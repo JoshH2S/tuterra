@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import FileUpload from "@/components/FileUpload";
 import { toast } from "@/components/ui/use-toast";
-import { Book, Upload, Clock, Loader2, AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
+import { ObjectiveInput } from "@/components/lesson-planning/ObjectiveInput";
+import { LessonPlanOutput } from "@/components/lesson-planning/LessonPlanOutput";
 
 interface Objective {
   description: string;
@@ -34,7 +34,7 @@ const LessonPlanning = () => {
       toast({
         title: "Content will be trimmed",
         description: `Your file content (${content.length} characters) exceeds the limit of ${MAX_CONTENT_LENGTH} characters. Only the first ${MAX_CONTENT_LENGTH} characters will be processed.`,
-        variant: "warning",
+        variant: "destructive",
       });
     } else {
       toast({
@@ -80,7 +80,6 @@ const LessonPlanning = () => {
     setLessonPlan("");
 
     try {
-      // Read and trim the file content
       const fileContent = await selectedFile.text();
       const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
       
@@ -158,29 +157,12 @@ const LessonPlanning = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               {objectives.map((objective, index) => (
-                <div key={index} className="space-y-4">
-                  <div>
-                    <Label>Objective {index + 1}</Label>
-                    <Input
-                      placeholder="Enter learning objective"
-                      value={objective.description}
-                      onChange={(e) => updateObjective(index, "description", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Days to Complete</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        value={objective.days}
-                        onChange={(e) => updateObjective(index, "days", parseInt(e.target.value))}
-                        className="w-24"
-                      />
-                      <Clock className="h-4 w-4 text-gray-500" />
-                    </div>
-                  </div>
-                </div>
+                <ObjectiveInput
+                  key={index}
+                  objective={objective}
+                  index={index}
+                  onChange={updateObjective}
+                />
               ))}
               
               <Button
@@ -210,19 +192,7 @@ const LessonPlanning = () => {
             </CardContent>
           </Card>
 
-          {lessonPlan && (
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Generated Lesson Plan</CardTitle>
-                <CardDescription>AI-generated lesson plan based on your content and objectives</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="prose max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans">{lessonPlan}</pre>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <LessonPlanOutput lessonPlan={lessonPlan} />
         </div>
       </div>
     </div>
