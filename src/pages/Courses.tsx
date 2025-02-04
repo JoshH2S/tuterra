@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { toast } from "../components/ui/use-toast";
+import { toast } from "../hooks/use-toast";
 import { PlusCircle, Book } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import FileUpload from "../components/FileUpload";
@@ -24,10 +24,20 @@ const Courses = () => {
         return;
       }
 
+      // Get the current user's ID
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .insert([
-          { title: newCourseTitle }
+          { 
+            title: newCourseTitle,
+            teacher_id: user.id
+          }
         ])
         .select()
         .single();
