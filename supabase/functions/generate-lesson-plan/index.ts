@@ -9,12 +9,20 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { content, objectives } = await req.json();
+
+    if (!content || !objectives) {
+      throw new Error('Missing required parameters: content and objectives');
+    }
+
+    console.log('Processing request with content length:', content.length);
+    console.log('Number of objectives:', objectives.length);
 
     const prompt = `
       As an expert educator, create a detailed lesson plan based on the following content and objectives:
@@ -38,6 +46,8 @@ serve(async (req) => {
       Format the response in a clear, organized structure.
     `;
 
+    console.log('Sending request to OpenAI API');
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -56,7 +66,20 @@ serve(async (req) => {
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
     const data = await response.json();
+    console.log('Received response from OpenAI API');
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Unexpected API response structure:', data);
+      throw new Error('Invalid response format from OpenAI API');
+    }
+
     const lessonPlan = data.choices[0].message.content;
 
     return new Response(JSON.stringify({ lessonPlan }), {
@@ -64,9 +87,15 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in generate-lesson-plan function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'An unexpected error occurred',
+        details: error.toString()
+      }), 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
