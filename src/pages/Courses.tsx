@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { toast } from "../components/ui/use-toast";
-import { PlusCircle, Book } from "lucide-react";
+import { PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import FileUpload from "../components/FileUpload";
-import { processFileContent } from "@/utils/file-utils";
+import { processFileContent, MAX_CONTENT_LENGTH } from "@/utils/file-utils";
+import { Course } from "@/types/course";
+import { CourseList } from "@/components/courses/CourseList";
+import { CreateCourseForm } from "@/components/courses/CreateCourseForm";
 
 const Courses = () => {
-  const navigate = useNavigate();
-  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [newCourseTitle, setNewCourseTitle] = useState("");
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
 
@@ -141,58 +140,21 @@ const Courses = () => {
       </div>
 
       {isCreatingCourse && (
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Create New Course</h2>
-          <div className="flex gap-4">
-            <Input
-              placeholder="Enter course title"
-              value={newCourseTitle}
-              onChange={(e) => setNewCourseTitle(e.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={handleCreateCourse}>
-              Create Course
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsCreatingCourse(false);
-                setNewCourseTitle("");
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
+        <CreateCourseForm
+          newCourseTitle={newCourseTitle}
+          onTitleChange={setNewCourseTitle}
+          onSubmit={handleCreateCourse}
+          onCancel={() => {
+            setIsCreatingCourse(false);
+            setNewCourseTitle("");
+          }}
+        />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {courses.length === 0 ? (
-          <div className="col-span-2 text-center py-8 text-gray-500">
-            <Book className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>No courses created yet</p>
-            <p className="text-sm">Create your first course to get started</p>
-          </div>
-        ) : (
-          courses.map((course) => (
-            <div key={course.id} className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold mb-4">{course.title}</h2>
-              <FileUpload 
-                onFileSelect={(file) => handleFileSelect(file, course.id)}
-                acceptedTypes=".pdf,.doc,.docx,.txt"
-              />
-              <div className="mt-4 flex justify-end space-x-2">
-                <Button variant="outline" size="sm" onClick={() => navigate('/lesson-planning')}>
-                  Create Lesson Plan
-                </Button>
-                <Button variant="outline" size="sm">
-                  View Materials
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      <CourseList 
+        courses={courses}
+        onFileSelect={handleFileSelect}
+      />
     </div>
   );
 };
