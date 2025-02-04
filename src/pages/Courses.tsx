@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Course } from "@/types/course";
+import { processFileContent } from "@/utils/file-utils";
 
 const Courses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -22,6 +23,9 @@ const Courses = () => {
         return;
       }
 
+      // Process and sanitize file content
+      const { content, wasContentTrimmed } = await processFileContent(file);
+
       // First create the course
       const { data: courseData, error: courseError } = await supabase
         .from("courses")
@@ -36,7 +40,7 @@ const Courses = () => {
 
       if (courseError) throw courseError;
 
-      // Then upload the course material
+      // Then upload the course material with sanitized content
       const { data: materialData, error: materialError } = await supabase
         .from("course_materials")
         .insert([
@@ -44,7 +48,7 @@ const Courses = () => {
             course_id: courseData.id,
             file_name: file.name,
             file_type: file.type,
-            content: await file.text(),
+            content: content,
           },
         ])
         .select()
@@ -56,10 +60,17 @@ const Courses = () => {
       setCourses((prev) => [...prev, courseData as Course]);
       setCourseName("");
 
-      toast({
-        title: "Success",
-        description: `Course "${courseName}" created with uploaded material`,
-      });
+      if (wasContentTrimmed) {
+        toast({
+          title: "Success with modifications",
+          description: `Course "${courseName}" created. Note: Some special characters were removed from the file content for compatibility.`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Course "${courseName}" created with uploaded material`,
+        });
+      }
     } catch (error) {
       console.error("Error:", error);
       toast({
