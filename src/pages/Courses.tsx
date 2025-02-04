@@ -1,15 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import FileUpload from "../components/FileUpload";
 import { Button } from "../components/ui/button";
 import { toast } from "../components/ui/use-toast";
 import { PlusCircle, Book } from "lucide-react";
 
 const Courses = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<{ name: string; file: File }[]>([]);
 
   const handleFileSelect = (file: File) => {
     const newCourse = {
-      name: file.name.split('.')[0], // Use filename as course name
+      name: file.name.split('.')[0],
       file: file
     };
     
@@ -22,13 +24,18 @@ const Courses = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Courses</h1>
-        <p className="text-gray-600">Upload and manage your course materials</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Courses</h1>
+          <p className="text-gray-600">Upload and manage your course materials</p>
+        </div>
+        <Button onClick={() => navigate('/lesson-planning')}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Create Lesson Plan
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Course Upload Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-xl font-semibold mb-4">Upload New Course Material</h2>
           <FileUpload 
@@ -37,7 +44,6 @@ const Courses = () => {
           />
         </div>
 
-        {/* Course List Section */}
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-xl font-semibold mb-4">Your Courses</h2>
           {courses.length === 0 ? (
@@ -57,9 +63,14 @@ const Courses = () => {
                     <Book className="h-5 w-5 text-primary" />
                     <span className="font-medium">{course.name}</span>
                   </div>
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
+                  <div className="space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => navigate('/lesson-planning')}>
+                      Create Lesson Plan
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      View Details
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
