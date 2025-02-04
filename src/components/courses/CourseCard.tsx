@@ -11,10 +11,16 @@ interface CourseCardProps {
 const CourseCard = ({ course, onFileSelect }: CourseCardProps) => {
   const navigate = useNavigate();
 
+  const handleCourseClick = () => {
+    navigate(`/course/${course.id}`);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-xl font-semibold mb-4 cursor-pointer hover:text-blue-600" 
-          onClick={() => navigate(`/course/${course.id}`)}>
+      <h2 
+        className="text-xl font-semibold mb-4 cursor-pointer hover:text-blue-600 transition-colors" 
+        onClick={handleCourseClick}
+      >
         {course.title}
       </h2>
       <FileUpload 
@@ -25,7 +31,7 @@ const CourseCard = ({ course, onFileSelect }: CourseCardProps) => {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => navigate(`/course/${course.id}`)}
+          onClick={handleCourseClick}
         >
           View Course Details
         </Button>
