@@ -1,16 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import FileUpload from "@/components/FileUpload";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Course } from "@/types/course";
 import { processFileContent } from "@/utils/file-utils";
+import { RefreshCw, CheckCircle } from "lucide-react";
 
 const Courses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseName, setCourseName] = useState("");
   const { toast } = useToast();
+
+  const fetchCourses = async () => {
+    const { data, error } = await supabase
+      .from("courses")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch courses",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCourses(data || []);
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
   const handleFileUpload = async (file: File) => {
     try {
@@ -81,6 +105,14 @@ const Courses = () => {
     }
   };
 
+  const handleRefresh = () => {
+    fetchCourses();
+    toast({
+      title: "Refreshed",
+      description: "Course list has been updated",
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Card>
@@ -94,6 +126,16 @@ const Courses = () => {
             onChange={(e) => setCourseName(e.target.value)}
           />
           <FileUpload onFileSelect={handleFileUpload} />
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh Courses
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -101,7 +143,10 @@ const Courses = () => {
         {courses.map((course) => (
           <Card key={course.id}>
             <CardHeader>
-              <CardTitle>{course.title}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                {course.title}
+              </CardTitle>
             </CardHeader>
           </Card>
         ))}
