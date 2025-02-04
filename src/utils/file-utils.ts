@@ -1,18 +1,24 @@
 export const processFileContent = async (file: File) => {
   try {
-    const content = await file.text();
-    // Remove null bytes and other problematic Unicode characters
+    // First read the file as an ArrayBuffer to handle binary data properly
+    const buffer = await file.arrayBuffer();
+    const decoder = new TextDecoder('utf-8');
+    let content = decoder.decode(buffer);
+    
+    // More thorough sanitization of problematic characters
     const sanitizedContent = content
       .replace(/\u0000/g, '') // Remove null bytes
-      .replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F]/g, ''); // Remove control characters
+      .replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F]/g, '') // Remove control characters
+      .replace(/^\uFEFF/, '') // Remove BOM
+      .replace(/[^\x20-\x7E\x0A\x0D\u00A0-\uFFFF]/g, ''); // Keep only printable characters
     
     return {
       content: sanitizedContent,
-      wasContentTrimmed: false,
+      wasContentTrimmed: content.length !== sanitizedContent.length,
       originalLength: content.length
     };
   } catch (error) {
     console.error('Error processing file:', error);
-    throw new Error('Failed to process file content');
+    throw new Error('Failed to process file content: ' + (error.message || 'Unknown error'));
   }
 };
