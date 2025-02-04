@@ -28,7 +28,9 @@ serve(async (req) => {
     console.log('Number of objectives:', objectives.length);
 
     const prompt = `
-      As an expert educator, create a detailed lesson plan based on the following content and objectives:
+      As an expert educator, create a detailed lesson plan based on the following content and objectives.
+      Format your response in plain text without any special characters, markdown symbols, or formatting (no #, *, -, or other symbols).
+      Use numbers and letters for organization, and separate sections with blank lines.
 
       Content:
       ${trimmedContent}
@@ -39,14 +41,15 @@ serve(async (req) => {
       ).join('\n')}
 
       Please provide a structured lesson plan that includes:
-      1. Clear learning outcomes
-      2. Detailed daily activities and teaching strategies
-      3. Required materials and resources
-      4. Assessment methods and success criteria
-      5. Differentiation strategies for diverse learners
-      6. Homework or extension activities
+      1. Learning Outcomes
+      2. Daily Activities and Teaching Strategies
+      3. Required Materials and Resources
+      4. Assessment Methods
+      5. Differentiation Strategies
+      6. Homework Activities
 
-      Format the response in a clear, organized structure.
+      Format everything in plain text with clear numbering and lettering for organization.
+      Do not use any special characters or markdown formatting.
     `;
 
     console.log('Sending request to OpenAI API');
@@ -62,7 +65,7 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert educator with experience in curriculum development and lesson planning. Provide detailed, practical, and engaging lesson plans.'
+            content: 'You are an expert educator. Provide lesson plans in plain text format only, without any markdown or special formatting characters. Use simple numbers and letters for organization.'
           },
           { role: 'user', content: prompt }
         ],
