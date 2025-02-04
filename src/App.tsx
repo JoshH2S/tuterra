@@ -64,7 +64,7 @@ const App = () => (
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <NotFound />
+                <Courses />
               </ProtectedRoute>
             }
           />
