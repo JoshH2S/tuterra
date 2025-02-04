@@ -8,6 +8,7 @@ import FileUpload from "@/components/FileUpload";
 import { toast } from "@/components/ui/use-toast";
 import { Book, Upload, Clock, Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Objective {
   description: string;
@@ -19,6 +20,7 @@ const LessonPlanning = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [objectives, setObjectives] = useState<Objective[]>([{ description: "", days: 1 }]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [lessonPlan, setLessonPlan] = useState<string>("");
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -61,41 +63,44 @@ const LessonPlanning = () => {
     }
 
     setIsProcessing(true);
+    setLessonPlan("");
 
     try {
       // Read the file content
       const fileContent = await selectedFile.text();
       
-      // Prepare the prompt for AI processing
-      const prompt = `
-        Please create a detailed lesson plan based on the following content and objectives:
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
 
-        Content:
-        ${fileContent.substring(0, 1000)}... // Truncated for API limits
+      const response = await fetch(
+        'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-lesson-plan',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            content: fileContent,
+            objectives: objectives,
+          }),
+        }
+      );
 
-        Objectives:
-        ${objectives.map((obj, index) => 
-          `${index + 1}. ${obj.description} (${obj.days} days)`
-        ).join('\n')}
+      if (!response.ok) {
+        throw new Error('Failed to generate lesson plan');
+      }
 
-        Please provide:
-        1. A structured lesson plan
-        2. Key learning outcomes
-        3. Suggested activities
-        4. Assessment methods
-      `;
-
-      // Here we would make the API call to OpenAI or another AI service
-      // For now, we'll simulate the AI processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const data = await response.json();
+      setLessonPlan(data.lessonPlan);
 
       toast({
         title: "Success",
-        description: "Lesson plan generated successfully! (Demo mode)",
+        description: "Lesson plan generated successfully!",
       });
-
-      // Here you would typically save the generated lesson plan
-      // and navigate to a view page
     } catch (error) {
       console.error('Error processing lesson plan:', error);
       toast({
@@ -189,6 +194,20 @@ const LessonPlanning = () => {
               </Button>
             </CardContent>
           </Card>
+
+          {lessonPlan && (
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Generated Lesson Plan</CardTitle>
+                <CardDescription>AI-generated lesson plan based on your content and objectives</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="prose max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans">{lessonPlan}</pre>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
