@@ -13,17 +13,21 @@ const CourseCard = ({ course, onFileSelect }: CourseCardProps) => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-xl font-semibold mb-4">{course.title}</h2>
+      <h2 className="text-xl font-semibold mb-4 cursor-pointer hover:text-blue-600" 
+          onClick={() => navigate(`/course/${course.id}`)}>
+        {course.title}
+      </h2>
       <FileUpload 
         onFileSelect={(file) => onFileSelect(file, course.id)}
         acceptedTypes=".pdf,.doc,.docx,.txt"
       />
       <div className="mt-4 flex justify-end space-x-2">
-        <Button variant="outline" size="sm" onClick={() => navigate('/lesson-planning')}>
-          Create Lesson Plan
-        </Button>
-        <Button variant="outline" size="sm">
-          View Materials
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate(`/course/${course.id}`)}
+        >
+          View Course Details
         </Button>
       </div>
     </div>

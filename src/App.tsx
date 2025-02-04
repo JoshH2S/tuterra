@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
 import LessonPlanning from "./pages/LessonPlanning";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -72,6 +73,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Courses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/course/:courseId"
+            element={
+              <ProtectedRoute>
+                <CourseDetail />
               </ProtectedRoute>
             }
           />
