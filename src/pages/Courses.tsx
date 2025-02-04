@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { toast } from "../hooks/use-toast";
+import { toast } from "../components/ui/use-toast";
 import { PlusCircle, Book } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import FileUpload from "../components/FileUpload";
+import { processFileContent } from "@/utils/file-utils";
 
 const Courses = () => {
   const navigate = useNavigate();
@@ -24,7 +25,6 @@ const Courses = () => {
         return;
       }
 
-      // Get the current user's ID
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
@@ -64,14 +64,12 @@ const Courses = () => {
 
   const handleFileSelect = async (file: File, courseId: string) => {
     try {
-      const content = await file.text();
-      const MAX_CONTENT_LENGTH = 5000;
-      const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
+      const { content: trimmedContent, wasContentTrimmed } = await processFileContent(file);
       
-      if (content.length > MAX_CONTENT_LENGTH) {
+      if (wasContentTrimmed) {
         toast({
           title: "Content trimmed",
-          description: `File content exceeds ${MAX_CONTENT_LENGTH} characters. Only the first ${MAX_CONTENT_LENGTH} characters will be saved.`,
+          description: `File content has been trimmed to the maximum allowed length.`,
           variant: "destructive",
         });
       }
@@ -157,7 +155,7 @@ const Courses = () => {
               <h2 className="text-xl font-semibold mb-4">{course.title}</h2>
               <FileUpload 
                 onFileSelect={(file) => handleFileSelect(file, course.id)}
-                acceptedTypes=".pdf,.doc,.docx"
+                acceptedTypes=".pdf,.doc,.docx,.txt"
               />
               <div className="mt-4 flex justify-end space-x-2">
                 <Button variant="outline" size="sm" onClick={() => navigate('/lesson-planning')}>
