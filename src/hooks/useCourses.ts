@@ -86,6 +86,10 @@ export const useCourses = () => {
         throw new Error('Content validation failed: ' + validateError.message);
       }
 
+      if (!isValid) {
+        throw new Error('Content validation failed: Invalid content format');
+      }
+
       const { error: uploadError } = await supabase
         .from('course_materials')
         .insert([
