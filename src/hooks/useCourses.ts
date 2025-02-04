@@ -79,7 +79,7 @@ export const useCourses = () => {
       }
 
       // Validate content before inserting
-      const { error: validateError } = await supabase
+      const { data: isValid, error: validateError } = await supabase
         .rpc('validate_course_material_content', { content_to_validate: content });
 
       if (validateError) {

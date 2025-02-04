@@ -120,7 +120,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      validate_course_material_content: {
+        Args: {
+          content_to_validate: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       user_type: "teacher" | "student"
