@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import FileUpload from "@/components/FileUpload";
 import { toast } from "@/components/ui/use-toast";
-import { Book, Upload, Clock, Loader2 } from "lucide-react";
+import { Book, Upload, Clock, Loader2, AlertCircle } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,19 +15,33 @@ interface Objective {
   days: number;
 }
 
+const MAX_CONTENT_LENGTH = 5000;
+
 const LessonPlanning = () => {
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [objectives, setObjectives] = useState<Objective[]>([{ description: "", days: 1 }]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [lessonPlan, setLessonPlan] = useState<string>("");
+  const [contentLength, setContentLength] = useState<number>(0);
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     setSelectedFile(file);
-    toast({
-      title: "File selected",
-      description: `${file.name} has been selected for lesson planning.`,
-    });
+    const content = await file.text();
+    setContentLength(content.length);
+    
+    if (content.length > MAX_CONTENT_LENGTH) {
+      toast({
+        title: "Content will be trimmed",
+        description: `Your file content (${content.length} characters) exceeds the limit of ${MAX_CONTENT_LENGTH} characters. Only the first ${MAX_CONTENT_LENGTH} characters will be processed.`,
+        variant: "warning",
+      });
+    } else {
+      toast({
+        title: "File selected",
+        description: `${file.name} has been selected for lesson planning.`,
+      });
+    }
   };
 
   const addObjective = () => {
@@ -66,8 +80,9 @@ const LessonPlanning = () => {
     setLessonPlan("");
 
     try {
-      // Read the file content
+      // Read and trim the file content
       const fileContent = await selectedFile.text();
+      const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -84,7 +99,7 @@ const LessonPlanning = () => {
             'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            content: fileContent,
+            content: trimmedContent,
             objectives: objectives,
           }),
         }

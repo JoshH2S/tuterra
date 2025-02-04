@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const MAX_CONTENT_LENGTH = 5000;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,14 +22,16 @@ serve(async (req) => {
       throw new Error('Missing required parameters: content and objectives');
     }
 
-    console.log('Processing request with content length:', content.length);
+    // Ensure content is within limits
+    const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
+    console.log('Processing request with content length:', trimmedContent.length);
     console.log('Number of objectives:', objectives.length);
 
     const prompt = `
       As an expert educator, create a detailed lesson plan based on the following content and objectives:
 
       Content:
-      ${content}
+      ${trimmedContent}
 
       Learning Objectives:
       ${objectives.map((obj: any, index: number) => 
@@ -75,7 +78,7 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Received response from OpenAI API');
 
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    if (!data.choices?.[0]?.message?.content) {
       console.error('Unexpected API response structure:', data);
       throw new Error('Invalid response format from OpenAI API');
     }
