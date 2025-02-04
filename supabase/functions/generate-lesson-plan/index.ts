@@ -10,19 +10,17 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { content, objectives } = await req.json();
+    const { content, objectives, teacherName, school } = await req.json();
 
     if (!content || !objectives) {
       throw new Error('Missing required parameters: content and objectives');
     }
 
-    // Ensure content is within limits
     const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
     console.log('Processing request with content length:', trimmedContent.length);
     console.log('Number of objectives:', objectives.length);
@@ -31,6 +29,10 @@ serve(async (req) => {
       As an expert educator, create a detailed lesson plan based on the following content and objectives.
       Format your response in plain text without any special characters, markdown symbols, or formatting (no #, *, -, or other symbols).
       Use numbers and letters for organization, and separate sections with blank lines.
+
+      Teacher Information:
+      Teacher: ${teacherName || 'Not specified'}
+      School: ${school || 'Not specified'}
 
       Content:
       ${trimmedContent}
@@ -61,7 +63,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [
           { 
             role: 'system', 
