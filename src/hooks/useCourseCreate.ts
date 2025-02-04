@@ -1,4 +1,4 @@
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Course } from "@/types/course";
 
@@ -22,7 +22,6 @@ export const useCourseCreate = (setCourses: React.Dispatch<React.SetStateAction<
 
       if (courseError) throw courseError;
 
-      // Properly type the course data and state update
       const newCourse = courseData as Course;
       setCourses(prevCourses => [...prevCourses, newCourse]);
       

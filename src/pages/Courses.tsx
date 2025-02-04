@@ -1,50 +1,100 @@
 import { useState } from "react";
-import { useCourses } from "@/hooks/useCourses";
-import { CourseList } from "@/components/courses/CourseList";
-import { CreateCourseForm } from "@/components/courses/CreateCourseForm";
-import { CoursesHeader } from "@/components/courses/CoursesHeader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import FileUpload from "@/components/FileUpload";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Course } from "@/types/course";
 
 const Courses = () => {
-  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
-  const [newCourseTitle, setNewCourseTitle] = useState("");
-  const { courses, isLoading, createCourse, handleFileUpload } = useCourses();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseName, setCourseName] = useState("");
+  const { toast } = useToast();
 
-  const handleCreateCourse = async () => {
-    if (!newCourseTitle.trim()) {
-      return;
-    }
+  const handleFileUpload = async (file: File) => {
+    try {
+      if (!courseName.trim()) {
+        toast({
+          title: "Error",
+          description: "Please enter a course name",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    const success = await createCourse(newCourseTitle);
-    if (success) {
-      setNewCourseTitle("");
-      setIsCreatingCourse(false);
+      // First create the course
+      const { data: courseData, error: courseError } = await supabase
+        .from("courses")
+        .insert([
+          {
+            title: courseName,
+            teacher_id: (await supabase.auth.getUser()).data.user?.id,
+          },
+        ])
+        .select()
+        .single();
+
+      if (courseError) throw courseError;
+
+      // Then upload the course material
+      const { data: materialData, error: materialError } = await supabase
+        .from("course_materials")
+        .insert([
+          {
+            course_id: courseData.id,
+            file_name: file.name,
+            file_type: file.type,
+            content: await file.text(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (materialError) throw materialError;
+
+      // Update local state
+      setCourses((prev) => [...prev, courseData as Course]);
+      setCourseName("");
+
+      toast({
+        title: "Success",
+        description: `Course "${courseName}" created with uploaded material`,
+      });
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create course and upload material",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <CoursesHeader onCreateClick={() => setIsCreatingCourse(true)} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Course Material</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            placeholder="Enter course name"
+            value={courseName}
+            onChange={(e) => setCourseName(e.target.value)}
+          />
+          <FileUpload onFileSelect={handleFileUpload} />
+        </CardContent>
+      </Card>
 
-      {isCreatingCourse && (
-        <CreateCourseForm
-          newCourseTitle={newCourseTitle}
-          onTitleChange={setNewCourseTitle}
-          onSubmit={handleCreateCourse}
-          onCancel={() => {
-            setIsCreatingCourse(false);
-            setNewCourseTitle("");
-          }}
-        />
-      )}
-
-      {isLoading ? (
-        <div className="text-center py-8">Loading courses...</div>
-      ) : (
-        <CourseList 
-          courses={courses}
-          onFileSelect={handleFileUpload}
-        />
-      )}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {courses.map((course) => (
+          <Card key={course.id}>
+            <CardHeader>
+              <CardTitle>{course.title}</CardTitle>
+            </CardHeader>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
