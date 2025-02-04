@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -13,6 +13,32 @@ const Courses = () => {
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [newCourseTitle, setNewCourseTitle] = useState("");
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: coursesData, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('teacher_id', user.id);
+
+      if (error) throw error;
+      setCourses(coursesData || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch courses. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleCreateCourse = async () => {
     try {
@@ -44,7 +70,7 @@ const Courses = () => {
 
       if (courseError) throw courseError;
 
-      setCourses([...courses, { id: courseData.id, title: courseData.title }]);
+      setCourses(prev => [...prev, courseData]);
       setNewCourseTitle("");
       setIsCreatingCourse(false);
       
@@ -64,34 +90,32 @@ const Courses = () => {
 
   const handleFileSelect = async (file: File, courseId: string) => {
     try {
-      const { content: trimmedContent, wasContentTrimmed } = await processFileContent(file);
+      const { content, wasContentTrimmed, originalLength } = await processFileContent(file);
       
       if (wasContentTrimmed) {
         toast({
           title: "Content trimmed",
-          description: `File content has been trimmed to the maximum allowed length.`,
+          description: `File content has been trimmed from ${originalLength} to ${MAX_CONTENT_LENGTH} characters.`,
           variant: "destructive",
         });
       }
 
-      const { data: materialData, error: materialError } = await supabase
+      const { error: uploadError } = await supabase
         .from('course_materials')
         .insert([
           {
             course_id: courseId,
             file_name: file.name,
             file_type: file.type,
-            content: trimmedContent
+            content: content
           }
-        ])
-        .select()
-        .single();
+        ]);
 
-      if (materialError) throw materialError;
+      if (uploadError) throw uploadError;
       
       toast({
-        title: "Material uploaded",
-        description: `${file.name} has been successfully uploaded.`,
+        title: "Success",
+        description: `${file.name} has been uploaded successfully.`,
       });
     } catch (error) {
       console.error('Error uploading material:', error);
