@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import FileUpload from "@/components/FileUpload";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
-import { ObjectiveInput } from "@/components/lesson-planning/ObjectiveInput";
+import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
+import { ObjectivesCard } from "@/components/lesson-planning/ObjectivesCard";
 import { LessonPlanOutput } from "@/components/lesson-planning/LessonPlanOutput";
 
 interface Objective {
@@ -29,19 +26,6 @@ const LessonPlanning = () => {
     setSelectedFile(file);
     const content = await file.text();
     setContentLength(content.length);
-    
-    if (content.length > MAX_CONTENT_LENGTH) {
-      toast({
-        title: "Content will be trimmed",
-        description: `Your file content (${content.length} characters) exceeds the limit of ${MAX_CONTENT_LENGTH} characters. Only the first ${MAX_CONTENT_LENGTH} characters will be processed.`,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "File selected",
-        description: `${file.name} has been selected for lesson planning.`,
-      });
-    }
   };
 
   const addObjective = () => {
@@ -89,7 +73,6 @@ const LessonPlanning = () => {
         return;
       }
 
-      // Fetch teacher information
       const { data: teacherData } = await supabase
         .from('profiles')
         .select('first_name, last_name, school')
@@ -146,60 +129,19 @@ const LessonPlanning = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Course Material</CardTitle>
-              <CardDescription>Upload a new file or select from existing courses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FileUpload
-                onFileSelect={handleFileSelect}
-                acceptedTypes=".pdf,.doc,.docx,.txt"
-              />
-            </CardContent>
-          </Card>
+          <CourseMaterialUpload
+            onFileSelect={handleFileSelect}
+            contentLength={contentLength}
+          />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Course Objectives</CardTitle>
-              <CardDescription>Define learning objectives and their duration</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {objectives.map((objective, index) => (
-                <ObjectiveInput
-                  key={index}
-                  objective={objective}
-                  index={index}
-                  onChange={updateObjective}
-                />
-              ))}
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addObjective}
-                className="w-full"
-              >
-                Add Another Objective
-              </Button>
-
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                className="w-full"
-                disabled={isProcessing || !selectedFile || objectives.some(obj => !obj.description)}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Lesson Plan...
-                  </>
-                ) : (
-                  'Generate Lesson Plan'
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+          <ObjectivesCard
+            objectives={objectives}
+            onObjectiveChange={updateObjective}
+            onAddObjective={addObjective}
+            onSubmit={handleSubmit}
+            isProcessing={isProcessing}
+            isSubmitDisabled={isProcessing || !selectedFile || objectives.some(obj => !obj.description)}
+          />
 
           <LessonPlanOutput lessonPlan={lessonPlan} />
         </div>
