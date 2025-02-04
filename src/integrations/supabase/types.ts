@@ -13,20 +13,32 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          first_name: string
           id: string
+          last_name: string
+          school: string
           updated_at: string
+          user_type: Database["public"]["Enums"]["user_type"]
         }
         Insert: {
           created_at?: string
           email: string
+          first_name: string
           id: string
+          last_name: string
+          school: string
           updated_at?: string
+          user_type: Database["public"]["Enums"]["user_type"]
         }
         Update: {
           created_at?: string
           email?: string
+          first_name?: string
           id?: string
+          last_name?: string
+          school?: string
           updated_at?: string
+          user_type?: Database["public"]["Enums"]["user_type"]
         }
         Relationships: []
       }
@@ -38,7 +50,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_type: "teacher" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
