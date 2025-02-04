@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [school, setSchool] = useState("");
@@ -23,6 +24,16 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
     
     try {
       const { error } = await supabase.auth.signUp({
@@ -157,6 +168,13 @@ const Auth = () => {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <Input
+                  type="password"
+                  placeholder="Re-type Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
                 <Input
