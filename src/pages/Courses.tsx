@@ -3,7 +3,7 @@ import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { processFileContent, MAX_CONTENT_LENGTH } from "@/utils/file-utils";
+import { processFileContent } from "@/utils/file-utils";
 import { Course } from "@/types/course";
 import { CourseList } from "@/components/courses/CourseList";
 import { CreateCourseForm } from "@/components/courses/CreateCourseForm";
@@ -94,7 +94,7 @@ const Courses = () => {
       if (wasContentTrimmed) {
         toast({
           title: "Content trimmed",
-          description: `File content has been trimmed from ${originalLength} to ${MAX_CONTENT_LENGTH} characters.`,
+          description: `File content has been trimmed from ${originalLength} characters.`,
           variant: "destructive",
         });
       }
