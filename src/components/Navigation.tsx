@@ -1,12 +1,31 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, BookOpen, Users, BarChart } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, BookOpen, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigate("/auth");
+    } catch (error: any) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -40,6 +59,15 @@ const Navigation = () => {
             >
               Analytics
             </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -80,6 +108,14 @@ const Navigation = () => {
             >
               Analytics
             </Link>
+            <Button
+              variant="ghost"
+              onClick={handleSignOut}
+              className="w-full justify-start"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       )}
