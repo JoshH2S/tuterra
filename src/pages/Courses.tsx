@@ -64,6 +64,18 @@ const Courses = () => {
 
   const handleFileSelect = async (file: File, courseId: string) => {
     try {
+      const content = await file.text();
+      const MAX_CONTENT_LENGTH = 5000;
+      const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
+      
+      if (content.length > MAX_CONTENT_LENGTH) {
+        toast({
+          title: "Content trimmed",
+          description: `File content exceeds ${MAX_CONTENT_LENGTH} characters. Only the first ${MAX_CONTENT_LENGTH} characters will be saved.`,
+          variant: "destructive",
+        });
+      }
+
       const { data: materialData, error: materialError } = await supabase
         .from('course_materials')
         .insert([
@@ -71,7 +83,7 @@ const Courses = () => {
             course_id: courseId,
             file_name: file.name,
             file_type: file.type,
-            content: await file.text()
+            content: trimmedContent
           }
         ])
         .select()
