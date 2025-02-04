@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navigation from "../components/Navigation";
 import FileUpload from "../components/FileUpload";
 import { BookOpen, Users, BarChart } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
-    // Here we would typically process the file and send it to our AI service
     console.log("File selected:", selectedFile.name);
   };
 
@@ -28,6 +30,15 @@ const Index = () => {
               Upload your course materials and let our AI assistant create personalized lesson plans,
               quizzes, and study materials for your students.
             </p>
+            <div className="mt-8">
+              <Button 
+                onClick={() => navigate('/lesson-planning')}
+                size="lg"
+                className="bg-primary-500 text-white px-8 py-3 rounded-md hover:bg-primary-600 transition-colors"
+              >
+                Start AI Lesson Planning
+              </Button>
+            </div>
           </div>
         </div>
       </div>
