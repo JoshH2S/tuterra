@@ -1,7 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
-import { parse } from "https://deno.land/x/pdfparser@v1.1.2/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -23,14 +22,15 @@ function truncateText(text: string, maxTokens = 30000) {
 
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   try {
-    const uint8Array = new Uint8Array(buffer);
-    const pdfData = await parse(uint8Array);
-    const pages = pdfData.pages;
-    const text = pages.map(page => page.text).join('\n');
+    // For now, we'll convert the PDF content to a string representation
+    // This is a temporary solution until we find a stable PDF parser for Deno
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(buffer);
+    console.log('Extracted text length:', text.length);
     return text;
   } catch (error) {
-    console.error('Error parsing PDF:', error);
-    throw new Error('Failed to extract text from PDF');
+    console.error('Error processing PDF:', error);
+    throw new Error('Failed to process PDF content');
   }
 }
 
@@ -123,7 +123,7 @@ Be encouraging, clear, and helpful in your responses. Base your answers on the c
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           { role: 'system', content: systemMessage },
           { role: 'user', content: message }
