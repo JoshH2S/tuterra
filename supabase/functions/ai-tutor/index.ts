@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
-import * as pdfParse from 'https://esm.sh/pdf-parse@1.1.1';
+import { PdfServiceClient } from "https://deno.land/x/pdfjs@v0.1.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -12,10 +12,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Function to truncate text to fit within model's context length
 function truncateText(text: string, maxTokens = 30000) {
-  // More conservative approximation: 1 token ≈ 4 characters
-  // We use a smaller maxTokens to leave room for the system message and user query
   const maxChars = maxTokens * 4;
   if (text.length > maxChars) {
     console.log(`Truncating content from ${text.length} characters to ${maxChars}`);
@@ -26,9 +23,10 @@ function truncateText(text: string, maxTokens = 30000) {
 
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   try {
+    const pdfService = new PdfServiceClient();
     const uint8Array = new Uint8Array(buffer);
-    const data = await pdfParse(uint8Array);
-    return data.text;
+    const text = await pdfService.getText(uint8Array);
+    return text;
   } catch (error) {
     console.error('Error parsing PDF:', error);
     throw new Error('Failed to extract text from PDF');
