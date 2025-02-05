@@ -11,6 +11,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Function to truncate text to approximate token count
+function truncateText(text: string, maxTokens = 50000) {
+  // Rough approximation: 1 token ≈ 4 characters
+  const maxChars = maxTokens * 4;
+  if (text.length > maxChars) {
+    console.log(`Truncating content from ${text.length} characters to ${maxChars}`);
+    return text.slice(0, maxChars) + "\n[Content truncated due to length...]";
+  }
+  return text;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -44,9 +55,10 @@ serve(async (req) => {
           console.error('Error downloading material:', downloadError);
           context = ""; // Continue without context if file can't be downloaded
         } else {
-          // Convert the file to text
+          // Convert the file to text and truncate if needed
           const text = await fileData.text();
-          context = `\n\nReference Material Content:\n${text}`;
+          context = truncateText(text);
+          console.log(`Context length after truncation: ${context.length} characters`);
         }
       } catch (error) {
         console.error('Error fetching material:', error);
@@ -80,6 +92,20 @@ serve(async (req) => {
       throw userMessageError;
     }
 
+    // Prepare system message with truncated context
+    const systemMessage = `You are an AI tutor assistant. ${
+      context ? 'You have access to the following course material (truncated if too long):' + context 
+      : 'No specific course material is currently selected.'
+    }\n\nUse this content to help answer questions accurately and provide relevant examples. Help students with:
+- Creating study guides and summaries
+- Generating practice quizzes
+- Building study schedules
+- Explaining complex topics
+- Providing learning resources
+
+Be encouraging, clear, and helpful in your responses. Base your answers on the course materials when available.`;
+
+    console.log('Making request to OpenAI API...');
     // Get AI response
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -90,17 +116,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: `You are an AI tutor assistant. ${context ? 'You have access to the following course material:' + context : 'No specific course material is currently selected.'}\n\nUse this content to help answer questions accurately and provide relevant examples. Help students with:
-- Creating study guides and summaries
-- Generating practice quizzes
-- Building study schedules
-- Explaining complex topics
-- Providing learning resources
-
-Be encouraging, clear, and helpful in your responses. Base your answers on the course materials when available.`
-          },
+          { role: 'system', content: systemMessage },
           { role: 'user', content: message }
         ],
       }),
@@ -109,7 +125,7 @@ Be encouraging, clear, and helpful in your responses. Base your answers on the c
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      throw new Error('Failed to get AI response');
+      throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
     }
 
     const aiResponse = await response.json();
