@@ -8,15 +8,15 @@ import { useLessonPlan } from "@/hooks/useLessonPlan";
 
 const LessonPlanning = () => {
   const {
+    selectedFile,
     objectives,
-    setObjectives,
+    isProcessing,
+    lessonPlan,
+    contentLength,
+    handleFileSelect,
     addObjective,
-    removeObjective,
-    uploadStatus,
-    handleFileUpload,
-    generatedPlan,
-    isGenerating,
-    generatePlan,
+    updateObjective,
+    handleSubmit,
   } = useLessonPlan();
 
   return (
@@ -27,22 +27,27 @@ const LessonPlanning = () => {
         
         <div className="grid gap-8 md:grid-cols-2">
           <div className="space-y-8">
-            <ObjectiveInput onAdd={addObjective} />
+            <ObjectiveInput
+              objective={objectives[objectives.length - 1]}
+              index={objectives.length - 1}
+              onChange={updateObjective}
+            />
             <ObjectivesCard 
-              objectives={objectives} 
-              onRemove={removeObjective}
+              objectives={objectives}
+              onObjectiveChange={updateObjective}
+              onAddObjective={addObjective}
+              onSubmit={handleSubmit}
+              isProcessing={isProcessing}
+              isSubmitDisabled={isProcessing || !selectedFile || objectives.some(obj => !obj.description)}
             />
             <CourseMaterialUpload 
-              onUpload={handleFileUpload}
-              uploadStatus={uploadStatus}
+              onFileSelect={handleFileSelect}
+              contentLength={contentLength}
             />
           </div>
           
           <LessonPlanOutput
-            objectives={objectives}
-            isGenerating={isGenerating}
-            generatedPlan={generatedPlan}
-            onGenerate={generatePlan}
+            lessonPlan={lessonPlan}
           />
         </div>
       </main>
