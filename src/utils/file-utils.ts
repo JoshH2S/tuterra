@@ -30,9 +30,9 @@ export const processFileContent = async (file: File): Promise<ProcessedFile> => 
       };
     }
 
-    // For text files, read and process content
+    // For text files, read and process content with UTF-8 encoding
     console.log('Reading text file content...');
-    const content = await file.text();
+    const content = await readFileAsText(file);
     
     if (!content) {
       console.warn('File appears to be empty');
@@ -40,8 +40,12 @@ export const processFileContent = async (file: File): Promise<ProcessedFile> => 
     }
 
     console.log('Original content length:', content.length);
+    console.log('Sample of original content:', content.substring(0, 100));
+    
     const sanitizedContent = sanitizeContent(content);
+    
     console.log('Sanitized content length:', sanitizedContent.length);
+    console.log('Sample of sanitized content:', sanitizedContent.substring(0, 100));
     
     if (!sanitizedContent) {
       throw new Error('File appears to be empty after processing');
@@ -64,22 +68,45 @@ export const processFileContent = async (file: File): Promise<ProcessedFile> => 
   }
 };
 
+const readFileAsText = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to read file as text'));
+      }
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file, 'UTF-8'); // Explicitly specify UTF-8 encoding
+  });
+};
+
 const sanitizeContent = (content: string): string => {
   let sanitized = content;
   
-  // Remove only problematic characters while preserving content
+  // Remove problematic and hidden characters while preserving content
   sanitized = sanitized
-    .replace(/\0/g, '') // Remove null bytes
-    .replace(/^\uFEFF/, '') // Remove BOM if present
-    // Only remove control characters that could cause issues
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // Remove UTF-8 BOM
+    .replace(/^\uFEFF/, '')
+    // Remove null bytes
+    .replace(/\0/g, '')
+    // Remove all C0 control characters (0x00-0x1F) except allowed whitespace
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+    // Remove all C1 control characters (0x80-0x9F)
+    .replace(/[\x80-\x9F]/g, '')
+    // Remove zero-width characters
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    // Remove other problematic Unicode characters
+    .replace(/[\u2028\u2029\uFFF9-\uFFFB]/g, '')
     .trim();
 
-  // Preserve all other characters including:
-  // - Unicode characters
+  // Preserve:
+  // - Regular Unicode characters
+  // - Whitespace (\n, \r, \t, space)
   // - Special characters
-  // - Line breaks and formatting
-  // - Extended ASCII
+  // - Extended ASCII (printable)
   
   return sanitized;
 };
