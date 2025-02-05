@@ -17,21 +17,29 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationId, courseId, studentId } = await req.json();
+    const { message, conversationId, courseId, studentId, materialPath } = await req.json();
 
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-    // Fetch course materials
-    const { data: courseMaterials } = await supabase
-      .from('course_materials')
-      .select('content')
-      .eq('course_id', courseId);
+    let context = "";
+    
+    // If a material is selected, fetch its content
+    if (materialPath) {
+      try {
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from('course_materials')
+          .download(materialPath);
 
-    const courseContext = courseMaterials
-      ?.map(material => material.content)
-      .filter(Boolean)
-      .join('\n\n');
+        if (downloadError) throw downloadError;
+
+        // Convert the file to text
+        const text = await fileData.text();
+        context = `\n\nReference Material Content:\n${text}`;
+      } catch (error) {
+        console.error('Error fetching material:', error);
+      }
+    }
 
     // Create a new conversation if none exists
     let currentConversationId = conversationId;
@@ -67,18 +75,14 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an AI tutor assistant. You have access to the following course materials:
-
-${courseContext}
-
-Use this content to help answer questions accurately and provide relevant examples. Help students with:
+            content: `You are an AI tutor assistant. ${context ? 'You have access to the following course material:' + context : 'No specific course material is currently selected.'}\n\nUse this content to help answer questions accurately and provide relevant examples. Help students with:
 - Creating study guides and summaries
 - Generating practice quizzes
 - Building study schedules
 - Explaining complex topics
 - Providing learning resources
 
-Be encouraging, clear, and helpful in your responses. Base your answers on the course materials provided.`
+Be encouraging, clear, and helpful in your responses. Base your answers on the course materials when available.`
           },
           { role: 'user', content: message }
         ],

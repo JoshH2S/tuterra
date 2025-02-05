@@ -5,9 +5,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorMessage } from "./TutorMessage";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface TutorChatProps {
   courseId: string;
+}
+
+interface CourseMaterial {
+  id: string;
+  file_name: string;
+  storage_path: string;
 }
 
 export const TutorChat = ({ courseId }: TutorChatProps) => {
@@ -15,6 +23,8 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [materials, setMaterials] = useState<CourseMaterial[]>([]);
+  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -25,6 +35,31 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('course_materials')
+          .select('id, file_name, storage_path')
+          .eq('course_id', courseId);
+
+        if (error) throw error;
+        if (data) setMaterials(data);
+      } catch (error) {
+        console.error('Error fetching materials:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load course materials",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (courseId) {
+      fetchMaterials();
+    }
+  }, [courseId, toast]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -76,6 +111,7 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
           conversationId,
           courseId,
           studentId: user.id,
+          materialPath: selectedMaterial,
         },
       });
 
@@ -109,9 +145,31 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
     <div className="flex flex-col h-[600px] bg-white rounded-lg shadow-md">
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold">AI Study Assistant</h2>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 mb-4">
           Ask me to create study guides, generate quizzes, build study schedules, or explain any topic you're struggling with.
         </p>
+        
+        {materials.length > 0 && (
+          <Card className="bg-gray-50">
+            <CardContent className="pt-4">
+              <Select
+                value={selectedMaterial || ""}
+                onValueChange={setSelectedMaterial}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a course material to reference" />
+                </SelectTrigger>
+                <SelectContent>
+                  {materials.map((material) => (
+                    <SelectItem key={material.id} value={material.storage_path}>
+                      {material.file_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
