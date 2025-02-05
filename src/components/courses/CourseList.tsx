@@ -5,9 +5,10 @@ import CourseCard from "./CourseCard";
 interface CourseListProps {
   courses: Course[];
   onFileSelect: (file: File, courseId: string) => Promise<void>;
+  onDelete: (courseId: string) => Promise<void>;
 }
 
-export const CourseList = ({ courses, onFileSelect }: CourseListProps) => {
+export const CourseList = ({ courses, onFileSelect, onDelete }: CourseListProps) => {
   if (courses.length === 0) {
     return (
       <div className="col-span-2 text-center py-8 text-gray-500">
@@ -25,6 +26,7 @@ export const CourseList = ({ courses, onFileSelect }: CourseListProps) => {
           key={course.id} 
           course={course} 
           onFileSelect={onFileSelect}
+          onDelete={onDelete}
         />
       ))}
     </div>

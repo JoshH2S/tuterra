@@ -2,13 +2,26 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import { Course } from "@/types/course";
+import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface CourseCardProps {
   course: Course;
   onFileSelect: (file: File, courseId: string) => Promise<void>;
+  onDelete: (courseId: string) => Promise<void>;
 }
 
-const CourseCard = ({ course, onFileSelect }: CourseCardProps) => {
+const CourseCard = ({ course, onFileSelect, onDelete }: CourseCardProps) => {
   const navigate = useNavigate();
 
   const handleCourseClick = () => {
@@ -17,12 +30,42 @@ const CourseCard = ({ course, onFileSelect }: CourseCardProps) => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 
-        className="text-xl font-semibold mb-4 cursor-pointer hover:text-blue-600 transition-colors" 
-        onClick={handleCourseClick}
-      >
-        {course.title}
-      </h2>
+      <div className="flex justify-between items-start mb-4">
+        <h2 
+          className="text-xl font-semibold cursor-pointer hover:text-blue-600 transition-colors" 
+          onClick={handleCourseClick}
+        >
+          {course.title}
+        </h2>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-500 hover:text-red-600"
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Course</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{course.title}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => onDelete(course.id)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
       <FileUpload 
         onFileSelect={(file) => onFileSelect(file, course.id)}
         acceptedTypes=".pdf,.doc,.docx,.txt"
