@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useConversation } from "./useConversation";
+import { useMessageTransform } from "./useMessageTransform";
 
 interface Message {
   id: string;
@@ -8,62 +10,24 @@ interface Message {
   role: 'user' | 'assistant';
 }
 
-interface SupabaseMessage {
-  id: string;
-  content: string;
-  role: string;
-  conversation_id: string;
-  created_at: string;
-}
-
 export const useTutorMessages = (courseId: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const { conversationId, setConversationId } = useConversation(courseId);
+  const { transformMessages } = useMessageTransform();
   const { toast } = useToast();
 
-  const transformMessages = (messages: SupabaseMessage[]): Message[] => {
-    return messages.map(msg => ({
-      id: msg.id,
-      content: msg.content,
-      role: msg.role as 'user' | 'assistant' // This is safe because we control the values in the database
-    }));
-  };
+  const fetchMessages = async (conversationId: string) => {
+    const { data: messagesData } = await supabase
+      .from('tutor_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user || !courseId) return;
-
-        const { data: conversationData } = await supabase
-          .from('tutor_conversations')
-          .select('id')
-          .eq('student_id', userData.user.id)
-          .eq('course_id', courseId)
-          .maybeSingle();
-
-        if (conversationData) {
-          setConversationId(conversationData.id);
-          const { data: messagesData } = await supabase
-            .from('tutor_messages')
-            .select('*')
-            .eq('conversation_id', conversationData.id)
-            .order('created_at', { ascending: true });
-
-          if (messagesData) {
-            setMessages(transformMessages(messagesData));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      }
-    };
-
-    if (courseId) {
-      fetchMessages();
+    if (messagesData) {
+      setMessages(transformMessages(messagesData));
     }
-  }, [courseId]);
+  };
 
   const sendMessage = async (message: string, selectedMaterial: string | null) => {
     if (!message.trim() || isLoading || !courseId) return;
@@ -88,15 +52,9 @@ export const useTutorMessages = (courseId: string) => {
 
       if (response.error) throw response.error;
       
-      const { data: messagesData } = await supabase
-        .from('tutor_messages')
-        .select('*')
-        .eq('conversation_id', response.data.conversationId)
-        .order('created_at', { ascending: true });
-
-      if (messagesData) {
-        setMessages(transformMessages(messagesData));
+      if (response.data.conversationId) {
         setConversationId(response.data.conversationId);
+        await fetchMessages(response.data.conversationId);
       }
     } catch (error: any) {
       console.error('Error in sendMessage:', error);
