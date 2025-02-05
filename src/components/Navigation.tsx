@@ -1,8 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { useMobile } from "@/hooks/useMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Navigation = () => {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const location = useLocation();
 
   const links = [

@@ -1,47 +1,51 @@
-import Navigation from "@/components/Navigation";
-import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
-import { ObjectivesCard } from "@/components/lesson-planning/ObjectivesCard";
-import { LessonPlanOutput } from "@/components/lesson-planning/LessonPlanOutput";
+import { Navigation } from "@/components/Navigation";
 import { LessonPlanningHeader } from "@/components/lesson-planning/LessonPlanningHeader";
+import { ObjectiveInput } from "@/components/lesson-planning/ObjectiveInput";
+import { ObjectivesCard } from "@/components/lesson-planning/ObjectivesCard";
+import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
+import { LessonPlanOutput } from "@/components/lesson-planning/LessonPlanOutput";
 import { useLessonPlan } from "@/hooks/useLessonPlan";
 
 const LessonPlanning = () => {
   const {
-    selectedFile,
     objectives,
-    isProcessing,
-    lessonPlan,
-    contentLength,
-    handleFileSelect,
+    setObjectives,
     addObjective,
-    updateObjective,
-    handleSubmit,
+    removeObjective,
+    uploadStatus,
+    handleFileUpload,
+    generatedPlan,
+    isGenerating,
+    generatePlan,
   } = useLessonPlan();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8">
         <LessonPlanningHeader />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <CourseMaterialUpload
-            onFileSelect={handleFileSelect}
-            contentLength={contentLength}
-          />
-
-          <ObjectivesCard
+        
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-8">
+            <ObjectiveInput onAdd={addObjective} />
+            <ObjectivesCard 
+              objectives={objectives} 
+              onRemove={removeObjective}
+            />
+            <CourseMaterialUpload 
+              onUpload={handleFileUpload}
+              uploadStatus={uploadStatus}
+            />
+          </div>
+          
+          <LessonPlanOutput
             objectives={objectives}
-            onObjectiveChange={updateObjective}
-            onAddObjective={addObjective}
-            onSubmit={handleSubmit}
-            isProcessing={isProcessing}
-            isSubmitDisabled={isProcessing || !selectedFile || objectives.some(obj => !obj.description)}
+            isGenerating={isGenerating}
+            generatedPlan={generatedPlan}
+            onGenerate={generatePlan}
           />
-
-          <LessonPlanOutput lessonPlan={lessonPlan} />
         </div>
-      </div>
+      </main>
     </div>
   );
 };
