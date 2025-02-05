@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,13 +6,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorMessage } from "./TutorMessage";
 
-export const TutorChat = () => {
+interface TutorChatProps {
+  courseId: string;
+}
+
+export const TutorChat = ({ courseId }: TutorChatProps) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { courseId } = useParams();
   const { toast } = useToast();
 
   const scrollToBottom = () => {
