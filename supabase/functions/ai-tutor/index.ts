@@ -11,7 +11,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function truncateText(text: string, maxTokens = 15000) {
+function truncateText(text: string, maxTokens = 8000) {
   const maxChars = maxTokens * 4;
   if (text.length > maxChars) {
     console.log(`Truncating content from ${text.length} characters to ${maxChars}`);
@@ -22,8 +22,6 @@ function truncateText(text: string, maxTokens = 15000) {
 
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   try {
-    // For now, we'll convert the PDF content to a string representation
-    // This is a temporary solution until we find a stable PDF parser for Deno
     const decoder = new TextDecoder('utf-8');
     const text = decoder.decode(buffer);
     console.log('Extracted text length:', text.length);
@@ -55,6 +53,7 @@ serve(async (req) => {
     
     if (materialPath) {
       try {
+        console.log('Fetching material from path:', materialPath);
         const { data: fileData, error: downloadError } = await supabase.storage
           .from('course_materials')
           .download(materialPath);
@@ -128,6 +127,7 @@ Be encouraging, clear, and helpful in your responses. Base your answers on the c
           { role: 'system', content: systemMessage },
           { role: 'user', content: message }
         ],
+        max_tokens: 2000,
       }),
     });
 
