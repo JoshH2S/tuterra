@@ -1,32 +1,18 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import { ProtectedRoute } from "./ProtectedRoute";
 import Index from "@/pages/Index";
+import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
 import LessonPlanning from "@/pages/LessonPlanning";
+import CourseTutor from "@/pages/CourseTutor";
 import NotFound from "@/pages/NotFound";
-import Auth from "@/pages/Auth";
-import { ProtectedRoute } from "./ProtectedRoute";
 
 export const AppRoutes = () => {
   return (
     <Routes>
+      <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Index />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Courses />
-          </ProtectedRoute>
-        }
-      />
       <Route
         path="/courses"
         element={
@@ -36,7 +22,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/course/:courseId"
+        path="/courses/:courseId"
         element={
           <ProtectedRoute>
             <CourseDetail />
@@ -52,10 +38,10 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/analytics"
+        path="/tutor"
         element={
           <ProtectedRoute>
-            <NotFound />
+            <CourseTutor />
           </ProtectedRoute>
         }
       />
