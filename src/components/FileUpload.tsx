@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Check, AlertCircle, FileText, FileWord, FilePdf } from "lucide-react";
+import { Upload, Check, AlertCircle, FileText, File } from "lucide-react";
 import { FileType } from "@/types/file";
 
 interface FileUploadProps {
@@ -40,10 +40,10 @@ const FileUpload = ({ onFileSelect, acceptedTypes = ".pdf,.doc,.docx,.txt" }: Fi
     const extension = fileName.split('.').pop()?.toLowerCase();
     switch (extension) {
       case 'pdf':
-        return <FilePdf className="h-12 w-12 text-red-500" />;
+        return <File className="h-12 w-12 text-red-500" />;
       case 'doc':
       case 'docx':
-        return <FileWord className="h-12 w-12 text-blue-500" />;
+        return <File className="h-12 w-12 text-blue-500" />;
       default:
         return <FileText className="h-12 w-12 text-gray-500" />;
     }
