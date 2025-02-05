@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
+import * as pdfParse from 'https://esm.sh/pdf-parse@1.1.1';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -23,8 +24,18 @@ function truncateText(text: string, maxTokens = 30000) {
   return text;
 }
 
+async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
+  try {
+    const uint8Array = new Uint8Array(buffer);
+    const data = await pdfParse(uint8Array);
+    return data.text;
+  } catch (error) {
+    console.error('Error parsing PDF:', error);
+    throw new Error('Failed to extract text from PDF');
+  }
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -40,12 +51,9 @@ serve(async (req) => {
       throw new Error('Message is required');
     }
 
-    // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-
     let context = "";
     
-    // If a material is selected, fetch its content
     if (materialPath) {
       try {
         const { data: fileData, error: downloadError } = await supabase.storage
@@ -54,20 +62,24 @@ serve(async (req) => {
 
         if (downloadError) {
           console.error('Error downloading material:', downloadError);
-          context = ""; // Continue without context if file can't be downloaded
+          context = "";
         } else {
-          // Convert the file to text and truncate if needed
-          const text = await fileData.text();
+          let text;
+          if (materialPath.toLowerCase().endsWith('.pdf')) {
+            const arrayBuffer = await fileData.arrayBuffer();
+            text = await extractTextFromPDF(arrayBuffer);
+          } else {
+            text = await fileData.text();
+          }
           context = truncateText(text);
           console.log(`Context length after truncation: ${context.length} characters`);
         }
       } catch (error) {
-        console.error('Error fetching material:', error);
-        context = ""; // Continue without context if there's an error
+        console.error('Error processing material:', error);
+        context = "";
       }
     }
 
-    // Create a new conversation if none exists
     let currentConversationId = conversationId;
     if (!currentConversationId) {
       const { data: conversation, error: convError } = await supabase
@@ -80,7 +92,6 @@ serve(async (req) => {
       currentConversationId = conversation.id;
     }
 
-    // Store user message
     const { error: userMessageError } = await supabase
       .from('tutor_messages')
       .insert([{
@@ -93,7 +104,6 @@ serve(async (req) => {
       throw userMessageError;
     }
 
-    // Prepare system message with truncated context
     const systemMessage = `You are an AI tutor assistant. ${
       context ? 'You have access to the following course material:' + context 
       : 'No specific course material is currently selected.'
@@ -107,7 +117,6 @@ serve(async (req) => {
 Be encouraging, clear, and helpful in your responses. Base your answers on the course materials when available.`;
 
     console.log('Making request to OpenAI API...');
-    // Get AI response
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -132,7 +141,6 @@ Be encouraging, clear, and helpful in your responses. Base your answers on the c
     const aiResponse = await response.json();
     const aiMessage = aiResponse.choices[0].message.content;
 
-    // Store AI response
     const { error: aiMessageError } = await supabase
       .from('tutor_messages')
       .insert([{
