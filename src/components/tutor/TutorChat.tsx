@@ -1,12 +1,9 @@
-import { useState, useEffect, useRef } from "react";
-import { Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { TutorMessage } from "./TutorMessage";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import { TutorChatHeader } from "./TutorChatHeader";
+import { TutorChatMessages } from "./TutorChatMessages";
+import { TutorChatInput } from "./TutorChatInput";
 
 interface TutorChatProps {
   courseId: string;
@@ -25,16 +22,7 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [materials, setMaterials] = useState<CourseMaterial[]>([]);
   const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   useEffect(() => {
     const fetchMaterials = async () => {
@@ -119,7 +107,6 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
 
       setMessage("");
       
-      // Fetch updated messages
       const { data: messagesData } = await supabase
         .from('tutor_messages')
         .select('*')
@@ -143,63 +130,18 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
 
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-lg shadow-md">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">AI Study Assistant</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Ask me to create study guides, generate quizzes, build study schedules, or explain any topic you're struggling with.
-        </p>
-        
-        {materials.length > 0 && (
-          <Card className="bg-gray-50">
-            <CardContent className="pt-4">
-              <Select
-                value={selectedMaterial || ""}
-                onValueChange={setSelectedMaterial}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a course material to reference" />
-                </SelectTrigger>
-                <SelectContent>
-                  {materials.map((material) => (
-                    <SelectItem key={material.id} value={material.storage_path}>
-                      {material.file_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <TutorMessage
-            key={msg.id}
-            content={msg.content}
-            role={msg.role}
-          />
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <form onSubmit={handleSubmit} className="p-4 border-t">
-        <div className="flex gap-2">
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 min-h-[60px]"
-          />
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="self-end"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </form>
+      <TutorChatHeader
+        materials={materials}
+        selectedMaterial={selectedMaterial}
+        onMaterialSelect={setSelectedMaterial}
+      />
+      <TutorChatMessages messages={messages} />
+      <TutorChatInput
+        message={message}
+        isLoading={isLoading}
+        onMessageChange={setMessage}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 };
