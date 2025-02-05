@@ -1,25 +1,37 @@
-import { FileType, ProcessedFile } from "@/types/file";
+import { ProcessedFile } from "@/types/file";
 
-export const processFileContent = async (file: File) => {
+export const processFileContent = async (file: File): Promise<ProcessedFile> => {
   try {
+    // Handle different file types
+    const fileType = file.type.toLowerCase();
+    
+    // For binary files (PDF, DOC, etc.), just validate the file
+    if (fileType.includes('pdf') || 
+        fileType.includes('msword') || 
+        fileType.includes('officedocument')) {
+      return {
+        content: '', // Binary content will be handled separately
+        wasContentTrimmed: false,
+        originalLength: file.size
+      };
+    }
+
+    // For text files, read and sanitize content
     const content = await file.text();
     
     if (!content) {
       throw new Error('Unable to read file content');
     }
 
-    // Sanitize content
     const sanitizedContent = sanitizeContent(content);
     
     if (!sanitizedContent) {
       throw new Error('File appears to be empty after processing');
     }
 
-    const wasContentTrimmed = content.length !== sanitizedContent.length;
-    
     return {
       content: sanitizedContent,
-      wasContentTrimmed,
+      wasContentTrimmed: content.length !== sanitizedContent.length,
       originalLength: content.length
     };
   } catch (error) {
@@ -31,12 +43,12 @@ export const processFileContent = async (file: File) => {
 const sanitizeContent = (content: string): string => {
   let sanitized = content;
   
-  // Basic sanitization for all file types
+  // Only remove truly problematic characters while preserving formatting
   sanitized = sanitized
     .replace(/\0/g, '') // Remove null bytes
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '') // Remove control characters
     .replace(/^\uFEFF/, '') // Remove BOM if present
-    .replace(/[^\x20-\x7E\n\r]/g, '') // Keep only printable ASCII chars and newlines
+    // Preserve more Unicode characters, only remove control chars
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
     .trim();
 
   return sanitized;
