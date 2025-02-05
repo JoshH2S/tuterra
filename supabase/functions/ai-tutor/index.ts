@@ -11,7 +11,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function truncateText(text: string, maxTokens = 30000) {
+function truncateText(text: string, maxTokens = 15000) {
   const maxChars = maxTokens * 4;
   if (text.length > maxChars) {
     console.log(`Truncating content from ${text.length} characters to ${maxChars}`);
@@ -123,7 +123,7 @@ Be encouraging, clear, and helpful in your responses. Base your answers on the c
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemMessage },
           { role: 'user', content: message }
