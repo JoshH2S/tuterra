@@ -8,7 +8,7 @@ export const Navigation = () => {
   const links = [
     { href: "/courses", label: "Courses" },
     { href: "/lesson-planning", label: "Lesson Planning" },
-    { href: "/tutor", label: "AI Tutor" },
+    { href: "/tutor", label: "AI Tutor" },  // Changed from /course/tutor to /tutor
   ];
 
   return (
