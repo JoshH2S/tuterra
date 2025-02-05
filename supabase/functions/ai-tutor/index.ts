@@ -12,12 +12,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
+
     const { message, conversationId, courseId, studentId, materialPath } = await req.json();
+    
+    if (!message) {
+      throw new Error('Message is required');
+    }
 
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
@@ -31,13 +40,17 @@ serve(async (req) => {
           .from('course_materials')
           .download(materialPath);
 
-        if (downloadError) throw downloadError;
-
-        // Convert the file to text
-        const text = await fileData.text();
-        context = `\n\nReference Material Content:\n${text}`;
+        if (downloadError) {
+          console.error('Error downloading material:', downloadError);
+          context = ""; // Continue without context if file can't be downloaded
+        } else {
+          // Convert the file to text
+          const text = await fileData.text();
+          context = `\n\nReference Material Content:\n${text}`;
+        }
       } catch (error) {
         console.error('Error fetching material:', error);
+        context = ""; // Continue without context if there's an error
       }
     }
 
@@ -55,13 +68,17 @@ serve(async (req) => {
     }
 
     // Store user message
-    await supabase.from('tutor_messages').insert([
-      {
+    const { error: userMessageError } = await supabase
+      .from('tutor_messages')
+      .insert([{
         conversation_id: currentConversationId,
         content: message,
         role: 'user',
-      }
-    ]);
+      }]);
+
+    if (userMessageError) {
+      throw userMessageError;
+    }
 
     // Get AI response
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -89,32 +106,52 @@ Be encouraging, clear, and helpful in your responses. Base your answers on the c
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error('Failed to get AI response');
+    }
+
     const aiResponse = await response.json();
     const aiMessage = aiResponse.choices[0].message.content;
 
     // Store AI response
-    await supabase.from('tutor_messages').insert([
-      {
+    const { error: aiMessageError } = await supabase
+      .from('tutor_messages')
+      .insert([{
         conversation_id: currentConversationId,
         content: aiMessage,
         role: 'assistant',
-      }
-    ]);
+      }]);
+
+    if (aiMessageError) {
+      throw aiMessageError;
+    }
 
     return new Response(
       JSON.stringify({ 
         message: aiMessage, 
         conversationId: currentConversationId 
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in ai-tutor function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'An error occurred while processing your request' 
+      }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
       }
     );
   }
