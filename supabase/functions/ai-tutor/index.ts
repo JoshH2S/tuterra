@@ -11,13 +11,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Function to truncate text to approximate token count
-function truncateText(text: string, maxTokens = 50000) {
-  // Rough approximation: 1 token ≈ 4 characters
+// Function to truncate text to fit within model's context length
+function truncateText(text: string, maxTokens = 30000) {
+  // More conservative approximation: 1 token ≈ 4 characters
+  // We use a smaller maxTokens to leave room for the system message and user query
   const maxChars = maxTokens * 4;
   if (text.length > maxChars) {
     console.log(`Truncating content from ${text.length} characters to ${maxChars}`);
-    return text.slice(0, maxChars) + "\n[Content truncated due to length...]";
+    return text.slice(0, maxChars) + "\n[Content truncated to fit within model's context limit...]";
   }
   return text;
 }
@@ -94,7 +95,7 @@ serve(async (req) => {
 
     // Prepare system message with truncated context
     const systemMessage = `You are an AI tutor assistant. ${
-      context ? 'You have access to the following course material (truncated if too long):' + context 
+      context ? 'You have access to the following course material:' + context 
       : 'No specific course material is currently selected.'
     }\n\nUse this content to help answer questions accurately and provide relevant examples. Help students with:
 - Creating study guides and summaries
