@@ -21,7 +21,7 @@ export const useCourseFileUpload = () => {
       }
 
       if (!isValid) {
-        throw new Error('The file contains invalid characters or formatting. Please ensure your file is a valid text document.');
+        throw new Error('The file contains invalid characters or formatting. Please ensure your file is a valid document.');
       }
 
       const { error: uploadError } = await supabase
