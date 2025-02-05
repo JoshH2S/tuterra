@@ -30,14 +30,14 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
     const fetchMessages = async () => {
       try {
         const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) return;
+        if (!userData.user || !courseId) return;
 
         const { data: conversationData } = await supabase
           .from('tutor_conversations')
           .select('id')
           .eq('student_id', userData.user.id)
           .eq('course_id', courseId)
-          .single();
+          .maybeSingle();
 
         if (conversationData) {
           setConversationId(conversationData.id);
@@ -56,12 +56,14 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
       }
     };
 
-    fetchMessages();
+    if (courseId) {
+      fetchMessages();
+    }
   }, [courseId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isLoading) return;
+    if (!message.trim() || isLoading || !courseId) return;
 
     setIsLoading(true);
     try {

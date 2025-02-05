@@ -10,6 +10,8 @@ const CourseDetail = () => {
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
     queryFn: async () => {
+      if (!courseId) return null;
+      
       const { data, error } = await supabase
         .from('courses')
         .select(`
@@ -21,11 +23,12 @@ const CourseDetail = () => {
           )
         `)
         .eq('id', courseId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
     },
+    enabled: !!courseId,
   });
 
   return (
@@ -41,7 +44,7 @@ const CourseDetail = () => {
             </CardHeader>
           </Card>
         )}
-        <TutorChat />
+        {courseId && <TutorChat courseId={courseId} />}
       </div>
     </div>
   );
