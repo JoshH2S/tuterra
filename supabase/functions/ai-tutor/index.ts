@@ -22,6 +22,17 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
+    // Fetch course materials
+    const { data: courseMaterials } = await supabase
+      .from('course_materials')
+      .select('content')
+      .eq('course_id', courseId);
+
+    const courseContext = courseMaterials
+      ?.map(material => material.content)
+      .filter(Boolean)
+      .join('\n\n');
+
     // Create a new conversation if none exists
     let currentConversationId = conversationId;
     if (!currentConversationId) {
@@ -56,13 +67,18 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an AI tutor assistant. Help students with:
-              - Creating study guides and summaries
-              - Generating practice quizzes
-              - Building study schedules
-              - Explaining complex topics
-              - Providing learning resources
-              Be encouraging, clear, and helpful in your responses.`
+            content: `You are an AI tutor assistant. You have access to the following course materials:
+
+${courseContext}
+
+Use this content to help answer questions accurately and provide relevant examples. Help students with:
+- Creating study guides and summaries
+- Generating practice quizzes
+- Building study schedules
+- Explaining complex topics
+- Providing learning resources
+
+Be encouraging, clear, and helpful in your responses. Base your answers on the course materials provided.`
           },
           { role: 'user', content: message }
         ],
