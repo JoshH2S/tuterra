@@ -90,16 +90,19 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
 
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session found');
 
       const response = await supabase.functions.invoke('ai-tutor', {
         body: {
           message,
           conversationId,
           courseId,
-          studentId: user.id,
+          studentId: session.user.id,
           materialPath: selectedMaterial,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
@@ -118,6 +121,7 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
         setConversationId(response.data.conversationId);
       }
     } catch (error: any) {
+      console.error('Error in handleSubmit:', error);
       toast({
         title: "Error sending message",
         description: error.message,
