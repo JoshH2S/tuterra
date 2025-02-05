@@ -3,6 +3,11 @@ export interface FileType {
   size: number;
 }
 
+export interface StorageFile extends FileType {
+  path: string;
+  type: string;
+}
+
 export interface ProcessedFile {
   content: string;
   wasContentTrimmed: boolean;

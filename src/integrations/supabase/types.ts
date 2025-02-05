@@ -11,30 +11,33 @@ export type Database = {
     Tables: {
       course_materials: {
         Row: {
-          content: string | null
           course_id: string
           created_at: string
           file_name: string
           file_type: string
           id: string
+          size: number
+          storage_path: string
           updated_at: string
         }
         Insert: {
-          content?: string | null
           course_id: string
           created_at?: string
           file_name: string
           file_type: string
           id?: string
+          size: number
+          storage_path: string
           updated_at?: string
         }
         Update: {
-          content?: string | null
           course_id?: string
           created_at?: string
           file_name?: string
           file_type?: string
           id?: string
+          size?: number
+          storage_path?: string
           updated_at?: string
         }
         Relationships: [

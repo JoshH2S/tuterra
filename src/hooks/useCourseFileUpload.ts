@@ -1,67 +1,60 @@
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { processFileContent } from "@/utils/file-utils";
 
 export const useCourseFileUpload = () => {
   const handleFileUpload = async (file: File, courseId: string) => {
     try {
       console.log('Starting file upload process for:', file.name);
       
-      const { content, wasContentTrimmed, originalLength } = await processFileContent(file);
+      // Create a unique file path using the course ID and original filename
+      const fileExt = file.name.split('.').pop();
+      const sanitizedFileName = file.name.replace(/[^\x00-\x7F]/g, '');
+      const uniqueFilePath = `${courseId}/${crypto.randomUUID()}-${sanitizedFileName}`;
       
-      if (!content) {
-        throw new Error('File appears to be empty after processing');
+      // Upload file to Supabase Storage
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from('course_materials')
+        .upload(uniqueFilePath, file);
+
+      if (storageError) {
+        console.error('Storage error:', storageError);
+        throw new Error('Failed to upload file to storage');
       }
 
-      // Validate content before inserting
-      const { data: isValid, error: validateError } = await supabase
-        .rpc('validate_course_material_content', { content_to_validate: content });
-
-      if (validateError) {
-        console.error('Validation error:', validateError);
-        throw new Error('Content validation failed: ' + validateError.message);
-      }
-
-      if (!isValid) {
-        throw new Error('The file contains invalid characters or formatting. Please ensure your file is a valid document.');
-      }
-
-      const { error: uploadError } = await supabase
+      // Insert metadata into course_materials table
+      const { error: dbError } = await supabase
         .from('course_materials')
         .insert([
           {
             course_id: courseId,
             file_name: file.name,
             file_type: file.type,
-            content: content
+            storage_path: uniqueFilePath,
+            size: file.size
           }
         ]);
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Failed to upload material: ' + uploadError.message);
+      if (dbError) {
+        console.error('Database error:', dbError);
+        // If database insert fails, clean up the uploaded file
+        await supabase.storage
+          .from('course_materials')
+          .remove([uniqueFilePath]);
+        throw new Error('Failed to save file metadata');
       }
-      
-      if (wasContentTrimmed) {
-        toast({
-          title: "File processed with modifications",
-          description: `Some special characters were removed for compatibility. Original size: ${originalLength} characters.`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: `${file.name} has been uploaded successfully.`,
-        });
-      }
+
+      toast({
+        title: "Success",
+        description: `${file.name} has been uploaded successfully.`,
+      });
     } catch (error) {
       console.error('Error uploading material:', error);
       toast({
         title: "Upload Failed",
-        description: error.message || "Failed to upload file. Please try a different file or format.",
+        description: error.message || "Failed to upload file. Please try again.",
         variant: "destructive",
       });
-      throw error; // Re-throw to propagate to UI
+      throw error;
     }
   };
 

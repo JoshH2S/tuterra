@@ -9,6 +9,8 @@ interface FileUploadProps {
   acceptedTypes: string;
 }
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
 const FileUpload = ({ onFileSelect, acceptedTypes }: FileUploadProps) => {
   const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -19,6 +21,11 @@ const FileUpload = ({ onFileSelect, acceptedTypes }: FileUploadProps) => {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError("File size exceeds 50MB limit");
+      return;
+    }
 
     try {
       setIsUploading(true);
@@ -33,6 +40,7 @@ const FileUpload = ({ onFileSelect, acceptedTypes }: FileUploadProps) => {
     } catch (error) {
       setUploadError(error.message);
       setUploadSuccess(false);
+      setSelectedFile(null);
     } finally {
       setIsUploading(false);
     }
