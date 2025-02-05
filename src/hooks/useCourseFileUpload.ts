@@ -7,7 +7,7 @@ export const useCourseFileUpload = () => {
     try {
       const { content, wasContentTrimmed, originalLength } = await processFileContent(file);
       
-      if (!content || content.trim().length === 0) {
+      if (!content) {
         throw new Error('File appears to be empty after processing');
       }
 
@@ -42,7 +42,7 @@ export const useCourseFileUpload = () => {
       
       if (wasContentTrimmed) {
         toast({
-          title: "File processed successfully",
+          title: "File processed with modifications",
           description: `Some special characters were removed for compatibility. Original size: ${originalLength} characters.`,
           variant: "default",
         });
@@ -59,6 +59,7 @@ export const useCourseFileUpload = () => {
         description: error.message || "Failed to upload file. Please try a different file or format.",
         variant: "destructive",
       });
+      throw error; // Re-throw to propagate to UI
     }
   };
 
