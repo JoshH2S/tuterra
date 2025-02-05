@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, BookOpen, LogOut } from "lucide-react";
+import { Menu, X, BookOpen, LogOut, Brain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -49,9 +49,17 @@ const Navigation = () => {
             </Link>
             <Link
               to="/courses"
-              className="text-gray-600 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium"
+              className="text-gray-600 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
             >
+              <BookOpen className="h-4 w-4" />
               Courses
+            </Link>
+            <Link
+              to="/course/tutor"
+              className="text-gray-600 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+            >
+              <Brain className="h-4 w-4" />
+              AI Tutor
             </Link>
             <Link
               to="/analytics"
@@ -101,6 +109,13 @@ const Navigation = () => {
               className="text-gray-600 hover:text-primary-500 block px-3 py-2 rounded-md text-base font-medium"
             >
               Courses
+            </Link>
+            <Link
+              to="/course/tutor"
+              className="text-gray-600 hover:text-primary-500 block px-3 py-2 rounded-md text-base font-medium flex items-center gap-2"
+            >
+              <Brain className="h-4 w-4" />
+              AI Tutor
             </Link>
             <Link
               to="/analytics"
