@@ -12,6 +12,14 @@ export const processFileContent = async (file: File) => {
       .replace(/^\uFEFF/, '') // Remove BOM
       .replace(/[^\x20-\x7E\x0A\x0D\u00A0-\uFFFF]/g, ''); // Keep only printable characters
     
+    // Check if content was significantly altered during sanitization
+    const contentDifference = Math.abs(content.length - sanitizedContent.length);
+    const contentChangeThreshold = content.length * 0.1; // 10% threshold
+    
+    if (contentDifference > contentChangeThreshold) {
+      throw new Error('File contains too many invalid characters and could not be processed safely.');
+    }
+    
     return {
       content: sanitizedContent,
       wasContentTrimmed: content.length !== sanitizedContent.length,

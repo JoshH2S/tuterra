@@ -1,4 +1,4 @@
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { processFileContent } from "@/utils/file-utils";
 
@@ -8,7 +8,7 @@ export const useCourseFileUpload = () => {
       const { content, wasContentTrimmed, originalLength } = await processFileContent(file);
       
       if (!content || content.trim().length === 0) {
-        throw new Error('File content is empty after processing');
+        throw new Error('File appears to be empty after processing');
       }
 
       // Validate content before inserting
@@ -16,11 +16,12 @@ export const useCourseFileUpload = () => {
         .rpc('validate_course_material_content', { content_to_validate: content });
 
       if (validateError) {
+        console.error('Validation error:', validateError);
         throw new Error('Content validation failed: ' + validateError.message);
       }
 
       if (!isValid) {
-        throw new Error('Content validation failed: Invalid content format');
+        throw new Error('The file contains invalid characters or formatting. Please ensure your file is a valid text document.');
       }
 
       const { error: uploadError } = await supabase
@@ -41,8 +42,8 @@ export const useCourseFileUpload = () => {
       
       if (wasContentTrimmed) {
         toast({
-          title: "Content modified",
-          description: `File content has been sanitized for compatibility. Original length: ${originalLength} characters.`,
+          title: "File processed successfully",
+          description: `Some special characters were removed for compatibility. Original size: ${originalLength} characters.`,
           variant: "default",
         });
       } else {
@@ -54,8 +55,8 @@ export const useCourseFileUpload = () => {
     } catch (error) {
       console.error('Error uploading material:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to upload material. Please try again.",
+        title: "Upload Failed",
+        description: error.message || "Failed to upload file. Please try a different file or format.",
         variant: "destructive",
       });
     }
