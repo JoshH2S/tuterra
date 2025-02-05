@@ -5,6 +5,8 @@ import { processFileContent } from "@/utils/file-utils";
 export const useCourseFileUpload = () => {
   const handleFileUpload = async (file: File, courseId: string) => {
     try {
+      console.log('Starting file upload process for:', file.name);
+      
       const { content, wasContentTrimmed, originalLength } = await processFileContent(file);
       
       if (!content) {
