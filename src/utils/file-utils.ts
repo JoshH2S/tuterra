@@ -18,15 +18,23 @@ export const processFileContent = async (file: File): Promise<ProcessedFile> => 
     // Handle different file types
     const fileType = file.type.toLowerCase();
     
-    // For binary files, return empty content but preserve metadata
-    if (fileType.includes('pdf') || 
-        fileType.includes('msword') || 
-        fileType.includes('officedocument')) {
-      console.log('Binary file detected, skipping content processing');
+    // For PDF files, use binary reading
+    if (fileType === 'application/pdf') {
+      console.log('PDF file detected, using binary reading');
+      const content = await readBinaryFile(file);
+      
+      if (!content) {
+        console.warn('PDF appears to be empty');
+        throw new Error('Unable to read PDF content');
+      }
+
+      console.log('PDF content length:', content.length);
+      console.log('PDF content sample (base64):', content.substring(0, 100));
+
       return {
-        content: '',
+        content,
         wasContentTrimmed: false,
-        originalLength: file.size
+        originalLength: content.length
       };
     }
 
@@ -66,6 +74,26 @@ export const processFileContent = async (file: File): Promise<ProcessedFile> => 
     console.error('Error processing file:', error);
     throw new Error(getErrorMessage(error));
   }
+};
+
+const readBinaryFile = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        // Convert ArrayBuffer to Base64 string for storage
+        const base64String = btoa(
+          new Uint8Array(reader.result as ArrayBuffer)
+            .reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        resolve(base64String);
+      } else {
+        reject(new Error('Failed to read binary file'));
+      }
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(file);
+  });
 };
 
 const readFileAsText = (file: File): Promise<string> => {
