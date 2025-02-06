@@ -13,6 +13,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Function to trim content to a reasonable length while preserving meaning
+const trimContent = (content: string, maxLength: number = 4000): string => {
+  if (content.length <= maxLength) return content;
+
+  // Split into paragraphs and select the most relevant ones
+  const paragraphs = content.split('\n\n');
+  let trimmedContent = '';
+  let currentLength = 0;
+
+  // Keep adding paragraphs until we reach the max length
+  for (const paragraph of paragraphs) {
+    if (currentLength + paragraph.length > maxLength) break;
+    trimmedContent += paragraph + '\n\n';
+    currentLength += paragraph.length + 2; // +2 for the newlines
+  }
+
+  console.log(`Content trimmed from ${content.length} to ${trimmedContent.length} characters`);
+  return trimmedContent.trim();
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -26,13 +46,17 @@ serve(async (req) => {
       throw new Error('Invalid request: Missing course content or topics');
     }
 
+    // Trim content to avoid token limit issues
+    const trimmedContent = trimContent(courseContent);
+    console.log('Content length after trimming:', trimmedContent.length);
+
     // Format the prompt for quiz generation
     const prompt = `
       Based on the following course content, generate quiz questions for these topics:
       ${topics.map((t: any) => `${t.name} (${t.questionCount} questions)`).join(', ')}
 
       Course Content:
-      ${courseContent}
+      ${trimmedContent}
 
       For each topic, generate the exact number of questions specified.
       Each question should:
