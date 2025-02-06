@@ -69,7 +69,21 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
       console.log('Processing text file');
       const rawContent = await readTextFile(file);
       content = sanitizeContent(rawContent);
-      console.log('Content length after sanitization:', content.length);
+      
+      // Extract relevant content using the new utility
+      const { sections, keyTerms, totalLength } = extractRelevantContent(content);
+      
+      // Combine sections and key terms into a structured format
+      content = sections.map(section => 
+        `${section.title}\n${section.content}`
+      ).join('\n\n') + '\n\nKey Terms:\n' + keyTerms.join('\n');
+      
+      console.log('Content processed:', {
+        originalLength: rawContent.length,
+        processedLength: content.length,
+        sections: sections.length,
+        keyTerms: keyTerms.length
+      });
     }
 
     if (!content) {
