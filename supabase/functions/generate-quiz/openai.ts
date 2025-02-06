@@ -28,7 +28,7 @@ Format your response as a JSON array of question objects where each object has t
   "topic": "topic name"
 }
 
-IMPORTANT: Make sure your response is valid JSON that can be parsed. Do not include any explanatory text, ONLY the JSON array.`;
+IMPORTANT: Make sure your response is valid JSON that can be parsed. Do not include any explanatory text, code blocks, or markdown formatting. ONLY the JSON array.`;
 
   try {
     console.log('Making request to OpenAI API...');
@@ -43,7 +43,7 @@ IMPORTANT: Make sure your response is valid JSON that can be parsed. Do not incl
         messages: [
           {
             role: 'system',
-            content: 'You are an expert at creating focused multiple choice quiz questions. Always respond with valid JSON array containing question objects.'
+            content: 'You are an expert at creating focused multiple choice quiz questions. You must ONLY return a valid JSON array of question objects, without any markdown formatting or explanation.'
           },
           {
             role: 'user',
@@ -69,8 +69,11 @@ IMPORTANT: Make sure your response is valid JSON that can be parsed. Do not incl
       throw new Error('Invalid response format from OpenAI');
     }
 
-    const content = data.choices[0].message.content;
+    let content = data.choices[0].message.content;
     console.log('Raw OpenAI response content:', content);
+    
+    // Remove any markdown code block formatting if present
+    content = content.replace(/```json\n?|\n?```/g, '');
     
     try {
       // Attempt to parse the content
