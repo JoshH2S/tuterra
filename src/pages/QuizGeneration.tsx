@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import FileUpload from "@/components/FileUpload";
 import { TopicInput } from "@/components/quiz-generation/TopicInput";
 import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
 import { useQuizGeneration } from "@/hooks/useQuizGeneration";
+import { ProtectedRoute } from "@/routes/ProtectedRoute";
 
 interface Topic {
   name: string;
@@ -122,4 +124,9 @@ const QuizGeneration = () => {
   );
 };
 
-export default QuizGeneration;
+// Wrap the component with ProtectedRoute
+export default () => (
+  <ProtectedRoute>
+    <QuizGeneration />
+  </ProtectedRoute>
+);
