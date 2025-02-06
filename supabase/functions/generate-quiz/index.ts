@@ -1,56 +1,31 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Function to trim content to a reasonable length while preserving meaning
-const trimContent = (content: string, maxLength: number = 4000): string => {
-  if (!content) return '';
-  if (content.length <= maxLength) return content;
-
-  const paragraphs = content.split('\n\n');
-  let trimmedContent = '';
-  let currentLength = 0;
-
-  for (const paragraph of paragraphs) {
-    if (currentLength + paragraph.length > maxLength) break;
-    trimmedContent += paragraph + '\n\n';
-    currentLength += paragraph.length + 2;
-  }
-
-  console.log(`Content trimmed from ${content.length} to ${trimmedContent.length} characters`);
-  return trimmedContent.trim();
-};
-
-// Function to generate quiz questions for a content chunk
-async function generateQuestionsForChunk(
-  content: string,
+async function generateQuestions(
+  fileUrl: string,
   topics: { name: string; questionCount: number }[]
 ): Promise<any> {
-  // Validate inputs
-  if (!content || typeof content !== 'string' || content.trim().length === 0) {
-    console.error('Invalid content provided:', { content });
-    throw new Error('Invalid content provided for question generation');
-  }
-
   if (!Array.isArray(topics) || topics.length === 0 || !topics.every(t => t.name && t.questionCount > 0)) {
     console.error('Invalid topics provided:', { topics });
     throw new Error('Invalid topics provided for question generation');
   }
 
-  console.log('Generating questions for content length:', content.length, 'and topics:', topics);
+  console.log('Generating questions for file:', fileUrl);
+  console.log('Topics:', topics);
 
-  const prompt = `You are a quiz generator. Create a quiz based on the following content and topics.
-
-Content:
-${content}
-
-Topics to cover:
+  const prompt = `You are a quiz generator. Create a quiz based on the content from the provided file.
+Please focus on these topics:
 ${topics.map((topic, index) => `${index + 1}. ${topic.name} (${topic.questionCount} questions)`).join('\n')}
 
 Requirements:
@@ -115,7 +90,6 @@ Return an array of these question objects.`;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -124,29 +98,31 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log('Received request data:', requestData);
 
-    // Validate required fields
-    if (!requestData.courseContent || !requestData.topics) {
-      throw new Error('Missing required fields: courseContent and topics are required');
+    if (!requestData.fileId || !requestData.topics) {
+      throw new Error('Missing required fields: fileId and topics are required');
     }
 
-    // Validate topics structure
     if (!Array.isArray(requestData.topics) || requestData.topics.length === 0) {
       throw new Error('Topics must be a non-empty array');
     }
 
-    // Process and trim content
-    const content = trimContent(requestData.courseContent);
-    if (!content) {
-      throw new Error('Invalid or empty course content provided');
+    // Initialize Supabase client
+    const supabase = createClient(supabaseUrl || '', supabaseServiceKey || '');
+
+    // Get file URL from storage
+    const { data: { publicUrl }, error: urlError } = supabase
+      .storage
+      .from('course_materials')
+      .getPublicUrl(requestData.fileId);
+
+    if (urlError || !publicUrl) {
+      console.error('Error getting file URL:', urlError);
+      throw new Error('Failed to get file URL');
     }
+
+    // Generate questions using the file URL
+    const questions = await generateQuestions(publicUrl, requestData.topics);
     
-    console.log('Processed content length:', content.length);
-    console.log('Number of topics:', requestData.topics.length);
-
-    // Generate questions
-    const questions = await generateQuestionsForChunk(content, requestData.topics);
-    console.log(`Generated ${questions.length} questions`);
-
     // Deduplicate questions
     const uniqueQuestions = Array.from(new Set(questions.map(q => JSON.stringify(q))))
       .map(q => JSON.parse(q));

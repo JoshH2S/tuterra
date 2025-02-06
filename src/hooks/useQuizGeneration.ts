@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { processFileContent } from "@/utils/file-utils";
+import { useCourseFileUpload } from "@/hooks/useCourseFileUpload";
 
 interface Topic {
   name: string;
@@ -10,6 +11,7 @@ interface Topic {
 
 export const useQuizGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const { handleFileUpload } = useCourseFileUpload();
 
   const generateQuiz = async (
     courseId: string,
@@ -20,14 +22,14 @@ export const useQuizGeneration = () => {
     try {
       setIsGenerating(true);
 
-      // Process the uploaded file
-      const processedFile = await processFileContent(file);
+      // Upload file to Supabase Storage
+      const fileId = await handleFileUpload(file, courseId);
 
       // Generate questions using the Edge Function
       const { data: generatedData, error: generationError } = await supabase.functions
         .invoke('generate-quiz', {
           body: {
-            courseContent: processedFile.content,
+            fileId,
             topics,
           },
         });
