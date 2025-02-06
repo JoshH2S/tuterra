@@ -76,7 +76,7 @@ async function makeOpenAIRequest(prompt: string, retryCount = 0): Promise<Questi
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -107,7 +107,8 @@ async function makeOpenAIRequest(prompt: string, retryCount = 0): Promise<Questi
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      const errorData = await response.json();
+      const errorMessage = errorData.error?.message || JSON.stringify(errorData.error) || response.statusText;
       
       if (response.status === 429 && retryCount < MAX_RETRIES) {
         const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
@@ -116,7 +117,7 @@ async function makeOpenAIRequest(prompt: string, retryCount = 0): Promise<Questi
         return makeOpenAIRequest(prompt, retryCount + 1);
       }
 
-      throw new Error(`OpenAI API error: ${errorData.error || response.statusText}`);
+      throw new Error(`OpenAI API error: ${errorMessage}`);
     }
 
     const data = await response.json();

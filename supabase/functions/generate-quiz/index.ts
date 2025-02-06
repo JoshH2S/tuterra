@@ -31,11 +31,15 @@ serve(async (req) => {
     const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
     console.log('File content extracted and trimmed, length:', trimmedContent.length);
 
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     // Generate questions using OpenAI with teacher context
     const questions = await generateQuestionsWithOpenAI(
       trimmedContent, 
       topics, 
-      openAIApiKey || '',
+      openAIApiKey,
       { teacherName, school }
     );
     console.log(`Generated ${questions.length} questions`);
@@ -51,15 +55,15 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in generate-quiz function:', error);
-    const errorMessage = error.message.includes('Too Many Requests')
+    const errorMessage = error.message?.includes('Too Many Requests')
       ? 'OpenAI is currently busy. Please try again in a few moments.'
-      : 'Failed to generate quiz questions.';
+      : error.message || 'Failed to generate quiz questions.';
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        details: errorMessage,
-        retry: error.message.includes('Too Many Requests')
+        error: errorMessage,
+        details: 'Failed to generate quiz questions.',
+        retry: error.message?.includes('Too Many Requests') || false
       }), 
       {
         status: 500,
