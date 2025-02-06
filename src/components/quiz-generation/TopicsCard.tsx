@@ -3,11 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { TopicInput } from "./TopicInput";
-
-interface Topic {
-  description: string;
-  points: number;
-}
+import { Topic } from "@/hooks/useQuizGeneration";
 
 interface TopicsCardProps {
   topics: Topic[];
@@ -30,7 +26,7 @@ export const TopicsCard = ({
     <Card>
       <CardHeader>
         <CardTitle>Quiz Topics</CardTitle>
-        <CardDescription>Define topics to cover and points per question</CardDescription>
+        <CardDescription>Define topics and number of questions</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {topics.map((topic, index) => (

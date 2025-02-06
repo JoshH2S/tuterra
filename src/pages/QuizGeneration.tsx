@@ -1,7 +1,6 @@
 
 import { Navigation } from "@/components/Navigation";
 import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
-import { TopicInput } from "@/components/quiz-generation/TopicInput";
 import { TopicsCard } from "@/components/quiz-generation/TopicsCard";
 import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
 import { QuizOutput } from "@/components/quiz-generation/QuizOutput";

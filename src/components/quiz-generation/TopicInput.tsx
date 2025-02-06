@@ -2,11 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HashIcon } from "lucide-react";
-
-interface Topic {
-  description: string;
-  numQuestions: number;
-}
+import { Topic } from "@/hooks/useQuizGeneration";
 
 interface TopicInputProps {
   topic: Topic;
