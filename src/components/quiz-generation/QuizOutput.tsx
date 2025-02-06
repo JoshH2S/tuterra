@@ -6,6 +6,12 @@ import jsPDF from "jspdf";
 
 interface Question {
   question: string;
+  options: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+  };
   correctAnswer: string;
   topic: string;
   points: number;
@@ -45,6 +51,18 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
       doc.text(questionLines, margin, yPosition);
       yPosition += 10 * questionLines.length;
 
+      // Add options
+      Object.entries(question.options).forEach(([letter, text]) => {
+        if (yPosition > doc.internal.pageSize.getHeight() - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        const optionText = `${letter}. ${text}`;
+        const optionLines = doc.splitTextToSize(optionText, pageWidth - (margin * 2) - 10);
+        doc.text(optionLines, margin + 10, yPosition);
+        yPosition += 7 * optionLines.length;
+      });
+
       // Add answer
       const answerText = `Answer: ${question.correctAnswer}`;
       const answerLines = doc.splitTextToSize(answerText, pageWidth - (margin * 2));
@@ -78,7 +96,15 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
                 <span className="font-medium">{index + 1}.</span>
                 <div className="flex-1">
                   <p className="font-medium">{question.question}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <div className="mt-2 space-y-1">
+                    {Object.entries(question.options).map(([letter, text]) => (
+                      <div key={letter} className="flex items-start gap-2">
+                        <span className="text-sm font-medium min-w-[20px]">{letter}.</span>
+                        <p className="text-sm">{text}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
                     Answer: {question.correctAnswer}
                   </p>
                   <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">

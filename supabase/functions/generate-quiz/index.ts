@@ -27,13 +27,28 @@ serve(async (req) => {
     console.log('Number of topics:', topics.length);
 
     const prompt = `
-      As an expert educator, create a comprehensive quiz based on the following content and topics.
+      As an expert educator, create a comprehensive multiple-choice quiz based on the following content and topics.
       Format your response as a pure JSON array without any markdown formatting.
       Each question should have these properties:
       - question: the actual question text
-      - correctAnswer: the correct answer
+      - options: an array of 4 options labeled A, B, C, and D
+      - correctAnswer: one of "A", "B", "C", or "D"
       - topic: which topic this question relates to
       - points: number of points for this question (1 point for each question)
+
+      Example of expected format for each question:
+      {
+        "question": "What is the capital of France?",
+        "options": {
+          "A": "London",
+          "B": "Berlin",
+          "C": "Paris",
+          "D": "Madrid"
+        },
+        "correctAnswer": "C",
+        "topic": "Geography",
+        "points": 1
+      }
 
       Teacher Information:
       Teacher: ${teacherName || 'Not specified'}
@@ -48,11 +63,13 @@ serve(async (req) => {
       ).join('\n')}
 
       Instructions:
-      1. Create multiple-choice questions
+      1. Create multiple-choice questions with EXACTLY 4 options (A, B, C, D)
       2. Ensure questions are clear and unambiguous
       3. Create EXACTLY the specified number of questions for each topic
       4. Return ONLY a valid JSON array without any markdown formatting or explanatory text
       5. Each question is worth 1 point
+      6. Each option should be distinctly different and plausible
+      7. The correct answer should be specified as "A", "B", "C", or "D"
     `;
 
     console.log('Sending request to OpenAI API');
@@ -68,7 +85,7 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert educator specializing in creating assessment questions. Return ONLY pure JSON arrays without any markdown formatting or additional text.'
+            content: 'You are an expert educator specializing in creating multiple-choice assessment questions. Return ONLY pure JSON arrays without any markdown formatting or additional text.'
           },
           { role: 'user', content: prompt }
         ],
