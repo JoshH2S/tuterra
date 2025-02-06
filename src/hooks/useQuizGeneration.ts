@@ -8,8 +8,16 @@ interface Topic {
   questionCount: number;
 }
 
+interface Question {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  topic: string;
+}
+
 export const useQuizGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
 
   const generateQuiz = async (
     title: string,
@@ -35,7 +43,6 @@ export const useQuizGeneration = () => {
       });
 
       if (error) {
-        // Check if it's a rate limit error
         if (error.message.includes('Too Many Requests')) {
           toast({
             title: "Service Busy",
@@ -52,6 +59,8 @@ export const useQuizGeneration = () => {
         throw error;
       }
 
+      setGeneratedQuestions(data.questions);
+      
       toast({
         title: "Quiz Generated",
         description: `Successfully generated ${data.questionCount} questions.`,
@@ -69,5 +78,6 @@ export const useQuizGeneration = () => {
   return {
     generateQuiz,
     isGenerating,
+    generatedQuestions,
   };
 };

@@ -2,12 +2,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from './constants.ts';
-import { processFileContent, storeTemporaryFile, cleanupTemporaryFile } from './file-utils.ts';
 import { generateQuestionsWithOpenAI } from './openai.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,44 +23,22 @@ serve(async (req) => {
       throw new Error('Missing required fields');
     }
 
-    // Store file temporarily and get URL
-    const fileUrl = await storeTemporaryFile(file, supabaseUrl, supabaseServiceKey, userId);
-    console.log('Temporary file stored:', fileUrl);
-
-    // Extract file content
-    const fileContent = await processFileContent(file);
+    // Read file content directly
+    const fileContent = await file.text();
     console.log('File content extracted, length:', fileContent.length);
 
-    try {
-      // Generate questions using OpenAI with retry logic
-      const questions = await generateQuestionsWithOpenAI(fileContent, topics, openAIApiKey || '');
-      console.log(`Generated ${questions.length} questions`);
+    // Generate questions using OpenAI
+    const questions = await generateQuestionsWithOpenAI(fileContent, topics, openAIApiKey || '');
+    console.log(`Generated ${questions.length} questions`);
 
-      // Clean up temporary file
-      const filePath = new URL(fileUrl).pathname.split('/').pop() || '';
-      await cleanupTemporaryFile(filePath, supabaseUrl, supabaseServiceKey);
-      console.log('Temporary file cleaned up');
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          questions,
-          questionCount: questions.length 
-        }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (error) {
-      // Clean up temporary file even if question generation fails
-      try {
-        const filePath = new URL(fileUrl).pathname.split('/').pop() || '';
-        await cleanupTemporaryFile(filePath, supabaseUrl, supabaseServiceKey);
-        console.log('Temporary file cleaned up after error');
-      } catch (cleanupError) {
-        console.error('Error cleaning up temporary file:', cleanupError);
-      }
-
-      throw error;
-    }
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        questions,
+        questionCount: questions.length 
+      }), 
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error('Error in generate-quiz function:', error);
     const errorMessage = error.message.includes('Too Many Requests')
