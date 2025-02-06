@@ -18,8 +18,10 @@ interface Question {
   topic: string;
 }
 
-const MAX_TOKENS = 4000; // Safe limit for context window
-const TOKENS_PER_CHAR = 4; // Approximate ratio for token estimation
+const MAX_TOKENS = 4000;
+const TOKENS_PER_CHAR = 4;
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / TOKENS_PER_CHAR);
@@ -58,6 +60,80 @@ function distributeQuestionCounts(topics: Topic[], chunkCount: number): Topic[][
       questionCount: Math.ceil(topic.questionCount / chunkCount)
     }))
   );
+}
+
+async function makeOpenAIRequest(prompt: string, retryCount = 0): Promise<Question[]> {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at creating multiple choice quiz questions. Return a valid JSON array of questions.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      
+      // Handle rate limiting
+      if (response.status === 429 && retryCount < MAX_RETRIES) {
+        const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+        console.log(`Rate limited. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return makeOpenAIRequest(prompt, retryCount + 1);
+      }
+
+      throw new Error(`OpenAI API error: ${errorData.error || response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('OpenAI API response received successfully');
+
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response format from OpenAI');
+    }
+
+    const parsed = JSON.parse(data.choices[0].message.content);
+    const questions = Array.isArray(parsed) ? parsed : parsed.questions;
+    
+    if (!Array.isArray(questions)) {
+      throw new Error('Response does not contain a valid questions array');
+    }
+
+    // Validate question structure
+    questions.forEach((q, idx) => {
+      if (!q.question || !q.options || !q.correct_answer || !q.topic) {
+        throw new Error(`Question ${idx + 1} is missing required fields`);
+      }
+      if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
+        throw new Error(`Question ${idx + 1} has invalid correct_answer: ${q.correct_answer}`);
+      }
+    });
+
+    return questions;
+  } catch (error) {
+    if (retryCount < MAX_RETRIES && error.message.includes('Too Many Requests')) {
+      const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+      console.log(`Rate limited. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+      return makeOpenAIRequest(prompt, retryCount + 1);
+    }
+    throw error;
+  }
 }
 
 export async function generateQuestionsWithOpenAI(
@@ -101,66 +177,9 @@ Format your response as a JSON array of questions, where each question has this 
 }`;
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert at creating multiple choice quiz questions. Return a valid JSON array of questions.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          response_format: { type: "json_object" }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('OpenAI API response received for chunk', i + 1);
-
-      if (!data.choices?.[0]?.message?.content) {
-        throw new Error('Invalid response format from OpenAI');
-      }
-
-      let chunkQuestions: Question[];
-      try {
-        const parsed = JSON.parse(data.choices[0].message.content);
-        chunkQuestions = Array.isArray(parsed) ? parsed : parsed.questions;
-        
-        if (!Array.isArray(chunkQuestions)) {
-          throw new Error('Response does not contain a valid questions array');
-        }
-
-        // Validate question structure
-        chunkQuestions.forEach((q, idx) => {
-          if (!q.question || !q.options || !q.correct_answer || !q.topic) {
-            throw new Error(`Question ${idx + 1} is missing required fields`);
-          }
-          if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
-            throw new Error(`Question ${idx + 1} has invalid correct_answer: ${q.correct_answer}`);
-          }
-        });
-
-      } catch (error) {
-        console.error('Failed to parse chunk questions:', error);
-        throw new Error(`Failed to parse questions from chunk ${i + 1}: ${error.message}`);
-      }
-
+      const chunkQuestions = await makeOpenAIRequest(prompt);
       allQuestions.push(...chunkQuestions);
       console.log(`Added ${chunkQuestions.length} questions from chunk ${i + 1}`);
-
     } catch (error) {
       console.error(`Error processing chunk ${i + 1}:`, error);
       throw error;

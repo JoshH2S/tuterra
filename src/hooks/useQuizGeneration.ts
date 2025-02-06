@@ -34,7 +34,23 @@ export const useQuizGeneration = () => {
         body: formData,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's a rate limit error
+        if (error.message.includes('Too Many Requests')) {
+          toast({
+            title: "Service Busy",
+            description: "The quiz generation service is currently busy. Please try again in a few moments.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to generate quiz. Please try again.",
+            variant: "destructive",
+          });
+        }
+        throw error;
+      }
 
       toast({
         title: "Quiz Generated",
@@ -44,11 +60,6 @@ export const useQuizGeneration = () => {
       return data.questions;
     } catch (error) {
       console.error('Error generating quiz:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate quiz. Please try again.",
-        variant: "destructive",
-      });
       throw error;
     } finally {
       setIsGenerating(false);

@@ -34,29 +34,47 @@ serve(async (req) => {
     const fileContent = await processFileContent(file);
     console.log('File content extracted, length:', fileContent.length);
 
-    // Generate questions using OpenAI
-    const questions = await generateQuestionsWithOpenAI(fileContent, topics, openAIApiKey || '');
-    console.log(`Generated ${questions.length} questions`);
+    try {
+      // Generate questions using OpenAI with retry logic
+      const questions = await generateQuestionsWithOpenAI(fileContent, topics, openAIApiKey || '');
+      console.log(`Generated ${questions.length} questions`);
 
-    // Clean up temporary file
-    const filePath = new URL(fileUrl).pathname.split('/').pop() || '';
-    await cleanupTemporaryFile(filePath, supabaseUrl, supabaseServiceKey);
-    console.log('Temporary file cleaned up');
+      // Clean up temporary file
+      const filePath = new URL(fileUrl).pathname.split('/').pop() || '';
+      await cleanupTemporaryFile(filePath, supabaseUrl, supabaseServiceKey);
+      console.log('Temporary file cleaned up');
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        questions,
-        questionCount: questions.length 
-      }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          questions,
+          questionCount: questions.length 
+        }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (error) {
+      // Clean up temporary file even if question generation fails
+      try {
+        const filePath = new URL(fileUrl).pathname.split('/').pop() || '';
+        await cleanupTemporaryFile(filePath, supabaseUrl, supabaseServiceKey);
+        console.log('Temporary file cleaned up after error');
+      } catch (cleanupError) {
+        console.error('Error cleaning up temporary file:', cleanupError);
+      }
+
+      throw error;
+    }
   } catch (error) {
     console.error('Error in generate-quiz function:', error);
+    const errorMessage = error.message.includes('Too Many Requests')
+      ? 'OpenAI is currently busy. Please try again in a few moments.'
+      : 'Failed to generate quiz questions.';
+    
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: 'Failed to generate quiz questions.'
+        details: errorMessage,
+        retry: error.message.includes('Too Many Requests')
       }), 
       {
         status: 500,
