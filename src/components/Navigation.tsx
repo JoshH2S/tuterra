@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BookOpen, ClipboardList, Brain } from "lucide-react";
+import { BookOpen, ClipboardList, Brain, FileText } from "lucide-react";
 
 export const Navigation = () => {
   const isMobile = useIsMobile();
@@ -16,6 +16,11 @@ export const Navigation = () => {
       href: "/lesson-planning", 
       label: "Lesson Planning",
       icon: ClipboardList
+    },
+    { 
+      href: "/quiz-generation", 
+      label: "Quiz Generation",
+      icon: FileText
     },
     { 
       href: "/tutor", 
