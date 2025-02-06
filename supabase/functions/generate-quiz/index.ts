@@ -5,6 +5,7 @@ import { corsHeaders } from './constants.ts';
 import { generateQuestionsWithOpenAI } from './openai.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const MAX_CONTENT_LENGTH = 5000; // Match lesson plan limit
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,24 +19,33 @@ serve(async (req) => {
     const topics = JSON.parse(topicsJson);
     const title = formData.get('title') as string;
     const userId = formData.get('userId') as string;
+    const teacherName = formData.get('teacherName') as string;
+    const school = formData.get('school') as string;
 
     if (!file || !topics || !title || !userId) {
       throw new Error('Missing required fields');
     }
 
-    // Read file content directly
+    // Read and trim file content
     const fileContent = await file.text();
-    console.log('File content extracted, length:', fileContent.length);
+    const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
+    console.log('File content extracted and trimmed, length:', trimmedContent.length);
 
-    // Generate questions using OpenAI
-    const questions = await generateQuestionsWithOpenAI(fileContent, topics, openAIApiKey || '');
+    // Generate questions using OpenAI with teacher context
+    const questions = await generateQuestionsWithOpenAI(
+      trimmedContent, 
+      topics, 
+      openAIApiKey || '',
+      { teacherName, school }
+    );
     console.log(`Generated ${questions.length} questions`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         questions,
-        questionCount: questions.length 
+        questionCount: questions.length,
+        contentTrimmed: trimmedContent.length < fileContent.length
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

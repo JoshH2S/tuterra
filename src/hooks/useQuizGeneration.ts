@@ -32,11 +32,25 @@ export const useQuizGeneration = () => {
         throw new Error('User not authenticated');
       }
 
+      // Get teacher profile data
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, school')
+        .eq('id', session.user.id)
+        .single();
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('topics', JSON.stringify(topics));
       formData.append('title', title);
       formData.append('userId', session.user.id);
+      
+      // Add teacher context
+      if (profile) {
+        const teacherName = `${profile.first_name} ${profile.last_name}`.trim();
+        if (teacherName) formData.append('teacherName', teacherName);
+        if (profile.school) formData.append('school', profile.school);
+      }
 
       const { data, error } = await supabase.functions.invoke('generate-quiz', {
         body: formData,
@@ -57,6 +71,14 @@ export const useQuizGeneration = () => {
           });
         }
         throw error;
+      }
+
+      if (data.contentTrimmed) {
+        toast({
+          title: "Content Trimmed",
+          description: "Your content was trimmed to 5000 characters to ensure optimal processing.",
+          variant: "default",
+        });
       }
 
       setGeneratedQuestions(data.questions);
