@@ -12,28 +12,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function generateQuestions(
-  fileContent: string,
+const MAX_CHUNK_SIZE = 30000; // Maximum safe chunk size for GPT-4
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB max file size
+
+async function generateQuestionsFromChunk(
+  chunk: string,
   topics: { name: string; questionCount: number }[]
 ): Promise<any> {
-  console.log('Generating questions for topics:', topics);
+  console.log('Generating questions for chunk of size:', chunk.length);
 
-  const prompt = `You are a quiz generator. Generate quiz questions based on this content:
-${fileContent}
+  const prompt = `Generate quiz questions from this content snippet:
+${chunk}
 
-Please focus on these topics:
+Generate questions for these topics:
 ${topics.map((topic, index) => `${index + 1}. ${topic.name} (${topic.questionCount} questions)`).join('\n')}
 
-Requirements:
-1. Each question must test understanding, not just recall
-2. Each question must have exactly four answer options labeled A, B, C, and D
-3. One option must be correct, three must be plausible but incorrect
-4. Questions must directly reference the content
-5. Avoid obvious incorrect answers
-
-Format each question as a JSON object with:
+Format each question as JSON with:
 {
-  "question": "the question text",
+  "question": "question text",
   "options": {
     "A": "first option",
     "B": "second option",
@@ -41,10 +37,10 @@ Format each question as a JSON object with:
     "D": "fourth option"
   },
   "correct_answer": "A/B/C/D",
-  "topic": "the topic name"
+  "topic": "topic name"
 }
 
-Return an array of these question objects.`;
+Return an array of question objects.`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -58,7 +54,7 @@ Return an array of these question objects.`;
         messages: [
           {
             role: 'system',
-            content: 'You are an expert at creating educational quiz questions from file content. Generate clear, focused questions with specific, unambiguous answers.'
+            content: 'You are an expert at creating focused quiz questions from educational content.'
           },
           {
             role: 'user',
@@ -76,13 +72,34 @@ Return an array of these question objects.`;
     }
 
     const data = await response.json();
-    const questions = JSON.parse(data.choices[0].message.content);
-    console.log(`Generated ${questions.length} questions successfully`);
-    return questions;
+    return JSON.parse(data.choices[0].message.content);
   } catch (error) {
-    console.error('Error generating questions:', error);
+    console.error('Error generating questions from chunk:', error);
     throw error;
   }
+}
+
+function chunkContent(content: string): string[] {
+  const chunks: string[] = [];
+  let currentChunk = '';
+  const paragraphs = content.split(/\n\s*\n/);
+
+  for (const paragraph of paragraphs) {
+    if ((currentChunk.length + paragraph.length) < MAX_CHUNK_SIZE) {
+      currentChunk += paragraph + '\n\n';
+    } else {
+      if (currentChunk.length > 0) {
+        chunks.push(currentChunk.trim());
+      }
+      currentChunk = paragraph + '\n\n';
+    }
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks;
 }
 
 serve(async (req) => {
@@ -103,13 +120,24 @@ serve(async (req) => {
       throw new Error('Missing required fields');
     }
 
-    // Read file content directly
-    const fileContent = await file.text();
-    console.log('File content length:', fileContent.length);
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error('File size exceeds 10MB limit');
+    }
 
-    // Generate questions using the file content
-    const questions = await generateQuestions(fileContent, topics);
+    // Read and chunk the file content
+    const fileContent = await file.text();
+    console.log('Processing file of size:', fileContent.length);
     
+    const contentChunks = chunkContent(fileContent);
+    console.log(`Split content into ${contentChunks.length} chunks`);
+
+    // Generate questions from each chunk
+    let allQuestions: any[] = [];
+    for (const chunk of contentChunks) {
+      const questions = await generateQuestionsFromChunk(chunk, topics);
+      allQuestions = allQuestions.concat(questions);
+    }
+
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl || '', supabaseServiceKey || '');
 
@@ -129,7 +157,7 @@ serve(async (req) => {
       throw new Error('Failed to create quiz');
     }
 
-    // Store file in Supabase Storage
+    // Store file in Storage
     const fileExt = file.name.split('.').pop();
     const sanitizedFileName = file.name.replace(/[^\x00-\x7F]/g, '');
     const uniqueFilePath = `${courseId}/${crypto.randomUUID()}-${sanitizedFileName}`;
@@ -160,7 +188,7 @@ serve(async (req) => {
     }
 
     // Store questions
-    const formattedQuestions = questions.map((q: any) => ({
+    const formattedQuestions = allQuestions.map((q: any) => ({
       quiz_id: quiz.id,
       question: q.question,
       correct_answer: q.correct_answer,
@@ -181,7 +209,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         quizId: quiz.id,
-        questionCount: questions.length 
+        questionCount: allQuestions.length 
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
