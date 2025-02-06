@@ -39,11 +39,11 @@ IMPORTANT: Make sure your response is valid JSON that can be parsed. Do not incl
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4-1106-preview',
         messages: [
           {
             role: 'system',
-            content: 'You are an expert at creating focused multiple choice quiz questions. Always respond with valid JSON.'
+            content: 'You are an expert at creating focused multiple choice quiz questions. Always respond with valid JSON array containing question objects.'
           },
           {
             role: 'user',
@@ -51,47 +51,69 @@ IMPORTANT: Make sure your response is valid JSON that can be parsed. Do not incl
           }
         ],
         temperature: 0.7,
+        response_format: { type: "json_object" }
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      console.error('OpenAI API error response:', errorData);
+      throw new Error(`OpenAI API error: ${JSON.stringify(errorData.error || 'Unknown error')}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response:', data);
+
     if (!data.choices?.[0]?.message?.content) {
       console.error('Unexpected OpenAI response format:', data);
       throw new Error('Invalid response format from OpenAI');
     }
 
     const content = data.choices[0].message.content;
-    console.log('Attempting to parse OpenAI response:', content.substring(0, 100) + '...');
+    console.log('Raw OpenAI response content:', content);
     
     try {
-      const questions = JSON.parse(content);
-      if (!Array.isArray(questions)) {
-        throw new Error('Response is not an array');
+      // Attempt to parse the content
+      let parsedContent = JSON.parse(content);
+      
+      // If the content is wrapped in an additional object (due to response_format: json_object)
+      // extract the questions array
+      if (parsedContent.questions) {
+        parsedContent = parsedContent.questions;
+      }
+
+      // Ensure we have an array
+      if (!Array.isArray(parsedContent)) {
+        console.error('Parsed content is not an array:', parsedContent);
+        throw new Error('OpenAI response is not an array of questions');
       }
       
       // Validate the structure of each question
-      questions.forEach((q, index) => {
+      parsedContent.forEach((q, index) => {
         if (!q.question || !q.options || !q.correct_answer || !q.topic) {
           console.error('Invalid question format at index', index, q);
           throw new Error(`Question at index ${index} is missing required fields`);
         }
+        
+        // Validate options structure
+        if (!q.options.A || !q.options.B || !q.options.C || !q.options.D) {
+          throw new Error(`Question at index ${index} is missing one or more options`);
+        }
+        
+        // Validate correct_answer is valid
+        if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
+          throw new Error(`Question at index ${index} has invalid correct_answer: ${q.correct_answer}`);
+        }
       });
       
-      return questions;
+      return parsedContent;
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
-      console.error('Raw content:', content);
-      throw new Error('Failed to parse quiz questions from OpenAI response');
+      console.error('Content that failed to parse:', content);
+      throw new Error(`Failed to parse quiz questions: ${parseError.message}`);
     }
   } catch (error) {
     console.error('Error generating questions from chunk:', error);
     throw error;
   }
 }
-
