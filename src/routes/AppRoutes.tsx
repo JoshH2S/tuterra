@@ -1,3 +1,4 @@
+
 import { Routes, Route } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
@@ -39,7 +40,7 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/quiz-generation"
+        path="/courses/:courseId/quiz-generation"
         element={
           <ProtectedRoute>
             <QuizGeneration />
