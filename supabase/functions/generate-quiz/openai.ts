@@ -6,18 +6,85 @@ interface Topic {
   questionCount: number;
 }
 
+interface Question {
+  question: string;
+  options: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+  };
+  correct_answer: string;
+  topic: string;
+}
+
+const MAX_TOKENS = 4000; // Safe limit for context window
+const TOKENS_PER_CHAR = 4; // Approximate ratio for token estimation
+
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / TOKENS_PER_CHAR);
+}
+
+function chunkContent(content: string, maxTokens: number): string[] {
+  const chunks: string[] = [];
+  let currentChunk = '';
+  const paragraphs = content.split('\n\n');
+
+  for (const paragraph of paragraphs) {
+    const paragraphTokens = estimateTokens(currentChunk + paragraph);
+    
+    if (paragraphTokens > maxTokens && currentChunk) {
+      chunks.push(currentChunk.trim());
+      currentChunk = paragraph;
+    } else {
+      currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
+    }
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks;
+}
+
+function distributeQuestionCounts(topics: Topic[], chunkCount: number): Topic[][] {
+  const totalQuestions = topics.reduce((sum, t) => sum + t.questionCount, 0);
+  const questionsPerChunk = Math.ceil(totalQuestions / chunkCount);
+  
+  return Array(chunkCount).fill(null).map(() => 
+    topics.map(topic => ({
+      ...topic,
+      questionCount: Math.ceil(topic.questionCount / chunkCount)
+    }))
+  );
+}
+
 export async function generateQuestionsWithOpenAI(
   content: string,
   topics: Topic[],
   openAIApiKey: string
-): Promise<any[]> {
-  console.log('Generating questions, content length:', content.length);
+): Promise<Question[]> {
+  console.log('Starting question generation, content length:', content.length);
   
-  const prompt = `Generate multiple choice quiz questions from this content:
-${content}
+  const chunks = chunkContent(content, MAX_TOKENS);
+  console.log(`Content split into ${chunks.length} chunks`);
+  
+  const topicDistribution = distributeQuestionCounts(topics, chunks.length);
+  const allQuestions: Question[] = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const chunkTopics = topicDistribution[i];
+    
+    console.log(`Processing chunk ${i + 1}/${chunks.length}, length: ${chunk.length}`);
+    console.log('Topics for this chunk:', chunkTopics);
+
+    const prompt = `Generate multiple choice quiz questions from this content:
+${chunk}
 
 Generate questions for these topics:
-${topics.map((topic, index) => `${index + 1}. ${topic.name} (${topic.questionCount} questions)`).join('\n')}
+${chunkTopics.map((topic, index) => `${index + 1}. ${topic.name} (${topic.questionCount} questions)`).join('\n')}
 
 Each question MUST have exactly four options (A, B, C, D) and one correct answer.
 Format your response as a JSON array of questions, where each question has this structure:
@@ -33,56 +100,88 @@ Format your response as a JSON array of questions, where each question has this 
   "topic": "topic name"
 }`;
 
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert at creating multiple choice quiz questions. Return a valid JSON array of questions.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        response_format: { type: "json_object" }
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('OpenAI API response received');
-
-    if (!data.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response format from OpenAI');
-    }
-
-    let questions;
     try {
-      const parsed = JSON.parse(data.choices[0].message.content);
-      questions = Array.isArray(parsed) ? parsed : parsed.questions;
-      
-      if (!Array.isArray(questions)) {
-        throw new Error('Response does not contain a valid questions array');
-      }
-    } catch (error) {
-      console.error('Failed to parse OpenAI response:', error);
-      throw new Error('Failed to parse questions from OpenAI response');
-    }
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert at creating multiple choice quiz questions. Return a valid JSON array of questions.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          response_format: { type: "json_object" }
+        }),
+      });
 
-    return questions;
-  } catch (error) {
-    console.error('Error calling OpenAI:', error);
-    throw error;
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('OpenAI API response received for chunk', i + 1);
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from OpenAI');
+      }
+
+      let chunkQuestions: Question[];
+      try {
+        const parsed = JSON.parse(data.choices[0].message.content);
+        chunkQuestions = Array.isArray(parsed) ? parsed : parsed.questions;
+        
+        if (!Array.isArray(chunkQuestions)) {
+          throw new Error('Response does not contain a valid questions array');
+        }
+
+        // Validate question structure
+        chunkQuestions.forEach((q, idx) => {
+          if (!q.question || !q.options || !q.correct_answer || !q.topic) {
+            throw new Error(`Question ${idx + 1} is missing required fields`);
+          }
+          if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
+            throw new Error(`Question ${idx + 1} has invalid correct_answer: ${q.correct_answer}`);
+          }
+        });
+
+      } catch (error) {
+        console.error('Failed to parse chunk questions:', error);
+        throw new Error(`Failed to parse questions from chunk ${i + 1}: ${error.message}`);
+      }
+
+      allQuestions.push(...chunkQuestions);
+      console.log(`Added ${chunkQuestions.length} questions from chunk ${i + 1}`);
+
+    } catch (error) {
+      console.error(`Error processing chunk ${i + 1}:`, error);
+      throw error;
+    }
   }
+
+  // Ensure we have the correct number of questions per topic
+  const questionsByTopic = new Map<string, Question[]>();
+  for (const question of allQuestions) {
+    if (!questionsByTopic.has(question.topic)) {
+      questionsByTopic.set(question.topic, []);
+    }
+    questionsByTopic.get(question.topic)!.push(question);
+  }
+
+  const finalQuestions: Question[] = [];
+  for (const topic of topics) {
+    const topicQuestions = questionsByTopic.get(topic.name) || [];
+    finalQuestions.push(...topicQuestions.slice(0, topic.questionCount));
+  }
+
+  console.log('Final question count:', finalQuestions.length);
+  return finalQuestions;
 }
