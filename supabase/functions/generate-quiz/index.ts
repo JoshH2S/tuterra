@@ -28,117 +28,110 @@ const trimContent = (content: string, maxLength: number = 4000): string => {
   return trimmedContent.trim();
 };
 
+// Function to generate quiz questions for a content chunk
+async function generateQuestionsForChunk(
+  content: string,
+  topics: string[],
+  questionsPerTopic: number
+): Promise<any> {
+  const prompt = `You are a quiz generator. Create a quiz based on the following content and topics. Generate ${questionsPerTopic} questions per topic.
+
+Content:
+${content}
+
+Topics to cover:
+${topics.map((topic, index) => `${index + 1}. ${topic}`).join('\n')}
+
+Requirements:
+1. Each question must test understanding, not just recall
+2. Each question must have exactly four answer options labeled A, B, C, and D
+3. One option must be correct, three must be plausible but incorrect
+4. Questions must directly reference the content
+5. Avoid obvious incorrect answers
+
+Format each question as a JSON object with:
+{
+  "question": "the question text",
+  "options": {
+    "A": "first option",
+    "B": "second option",
+    "C": "third option",
+    "D": "fourth option"
+  },
+  "correct_answer": "A/B/C/D",
+  "topic": "the topic name"
+}
+
+Return an array of these question objects.`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert at creating educational quiz questions. Generate clear, focused questions with specific, unambiguous answers.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('OpenAI API error:', errorData);
+    throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  return JSON.parse(data.choices[0].message.content);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { courseContent, topics } = await req.json();
-    console.log('Received request with topics:', topics);
+    const { chunks, topics } = await req.json();
+    console.log('Received request with chunks:', chunks.length, 'topics:', topics);
 
-    if (!courseContent || !topics || !Array.isArray(topics) || topics.length === 0) {
-      throw new Error('Invalid request: Missing course content or topics');
+    if (!chunks || !Array.isArray(chunks) || chunks.length === 0) {
+      throw new Error('Invalid request: Missing content chunks');
     }
 
-    // Trim content to avoid token limit issues
-    const trimmedContent = trimContent(courseContent);
-    console.log('Content length after trimming:', trimmedContent.length);
+    // Calculate questions per topic based on total desired questions
+    const questionsPerTopic = Math.max(1, Math.floor(3 / topics.length));
+    console.log(`Generating ${questionsPerTopic} questions per topic`);
 
-    // Format the prompt for quiz generation with a more structured approach
-    const prompt = `You are a quiz generator. Create a quiz based on the uploaded textbook content and the specified topics with corresponding question counts. The quiz must follow this exact format:
-
-1. Each question must be preceded by a number followed by a period (e.g., 1., 2., 3.)
-2. Each question must have exactly four answer options labeled A, B, C, and D
-3. The correct answer must be explicitly marked after the options
-4. All questions must directly reference the content for accuracy
-
-Course Content:
-${trimmedContent}
-
-Topics to cover:
-${topics.map((t: any, index: number) => `${index + 1}. ${t.name}: ${t.questionCount} questions`).join('\n')}
-
-Generate the questions in this format:
-
-1. [Question Text]
-   A. [Answer Option A]
-   B. [Answer Option B]
-   C. [Answer Option C]
-   D. [Answer Option D]
-   Correct Answer: [A/B/C/D]
-
-Each question should test key concepts comprehensively and be relevant to the topics.
-Format your response as a JSON array where each object has:
-{
-  "question": "the full question text",
-  "correct_answer": "the correct answer (A, B, C, or D)",
-  "topic": "the topic name"
-}`;
-
-    console.log('Sending request to OpenAI...');
-
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert at creating educational quiz questions. Generate clear, focused questions with specific, unambiguous answers.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    // Generate questions for each chunk
+    const allQuestions = [];
+    for (let i = 0; i < chunks.length; i++) {
+      console.log(`Processing chunk ${i + 1} of ${chunks.length}`);
+      const chunkQuestions = await generateQuestionsForChunk(
+        chunks[i].content,
+        chunks[i].topics,
+        questionsPerTopic
+      );
+      allQuestions.push(...chunkQuestions);
     }
 
-    const data = await response.json();
-    console.log('Received response from OpenAI');
+    // Deduplicate questions and ensure even distribution across topics
+    const uniqueQuestions = Array.from(new Set(allQuestions.map(q => JSON.stringify(q))))
+      .map(q => JSON.parse(q));
 
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Invalid OpenAI response structure:', data);
-      throw new Error('Invalid response from OpenAI');
-    }
+    console.log(`Generated ${uniqueQuestions.length} unique questions`);
 
-    let generatedQuestions;
-    try {
-      generatedQuestions = JSON.parse(data.choices[0].message.content);
-      console.log('Successfully parsed questions:', generatedQuestions);
-    } catch (error) {
-      console.error('Error parsing OpenAI response:', error);
-      throw new Error('Failed to parse generated questions');
-    }
-
-    // Validate the response format
-    if (!Array.isArray(generatedQuestions)) {
-      console.error('Generated questions is not an array:', generatedQuestions);
-      throw new Error('Generated questions must be an array');
-    }
-
-    // Validate each question has required fields
-    generatedQuestions.forEach((q: any, index: number) => {
-      if (!q.question || !q.correct_answer || !q.topic) {
-        throw new Error(`Question at index ${index} is missing required fields`);
-      }
-    });
-
-    return new Response(JSON.stringify({ questions: generatedQuestions }), {
+    return new Response(JSON.stringify({ questions: uniqueQuestions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

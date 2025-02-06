@@ -7,6 +7,14 @@ interface ProcessedContent {
   totalLength: number;
 }
 
+interface ContentChunk {
+  content: string;
+  topics: string[];
+  tokenCount: number;
+}
+
+const MAX_CHUNK_SIZE = 1500; // Target size for each chunk in tokens
+
 /**
  * Extracts key sections and important content from raw text
  * while removing unnecessary elements
@@ -89,6 +97,71 @@ const cleanContent = (content: string): string => {
     // Remove consecutive empty lines
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+};
+
+/**
+ * Chunks the processed content into smaller pieces for efficient processing
+ */
+export const chunkContent = (processedContent: ProcessedContent): ContentChunk[] => {
+  const chunks: ContentChunk[] = [];
+  let currentChunk = '';
+  let currentTopics: string[] = [];
+  let currentTokenCount = 0;
+
+  // Helper function to estimate tokens (rough approximation)
+  const estimateTokens = (text: string) => Math.ceil(text.length / 4);
+
+  // Process sections
+  for (const section of processedContent.sections) {
+    const sectionText = `${section.title}\n${section.content}\n\n`;
+    const sectionTokens = estimateTokens(sectionText);
+
+    // If adding this section would exceed chunk size, create new chunk
+    if (currentTokenCount + sectionTokens > MAX_CHUNK_SIZE && currentChunk !== '') {
+      chunks.push({
+        content: currentChunk.trim(),
+        topics: [...new Set(currentTopics)],
+        tokenCount: currentTokenCount
+      });
+      currentChunk = '';
+      currentTopics = [];
+      currentTokenCount = 0;
+    }
+
+    currentChunk += sectionText;
+    currentTopics.push(section.title);
+    currentTokenCount += sectionTokens;
+  }
+
+  // Add any remaining content as the last chunk
+  if (currentChunk !== '') {
+    chunks.push({
+      content: currentChunk.trim(),
+      topics: [...new Set(currentTopics)],
+      tokenCount: currentTokenCount
+    });
+  }
+
+  // Add key terms as a separate chunk if they exist
+  if (processedContent.keyTerms.length > 0) {
+    const keyTermsText = 'Key Terms:\n' + processedContent.keyTerms.join('\n');
+    const keyTermsTokens = estimateTokens(keyTermsText);
+    
+    if (keyTermsTokens <= MAX_CHUNK_SIZE) {
+      chunks.push({
+        content: keyTermsText,
+        topics: ['Key Terms'],
+        tokenCount: keyTermsTokens
+      });
+    }
+  }
+
+  console.log(`Content chunked into ${chunks.length} parts`);
+  chunks.forEach((chunk, i) => {
+    console.log(`Chunk ${i + 1}: ${chunk.tokenCount} tokens, Topics: ${chunk.topics.join(', ')}`);
+  });
+
+  return chunks;
 };
 
 /**
