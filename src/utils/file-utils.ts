@@ -47,6 +47,8 @@ const sanitizeContent = (content: string): string => {
   return content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 };
 
+import { extractRelevantContent } from './content-processor';
+
 export const processFileContent = async (file: File): Promise<ProcessedContent> => {
   console.log('Processing file:', {
     name: file.name,
