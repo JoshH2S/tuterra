@@ -19,10 +19,16 @@ export const useQuizGeneration = () => {
     try {
       setIsGenerating(true);
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('User not authenticated');
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('topics', JSON.stringify(topics));
       formData.append('title', title);
+      formData.append('userId', session.user.id);
 
       const { data, error } = await supabase.functions.invoke('generate-quiz', {
         body: formData,

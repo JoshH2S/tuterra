@@ -285,6 +285,33 @@ export type Database = {
           },
         ]
       }
+      temp_files: {
+        Row: {
+          created_at: string
+          expires_at: string
+          file_path: string
+          id: string
+          processed: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          file_path: string
+          id?: string
+          processed?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          file_path?: string
+          id?: string
+          processed?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       tutor_conversations: {
         Row: {
           course_id: string
