@@ -22,6 +22,10 @@ serve(async (req) => {
     const { courseContent, topics } = await req.json();
     console.log('Received request with topics:', topics);
 
+    if (!courseContent || !topics || !Array.isArray(topics) || topics.length === 0) {
+      throw new Error('Invalid request: Missing course content or topics');
+    }
+
     // Format the prompt for quiz generation
     const prompt = `
       Based on the following course content, generate quiz questions for these topics:
@@ -68,14 +72,22 @@ serve(async (req) => {
           }
         ],
         temperature: 0.7,
+        max_tokens: 2000,
       }),
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
 
     const data = await response.json();
     console.log('Received response from OpenAI:', data);
 
     if (!data.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response from OpenAI');
+      console.error('Invalid OpenAI response structure:', data);
+      throw new Error('Invalid response structure from OpenAI');
     }
 
     let generatedQuestions;
@@ -89,6 +101,7 @@ serve(async (req) => {
 
     // Validate the response format
     if (!Array.isArray(generatedQuestions)) {
+      console.error('Generated questions is not an array:', generatedQuestions);
       throw new Error('Generated questions must be an array');
     }
 
