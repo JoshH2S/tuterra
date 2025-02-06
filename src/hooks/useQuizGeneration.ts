@@ -22,10 +22,10 @@ export const useQuizGeneration = () => {
     try {
       setIsGenerating(true);
 
-      // Upload file to Supabase Storage
+      // Upload file to Supabase Storage and get the file path
       const fileId = await handleFileUpload(file, courseId);
 
-      // Generate questions using the Edge Function
+      // Generate questions using the Edge Function with the file ID
       const { data: generatedData, error: generationError } = await supabase.functions
         .invoke('generate-quiz', {
           body: {
@@ -55,6 +55,7 @@ export const useQuizGeneration = () => {
         question: q.question,
         correct_answer: q.correct_answer,
         topic: q.topic,
+        options: q.options
       }));
 
       const { error: questionsError } = await supabase

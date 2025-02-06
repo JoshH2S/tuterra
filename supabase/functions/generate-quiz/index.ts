@@ -16,15 +16,10 @@ async function generateQuestions(
   fileUrl: string,
   topics: { name: string; questionCount: number }[]
 ): Promise<any> {
-  if (!Array.isArray(topics) || topics.length === 0 || !topics.every(t => t.name && t.questionCount > 0)) {
-    console.error('Invalid topics provided:', { topics });
-    throw new Error('Invalid topics provided for question generation');
-  }
-
-  console.log('Generating questions for file:', fileUrl);
+  console.log('Generating questions using file URL:', fileUrl);
   console.log('Topics:', topics);
 
-  const prompt = `You are a quiz generator. Create a quiz based on the content from the provided file.
+  const prompt = `You are a quiz generator. Generate quiz questions based on the content from this file: ${fileUrl}
 Please focus on these topics:
 ${topics.map((topic, index) => `${index + 1}. ${topic.name} (${topic.questionCount} questions)`).join('\n')}
 
@@ -62,7 +57,7 @@ Return an array of these question objects.`;
         messages: [
           {
             role: 'system',
-            content: 'You are an expert at creating educational quiz questions. Generate clear, focused questions with specific, unambiguous answers.'
+            content: 'You are an expert at creating educational quiz questions from file content. Generate clear, focused questions with specific, unambiguous answers.'
           },
           {
             role: 'user',
@@ -120,6 +115,8 @@ serve(async (req) => {
       throw new Error('Failed to get file URL');
     }
 
+    console.log('Generated public URL:', publicUrl);
+
     // Generate questions using the file URL
     const questions = await generateQuestions(publicUrl, requestData.topics);
     
@@ -147,3 +144,4 @@ serve(async (req) => {
     );
   }
 });
+
