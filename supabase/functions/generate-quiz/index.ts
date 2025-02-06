@@ -20,6 +20,7 @@ serve(async (req) => {
 
   try {
     const { courseContent, topics } = await req.json();
+    console.log('Received request with topics:', topics);
 
     // Format the prompt for quiz generation
     const prompt = `
@@ -29,18 +30,23 @@ serve(async (req) => {
       Course Content:
       ${courseContent}
 
-      For each question, provide:
-      1. The question text
-      2. The correct answer
-      3. The topic it belongs to
+      For each topic, generate the exact number of questions specified.
+      Each question should:
+      1. Be clear and unambiguous
+      2. Have a specific, correct answer
+      3. Be relevant to the topic and course content
 
-      Format each question as a JSON object with properties:
-      - question (string)
-      - correct_answer (string)
-      - topic (string)
+      Format your response as a JSON array where each question object has:
+      {
+        "question": "the question text",
+        "correct_answer": "the correct answer",
+        "topic": "the topic name"
+      }
 
-      Return an array of these question objects.
+      Make sure to generate exactly ${topics.reduce((acc: number, t: any) => acc + t.questionCount, 0)} questions total.
     `;
+
+    console.log('Sending request to OpenAI...');
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -54,7 +60,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful AI that generates educational quiz questions. Generate clear, concise questions with unambiguous answers.'
+            content: 'You are an expert at creating educational quiz questions. Generate clear, focused questions with specific, unambiguous answers.'
           },
           {
             role: 'user',
@@ -66,16 +72,47 @@ serve(async (req) => {
     });
 
     const data = await response.json();
-    const generatedQuestions = JSON.parse(data.choices[0].message.content);
+    console.log('Received response from OpenAI:', data);
+
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response from OpenAI');
+    }
+
+    let generatedQuestions;
+    try {
+      generatedQuestions = JSON.parse(data.choices[0].message.content);
+      console.log('Successfully parsed questions:', generatedQuestions);
+    } catch (error) {
+      console.error('Error parsing OpenAI response:', error);
+      throw new Error('Failed to parse generated questions');
+    }
+
+    // Validate the response format
+    if (!Array.isArray(generatedQuestions)) {
+      throw new Error('Generated questions must be an array');
+    }
+
+    // Validate each question has required fields
+    generatedQuestions.forEach((q: any, index: number) => {
+      if (!q.question || !q.correct_answer || !q.topic) {
+        throw new Error(`Question at index ${index} is missing required fields`);
+      }
+    });
 
     return new Response(JSON.stringify({ questions: generatedQuestions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in generate-quiz function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Failed to generate quiz questions. Please try again.'
+      }), 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
