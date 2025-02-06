@@ -15,9 +15,30 @@ interface Question {
   topic: string;
 }
 
+interface OpenAIQuestion {
+  question: string;
+  options: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+  };
+  correct_answer: string;
+  topic: string;
+}
+
 export const useQuizGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
+
+  const transformOpenAIResponse = (questions: OpenAIQuestion[]): Question[] => {
+    return questions.map(q => ({
+      question: q.question,
+      options: [q.options.A, q.options.B, q.options.C, q.options.D],
+      correctAnswer: q.correct_answer,
+      topic: q.topic
+    }));
+  };
 
   const generateQuiz = async (
     title: string,
@@ -81,14 +102,15 @@ export const useQuizGeneration = () => {
         });
       }
 
-      setGeneratedQuestions(data.questions);
+      const transformedQuestions = transformOpenAIResponse(data.questions);
+      setGeneratedQuestions(transformedQuestions);
       
       toast({
         title: "Quiz Generated",
-        description: `Successfully generated ${data.questionCount} questions.`,
+        description: `Successfully generated ${transformedQuestions.length} questions.`,
       });
 
-      return data.questions;
+      return transformedQuestions;
     } catch (error) {
       console.error('Error generating quiz:', error);
       throw error;
