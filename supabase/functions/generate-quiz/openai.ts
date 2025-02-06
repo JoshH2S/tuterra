@@ -1,3 +1,4 @@
+
 import { corsHeaders } from './constants.ts';
 
 interface Topic {
@@ -75,11 +76,26 @@ async function makeOpenAIRequest(prompt: string, retryCount = 0): Promise<Questi
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
-            content: 'You are an expert at creating multiple choice quiz questions. Return a valid JSON array of questions.'
+            content: `You are an expert at creating multiple choice quiz questions. Generate questions in this exact JSON format:
+{
+  "questions": [
+    {
+      "question": "Question text here",
+      "options": {
+        "A": "First option",
+        "B": "Second option",
+        "C": "Third option",
+        "D": "Fourth option"
+      },
+      "correct_answer": "A",
+      "topic": "Topic name"
+    }
+  ]
+}`
           },
           {
             role: 'user',
@@ -93,7 +109,6 @@ async function makeOpenAIRequest(prompt: string, retryCount = 0): Promise<Questi
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       
-      // Handle rate limiting
       if (response.status === 429 && retryCount < MAX_RETRIES) {
         const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
         console.log(`Rate limited. Retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
@@ -105,21 +120,19 @@ async function makeOpenAIRequest(prompt: string, retryCount = 0): Promise<Questi
     }
 
     const data = await response.json();
-    console.log('OpenAI API response received successfully');
+    console.log('OpenAI API response received:', data);
 
     if (!data.choices?.[0]?.message?.content) {
       throw new Error('Invalid response format from OpenAI');
     }
 
     const parsed = JSON.parse(data.choices[0].message.content);
-    const questions = Array.isArray(parsed) ? parsed : parsed.questions;
-    
-    if (!Array.isArray(questions)) {
+    if (!parsed.questions || !Array.isArray(parsed.questions)) {
       throw new Error('Response does not contain a valid questions array');
     }
 
     // Validate question structure
-    questions.forEach((q, idx) => {
+    parsed.questions.forEach((q: Question, idx: number) => {
       if (!q.question || !q.options || !q.correct_answer || !q.topic) {
         throw new Error(`Question ${idx + 1} is missing required fields`);
       }
@@ -128,7 +141,7 @@ async function makeOpenAIRequest(prompt: string, retryCount = 0): Promise<Questi
       }
     });
 
-    return questions;
+    return parsed.questions;
   } catch (error) {
     if (retryCount < MAX_RETRIES && error.message.includes('Too Many Requests')) {
       const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
@@ -173,19 +186,7 @@ ${chunk}
 Generate questions for these topics:
 ${chunkTopics.map((topic, index) => `${index + 1}. ${topic.name} (${topic.questionCount} questions)`).join('\n')}
 
-Each question MUST have exactly four options (A, B, C, D) and one correct answer.
-Format your response as a JSON array of questions, where each question has this structure:
-{
-  "question": "the question text",
-  "options": {
-    "A": "first option",
-    "B": "second option",
-    "C": "third option",
-    "D": "fourth option"
-  },
-  "correct_answer": "A/B/C/D",
-  "topic": "topic name"
-}`;
+Each question MUST have exactly four options (A, B, C, D) and one correct answer. Make sure the questions test understanding of the content.`;
 
     try {
       const chunkQuestions = await makeOpenAIRequest(prompt);
