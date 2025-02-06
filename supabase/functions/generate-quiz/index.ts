@@ -33,7 +33,7 @@ serve(async (req) => {
       - question: the actual question text
       - correctAnswer: the correct answer
       - topic: which topic this question relates to
-      - points: number of points for this question (1-3 based on difficulty)
+      - points: number of points for this question (1 point for each question)
 
       Teacher Information:
       Teacher: ${teacherName || 'Not specified'}
@@ -42,17 +42,17 @@ serve(async (req) => {
       Content:
       ${trimmedContent}
 
-      Topics to cover:
+      Topics to cover (with number of questions per topic):
       ${topics.map((topic: any, index: number) => 
-        `${index + 1}. ${topic.description} (Points: ${topic.points})`
+        `${index + 1}. ${topic.description} (Number of questions: ${topic.numQuestions})`
       ).join('\n')}
 
       Instructions:
       1. Create multiple-choice questions
       2. Ensure questions are clear and unambiguous
-      3. Cover all provided topics
-      4. Include a mix of difficulty levels
-      5. Return response in valid JSON format
+      3. Create EXACTLY the specified number of questions for each topic
+      4. Return response in valid JSON format
+      5. Each question is worth 1 point
     `;
 
     console.log('Sending request to OpenAI API');

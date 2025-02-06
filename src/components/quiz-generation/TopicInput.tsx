@@ -1,11 +1,11 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Award } from "lucide-react";
+import { HashIcon } from "lucide-react";
 
 interface Topic {
   description: string;
-  points: number;
+  numQuestions: number;
 }
 
 interface TopicInputProps {
@@ -26,17 +26,17 @@ export const TopicInput = ({ topic, index, onChange }: TopicInputProps) => {
         />
       </div>
       <div>
-        <Label>Points per Question</Label>
+        <Label>Number of Questions</Label>
         <div className="flex items-center gap-2">
           <Input
             type="number"
             min="1"
-            max="3"
-            value={topic.points}
-            onChange={(e) => onChange(index, "points", parseInt(e.target.value))}
+            max="10"
+            value={topic.numQuestions}
+            onChange={(e) => onChange(index, "numQuestions", parseInt(e.target.value))}
             className="w-24"
           />
-          <Award className="h-4 w-4 text-gray-500" />
+          <HashIcon className="h-4 w-4 text-gray-500" />
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Topic {
   description: string;
-  points: number;
+  numQuestions: number;
 }
 
 export const MAX_CONTENT_LENGTH = 5000;
@@ -14,7 +14,7 @@ export const MAX_CONTENT_LENGTH = 5000;
 export const useQuizGeneration = () => {
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [topics, setTopics] = useState<Topic[]>([{ description: "", points: 1 }]);
+  const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
   const [contentLength, setContentLength] = useState<number>(0);
@@ -26,7 +26,7 @@ export const useQuizGeneration = () => {
   };
 
   const addTopic = () => {
-    setTopics([...topics, { description: "", points: 1 }]);
+    setTopics([...topics, { description: "", numQuestions: 3 }]);
   };
 
   const updateTopic = (index: number, field: keyof Topic, value: string | number) => {
