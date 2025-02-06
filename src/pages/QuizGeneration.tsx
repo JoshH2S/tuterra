@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { TopicInput } from "@/components/quiz-generation/TopicInput";
 import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
 import { useQuizGeneration } from "@/hooks/useQuizGeneration";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
+import { toast } from "@/hooks/use-toast";
 
 interface Topic {
   name: string;
@@ -17,10 +18,21 @@ interface Topic {
 
 const QuizGeneration = () => {
   const navigate = useNavigate();
+  const { courseId } = useParams<{ courseId: string }>();
   const [topics, setTopics] = useState<Topic[]>([{ name: "", questionCount: 1 }]);
   const [quizTitle, setQuizTitle] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { generateQuiz, isGenerating } = useQuizGeneration();
+
+  if (!courseId) {
+    toast({
+      title: "Error",
+      description: "No course ID provided.",
+      variant: "destructive"
+    });
+    navigate("/courses");
+    return null;
+  }
 
   const handleFileSelect = async (file: File) => {
     setSelectedFile(file);
@@ -41,21 +53,30 @@ const QuizGeneration = () => {
 
   const handleGenerateQuiz = async () => {
     if (!selectedFile || !quizTitle || topics.some(t => !t.name)) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
       return;
     }
 
     try {
       const quizId = await generateQuiz(
-        "your-course-id", // This should come from your course context or route params
+        courseId,
         quizTitle,
         selectedFile,
         topics
       );
       
-      // Navigate to the quiz detail page or wherever appropriate
       navigate(`/courses/quiz/${quizId}`);
     } catch (error) {
       console.error('Failed to generate quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate quiz. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
