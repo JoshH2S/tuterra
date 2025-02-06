@@ -13,16 +13,14 @@ const trimContent = (content: string, maxLength: number = 4000): string => {
   if (!content) return '';
   if (content.length <= maxLength) return content;
 
-  // Split into paragraphs and select the most relevant ones
   const paragraphs = content.split('\n\n');
   let trimmedContent = '';
   let currentLength = 0;
 
-  // Keep adding paragraphs until we reach the max length
   for (const paragraph of paragraphs) {
     if (currentLength + paragraph.length > maxLength) break;
     trimmedContent += paragraph + '\n\n';
-    currentLength += paragraph.length + 2; // +2 for the newlines
+    currentLength += paragraph.length + 2;
   }
 
   console.log(`Content trimmed from ${content.length} to ${trimmedContent.length} characters`);
@@ -34,10 +32,18 @@ async function generateQuestionsForChunk(
   content: string,
   topics: { name: string; questionCount: number }[]
 ): Promise<any> {
-  if (!content || !topics || topics.length === 0) {
-    console.error('Invalid input for question generation:', { content: !!content, topicsLength: topics?.length });
-    throw new Error('Invalid input for question generation');
+  // Validate inputs
+  if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    console.error('Invalid content provided:', { content });
+    throw new Error('Invalid content provided for question generation');
   }
+
+  if (!Array.isArray(topics) || topics.length === 0 || !topics.every(t => t.name && t.questionCount > 0)) {
+    console.error('Invalid topics provided:', { topics });
+    throw new Error('Invalid topics provided for question generation');
+  }
+
+  console.log('Generating questions for content length:', content.length, 'and topics:', topics);
 
   const prompt = `You are a quiz generator. Create a quiz based on the following content and topics.
 
@@ -99,7 +105,9 @@ Return an array of these question objects.`;
     }
 
     const data = await response.json();
-    return JSON.parse(data.choices[0].message.content);
+    const questions = JSON.parse(data.choices[0].message.content);
+    console.log(`Generated ${questions.length} questions successfully`);
+    return questions;
   } catch (error) {
     console.error('Error generating questions:', error);
     throw error;
@@ -116,17 +124,24 @@ serve(async (req) => {
     const requestData = await req.json();
     console.log('Received request data:', requestData);
 
+    // Validate required fields
     if (!requestData.courseContent || !requestData.topics) {
       throw new Error('Missing required fields: courseContent and topics are required');
     }
 
     // Validate topics structure
-    if (!Array.isArray(requestData.topics)) {
-      throw new Error('Topics must be an array');
+    if (!Array.isArray(requestData.topics) || requestData.topics.length === 0) {
+      throw new Error('Topics must be a non-empty array');
     }
 
+    // Process and trim content
     const content = trimContent(requestData.courseContent);
-    console.log('Trimmed content length:', content.length);
+    if (!content) {
+      throw new Error('Invalid or empty course content provided');
+    }
+    
+    console.log('Processed content length:', content.length);
+    console.log('Number of topics:', requestData.topics.length);
 
     // Generate questions
     const questions = await generateQuestionsForChunk(content, requestData.topics);
