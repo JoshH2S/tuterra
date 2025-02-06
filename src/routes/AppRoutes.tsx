@@ -1,13 +1,13 @@
 import { Routes, Route } from "react-router-dom";
-import { Auth } from "@/pages/Auth";
-import { Courses } from "@/pages/Courses";
-import { CourseDetail } from "@/pages/CourseDetail";
-import { LessonPlanning } from "@/pages/LessonPlanning";
-import { QuizGeneration } from "@/pages/QuizGeneration";
-import { CourseTutor } from "@/pages/CourseTutor";
-import { NotFound } from "@/pages/NotFound";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { Index } from "@/pages/Index";
+import Auth from "@/pages/Auth";
+import Courses from "@/pages/Courses";
+import CourseDetail from "@/pages/CourseDetail";
+import LessonPlanning from "@/pages/LessonPlanning";
+import QuizGeneration from "@/pages/QuizGeneration";
+import CourseTutor from "@/pages/CourseTutor";
+import NotFound from "@/pages/NotFound";
+import { ProtectedRoute } from "@/routes/ProtectedRoute";
+import Index from "@/pages/Index";
 
 export const AppRoutes = () => {
   return (
