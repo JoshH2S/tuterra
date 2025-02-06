@@ -39,22 +39,45 @@ export const LessonPlanOutput = ({ lessonPlan }: LessonPlanOutputProps) => {
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
     const lineHeight = 7;
-    let yPosition = 20;
+    let yPosition = margin;
+
+    // Set initial font sizes
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Lesson Plan", margin, yPosition);
+    yPosition += lineHeight * 2;
 
     // Add header with teacher information
     if (teacherInfo) {
       doc.setFontSize(12);
-      doc.text(`Teacher: ${teacherInfo.first_name} ${teacherInfo.last_name}`, 20, yPosition);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Teacher: ${teacherInfo.first_name} ${teacherInfo.last_name}`, margin, yPosition);
       yPosition += lineHeight;
-      doc.text(`School: ${teacherInfo.school}`, 20, yPosition);
+      doc.text(`School: ${teacherInfo.school}`, margin, yPosition);
       yPosition += lineHeight * 2;
     }
 
-    // Add lesson plan content
+    // Add lesson plan content with proper text wrapping and pagination
     doc.setFontSize(11);
-    const splitText = doc.splitTextToSize(lessonPlan, 170);
-    doc.text(splitText, 20, yPosition);
+    doc.setFont("helvetica", "normal");
+
+    // Split text into lines that fit within the page width
+    const textLines = doc.splitTextToSize(lessonPlan, pageWidth - (margin * 2));
+
+    // Add lines to pages
+    textLines.forEach((line: string) => {
+      // Check if we need a new page
+      if (yPosition > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+      }
+      doc.text(line, margin, yPosition);
+      yPosition += lineHeight;
+    });
 
     // Save the PDF
     doc.save('lesson-plan.pdf');
