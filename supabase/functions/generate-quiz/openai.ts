@@ -1,21 +1,26 @@
 
 import { corsHeaders } from './constants.ts';
 
-export async function generateQuestionsFromChunk(
-  chunk: string,
-  topics: { name: string; questionCount: number }[],
-  openAIApiKey: string
-): Promise<any> {
-  console.log('Generating questions for chunk of size:', chunk.length);
+interface Topic {
+  name: string;
+  questionCount: number;
+}
 
+export async function generateQuestionsWithOpenAI(
+  content: string,
+  topics: Topic[],
+  openAIApiKey: string
+): Promise<any[]> {
+  console.log('Generating questions, content length:', content.length);
+  
   const prompt = `Generate multiple choice quiz questions from this content:
-${chunk}
+${content}
 
 Generate questions for these topics:
 ${topics.map((topic, index) => `${index + 1}. ${topic.name} (${topic.questionCount} questions)`).join('\n')}
 
-Each question MUST have exactly four options (A, B, C, D) and one correct answer. 
-Return a JSON object with a 'questions' array where each question has this EXACT structure:
+Each question MUST have exactly four options (A, B, C, D) and one correct answer.
+Format your response as a JSON array of questions, where each question has this structure:
 {
   "question": "the question text",
   "options": {
@@ -29,7 +34,6 @@ Return a JSON object with a 'questions' array where each question has this EXACT
 }`;
 
   try {
-    console.log('Making request to OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -37,83 +41,48 @@ Return a JSON object with a 'questions' array where each question has this EXACT
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4-1106-preview',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: 'You are an expert at creating multiple choice quiz questions. Return ONLY valid JSON containing a questions array.'
+            content: 'You are an expert at creating multiple choice quiz questions. Return a valid JSON array of questions.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.7,
         response_format: { type: "json_object" }
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error response:', errorData);
-      throw new Error(`OpenAI API error: ${JSON.stringify(errorData.error || 'Unknown error')}`);
+      throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
     const data = await response.json();
     console.log('OpenAI API response received');
 
     if (!data.choices?.[0]?.message?.content) {
-      console.error('Unexpected OpenAI response format:', data);
       throw new Error('Invalid response format from OpenAI');
     }
 
-    let content = data.choices[0].message.content;
-    console.log('Raw content before parsing:', content);
-
+    let questions;
     try {
-      // Parse the content
-      const parsedContent = JSON.parse(content);
-      
-      // Extract questions array - it could be either directly an array or nested in a questions property
-      let questions = Array.isArray(parsedContent) ? parsedContent : parsedContent.questions;
+      const parsed = JSON.parse(data.choices[0].message.content);
+      questions = Array.isArray(parsed) ? parsed : parsed.questions;
       
       if (!Array.isArray(questions)) {
-        console.error('Parsed content does not contain a valid questions array:', parsedContent);
-        throw new Error('OpenAI response does not contain a valid questions array');
+        throw new Error('Response does not contain a valid questions array');
       }
-
-      // Validate each question
-      questions.forEach((q, index) => {
-        if (!q.question || !q.options || !q.correct_answer || !q.topic) {
-          console.error(`Invalid question format at index ${index}:`, q);
-          throw new Error(`Question at index ${index} is missing required fields`);
-        }
-
-        // Validate options
-        const requiredOptions = ['A', 'B', 'C', 'D'];
-        for (const opt of requiredOptions) {
-          if (!q.options[opt]) {
-            console.error(`Missing option ${opt} at index ${index}:`, q.options);
-            throw new Error(`Question at index ${index} is missing option ${opt}`);
-          }
-        }
-
-        // Validate correct_answer
-        if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
-          console.error(`Invalid correct_answer at index ${index}:`, q.correct_answer);
-          throw new Error(`Question at index ${index} has invalid correct_answer: ${q.correct_answer}`);
-        }
-      });
-
-      console.log(`Successfully validated ${questions.length} questions`);
-      return questions;
-    } catch (parseError) {
-      console.error('Failed to parse or validate OpenAI response:', parseError);
-      console.error('Content that failed to parse:', content);
-      throw new Error(`Failed to parse quiz questions: ${parseError.message}`);
+    } catch (error) {
+      console.error('Failed to parse OpenAI response:', error);
+      throw new Error('Failed to parse questions from OpenAI response');
     }
+
+    return questions;
   } catch (error) {
-    console.error('Error in generateQuestionsFromChunk:', error);
+    console.error('Error calling OpenAI:', error);
     throw error;
   }
 }
