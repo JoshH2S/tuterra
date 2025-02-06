@@ -13,13 +13,14 @@ const corsHeaders = {
 };
 
 async function generateQuestions(
-  fileUrl: string,
+  fileContent: string,
   topics: { name: string; questionCount: number }[]
 ): Promise<any> {
-  console.log('Generating questions using file URL:', fileUrl);
-  console.log('Topics:', topics);
+  console.log('Generating questions for topics:', topics);
 
-  const prompt = `You are a quiz generator. Generate quiz questions based on the content from this file: ${fileUrl}
+  const prompt = `You are a quiz generator. Generate quiz questions based on this content:
+${fileContent}
+
 Please focus on these topics:
 ${topics.map((topic, index) => `${index + 1}. ${topic.name} (${topic.questionCount} questions)`).join('\n')}
 
@@ -90,44 +91,98 @@ serve(async (req) => {
   }
 
   try {
-    const requestData = await req.json();
-    console.log('Received request data:', requestData);
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
+    const topicsJson = formData.get('topics') as string;
+    const topics = JSON.parse(topicsJson);
+    const courseId = formData.get('courseId') as string;
+    const title = formData.get('title') as string;
+    const teacherId = formData.get('teacherId') as string;
 
-    if (!requestData.fileId || !requestData.topics) {
-      throw new Error('Missing required fields: fileId and topics are required');
+    if (!file || !topics || !courseId || !title || !teacherId) {
+      throw new Error('Missing required fields');
     }
 
-    if (!Array.isArray(requestData.topics) || requestData.topics.length === 0) {
-      throw new Error('Topics must be a non-empty array');
-    }
+    // Read file content directly
+    const fileContent = await file.text();
+    console.log('File content length:', fileContent.length);
 
+    // Generate questions using the file content
+    const questions = await generateQuestions(fileContent, topics);
+    
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl || '', supabaseServiceKey || '');
 
-    // Get file URL from storage
-    const { data: { publicUrl }, error: urlError } = supabase
-      .storage
-      .from('course_materials')
-      .getPublicUrl(requestData.fileId);
+    // Create quiz record
+    const { data: quiz, error: quizError } = await supabase
+      .from('quizzes')
+      .insert({
+        title,
+        course_id: courseId,
+        teacher_id: teacherId,
+      })
+      .select()
+      .single();
 
-    if (urlError || !publicUrl) {
-      console.error('Error getting file URL:', urlError);
-      throw new Error('Failed to get file URL');
+    if (quizError) {
+      console.error('Error creating quiz:', quizError);
+      throw new Error('Failed to create quiz');
     }
 
-    console.log('Generated public URL:', publicUrl);
-
-    // Generate questions using the file URL
-    const questions = await generateQuestions(publicUrl, requestData.topics);
+    // Store file in Supabase Storage
+    const fileExt = file.name.split('.').pop();
+    const sanitizedFileName = file.name.replace(/[^\x00-\x7F]/g, '');
+    const uniqueFilePath = `${courseId}/${crypto.randomUUID()}-${sanitizedFileName}`;
     
-    // Deduplicate questions
-    const uniqueQuestions = Array.from(new Set(questions.map(q => JSON.stringify(q))))
-      .map(q => JSON.parse(q));
+    const { error: storageError } = await supabase.storage
+      .from('course_materials')
+      .upload(uniqueFilePath, file);
 
-    console.log(`Returning ${uniqueQuestions.length} unique questions`);
+    if (storageError) {
+      console.error('Error uploading file:', storageError);
+      throw new Error('Failed to upload file');
+    }
+
+    // Store file metadata
+    const { error: materialError } = await supabase
+      .from('course_materials')
+      .insert({
+        course_id: courseId,
+        file_name: file.name,
+        file_type: file.type,
+        size: file.size,
+        storage_path: uniqueFilePath,
+      });
+
+    if (materialError) {
+      console.error('Error storing file metadata:', materialError);
+      throw new Error('Failed to store file metadata');
+    }
+
+    // Store questions
+    const formattedQuestions = questions.map((q: any) => ({
+      quiz_id: quiz.id,
+      question: q.question,
+      correct_answer: q.correct_answer,
+      topic: q.topic,
+      options: q.options
+    }));
+
+    const { error: questionsError } = await supabase
+      .from('quiz_questions')
+      .insert(formattedQuestions);
+
+    if (questionsError) {
+      console.error('Error storing questions:', questionsError);
+      throw new Error('Failed to store questions');
+    }
 
     return new Response(
-      JSON.stringify({ questions: uniqueQuestions }), 
+      JSON.stringify({ 
+        success: true, 
+        quizId: quiz.id,
+        questionCount: questions.length 
+      }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -144,4 +199,3 @@ serve(async (req) => {
     );
   }
 });
-

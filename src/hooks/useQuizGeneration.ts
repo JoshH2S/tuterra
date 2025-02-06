@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useCourseFileUpload } from "@/hooks/useCourseFileUpload";
 
 interface Topic {
   name: string;
@@ -11,7 +10,6 @@ interface Topic {
 
 export const useQuizGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const { handleFileUpload } = useCourseFileUpload();
 
   const generateQuiz = async (
     courseId: string,
@@ -22,54 +20,26 @@ export const useQuizGeneration = () => {
     try {
       setIsGenerating(true);
 
-      // Upload file to Supabase Storage and get the file path
-      const fileId = await handleFileUpload(file, courseId);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('topics', JSON.stringify(topics));
+      formData.append('courseId', courseId);
+      formData.append('title', title);
+      formData.append('teacherId', (await supabase.auth.getUser()).data.user?.id || '');
 
-      // Generate questions using the Edge Function with the file ID
-      const { data: generatedData, error: generationError } = await supabase.functions
+      const { data, error } = await supabase.functions
         .invoke('generate-quiz', {
-          body: {
-            fileId,
-            topics,
-          },
+          body: formData,
         });
 
-      if (generationError) throw generationError;
-
-      // Create the quiz in the database
-      const { data: quiz, error: quizError } = await supabase
-        .from('quizzes')
-        .insert({
-          title,
-          course_id: courseId,
-          teacher_id: (await supabase.auth.getUser()).data.user?.id,
-        })
-        .select()
-        .single();
-
-      if (quizError) throw quizError;
-
-      // Insert the generated questions
-      const questions = generatedData.questions.map((q: any) => ({
-        quiz_id: quiz.id,
-        question: q.question,
-        correct_answer: q.correct_answer,
-        topic: q.topic,
-        options: q.options
-      }));
-
-      const { error: questionsError } = await supabase
-        .from('quiz_questions')
-        .insert(questions);
-
-      if (questionsError) throw questionsError;
+      if (error) throw error;
 
       toast({
         title: "Quiz Generated",
-        description: "Your quiz has been created successfully.",
+        description: `Successfully created quiz with ${data.questionCount} questions.`,
       });
 
-      return quiz.id;
+      return data.quizId;
     } catch (error) {
       console.error('Error generating quiz:', error);
       toast({
