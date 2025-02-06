@@ -4,7 +4,6 @@ import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
 import LessonPlanning from "@/pages/LessonPlanning";
-import QuizGeneration from "@/pages/QuizGeneration";
 import CourseTutor from "@/pages/CourseTutor";
 import NotFound from "@/pages/NotFound";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
@@ -36,19 +35,6 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <LessonPlanning />
-          </ProtectedRoute>
-        }
-      />
-      {/* Add redirect for incorrect quiz-generation route */}
-      <Route 
-        path="/quiz-generation" 
-        element={<Navigate to="/courses" replace />} 
-      />
-      <Route
-        path="/courses/:courseId/quiz-generation"
-        element={
-          <ProtectedRoute>
-            <QuizGeneration />
           </ProtectedRoute>
         }
       />
