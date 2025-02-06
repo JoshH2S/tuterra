@@ -26,9 +26,7 @@ Format your response as a JSON array of question objects where each object has t
   },
   "correct_answer": "A/B/C/D",
   "topic": "topic name"
-}
-
-IMPORTANT: Make sure your response is valid JSON. Return ONLY a questions array without any formatting or explanation.`;
+}`;
 
   try {
     console.log('Making request to OpenAI API...');
@@ -43,7 +41,7 @@ IMPORTANT: Make sure your response is valid JSON. Return ONLY a questions array 
         messages: [
           {
             role: 'system',
-            content: 'You are an expert at creating multiple choice quiz questions. Return a valid JSON array of question objects with no additional formatting.'
+            content: 'You are an expert at creating multiple choice quiz questions. Return ONLY the questions array as JSON.'
           },
           {
             role: 'user',
@@ -70,6 +68,7 @@ IMPORTANT: Make sure your response is valid JSON. Return ONLY a questions array 
     }
 
     let content = data.choices[0].message.content;
+    console.log('Raw content before parsing:', content);
     
     try {
       // Parse the content
@@ -96,11 +95,13 @@ IMPORTANT: Make sure your response is valid JSON. Return ONLY a questions array 
         
         // Validate options structure
         if (!q.options.A || !q.options.B || !q.options.C || !q.options.D) {
+          console.error('Invalid options at index', index, q.options);
           throw new Error(`Question at index ${index} is missing one or more options`);
         }
         
         // Validate correct_answer is valid
         if (!['A', 'B', 'C', 'D'].includes(q.correct_answer)) {
+          console.error('Invalid correct_answer at index', index, q.correct_answer);
           throw new Error(`Question at index ${index} has invalid correct_answer: ${q.correct_answer}`);
         }
       });
