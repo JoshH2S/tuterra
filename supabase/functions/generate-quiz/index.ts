@@ -28,8 +28,8 @@ serve(async (req) => {
 
     const prompt = `
       As an expert educator, create a comprehensive quiz based on the following content and topics.
-      Format your response in a structured JSON format with an array of questions.
-      Each question should have the following properties:
+      Format your response as a pure JSON array without any markdown formatting.
+      Each question should have these properties:
       - question: the actual question text
       - correctAnswer: the correct answer
       - topic: which topic this question relates to
@@ -51,7 +51,7 @@ serve(async (req) => {
       1. Create multiple-choice questions
       2. Ensure questions are clear and unambiguous
       3. Create EXACTLY the specified number of questions for each topic
-      4. Return response in valid JSON format
+      4. Return ONLY a valid JSON array without any markdown formatting or explanatory text
       5. Each question is worth 1 point
     `;
 
@@ -68,7 +68,7 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert educator specializing in creating assessment questions. Always return responses in valid JSON format.'
+            content: 'You are an expert educator specializing in creating assessment questions. Return ONLY pure JSON arrays without any markdown formatting or additional text.'
           },
           { role: 'user', content: prompt }
         ],
@@ -89,11 +89,27 @@ serve(async (req) => {
       throw new Error('Invalid response format from OpenAI API');
     }
 
-    const quizQuestions = JSON.parse(data.choices[0].message.content);
+    let content_text = data.choices[0].message.content;
+    
+    // Clean up the response if it contains markdown formatting
+    if (content_text.includes('```')) {
+      content_text = content_text.replace(/```json\n|\n```|```/g, '');
+    }
 
-    return new Response(JSON.stringify({ quizQuestions }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log('Attempting to parse response:', content_text);
+    
+    try {
+      const quizQuestions = JSON.parse(content_text);
+      console.log('Successfully parsed quiz questions');
+
+      return new Response(JSON.stringify({ quizQuestions }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (parseError) {
+      console.error('Error parsing quiz questions:', parseError);
+      console.error('Raw content that failed to parse:', content_text);
+      throw new Error(`Failed to parse quiz questions: ${parseError.message}`);
+    }
   } catch (error) {
     console.error('Error in generate-quiz function:', error);
     return new Response(
