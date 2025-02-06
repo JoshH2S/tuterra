@@ -1,8 +1,9 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import { Course } from "@/types/course";
-import { Trash2 } from "lucide-react";
+import { Trash2, FileText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +26,11 @@ const CourseCard = ({ course, onFileSelect, onDelete }: CourseCardProps) => {
   const navigate = useNavigate();
 
   const handleCourseClick = () => {
-    navigate(`/course/${course.id}`);
+    navigate(`/courses/${course.id}`);
+  };
+
+  const handleQuizGenerationClick = () => {
+    navigate(`/courses/${course.id}/quiz-generation`);
   };
 
   return (
@@ -77,6 +82,15 @@ const CourseCard = ({ course, onFileSelect, onDelete }: CourseCardProps) => {
           onClick={handleCourseClick}
         >
           View Course Details
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleQuizGenerationClick}
+          className="flex items-center gap-2"
+        >
+          <FileText className="h-4 w-4" />
+          Generate Quiz
         </Button>
       </div>
     </div>
