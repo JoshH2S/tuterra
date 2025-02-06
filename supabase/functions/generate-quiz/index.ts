@@ -1,12 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,29 +45,36 @@ serve(async (req) => {
     const trimmedContent = trimContent(courseContent);
     console.log('Content length after trimming:', trimmedContent.length);
 
-    // Format the prompt for quiz generation
-    const prompt = `
-      Based on the following course content, generate quiz questions for these topics:
-      ${topics.map((t: any) => `${t.name} (${t.questionCount} questions)`).join(', ')}
+    // Format the prompt for quiz generation with a more structured approach
+    const prompt = `You are a quiz generator. Create a quiz based on the uploaded textbook content and the specified topics with corresponding question counts. The quiz must follow this exact format:
 
-      Course Content:
-      ${trimmedContent}
+1. Each question must be preceded by a number followed by a period (e.g., 1., 2., 3.)
+2. Each question must have exactly four answer options labeled A, B, C, and D
+3. The correct answer must be explicitly marked after the options
+4. All questions must directly reference the content for accuracy
 
-      For each topic, generate the exact number of questions specified.
-      Each question should:
-      1. Be clear and unambiguous
-      2. Have a specific, correct answer
-      3. Be relevant to the topic and course content
+Course Content:
+${trimmedContent}
 
-      Format your response as a JSON array where each question object has:
-      {
-        "question": "the question text",
-        "correct_answer": "the correct answer",
-        "topic": "the topic name"
-      }
+Topics to cover:
+${topics.map((t: any, index: number) => `${index + 1}. ${t.name}: ${t.questionCount} questions`).join('\n')}
 
-      Make sure to generate exactly ${topics.reduce((acc: number, t: any) => acc + t.questionCount, 0)} questions total.
-    `;
+Generate the questions in this format:
+
+1. [Question Text]
+   A. [Answer Option A]
+   B. [Answer Option B]
+   C. [Answer Option C]
+   D. [Answer Option D]
+   Correct Answer: [A/B/C/D]
+
+Each question should test key concepts comprehensively and be relevant to the topics.
+Format your response as a JSON array where each object has:
+{
+  "question": "the full question text",
+  "correct_answer": "the correct answer (A, B, C, or D)",
+  "topic": "the topic name"
+}`;
 
     console.log('Sending request to OpenAI...');
 
@@ -107,11 +109,11 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Received response from OpenAI:', data);
+    console.log('Received response from OpenAI');
 
     if (!data.choices?.[0]?.message?.content) {
       console.error('Invalid OpenAI response structure:', data);
-      throw new Error('Invalid response structure from OpenAI');
+      throw new Error('Invalid response from OpenAI');
     }
 
     let generatedQuestions;
