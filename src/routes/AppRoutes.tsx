@@ -1,5 +1,5 @@
 
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
@@ -38,6 +38,11 @@ export const AppRoutes = () => {
             <LessonPlanning />
           </ProtectedRoute>
         }
+      />
+      {/* Add redirect for incorrect quiz-generation route */}
+      <Route 
+        path="/quiz-generation" 
+        element={<Navigate to="/courses" replace />} 
       />
       <Route
         path="/courses/:courseId/quiz-generation"
