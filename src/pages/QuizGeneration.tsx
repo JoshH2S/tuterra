@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
 import FileUpload from "@/components/FileUpload";
 import { TopicInput } from "@/components/quiz-generation/TopicInput";
 import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
+import { useQuizGeneration } from "@/hooks/useQuizGeneration";
 
 interface Topic {
   name: string;
@@ -13,16 +14,14 @@ interface Topic {
 }
 
 const QuizGeneration = () => {
+  const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([{ name: "", questionCount: 1 }]);
   const [quizTitle, setQuizTitle] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { generateQuiz, isGenerating } = useQuizGeneration();
 
   const handleFileSelect = async (file: File) => {
-    // Will implement file processing in the next step
-    toast({
-      title: "File selected",
-      description: `${file.name} has been selected for quiz generation.`,
-    });
+    setSelectedFile(file);
   };
 
   const handleTopicChange = (index: number, field: keyof Topic, value: string | number) => {
@@ -39,21 +38,22 @@ const QuizGeneration = () => {
   };
 
   const handleGenerateQuiz = async () => {
-    setIsGenerating(true);
+    if (!selectedFile || !quizTitle || topics.some(t => !t.name)) {
+      return;
+    }
+
     try {
-      // Will implement quiz generation in the next step
-      toast({
-        title: "Quiz Generation Started",
-        description: "Your quiz is being generated. This may take a moment.",
-      });
+      const quizId = await generateQuiz(
+        "your-course-id", // This should come from your course context or route params
+        quizTitle,
+        selectedFile,
+        topics
+      );
+      
+      // Navigate to the quiz detail page or wherever appropriate
+      navigate(`/courses/quiz/${quizId}`);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate quiz. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
+      console.error('Failed to generate quiz:', error);
     }
   };
 
