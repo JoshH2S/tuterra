@@ -44,6 +44,13 @@ export default function QuizResults() {
 
   const percentageScore = ((results.score || 0) / (results.total_questions || 1)) * 100;
 
+  const getPerformanceMessage = (score: number) => {
+    if (score >= 90) return "Excellent work!";
+    if (score >= 80) return "Great job!";
+    if (score >= 70) return "Good job!";
+    return "Good attempt";
+  };
+
   return (
     <div className="container mx-auto py-12">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -68,7 +75,9 @@ export default function QuizResults() {
                   <span className="text-5xl font-bold block">
                     {percentageScore.toFixed(1)}%
                   </span>
-                  <span className="text-sm text-gray-400">Performance Score</span>
+                  <span className="text-sm text-gray-400">
+                    {getPerformanceMessage(percentageScore)}
+                  </span>
                 </div>
               </div>
             </CardContent>
