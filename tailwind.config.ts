@@ -26,20 +26,20 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#B8860B", // Dark gold
+          DEFAULT: "#091747",
           foreground: "#FFFFFF",
-          100: "#FFF8DC", // Cornsilk
-          200: "#FFE4B5", // Moccasin
-          300: "#FFD700", // Gold
-          400: "#DAA520", // Goldenrod
-          500: "#B8860B", // Dark goldenrod
-          600: "#966909", // Darker gold
-          700: "#7C5707", // Even darker gold
-          800: "#634505", // Very dark gold
-          900: "#4A3403", // Extremely dark gold
+          100: "#E6E8EE",
+          200: "#CDD1DD",
+          300: "#B4BACC",
+          400: "#9BA3BB",
+          500: "#828CAA",
+          600: "#697599",
+          700: "#505E88",
+          800: "#374777",
+          900: "#091747",
         },
         secondary: {
-          DEFAULT: "#8B4513", // Saddle brown
+          DEFAULT: "#8B4513",
           foreground: "#FFFFFF",
           100: "#FFF5E6",
           200: "#FFE4B5",
@@ -52,8 +52,8 @@ export default {
           900: "#2D1303",
         },
         accent: {
-          DEFAULT: "#FFD700",
-          foreground: "#000000",
+          DEFAULT: "#091747",
+          foreground: "#FFFFFF",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
