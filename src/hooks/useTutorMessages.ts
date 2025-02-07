@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +11,7 @@ interface Message {
   role: 'user' | 'assistant';
 }
 
-export const useTutorMessages = (courseId: string) => {
+export const useTutorMessages = (courseId?: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { conversationId, setConversationId } = useConversation(courseId);
@@ -30,7 +31,7 @@ export const useTutorMessages = (courseId: string) => {
   };
 
   const sendMessage = async (message: string, selectedMaterial: string | null) => {
-    if (!message.trim() || isLoading || !courseId) return;
+    if (!message.trim() || isLoading) return;
 
     setIsLoading(true);
     try {

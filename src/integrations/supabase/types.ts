@@ -323,21 +323,21 @@ export type Database = {
       }
       tutor_conversations: {
         Row: {
-          course_id: string
+          course_id: string | null
           created_at: string
           id: string
           student_id: string
           updated_at: string
         }
         Insert: {
-          course_id: string
+          course_id?: string | null
           created_at?: string
           id?: string
           student_id: string
           updated_at?: string
         }
         Update: {
-          course_id?: string
+          course_id?: string | null
           created_at?: string
           id?: string
           student_id?: string

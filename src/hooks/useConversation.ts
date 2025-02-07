@@ -1,21 +1,26 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useConversation = (courseId: string) => {
+export const useConversation = (courseId?: string) => {
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchConversation = async () => {
       try {
         const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user || !courseId) return;
+        if (!userData.user) return;
 
-        const { data: conversationData } = await supabase
+        const query = supabase
           .from('tutor_conversations')
           .select('id')
-          .eq('student_id', userData.user.id)
-          .eq('course_id', courseId)
-          .maybeSingle();
+          .eq('student_id', userData.user.id);
+        
+        if (courseId) {
+          query.eq('course_id', courseId);
+        }
+
+        const { data: conversationData } = await query.maybeSingle();
 
         if (conversationData) {
           setConversationId(conversationData.id);
@@ -25,9 +30,7 @@ export const useConversation = (courseId: string) => {
       }
     };
 
-    if (courseId) {
-      fetchConversation();
-    }
+    fetchConversation();
   }, [courseId]);
 
   return {

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useTutorMaterials } from "@/hooks/useTutorMaterials";
 import { useTutorMessages } from "@/hooks/useTutorMessages";
@@ -6,7 +7,7 @@ import { TutorChatMessages } from "./TutorChatMessages";
 import { TutorChatInput } from "./TutorChatInput";
 
 interface TutorChatProps {
-  courseId: string;
+  courseId?: string;
 }
 
 export const TutorChat = ({ courseId }: TutorChatProps) => {

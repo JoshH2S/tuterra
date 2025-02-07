@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
@@ -82,7 +83,10 @@ serve(async (req) => {
     if (!currentConversationId) {
       const { data: conversation, error: convError } = await supabase
         .from('tutor_conversations')
-        .insert([{ student_id: studentId, course_id: courseId }])
+        .insert([{ 
+          student_id: studentId,
+          course_id: courseId || null 
+        }])
         .select()
         .single();
 
@@ -104,15 +108,16 @@ serve(async (req) => {
 
     const systemMessage = `You are an AI tutor assistant. ${
       context ? 'You have access to the following course material:' + context 
-      : 'No specific course material is currently selected.'
-    }\n\nUse this content to help answer questions accurately and provide relevant examples. Help students with:
+      : 'You are ready to help with any academic questions or learning needs.'
+    }\n\nHelp students with:
+- Understanding complex topics and concepts
 - Creating study guides and summaries
-- Generating practice quizzes
+- Generating practice questions
 - Building study schedules
-- Explaining complex topics
-- Providing learning resources
+- Providing learning resources and explanations
+- Answering general academic questions
 
-Be encouraging, clear, and helpful in your responses. Base your answers on the course materials when available.`;
+Be encouraging, clear, and helpful in your responses. When course materials are provided, use them to give context-specific answers.`;
 
     console.log('Making request to OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
