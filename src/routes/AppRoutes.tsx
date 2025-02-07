@@ -9,6 +9,8 @@ import CourseTutor from "@/pages/CourseTutor";
 import NotFound from "@/pages/NotFound";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import Index from "@/pages/Index";
+import Quizzes from "@/pages/Quizzes";
+import TakeQuiz from "@/pages/TakeQuiz";
 
 export const AppRoutes = () => {
   return (
@@ -60,6 +62,22 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <CourseTutor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/quizzes"
+        element={
+          <ProtectedRoute>
+            <Quizzes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/take-quiz/:id"
+        element={
+          <ProtectedRoute>
+            <TakeQuiz />
           </ProtectedRoute>
         }
       />
