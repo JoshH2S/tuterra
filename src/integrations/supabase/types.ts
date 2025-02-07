@@ -165,6 +165,7 @@ export type Database = {
           correct_answer: string
           created_at: string
           id: string
+          options: Json
           points: number | null
           question: string
           quiz_id: string
@@ -174,6 +175,7 @@ export type Database = {
           correct_answer: string
           created_at?: string
           id?: string
+          options?: Json
           points?: number | null
           question: string
           quiz_id: string
@@ -183,6 +185,7 @@ export type Database = {
           correct_answer?: string
           created_at?: string
           id?: string
+          options?: Json
           points?: number | null
           question?: string
           quiz_id?: string

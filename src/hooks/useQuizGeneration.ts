@@ -86,6 +86,7 @@ export const useQuizGeneration = () => {
         correct_answer: q.correctAnswer,
         topic: q.topic,
         points: q.points,
+        options: q.options
       }));
 
       const { error: questionsError } = await supabase
@@ -185,7 +186,7 @@ export const useQuizGeneration = () => {
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(false);
+      setIsSubmitting(false);
     }
   };
 

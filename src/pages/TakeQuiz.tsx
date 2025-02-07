@@ -139,11 +139,11 @@ export default function TakeQuiz() {
                     }
                     className="mt-2"
                   >
-                    {['A', 'B', 'C', 'D'].map((option) => (
+                    {Object.entries(question.options).map(([option, text]) => (
                       <div key={option} className="flex items-center space-x-2">
                         <RadioGroupItem value={option} id={`${question.id}-${option}`} />
                         <Label htmlFor={`${question.id}-${option}`}>
-                          {option}
+                          {text}
                         </Label>
                       </div>
                     ))}
