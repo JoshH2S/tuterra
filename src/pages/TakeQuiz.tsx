@@ -83,7 +83,7 @@ export default function TakeQuiz() {
         .insert({
           quiz_id: id,
           student_id: (await supabase.auth.getUser()).data.user?.id,
-          score: score, // Keep as number since the database expects a number
+          score: score,
           correct_answers: correctAnswers,
           total_questions: totalQuestions,
           completed_at: new Date().toISOString()
@@ -102,6 +102,29 @@ export default function TakeQuiz() {
         })));
 
       if (questionResponseError) throw questionResponseError;
+
+      // Generate AI feedback
+      const { data: feedbackData, error: feedbackError } = await fetch(
+        'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-quiz-feedback',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({
+            quizResponseId: quizResponse.id,
+            correctAnswers,
+            totalQuestions,
+            score,
+            questionResponses,
+          }),
+        }
+      ).then(res => res.json());
+
+      if (feedbackError) {
+        console.error('Error generating feedback:', feedbackError);
+      }
 
       // Navigate to results page
       navigate(`/quiz-results/${quizResponse.id}`);
