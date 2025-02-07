@@ -2,6 +2,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 import jsPDF from "jspdf";
 
 interface Option {
@@ -24,6 +26,45 @@ interface QuizOutputProps {
 }
 
 export const QuizOutput = ({ questions }: QuizOutputProps) => {
+  const handlePublish = async () => {
+    try {
+      const { data: latestQuiz } = await supabase
+        .from('quizzes')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!latestQuiz) {
+        toast({
+          title: "Error",
+          description: "No quiz found to publish",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('quizzes')
+        .update({ published: true })
+        .eq('id', latestQuiz.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Quiz published successfully!",
+      });
+    } catch (error) {
+      console.error('Error publishing quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to publish quiz. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -81,14 +122,23 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Generated Quiz</CardTitle>
-        <Button 
-          onClick={handleDownloadPDF}
-          variant="outline"
-          size="sm"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Download PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handlePublish}
+            variant="default"
+            size="sm"
+          >
+            Publish Quiz
+          </Button>
+          <Button 
+            onClick={handleDownloadPDF}
+            variant="outline"
+            size="sm"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download PDF
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
