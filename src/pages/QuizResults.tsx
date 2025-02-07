@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -64,7 +63,7 @@ export default function QuizResults() {
         </p>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="bg-black text-white p-6">
+          <Card className="bg-primary text-white p-6">
             <CardContent className="space-y-4 pt-6">
               <div className="relative w-full aspect-square flex items-center justify-center">
                 <div className="absolute inset 0">
@@ -165,4 +164,3 @@ export default function QuizResults() {
     </div>
   );
 }
-
