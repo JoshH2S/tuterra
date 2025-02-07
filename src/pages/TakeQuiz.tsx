@@ -83,7 +83,7 @@ export default function TakeQuiz() {
         .insert({
           quiz_id: id,
           student_id: (await supabase.auth.getUser()).data.user?.id,
-          score,
+          score: score.toString(), // Convert score to string to match the database type
           correct_answers: correctAnswers,
           total_questions: totalQuestions,
           completed_at: new Date().toISOString()
