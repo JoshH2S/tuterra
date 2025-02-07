@@ -83,7 +83,7 @@ export default function TakeQuiz() {
         .insert({
           quiz_id: id,
           student_id: (await supabase.auth.getUser()).data.user?.id,
-          score: score.toString(), // Convert score to string to match the database type
+          score: score, // Keep as number since the database expects a number
           correct_answers: correctAnswers,
           total_questions: totalQuestions,
           completed_at: new Date().toISOString()
@@ -139,11 +139,11 @@ export default function TakeQuiz() {
                     }
                     className="mt-2"
                   >
-                    {Object.entries(question.options).map(([option, text]) => (
+                    {Object.entries(question.options as Record<string, string>).map(([option, text]) => (
                       <div key={option} className="flex items-center space-x-2">
                         <RadioGroupItem value={option} id={`${question.id}-${option}`} />
                         <Label htmlFor={`${question.id}-${option}`}>
-                          {text}
+                          {text as string}
                         </Label>
                       </div>
                     ))}
