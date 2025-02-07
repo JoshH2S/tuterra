@@ -58,7 +58,7 @@ export default function QuizResults() {
   return (
     <div className="container mx-auto py-12">
       <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-4xl font-bold mb-2" style={{ color: '#091747' }}>{quiz.title}</h1>
+        <h1 className="text-4xl font-bold mb-2 text-[#091747]">{quiz.title}</h1>
         <p className="text-muted-foreground text-lg mb-8">
           Here's how you performed on this quiz
         </p>
@@ -74,7 +74,7 @@ export default function QuizResults() {
                   />
                 </div>
                 <div className="text-center">
-                  <span className="text-5xl font-bold block" style={{ color: '#091747' }}>
+                  <span className="text-5xl font-bold block text-[#091747]">
                     {percentageScore.toFixed(1)}%
                   </span>
                   <span className="text-sm text-gray-400">
@@ -89,7 +89,7 @@ export default function QuizResults() {
             <CardContent className="pt-6">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-2xl font-bold mb-1" style={{ color: '#091747' }}>
+                  <h3 className="text-2xl font-bold mb-1 text-[#091747]">
                     {results.correct_answers}
                   </h3>
                   <p className="text-muted-foreground">
@@ -97,7 +97,7 @@ export default function QuizResults() {
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-1" style={{ color: '#091747' }}>
+                  <h3 className="text-2xl font-bold mb-1 text-[#091747]">
                     {results.total_questions}
                   </h3>
                   <p className="text-muted-foreground">
@@ -105,7 +105,7 @@ export default function QuizResults() {
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-1" style={{ color: '#091747' }}>
+                  <h3 className="text-2xl font-bold mb-1 text-[#091747]">
                     {results.total_questions - results.correct_answers}
                   </h3>
                   <p className="text-muted-foreground">
@@ -118,11 +118,11 @@ export default function QuizResults() {
         </div>
 
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold" style={{ color: '#091747' }}>Detailed Feedback</h2>
+          <h2 className="text-2xl font-bold text-[#091747]">Detailed Feedback</h2>
           
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-xl font-semibold mb-4" style={{ color: '#091747' }}>Areas of Strength</h3>
+              <h3 className="text-xl font-semibold mb-4 text-[#091747]">Areas of Strength</h3>
               {results.ai_feedback?.strengths?.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-2">
                   {results.ai_feedback.strengths.map((strength: string, index: number) => (
@@ -137,7 +137,7 @@ export default function QuizResults() {
 
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-xl font-semibold mb-4" style={{ color: '#091747' }}>Areas for Improvement</h3>
+              <h3 className="text-xl font-semibold mb-4 text-[#091747]">Areas for Improvement</h3>
               {results.ai_feedback?.areas_for_improvement?.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-2">
                   {results.ai_feedback.areas_for_improvement.map((area: string, index: number) => (
@@ -152,7 +152,7 @@ export default function QuizResults() {
 
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-xl font-semibold mb-4" style={{ color: '#091747' }}>Advice Going Forward</h3>
+              <h3 className="text-xl font-semibold mb-4 text-[#091747]">Advice Going Forward</h3>
               {results.ai_feedback?.advice ? (
                 <p>{results.ai_feedback.advice}</p>
               ) : (
