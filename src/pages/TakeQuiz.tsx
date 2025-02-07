@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ export default function TakeQuiz() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch quiz and questions when component mounts
-  useState(() => {
+  useEffect(() => {
     const fetchQuiz = async () => {
       try {
         // Get quiz details
