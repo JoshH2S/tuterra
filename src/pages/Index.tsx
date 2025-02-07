@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
-import { BookOpen, Brain, Robot, ArrowRight, Sparkles, Users } from "lucide-react";
+import { BookOpen, Brain, Bot, ArrowRight, Sparkles, Users } from "lucide-react";
 
 const Index = () => {
   return (
@@ -35,7 +35,7 @@ const Index = () => {
         <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
           <div className="bg-white/80 backdrop-blur p-8 rounded-xl shadow-lg hover:shadow-xl transition-all">
             <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <Robot className="w-8 h-8 text-primary-500" />
+              <Bot className="w-8 h-8 text-primary-500" />
             </div>
             <h3 className="text-xl font-semibold mb-3 text-primary-800">AI in Education</h3>
             <p className="text-gray-600">
