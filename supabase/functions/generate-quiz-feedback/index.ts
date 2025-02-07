@@ -16,7 +16,54 @@ serve(async (req) => {
   try {
     const { quizResponseId, correctAnswers, totalQuestions, score, questionResponses } = await req.json();
 
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Fetch the quiz questions to analyze topics and patterns
+    const { data: responseData, error: responseError } = await supabase
+      .from('quiz_responses')
+      .select(`
+        *,
+        quiz:quizzes(
+          title,
+          quiz_questions(
+            question,
+            correct_answer,
+            topic,
+            options
+          )
+        )
+      `)
+      .eq('id', quizResponseId)
+      .single();
+
+    if (responseError) throw responseError;
+
     const percentage = (correctAnswers / totalQuestions) * 100;
+    const questions = responseData.quiz.quiz_questions;
+    
+    // Group questions by topic for analysis
+    const topicPerformance = questions.reduce((acc, q) => {
+      if (!acc[q.topic]) {
+        acc[q.topic] = { total: 0, correct: 0 };
+      }
+      acc[q.topic].total++;
+      const questionResponse = questionResponses.find(r => r.question_id === q.id);
+      if (questionResponse?.is_correct) {
+        acc[q.topic].correct++;
+      }
+      return acc;
+    }, {});
+
+    // Calculate performance by topic
+    const topicAnalysis = Object.entries(topicPerformance).map(([topic, stats]) => ({
+      topic,
+      percentage: (stats.correct / stats.total) * 100,
+      correct: stats.correct,
+      total: stats.total
+    }));
 
     // Generate feedback using GPT
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -30,23 +77,32 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an educational assistant providing constructive feedback on quiz performance.'
+            content: 'You are an educational assistant providing detailed, constructive feedback on quiz performance.'
           },
           {
             role: 'user',
             content: `
-              Please analyze this quiz performance and provide feedback:
-              - Score: ${score}
-              - Correct Answers: ${correctAnswers}
-              - Total Questions: ${totalQuestions}
-              - Percentage: ${percentage}%
+              Please analyze this quiz performance and provide specific, actionable feedback:
+              
+              Quiz Title: ${responseData.quiz.title}
+              Overall Score: ${score}
+              Correct Answers: ${correctAnswers}
+              Total Questions: ${totalQuestions}
+              Overall Percentage: ${percentage}%
+
+              Topic Performance:
+              ${topicAnalysis.map(t => 
+                `${t.topic}: ${t.correct}/${t.total} (${t.percentage.toFixed(1)}%)`
+              ).join('\n')}
 
               Provide feedback in this JSON format:
               {
-                "strengths": ["point 1", "point 2"],
-                "areas_for_improvement": ["point 1", "point 2"],
-                "advice": "detailed advice paragraph"
+                "strengths": ["specific strength point based on topics performed well in"],
+                "areas_for_improvement": ["specific improvement point based on topics that need work"],
+                "advice": "detailed advice paragraph focusing on how to improve in the weaker topics and maintain performance in stronger ones"
               }
+
+              Make the feedback specific to the actual topics and performance shown in the data.
             `
           }
         ]
@@ -56,15 +112,13 @@ serve(async (req) => {
     const aiResponse = await openAIResponse.json();
     const feedback = JSON.parse(aiResponse.choices[0].message.content);
 
-    // Update the quiz response with AI feedback
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
+    // Update the quiz response with AI feedback and topic performance
     const { error: updateError } = await supabase
       .from('quiz_responses')
-      .update({ ai_feedback: feedback })
+      .update({ 
+        ai_feedback: feedback,
+        topic_performance: topicAnalysis
+      })
       .eq('id', quizResponseId);
 
     if (updateError) throw updateError;

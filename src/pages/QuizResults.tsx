@@ -50,10 +50,8 @@ export default function QuizResults() {
     if (score >= 90) return "Excellent work!";
     if (score >= 80) return "Great job!";
     if (score >= 70) return "Good job!";
-    return "Good attempt";
+    return "Keep practicing";
   };
-
-  console.log("Current results state:", results);
 
   return (
     <div className="container mx-auto py-12">
@@ -116,6 +114,27 @@ export default function QuizResults() {
             </CardContent>
           </Card>
         </div>
+
+        {results.topic_performance && (
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-2xl font-bold mb-4 text-[#091747]">Topic Performance</h2>
+              <div className="space-y-4">
+                {results.topic_performance.map((topic: any, index: number) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{topic.topic}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {topic.correct}/{topic.total} ({topic.percentage.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <Progress value={topic.percentage} className="h-2" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-[#091747]">Detailed Feedback</h2>
