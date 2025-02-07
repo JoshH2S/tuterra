@@ -24,8 +24,8 @@ export default function QuizResults() {
           .single();
 
         if (responseError) throw responseError;
-        console.log("Quiz response data:", responseData); // Debug log
-        console.log("AI Feedback:", responseData?.ai_feedback); // Debug log for AI feedback specifically
+        console.log("Quiz response data:", responseData);
+        console.log("AI Feedback:", responseData?.ai_feedback);
         setResults(responseData);
         setQuiz(responseData.quiz);
 
@@ -53,19 +53,17 @@ export default function QuizResults() {
     return "Good attempt";
   };
 
-  // Debug log for results data
   console.log("Current results state:", results);
 
   return (
     <div className="container mx-auto py-12">
       <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-4xl font-bold mb-2">{quiz.title}</h1>
+        <h1 className="text-4xl font-bold mb-2" style={{ color: '#091747' }}>{quiz.title}</h1>
         <p className="text-muted-foreground text-lg mb-8">
           Here's how you performed on this quiz
         </p>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Score Display */}
           <Card className="bg-black text-white p-6">
             <CardContent className="space-y-4 pt-6">
               <div className="relative w-full aspect-square flex items-center justify-center">
@@ -76,7 +74,7 @@ export default function QuizResults() {
                   />
                 </div>
                 <div className="text-center">
-                  <span className="text-5xl font-bold block">
+                  <span className="text-5xl font-bold block" style={{ color: '#091747' }}>
                     {percentageScore.toFixed(1)}%
                   </span>
                   <span className="text-sm text-gray-400">
@@ -87,12 +85,11 @@ export default function QuizResults() {
             </CardContent>
           </Card>
 
-          {/* Stats Card */}
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-2xl font-bold mb-1">
+                  <h3 className="text-2xl font-bold mb-1" style={{ color: '#091747' }}>
                     {results.correct_answers}
                   </h3>
                   <p className="text-muted-foreground">
@@ -100,7 +97,7 @@ export default function QuizResults() {
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-1">
+                  <h3 className="text-2xl font-bold mb-1" style={{ color: '#091747' }}>
                     {results.total_questions}
                   </h3>
                   <p className="text-muted-foreground">
@@ -108,7 +105,7 @@ export default function QuizResults() {
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-1">
+                  <h3 className="text-2xl font-bold mb-1" style={{ color: '#091747' }}>
                     {results.total_questions - results.correct_answers}
                   </h3>
                   <p className="text-muted-foreground">
@@ -120,14 +117,12 @@ export default function QuizResults() {
           </Card>
         </div>
 
-        {/* AI Feedback Section */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Detailed Feedback</h2>
+          <h2 className="text-2xl font-bold" style={{ color: '#091747' }}>Detailed Feedback</h2>
           
-          {/* Strengths */}
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-xl font-semibold mb-4 text-green-600">Areas of Strength</h3>
+              <h3 className="text-xl font-semibold mb-4" style={{ color: '#091747' }}>Areas of Strength</h3>
               {results.ai_feedback?.strengths?.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-2">
                   {results.ai_feedback.strengths.map((strength: string, index: number) => (
@@ -140,10 +135,9 @@ export default function QuizResults() {
             </CardContent>
           </Card>
 
-          {/* Areas for Improvement */}
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-xl font-semibold mb-4 text-amber-600">Areas for Improvement</h3>
+              <h3 className="text-xl font-semibold mb-4" style={{ color: '#091747' }}>Areas for Improvement</h3>
               {results.ai_feedback?.areas_for_improvement?.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-2">
                   {results.ai_feedback.areas_for_improvement.map((area: string, index: number) => (
@@ -156,10 +150,9 @@ export default function QuizResults() {
             </CardContent>
           </Card>
 
-          {/* Advice */}
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-xl font-semibold mb-4 text-blue-600">Advice Going Forward</h3>
+              <h3 className="text-xl font-semibold mb-4" style={{ color: '#091747' }}>Advice Going Forward</h3>
               {results.ai_feedback?.advice ? (
                 <p>{results.ai_feedback.advice}</p>
               ) : (
