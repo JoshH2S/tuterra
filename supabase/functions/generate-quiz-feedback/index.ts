@@ -73,11 +73,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: 'You are an educational assistant providing detailed, constructive feedback on quiz performance.'
+            content: 'You are an educational assistant providing detailed, constructive feedback on quiz performance. Focus on specific topics and provide actionable advice.'
           },
           {
             role: 'user',
@@ -95,6 +95,18 @@ serve(async (req) => {
                 `${t.topic}: ${t.correct}/${t.total} (${t.percentage.toFixed(1)}%)`
               ).join('\n')}
 
+              Question Details:
+              ${questions.map((q, i) => {
+                const response = questionResponses.find(r => r.question_id === q.id);
+                return `
+                  Q${i + 1}. Topic: ${q.topic}
+                  Question: ${q.question}
+                  Correct Answer: ${q.correct_answer}
+                  Student Answer: ${response?.student_answer || 'Not answered'}
+                  Result: ${response?.is_correct ? 'Correct' : 'Incorrect'}
+                `;
+              }).join('\n')}
+
               Provide feedback in this JSON format:
               {
                 "strengths": ["specific strength point based on topics performed well in"],
@@ -102,7 +114,7 @@ serve(async (req) => {
                 "advice": "detailed advice paragraph focusing on how to improve in the weaker topics and maintain performance in stronger ones"
               }
 
-              Make the feedback specific to the actual topics and performance shown in the data.
+              Make the feedback specific to the actual topics, questions, and performance shown in the data.
             `
           }
         ]
@@ -110,7 +122,19 @@ serve(async (req) => {
     });
 
     const aiResponse = await openAIResponse.json();
-    const feedback = JSON.parse(aiResponse.choices[0].message.content);
+    console.log("AI Response:", aiResponse);
+    
+    let feedback;
+    try {
+      feedback = JSON.parse(aiResponse.choices[0].message.content);
+    } catch (e) {
+      console.error("Error parsing AI response:", e);
+      feedback = {
+        strengths: ["Unable to analyze strengths at this time"],
+        areas_for_improvement: ["Unable to analyze areas for improvement at this time"],
+        advice: "Please try again later for detailed feedback"
+      };
+    }
 
     // Update the quiz response with AI feedback and topic performance
     const { error: updateError } = await supabase
