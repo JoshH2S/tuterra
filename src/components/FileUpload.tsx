@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { FileIcon } from "./file-upload/FileIcon";
 import { UploadStatus } from "./file-upload/UploadStatus";
@@ -7,11 +8,12 @@ import { FileType } from "@/types/file";
 interface FileUploadProps {
   onFileSelect: (file: File) => Promise<void>;
   acceptedTypes: string;
+  trigger?: React.ReactNode;
 }
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-const FileUpload = ({ onFileSelect, acceptedTypes }: FileUploadProps) => {
+const FileUpload = ({ onFileSelect, acceptedTypes, trigger }: FileUploadProps) => {
   const [selectedFile, setSelectedFile] = useState<FileType | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -45,6 +47,29 @@ const FileUpload = ({ onFileSelect, acceptedTypes }: FileUploadProps) => {
       setIsUploading(false);
     }
   };
+
+  if (trigger) {
+    return (
+      <>
+        <label>
+          {trigger}
+          <input
+            type="file"
+            className="hidden"
+            onChange={handleFileSelect}
+            accept={acceptedTypes}
+          />
+        </label>
+        {(uploadSuccess || uploadError) && (
+          <UploadStatus
+            isSuccess={uploadSuccess}
+            isError={!!uploadError}
+            errorMessage={uploadError || undefined}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="space-y-4">

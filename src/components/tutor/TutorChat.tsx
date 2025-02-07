@@ -5,7 +5,6 @@ import { useTutorMessages } from "@/hooks/useTutorMessages";
 import { TutorChatHeader } from "./TutorChatHeader";
 import { TutorChatMessages } from "./TutorChatMessages";
 import { TutorChatInput } from "./TutorChatInput";
-import FileUpload from "@/components/FileUpload";
 import { processFileContent } from "@/utils/file-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -64,16 +63,13 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
         onMaterialSelect={setSelectedMaterial}
       />
       <TutorChatMessages messages={messages} />
-      <div className="p-4 border-t space-y-4">
-        <FileUpload 
-          onFileSelect={handleFileUpload}
-          acceptedTypes=".txt,.pdf,.doc,.docx"
-        />
+      <div className="p-4 border-t">
         <TutorChatInput
           message={message}
           isLoading={isLoading}
           onMessageChange={setMessage}
           onSubmit={handleSubmit}
+          onFileUpload={handleFileUpload}
         />
       </div>
     </div>

@@ -1,13 +1,15 @@
 
-import { Send } from "lucide-react";
+import { Send, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import FileUpload from "@/components/FileUpload";
 
 interface TutorChatInputProps {
   message: string;
   isLoading: boolean;
   onMessageChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
+  onFileUpload?: (file: File) => Promise<void>;
 }
 
 export const TutorChatInput = ({
@@ -15,6 +17,7 @@ export const TutorChatInput = ({
   isLoading,
   onMessageChange,
   onSubmit,
+  onFileUpload,
 }: TutorChatInputProps) => {
   return (
     <form onSubmit={onSubmit}>
@@ -25,13 +28,29 @@ export const TutorChatInput = ({
           placeholder="Ask a question..."
           className="flex-1 min-h-[60px]"
         />
-        <Button 
-          type="submit" 
-          disabled={isLoading}
-          className="self-end"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+        <div className="flex flex-col gap-2 self-end">
+          <FileUpload 
+            onFileSelect={onFileUpload}
+            acceptedTypes=".txt,.pdf,.doc,.docx"
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="self-end"
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+            }
+          />
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            size="icon"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </form>
   );
