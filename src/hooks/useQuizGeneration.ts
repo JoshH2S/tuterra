@@ -60,13 +60,13 @@ export const useQuizGeneration = () => {
         return;
       }
 
-      // Create the quiz
+      // Create the quiz with title and teacher_id
       const quizData = {
         title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
         teacher_id: session.user.id,
       };
 
-      // Add course_id only if it exists
+      // Only add course_id if it exists
       if (courseId) {
         Object.assign(quizData, { course_id: courseId });
       }
