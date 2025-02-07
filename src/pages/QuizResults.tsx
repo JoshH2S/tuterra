@@ -68,7 +68,6 @@ export default function QuizResults() {
                   <Progress 
                     value={percentageScore} 
                     className="h-full w-full rounded-full border-4 border-blue-500/20 bg-transparent"
-                    indicatorClassName="bg-blue-500"
                   />
                 </div>
                 <div className="text-center">
@@ -112,6 +111,55 @@ export default function QuizResults() {
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* AI Feedback Section */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">Detailed Feedback</h2>
+          
+          {/* Strengths */}
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-semibold mb-4 text-green-600">Areas of Strength</h3>
+              {results.ai_feedback?.strengths?.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-2">
+                  {results.ai_feedback.strengths.map((strength: string, index: number) => (
+                    <li key={index}>{strength}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">No specific strengths identified.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Areas for Improvement */}
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-semibold mb-4 text-amber-600">Areas for Improvement</h3>
+              {results.ai_feedback?.areas_for_improvement?.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-2">
+                  {results.ai_feedback.areas_for_improvement.map((area: string, index: number) => (
+                    <li key={index}>{area}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">No specific areas for improvement identified.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Advice */}
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-semibold mb-4 text-blue-600">Advice Going Forward</h3>
+              {results.ai_feedback?.advice ? (
+                <p>{results.ai_feedback.advice}</p>
+              ) : (
+                <p className="text-muted-foreground">No specific advice available.</p>
+              )}
             </CardContent>
           </Card>
         </div>

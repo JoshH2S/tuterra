@@ -203,6 +203,7 @@ export type Database = {
       }
       quiz_responses: {
         Row: {
+          ai_feedback: Json | null
           completed_at: string | null
           correct_answers: number | null
           created_at: string
@@ -210,9 +211,11 @@ export type Database = {
           quiz_id: string
           score: number | null
           student_id: string
+          topic_performance: Json | null
           total_questions: number | null
         }
         Insert: {
+          ai_feedback?: Json | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string
@@ -220,9 +223,11 @@ export type Database = {
           quiz_id: string
           score?: number | null
           student_id: string
+          topic_performance?: Json | null
           total_questions?: number | null
         }
         Update: {
+          ai_feedback?: Json | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string
@@ -230,6 +235,7 @@ export type Database = {
           quiz_id?: string
           score?: number | null
           student_id?: string
+          topic_performance?: Json | null
           total_questions?: number | null
         }
         Relationships: [
