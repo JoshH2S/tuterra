@@ -24,6 +24,8 @@ export default function QuizResults() {
           .single();
 
         if (responseError) throw responseError;
+        console.log("Quiz response data:", responseData); // Debug log
+        console.log("AI Feedback:", responseData?.ai_feedback); // Debug log for AI feedback specifically
         setResults(responseData);
         setQuiz(responseData.quiz);
 
@@ -50,6 +52,9 @@ export default function QuizResults() {
     if (score >= 70) return "Good job!";
     return "Good attempt";
   };
+
+  // Debug log for results data
+  console.log("Current results state:", results);
 
   return (
     <div className="container mx-auto py-12">
