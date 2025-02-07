@@ -40,6 +40,14 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path="/quiz-generation"
+        element={
+          <ProtectedRoute>
+            <QuizGeneration />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/courses/:id/quiz-generation"
         element={
           <ProtectedRoute>

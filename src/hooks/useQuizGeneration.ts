@@ -61,13 +61,19 @@ export const useQuizGeneration = () => {
       }
 
       // Create the quiz
-      const { data: quizData, error: quizError } = await supabase
+      const quizData = {
+        title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
+        teacher_id: session.user.id,
+      };
+
+      // Add course_id only if it exists
+      if (courseId) {
+        Object.assign(quizData, { course_id: courseId });
+      }
+
+      const { data: quiz, error: quizError } = await supabase
         .from('quizzes')
-        .insert({
-          title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
-          course_id: courseId,
-          teacher_id: session.user.id,
-        })
+        .insert(quizData)
         .select()
         .single();
 
@@ -75,7 +81,7 @@ export const useQuizGeneration = () => {
 
       // Insert all questions
       const questionsToInsert = questions.map(q => ({
-        quiz_id: quizData.id,
+        quiz_id: quiz.id,
         question: q.question,
         correct_answer: q.correctAnswer,
         topic: q.topic,
