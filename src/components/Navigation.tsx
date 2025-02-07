@@ -40,7 +40,7 @@ export const Navigation = () => {
           <img 
             src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
             alt="EduPortal"
-            className="h-12" // Increased from h-8 to h-12
+            className="h-36" // Increased from h-12 to h-36 (12 * 3 = 36)
           />
         </Link>
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-4`}>
@@ -66,4 +66,3 @@ export const Navigation = () => {
     </nav>
   );
 };
-
