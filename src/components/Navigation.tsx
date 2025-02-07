@@ -37,7 +37,7 @@ export const Navigation = () => {
           to="/"
           className="text-2xl font-bold text-primary-700 hover:text-primary-800 transition-colors"
         >
-          EduAI
+          EduPortal
         </Link>
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-4`}>
           {links.map(link => (
