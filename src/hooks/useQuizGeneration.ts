@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,14 +9,28 @@ export interface Topic {
   numQuestions: number;
 }
 
+export interface Question {
+  question: string;
+  options: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+  };
+  correctAnswer: string;
+  topic: string;
+  points: number;
+}
+
 export const MAX_CONTENT_LENGTH = 5000;
 
 export const useQuizGeneration = () => {
   const navigate = useNavigate();
+  const { id: courseId } = useParams();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [contentLength, setContentLength] = useState<number>(0);
 
   const handleFileSelect = async (file: File) => {
@@ -36,6 +50,56 @@ export const useQuizGeneration = () => {
       [field]: value
     };
     setTopics(newTopics);
+  };
+
+  const saveQuizToDatabase = async (questions: Question[]) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+
+      // Create the quiz
+      const { data: quizData, error: quizError } = await supabase
+        .from('quizzes')
+        .insert({
+          title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
+          course_id: courseId,
+          teacher_id: session.user.id,
+        })
+        .select()
+        .single();
+
+      if (quizError) throw quizError;
+
+      // Insert all questions
+      const questionsToInsert = questions.map(q => ({
+        quiz_id: quizData.id,
+        question: q.question,
+        correct_answer: q.correctAnswer,
+        topic: q.topic,
+        points: q.points,
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('quiz_questions')
+        .insert(questionsToInsert);
+
+      if (questionsError) throw questionsError;
+
+      toast({
+        title: "Success",
+        description: "Quiz saved successfully!",
+      });
+    } catch (error) {
+      console.error('Error saving quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save quiz. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = async () => {
@@ -99,10 +163,13 @@ export const useQuizGeneration = () => {
 
       const data = await response.json();
       setQuizQuestions(data.quizQuestions);
+      
+      // Save the generated quiz to the database
+      await saveQuizToDatabase(data.quizQuestions);
 
       toast({
         title: "Success",
-        description: "Quiz generated successfully!",
+        description: "Quiz generated and saved successfully!",
       });
     } catch (error) {
       console.error('Error processing quiz:', error);

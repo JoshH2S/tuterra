@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import jsPDF from "jspdf";
 
+interface Option {
+  A: string;
+  B: string;
+  C: string;
+  D: string;
+}
+
 interface Question {
   question: string;
-  options: {
-    A: string;
-    B: string;
-    C: string;
-    D: string;
-  };
+  options: Option;
   correctAnswer: string;
   topic: string;
   points: number;
