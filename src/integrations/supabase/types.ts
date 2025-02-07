@@ -201,27 +201,33 @@ export type Database = {
       quiz_responses: {
         Row: {
           completed_at: string | null
+          correct_answers: number | null
           created_at: string
           id: string
           quiz_id: string
           score: number | null
           student_id: string
+          total_questions: number | null
         }
         Insert: {
           completed_at?: string | null
+          correct_answers?: number | null
           created_at?: string
           id?: string
           quiz_id: string
           score?: number | null
           student_id: string
+          total_questions?: number | null
         }
         Update: {
           completed_at?: string | null
+          correct_answers?: number | null
           created_at?: string
           id?: string
           quiz_id?: string
           score?: number | null
           student_id?: string
+          total_questions?: number | null
         }
         Relationships: [
           {

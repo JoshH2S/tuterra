@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import Index from "@/pages/Index";
 import Quizzes from "@/pages/Quizzes";
 import TakeQuiz from "@/pages/TakeQuiz";
+import QuizResults from "@/pages/QuizResults";
 
 export const AppRoutes = () => {
   return (
@@ -81,7 +82,15 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/quiz-results/:id"
+        element={
+          <ProtectedRoute>
+            <QuizResults />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
-};
+}

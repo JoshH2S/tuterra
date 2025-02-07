@@ -1,5 +1,5 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
 
 export default function TakeQuiz() {
   const { id } = useParams();
@@ -17,7 +16,6 @@ export default function TakeQuiz() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch quiz and questions when component mounts
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
@@ -67,12 +65,28 @@ export default function TakeQuiz() {
     try {
       setIsSubmitting(true);
 
+      // Calculate correct answers and total questions
+      const questionResponses = questions.map(question => ({
+        question_id: question.id,
+        student_answer: answers[question.id] || null,
+        is_correct: answers[question.id] === question.correct_answer
+      }));
+
+      const correctAnswers = questionResponses.filter(response => response.is_correct).length;
+      const totalQuestions = questions.length;
+      const totalPoints = questions.reduce((sum, q) => sum + (q.points || 1), 0);
+      const score = Math.round((correctAnswers / totalQuestions) * totalPoints);
+
       // Create quiz response
       const { data: quizResponse, error: responseError } = await supabase
         .from('quiz_responses')
         .insert({
           quiz_id: id,
           student_id: (await supabase.auth.getUser()).data.user?.id,
+          score,
+          correct_answers: correctAnswers,
+          total_questions: totalQuestions,
+          completed_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -80,41 +94,17 @@ export default function TakeQuiz() {
       if (responseError) throw responseError;
 
       // Submit individual question responses
-      const questionResponses = questions.map(question => ({
-        quiz_response_id: quizResponse.id,
-        question_id: question.id,
-        student_answer: answers[question.id] || null,
-        is_correct: answers[question.id] === question.correct_answer
-      }));
-
       const { error: questionResponseError } = await supabase
         .from('question_responses')
-        .insert(questionResponses);
+        .insert(questionResponses.map(response => ({
+          ...response,
+          quiz_response_id: quizResponse.id
+        })));
 
       if (questionResponseError) throw questionResponseError;
 
-      // Calculate and update score
-      const correctAnswers = questionResponses.filter(response => response.is_correct).length;
-      const totalPoints = questions.reduce((sum, q) => sum + (q.points || 1), 0);
-      const score = Math.round((correctAnswers / questions.length) * totalPoints);
-
-      const { error: scoreError } = await supabase
-        .from('quiz_responses')
-        .update({ 
-          score,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', quizResponse.id);
-
-      if (scoreError) throw scoreError;
-
-      toast({
-        title: "Success",
-        description: `Quiz submitted! Your score: ${score}/${totalPoints}`,
-      });
-      
-      // Navigate to a results page or back to quiz list
-      navigate('/quizzes');
+      // Navigate to results page
+      navigate(`/quiz-results/${quizResponse.id}`);
     } catch (error) {
       console.error('Error submitting quiz:', error);
       toast({
