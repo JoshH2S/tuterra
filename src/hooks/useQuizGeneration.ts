@@ -186,7 +186,7 @@ export const useQuizGeneration = () => {
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsProcessing(false);
     }
   };
 
