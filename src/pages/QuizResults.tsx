@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -73,10 +74,10 @@ export default function QuizResults() {
                   />
                 </div>
                 <div className="text-center">
-                  <span className="text-5xl font-bold block text-[#091747]">
+                  <span className="text-5xl font-bold block text-white">
                     {percentageScore.toFixed(1)}%
                   </span>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-white">
                     {getPerformanceMessage(percentageScore)}
                   </span>
                 </div>
