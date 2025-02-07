@@ -35,9 +35,14 @@ export const Navigation = () => {
       <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-6 max-w-7xl mx-auto p-4`}>
         <Link 
           to="/"
-          className="text-2xl font-bold text-primary-700 hover:text-primary-800 transition-colors"
+          className="flex items-center gap-2 text-2xl font-bold text-primary-700 hover:text-primary-800 transition-colors"
         >
-          EduPortal
+          <img 
+            src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
+            alt="EduPortal Logo" 
+            className="h-8"
+          />
+          <span>EduPortal</span>
         </Link>
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-4`}>
           {links.map(link => (
