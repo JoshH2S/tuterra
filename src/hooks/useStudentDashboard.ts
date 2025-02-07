@@ -19,7 +19,12 @@ export const useStudentDashboard = () => {
         const { data: coursesData, error: coursesError } = await supabase
           .from('student_courses')
           .select(`
-            *,
+            id,
+            course_id,
+            student_id,
+            enrolled_at,
+            last_accessed,
+            status::text,
             course:courses(
               title,
               description
@@ -29,6 +34,12 @@ export const useStudentDashboard = () => {
 
         if (coursesError) throw coursesError;
 
+        // Type guard to ensure status is one of the allowed values
+        const typedCoursesData = coursesData?.map(course => ({
+          ...course,
+          status: course.status as StudentCourse['status']
+        })) || [];
+
         // Fetch performance data
         const { data: performanceData, error: performanceError } = await supabase
           .from('student_performance')
@@ -37,7 +48,7 @@ export const useStudentDashboard = () => {
 
         if (performanceError) throw performanceError;
 
-        setCourses(coursesData || []);
+        setCourses(typedCoursesData);
         setPerformance(performanceData || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
