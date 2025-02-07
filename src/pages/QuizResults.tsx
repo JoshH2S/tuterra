@@ -53,6 +53,14 @@ export default function QuizResults() {
     return "Keep practicing";
   };
 
+  // Ensure topic_performance is an array before mapping
+  const topicPerformanceArray = Array.isArray(results.topic_performance) 
+    ? results.topic_performance 
+    : Object.entries(results.topic_performance || {}).map(([topic, data]: [string, any]) => ({
+        topic,
+        ...data
+      }));
+
   return (
     <div className="container mx-auto py-12">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -115,12 +123,12 @@ export default function QuizResults() {
           </Card>
         </div>
 
-        {results.topic_performance && (
+        {topicPerformanceArray.length > 0 && (
           <Card>
             <CardContent className="pt-6">
               <h2 className="text-2xl font-bold mb-4 text-[#091747]">Topic Performance</h2>
               <div className="space-y-4">
-                {results.topic_performance.map((topic: any, index: number) => (
+                {topicPerformanceArray.map((topic: any, index: number) => (
                   <div key={index} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">{topic.topic}</span>
