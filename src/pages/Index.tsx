@@ -9,6 +9,11 @@ const Index = () => {
       <Navigation />
       <main className="container mx-auto px-4 py-8">
         <section className="text-center mb-16 animate-fadeIn">
+          <img 
+            src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
+            alt="EduPortal"
+            className="h-36 mx-auto mb-6"
+          />
           <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
             Learn, Adapt, Succeed with AI
           </h1>
