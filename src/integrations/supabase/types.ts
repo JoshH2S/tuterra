@@ -300,6 +300,93 @@ export type Database = {
           },
         ]
       }
+      student_courses: {
+        Row: {
+          course_id: string
+          enrolled_at: string
+          id: string
+          last_accessed: string
+          status: string
+          student_id: string
+        }
+        Insert: {
+          course_id: string
+          enrolled_at?: string
+          id?: string
+          last_accessed?: string
+          status?: string
+          student_id: string
+        }
+        Update: {
+          course_id?: string
+          enrolled_at?: string
+          id?: string
+          last_accessed?: string
+          status?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_courses_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_performance: {
+        Row: {
+          average_score: number
+          completed_quizzes: number
+          course_id: string
+          id: string
+          last_activity: string
+          student_id: string
+          total_quizzes: number
+        }
+        Insert: {
+          average_score?: number
+          completed_quizzes?: number
+          course_id: string
+          id?: string
+          last_activity?: string
+          student_id: string
+          total_quizzes?: number
+        }
+        Update: {
+          average_score?: number
+          completed_quizzes?: number
+          course_id?: string
+          id?: string
+          last_activity?: string
+          student_id?: string
+          total_quizzes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_performance_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_performance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       temp_files: {
         Row: {
           created_at: string
