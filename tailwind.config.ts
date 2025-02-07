@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -25,34 +26,34 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#1E3A8A",
+          DEFAULT: "#B8860B", // Dark gold
           foreground: "#FFFFFF",
-          100: "#EEF2FF",
-          200: "#C7D2FE",
-          300: "#A5B4FC",
-          400: "#818CF8",
-          500: "#1E3A8A",
-          600: "#1E40AF",
-          700: "#1E3A8A",
-          800: "#1E3A8A",
-          900: "#1E3A8A",
+          100: "#FFF8DC", // Cornsilk
+          200: "#FFE4B5", // Moccasin
+          300: "#FFD700", // Gold
+          400: "#DAA520", // Goldenrod
+          500: "#B8860B", // Dark goldenrod
+          600: "#966909", // Darker gold
+          700: "#7C5707", // Even darker gold
+          800: "#634505", // Very dark gold
+          900: "#4A3403", // Extremely dark gold
         },
         secondary: {
-          DEFAULT: "#0D9488",
+          DEFAULT: "#8B4513", // Saddle brown
           foreground: "#FFFFFF",
-          100: "#CCFBF1",
-          200: "#99F6E4",
-          300: "#5EEAD4",
-          400: "#2DD4BF",
-          500: "#0D9488",
-          600: "#0F766E",
-          700: "#115E59",
-          800: "#134E4A",
-          900: "#134E4A",
+          100: "#FFF5E6",
+          200: "#FFE4B5",
+          300: "#DEB887",
+          400: "#CD853F",
+          500: "#8B4513",
+          600: "#73370F",
+          700: "#5C2A0B",
+          800: "#441E07",
+          900: "#2D1303",
         },
         accent: {
-          DEFAULT: "#F59E0B",
-          foreground: "#FFFFFF",
+          DEFAULT: "#FFD700",
+          foreground: "#000000",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",

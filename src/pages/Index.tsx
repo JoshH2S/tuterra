@@ -1,64 +1,95 @@
+
 import { Link } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
-import { BookOpen, Brain, Sparkles } from "lucide-react";
+import { BookOpen, Brain, Robot, ArrowRight, Sparkles, Users } from "lucide-react";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-100 to-white">
       <Navigation />
-      <main className="container mx-auto px-4 py-16">
+      <main className="container mx-auto px-4 py-8">
         <section className="text-center mb-16 animate-fadeIn">
-          <h1 className="text-5xl font-bold mb-6 text-primary-800">
-            Welcome to EduAI
+          <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
+            Learn, Adapt, Succeed with AI
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Transform your teaching experience with AI-powered tools designed to enhance learning and save time
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Transform your learning experience with AI-powered tools designed to enhance education and save time
           </p>
           <div className="flex justify-center gap-6">
             <Link
               to="/courses"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-lg shadow-lg transition-all hover:scale-105"
+              className="group bg-primary hover:bg-primary-600 text-primary-foreground px-8 py-4 rounded-lg shadow-lg transition-all hover:scale-105 flex items-center gap-2"
             >
               Get Started
+              <ArrowRight className="group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               to="/tutor"
-              className="bg-secondary hover:bg-secondary/90 text-secondary-foreground px-8 py-4 rounded-lg shadow-lg transition-all hover:scale-105"
+              className="bg-white hover:bg-primary-100 text-primary-700 border-2 border-primary px-8 py-4 rounded-lg shadow-lg transition-all hover:scale-105"
             >
               Try AI Tutor
             </Link>
           </div>
         </section>
         
-        <section className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
+        <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+          <div className="bg-white/80 backdrop-blur p-8 rounded-xl shadow-lg hover:shadow-xl transition-all">
             <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <BookOpen className="w-8 h-8 text-primary" />
+              <Robot className="w-8 h-8 text-primary-500" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-800">Smart Courses</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary-800">AI in Education</h3>
             <p className="text-gray-600">
-              Create and manage courses with AI assistance for better organization and delivery
+              Revolutionize learning with AI assistance for better comprehension and retention
             </p>
           </div>
 
-          <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-secondary-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <Brain className="w-8 h-8 text-secondary" />
+          <div className="bg-white/80 backdrop-blur p-8 rounded-xl shadow-lg hover:shadow-xl transition-all">
+            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <Brain className="w-8 h-8 text-primary-500" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-800">AI Tutor</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary-800">Smart Learning</h3>
             <p className="text-gray-600">
-              Provide personalized learning experiences with our advanced AI tutoring system
+              Personalized learning paths adapted to your unique needs and pace
             </p>
           </div>
 
-          <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <Sparkles className="w-8 h-8 text-accent" />
+          <div className="bg-white/80 backdrop-blur p-8 rounded-xl shadow-lg hover:shadow-xl transition-all">
+            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <BookOpen className="w-8 h-8 text-primary-500" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-800">Lesson Planning</h3>
+            <h3 className="text-xl font-semibold mb-3 text-primary-800">Course Creation</h3>
             <p className="text-gray-600">
-              Generate comprehensive lesson plans with AI-powered insights and suggestions
+              Create engaging courses with AI-powered tools and insights
             </p>
+          </div>
+        </section>
+
+        <section className="bg-white/80 backdrop-blur rounded-2xl p-8 max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-primary-800 mb-4">Featured Benefits</h2>
+            <p className="text-gray-600">Discover how our AI-powered platform can transform your educational journey</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6 text-primary-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-primary-800 mb-2">Intelligent Assessment</h3>
+                <p className="text-gray-600">Get instant feedback and personalized recommendations to improve your learning</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Users className="w-6 h-6 text-primary-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-primary-800 mb-2">Collaborative Learning</h3>
+                <p className="text-gray-600">Connect with peers and experts in an AI-enhanced learning environment</p>
+              </div>
+            </div>
           </div>
         </section>
       </main>
