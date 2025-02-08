@@ -20,7 +20,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Ubuntu', 'sans-serif'], // Set Ubuntu as the default font
+        sans: ['Quicksand', 'sans-serif'], // Set Quicksand as the default font
       },
       colors: {
         border: "hsl(var(--border))",
