@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { AppRoutes } from "./routes/AppRoutes";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   SidebarProvider,
   Sidebar,
@@ -15,12 +15,16 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, Settings } from "lucide-react";
+import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
   useEffect(() => {
     const loadFont = async () => {
       const font = new FontFace(
@@ -40,6 +44,32 @@ const App = () => {
     loadFont();
   }, []);
 
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setFirstName(data.first_name || "");
+          setLastName(data.last_name || "");
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -54,7 +84,7 @@ const App = () => {
                     <span className="text-xl font-semibold text-primary">EduPortal</span>
                   </Link>
                 </SidebarHeader>
-                <SidebarContent>
+                <SidebarContent className="flex flex-col justify-between h-[calc(100vh-64px)]">
                   <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
@@ -96,11 +126,13 @@ const App = () => {
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                  </SidebarMenu>
+                  <SidebarMenu className="mt-auto border-t border-border pt-4">
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/profile-settings">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Profile Settings
+                        <Link to="/profile-settings" className="flex items-center">
+                          <UserRound className="mr-2 h-4 w-4" />
+                          {firstName && lastName ? `${firstName} ${lastName}` : "Profile Settings"}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
