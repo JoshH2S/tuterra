@@ -27,14 +27,10 @@ const App = () => (
       <BrowserRouter>
         <SidebarProvider>
           <div className="min-h-screen flex w-full">
-            <Sidebar>
+            <Sidebar className="w-[240px]">
               <SidebarHeader>
                 <Link to="/" className="flex items-center p-4">
-                  <img 
-                    src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
-                    alt="EduPortal"
-                    className="h-12"
-                  />
+                  <span className="text-xl font-semibold text-primary">EduPortal</span>
                 </Link>
               </SidebarHeader>
               <SidebarContent>
