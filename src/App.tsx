@@ -27,7 +27,7 @@ const App = () => (
       <BrowserRouter>
         <SidebarProvider>
           <div className="min-h-screen flex w-full">
-            <Sidebar className="w-[240px]">
+            <Sidebar className="w-[160px]">
               <SidebarHeader>
                 <Link to="/" className="flex items-center p-4">
                   <span className="text-xl font-semibold text-primary">EduPortal</span>
