@@ -127,12 +127,14 @@ const App = () => {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
-                  <SidebarMenu className="mt-auto pb-4">
+                  <SidebarMenu className="mt-auto border-t border-border pt-4">
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/profile-settings" className="flex items-center px-4">
-                          <UserRound className="mr-2 h-4 w-4" />
-                          {firstName && lastName ? `${firstName} ${lastName}` : "Profile Settings"}
+                        <Link to="/profile-settings" className="flex items-start px-4">
+                          <UserRound className="mr-2 h-4 w-4 mt-1" />
+                          <span className="text-left break-words leading-tight">
+                            {firstName && lastName ? `${firstName} ${lastName}` : "Profile Settings"}
+                          </span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
