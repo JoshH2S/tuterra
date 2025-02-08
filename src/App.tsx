@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard } from "lucide-react";
+import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const queryClient = new QueryClient();
@@ -93,6 +93,14 @@ const App = () => {
                         <Link to="/tutor">
                           <Brain className="mr-2 h-4 w-4" />
                           AI Tutor
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <Link to="/profile-settings">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Profile Settings
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
