@@ -1,9 +1,10 @@
+
 import { Link } from "react-router-dom";
 import { BookOpen, Brain, Bot, ArrowRight, Sparkles, Users } from "lucide-react";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-100 to-white">
+    <div className="min-h-[calc(100vh-2rem)] -m-4 md:-m-8 bg-gradient-to-b from-primary-100 to-white">
       <main className="container mx-auto px-4 py-8">
         <section className="text-center mb-16 animate-fadeIn">
           <img 
