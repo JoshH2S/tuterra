@@ -1,12 +1,9 @@
-
 import { Link } from "react-router-dom";
-import { Navigation } from "@/components/Navigation";
 import { BookOpen, Brain, Bot, ArrowRight, Sparkles, Users } from "lucide-react";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-100 to-white">
-      <Navigation />
       <main className="container mx-auto px-4 py-8">
         <section className="text-center mb-16 animate-fadeIn">
           <img 

@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/Navigation";
+
 import { LessonPlanningHeader } from "@/components/lesson-planning/LessonPlanningHeader";
 import { ObjectiveInput } from "@/components/lesson-planning/ObjectiveInput";
 import { ObjectivesCard } from "@/components/lesson-planning/ObjectivesCard";
@@ -21,7 +21,6 @@ const LessonPlanning = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       <main className="container mx-auto px-4 py-8">
         <LessonPlanningHeader />
         

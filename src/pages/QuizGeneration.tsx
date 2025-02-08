@@ -1,5 +1,4 @@
 
-import { Navigation } from "@/components/Navigation";
 import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
 import { TopicsCard } from "@/components/quiz-generation/TopicsCard";
 import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
@@ -21,7 +20,6 @@ const QuizGeneration = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       <main className="container mx-auto px-4 py-8">
         <QuizGenerationHeader />
         
