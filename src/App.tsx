@@ -71,6 +71,30 @@ const App = () => {
     };
 
     fetchUserProfile();
+
+    // Subscribe to profile changes
+    const profileChannel = supabase
+      .channel('profile-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          // Update local state when profile is updated
+          const newData = payload.new as { first_name: string; last_name: string; avatar_url: string };
+          setFirstName(newData.first_name || "");
+          setLastName(newData.last_name || "");
+          setAvatarUrl(newData.avatar_url || "");
+        }
+      )
+      .subscribe();
+
+    return () => {
+      profileChannel.unsubscribe();
+    };
   }, []);
 
   return (
@@ -135,7 +159,17 @@ const App = () => {
                       <SidebarMenuButton asChild>
                         <Link to="/profile-settings" className="pr-6">
                           <Avatar className="h-6 w-6 mr-2">
-                            <AvatarImage src={avatarUrl} alt="Profile" />
+                            <AvatarImage 
+                              src={avatarUrl} 
+                              alt="Profile" 
+                              className="object-cover"
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'cover',
+                                objectPosition: 'center'
+                              }}
+                            />
                             <AvatarFallback>{firstName?.[0]}{lastName?.[0]}</AvatarFallback>
                           </Avatar>
                           <span className="text-left break-words leading-tight min-w-0 max-w-[120px]">
