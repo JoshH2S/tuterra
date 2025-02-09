@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const Auth = () => {
+interface AuthProps {
+  mode?: "emailVerification" | "resetPassword";
+}
+
+const Auth = ({ mode }: AuthProps = {}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -89,6 +94,68 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  if (mode === "emailVerification") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Email Verification</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center">Please check your email for the verification link.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (mode === "resetPassword") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Reset Password</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setLoading(true);
+              try {
+                const { error } = await supabase.auth.resetPasswordForEmail(email);
+                if (error) throw error;
+                toast({
+                  title: "Success",
+                  description: "Check your email for the password reset link",
+                });
+              } catch (error: any) {
+                toast({
+                  title: "Error",
+                  description: error.message,
+                  variant: "destructive",
+                });
+              } finally {
+                setLoading(false);
+              }
+            }}>
+              <div className="space-y-4">
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Loading..." : "Send Reset Link"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
