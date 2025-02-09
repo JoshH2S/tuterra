@@ -5,6 +5,9 @@ import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import jsPDF from "jspdf";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
 interface Option {
   A: string;
@@ -19,6 +22,7 @@ interface Question {
   correctAnswer: string;
   topic: string;
   points: number;
+  explanation?: string;
 }
 
 interface QuizOutputProps {
@@ -26,6 +30,8 @@ interface QuizOutputProps {
 }
 
 export const QuizOutput = ({ questions }: QuizOutputProps) => {
+  const [duration, setDuration] = useState<number>(0);
+
   const handlePublish = async () => {
     try {
       const { data: latestQuiz } = await supabase
@@ -46,7 +52,10 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
 
       const { error } = await supabase
         .from('quizzes')
-        .update({ published: true })
+        .update({ 
+          published: true,
+          duration_minutes: duration 
+        })
         .eq('id', latestQuiz.id);
 
       if (error) throw error;
@@ -77,6 +86,13 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
     doc.text("Generated Quiz", margin, yPosition);
     yPosition += 15;
 
+    // Add duration if set
+    if (duration > 0) {
+      doc.setFontSize(12);
+      doc.text(`Duration: ${duration} minutes`, margin, yPosition);
+      yPosition += 10;
+    }
+
     // Add questions
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
@@ -106,11 +122,20 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
         yPosition += 7 * optionLines.length;
       });
 
-      // Add answer
+      // Add answer and explanation
       const answerText = `Answer: ${question.correctAnswer}`;
       const answerLines = doc.splitTextToSize(answerText, pageWidth - (margin * 2));
       doc.text(answerLines, margin, yPosition);
-      yPosition += (10 * answerLines.length) + 10;
+      yPosition += 10 * answerLines.length;
+
+      if (question.explanation) {
+        const explanationText = `Explanation: ${question.explanation}`;
+        const explanationLines = doc.splitTextToSize(explanationText, pageWidth - (margin * 2));
+        doc.text(explanationLines, margin, yPosition);
+        yPosition += 10 * explanationLines.length;
+      }
+
+      yPosition += 10; // Add space between questions
     });
 
     doc.save('quiz.pdf');
@@ -141,6 +166,20 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
         </div>
       </CardHeader>
       <CardContent>
+        <div className="mb-6">
+          <Label htmlFor="duration">Quiz Duration (minutes)</Label>
+          <Input
+            id="duration"
+            type="number"
+            min="0"
+            value={duration}
+            onChange={(e) => setDuration(Number(e.target.value))}
+            className="max-w-[200px]"
+          />
+          <p className="text-sm text-muted-foreground mt-1">
+            Set to 0 for no time limit
+          </p>
+        </div>
         <div className="space-y-6">
           {questions.map((question, index) => (
             <div key={index} className="space-y-2">
@@ -159,6 +198,11 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
                   <p className="text-sm text-muted-foreground mt-2">
                     Answer: {question.correctAnswer}
                   </p>
+                  {question.explanation && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Explanation: {question.explanation}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                     <span>Topic: {question.topic}</span>
                     <span>•</span>

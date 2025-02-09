@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Timer } from "lucide-react";
 
 export default function TakeQuiz() {
   const { id } = useParams();
@@ -15,6 +17,7 @@ export default function TakeQuiz() {
   const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -40,6 +43,11 @@ export default function TakeQuiz() {
 
         setQuiz(quizData);
 
+        // Set initial time remaining if duration is set
+        if (quizData.duration_minutes > 0) {
+          setTimeRemaining(quizData.duration_minutes * 60);
+        }
+
         // Get quiz questions
         const { data: questionData, error: questionError } = await supabase
           .from('quiz_questions')
@@ -48,6 +56,19 @@ export default function TakeQuiz() {
 
         if (questionError) throw questionError;
         setQuestions(questionData);
+
+        // Record quiz start time
+        if (quizData.duration_minutes > 0) {
+          const { error: startError } = await supabase
+            .from('quiz_responses')
+            .insert({
+              quiz_id: id,
+              student_id: (await supabase.auth.getUser()).data.user?.id,
+              start_time: new Date().toISOString()
+            });
+
+          if (startError) throw startError;
+        }
       } catch (error) {
         console.error('Error fetching quiz:', error);
         toast({
@@ -60,6 +81,29 @@ export default function TakeQuiz() {
 
     fetchQuiz();
   }, [id, navigate]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (timeRemaining !== null && timeRemaining > 0) {
+      timer = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev === null || prev <= 1) {
+            clearInterval(timer);
+            handleSubmit();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [timeRemaining]);
+
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const handleSubmit = async () => {
     try {
@@ -104,7 +148,7 @@ export default function TakeQuiz() {
       if (questionResponseError) throw questionResponseError;
 
       // Generate AI feedback
-      const { data: feedbackData, error: feedbackError } = await fetch(
+      const feedbackResponse = await fetch(
         'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-quiz-feedback',
         {
           method: 'POST',
@@ -120,10 +164,10 @@ export default function TakeQuiz() {
             questionResponses,
           }),
         }
-      ).then(res => res.json());
+      );
 
-      if (feedbackError) {
-        console.error('Error generating feedback:', feedbackError);
+      if (!feedbackResponse.ok) {
+        console.error('Error generating feedback:', await feedbackResponse.text());
       }
 
       // Navigate to results page
@@ -145,10 +189,23 @@ export default function TakeQuiz() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>{quiz.title}</CardTitle>
+          {timeRemaining !== null && (
+            <div className="flex items-center gap-2 text-lg font-semibold">
+              <Timer className="h-5 w-5" />
+              {formatTime(timeRemaining)}
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
+          {timeRemaining === 0 && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                Time's up! Your quiz has been automatically submitted.
+              </AlertDescription>
+            </Alert>
+          )}
           {questions.map((question, index) => (
             <div key={question.id} className="space-y-4">
               <div className="flex items-start gap-2">
@@ -177,7 +234,7 @@ export default function TakeQuiz() {
           ))}
           <Button 
             onClick={handleSubmit} 
-            disabled={isSubmitting}
+            disabled={isSubmitting || timeRemaining === 0}
             className="mt-6"
           >
             Submit Quiz

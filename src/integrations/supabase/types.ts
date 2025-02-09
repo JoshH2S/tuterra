@@ -167,30 +167,36 @@ export type Database = {
         Row: {
           correct_answer: string
           created_at: string
+          explanation: string | null
           id: string
           options: Json
           points: number | null
           question: string
+          question_type: string | null
           quiz_id: string
           topic: string
         }
         Insert: {
           correct_answer: string
           created_at?: string
+          explanation?: string | null
           id?: string
           options?: Json
           points?: number | null
           question: string
+          question_type?: string | null
           quiz_id: string
           topic: string
         }
         Update: {
           correct_answer?: string
           created_at?: string
+          explanation?: string | null
           id?: string
           options?: Json
           points?: number | null
           question?: string
+          question_type?: string | null
           quiz_id?: string
           topic?: string
         }
@@ -213,6 +219,7 @@ export type Database = {
           id: string
           quiz_id: string
           score: number | null
+          start_time: string | null
           student_id: string
           topic_performance: Json | null
           total_questions: number | null
@@ -225,6 +232,7 @@ export type Database = {
           id?: string
           quiz_id: string
           score?: number | null
+          start_time?: string | null
           student_id: string
           topic_performance?: Json | null
           total_questions?: number | null
@@ -237,6 +245,7 @@ export type Database = {
           id?: string
           quiz_id?: string
           score?: number | null
+          start_time?: string | null
           student_id?: string
           topic_performance?: Json | null
           total_questions?: number | null
@@ -262,6 +271,7 @@ export type Database = {
         Row: {
           course_id: string | null
           created_at: string
+          duration_minutes: number | null
           id: string
           published: boolean | null
           teacher_id: string
@@ -271,6 +281,7 @@ export type Database = {
         Insert: {
           course_id?: string | null
           created_at?: string
+          duration_minutes?: number | null
           id?: string
           published?: boolean | null
           teacher_id: string
@@ -280,6 +291,7 @@ export type Database = {
         Update: {
           course_id?: string | null
           created_at?: string
+          duration_minutes?: number | null
           id?: string
           published?: boolean | null
           teacher_id?: string
