@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -149,7 +148,17 @@ const ProfileSettings = () => {
         <CardContent>
           <div className="mb-6 flex flex-col items-center space-y-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={formData.avatarUrl} alt="Profile" />
+              <AvatarImage 
+                src={formData.avatarUrl} 
+                alt="Profile" 
+                className="object-cover" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover',
+                  objectPosition: 'center'
+                }}
+              />
               <AvatarFallback>{formData.firstName?.[0]}{formData.lastName?.[0]}</AvatarFallback>
             </Avatar>
             <div className="flex items-center space-x-4">
