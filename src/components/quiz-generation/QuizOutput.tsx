@@ -1,13 +1,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import jsPDF from "jspdf";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { QuizDurationInput } from "./QuizDurationInput";
+import { QuizActions } from "./QuizActions";
+import { QuizQuestionItem } from "./QuizQuestionItem";
 
 interface Option {
   A: string;
@@ -147,70 +146,23 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Generated Quiz</CardTitle>
-        <div className="flex gap-2">
-          <Button 
-            onClick={handlePublish}
-            variant="default"
-            size="sm"
-          >
-            Publish Quiz
-          </Button>
-          <Button 
-            onClick={handleDownloadPDF}
-            variant="outline"
-            size="sm"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Download PDF
-          </Button>
-        </div>
+        <QuizActions 
+          onPublish={handlePublish}
+          onDownload={handleDownloadPDF}
+        />
       </CardHeader>
       <CardContent>
-        <div className="mb-6">
-          <Label htmlFor="duration">Quiz Duration (minutes)</Label>
-          <Input
-            id="duration"
-            type="number"
-            min="0"
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-            className="max-w-[200px]"
-          />
-          <p className="text-sm text-muted-foreground mt-1">
-            Set to 0 for no time limit
-          </p>
-        </div>
+        <QuizDurationInput 
+          duration={duration}
+          onChange={setDuration}
+        />
         <div className="space-y-6">
           {questions.map((question, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="font-medium">{index + 1}.</span>
-                <div className="flex-1">
-                  <p className="font-medium">{question.question}</p>
-                  <div className="mt-2 space-y-1">
-                    {Object.entries(question.options).map(([letter, text]) => (
-                      <div key={letter} className="flex items-start gap-2">
-                        <span className="text-sm font-medium min-w-[20px]">{letter}.</span>
-                        <p className="text-sm">{text}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Answer: {question.correctAnswer}
-                  </p>
-                  {question.explanation && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Explanation: {question.explanation}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                    <span>Topic: {question.topic}</span>
-                    <span>•</span>
-                    <span>{question.points} points</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <QuizQuestionItem 
+              key={index}
+              question={question}
+              index={index}
+            />
           ))}
         </div>
       </CardContent>
