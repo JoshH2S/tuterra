@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
@@ -14,12 +13,23 @@ import TakeQuiz from "@/pages/TakeQuiz";
 import QuizResults from "@/pages/QuizResults";
 import StudentDashboard from "@/pages/StudentDashboard";
 import ProfileSettings from "@/pages/ProfileSettings";
+import UpdatePassword from "@/pages/UpdatePassword";
 
 export const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/verify-email" element={<Auth mode="emailVerification" />} />
+      <Route path="/reset-password" element={<Auth mode="resetPassword" />} />
+      <Route
+        path="/update-password"
+        element={
+          <ProtectedRoute>
+            <UpdatePassword />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/dashboard"
         element={
