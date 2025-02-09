@@ -18,12 +18,14 @@ import {
 import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
     const loadFont = async () => {
@@ -52,7 +54,7 @@ const App = () => {
 
         const { data, error } = await supabase
           .from('profiles')
-          .select('first_name, last_name')
+          .select('first_name, last_name, avatar_url')
           .eq('id', user.id)
           .single();
 
@@ -61,6 +63,7 @@ const App = () => {
         if (data) {
           setFirstName(data.first_name || "");
           setLastName(data.last_name || "");
+          setAvatarUrl(data.avatar_url || "");
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -131,7 +134,10 @@ const App = () => {
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
                         <Link to="/profile-settings" className="pr-6">
-                          <UserRound className="mr-2 h-4 w-4" />
+                          <Avatar className="h-6 w-6 mr-2">
+                            <AvatarImage src={avatarUrl} alt="Profile" />
+                            <AvatarFallback>{firstName?.[0]}{lastName?.[0]}</AvatarFallback>
+                          </Avatar>
                           <span className="text-left break-words leading-tight min-w-0 max-w-[120px]">
                             {firstName && lastName ? `${firstName} ${lastName}` : "Profile Settings"}
                           </span>
