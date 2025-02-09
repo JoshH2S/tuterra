@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -129,9 +130,9 @@ const App = () => {
                   <SidebarMenu className="mt-auto pt-4">
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/profile-settings" className="pr-2.5">
+                        <Link to="/profile-settings" className="pr-6">
                           <UserRound className="mr-2 h-4 w-4" />
-                          <span className="text-left break-words leading-tight min-w-0">
+                          <span className="text-left break-words leading-tight min-w-0 max-w-[120px]">
                             {firstName && lastName ? `${firstName} ${lastName}` : "Profile Settings"}
                           </span>
                         </Link>
