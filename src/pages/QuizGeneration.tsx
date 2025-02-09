@@ -3,6 +3,7 @@ import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGeneratio
 import { TopicsCard } from "@/components/quiz-generation/TopicsCard";
 import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
 import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
+import { QuizDurationInput } from "@/components/quiz-generation/QuizDurationInput";
 import { useQuizGeneration } from "@/hooks/useQuizGeneration";
 
 const QuizGeneration = () => {
@@ -12,10 +13,12 @@ const QuizGeneration = () => {
     isProcessing,
     quizQuestions,
     contentLength,
+    duration,
     handleFileSelect,
     addTopic,
     updateTopic,
     handleSubmit,
+    setDuration,
   } = useQuizGeneration();
 
   return (
@@ -32,6 +35,10 @@ const QuizGeneration = () => {
               onSubmit={handleSubmit}
               isProcessing={isProcessing}
               isSubmitDisabled={isProcessing || !selectedFile || topics.some(topic => !topic.description)}
+            />
+            <QuizDurationInput 
+              duration={duration}
+              onChange={setDuration}
             />
             <CourseMaterialUpload 
               onFileSelect={handleFileSelect}

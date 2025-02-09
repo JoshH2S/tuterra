@@ -32,6 +32,7 @@ export const useQuizGeneration = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [contentLength, setContentLength] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
 
   const handleFileSelect = async (file: File) => {
     setSelectedFile(file);
@@ -60,10 +61,11 @@ export const useQuizGeneration = () => {
         return;
       }
 
-      // Create the quiz with title and teacher_id
+      // Create the quiz with title, teacher_id, and duration
       const quizData = {
         title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
         teacher_id: session.user.id,
+        duration_minutes: duration
       };
 
       // Only add course_id if it exists
@@ -196,9 +198,11 @@ export const useQuizGeneration = () => {
     isProcessing,
     quizQuestions,
     contentLength,
+    duration,
     handleFileSelect,
     addTopic,
     updateTopic,
     handleSubmit,
+    setDuration,
   };
 };
