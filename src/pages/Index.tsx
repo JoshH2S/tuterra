@@ -5,7 +5,7 @@ import { HeroSection } from "@/components/blocks/hero-section-dark";
 
 const Index = () => {
   return (
-    <div className="min-h-[calc(100vh-2rem)] -m-4 md:-m-8 bg-gradient-to-b from-primary-100 to-white dark:from-gray-950 dark:to-gray-900">
+    <div className="min-h-screen -m-4 md:-m-8 bg-gradient-to-b from-primary-100 to-white dark:from-gray-950 dark:to-gray-900">
       <HeroSection 
         title="Learn, Adapt, Succeed"
         subtitle={{
