@@ -8,7 +8,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-100 to-white dark:from-gray-950 dark:to-gray-900 -m-4 md:-m-8">
       <div className="relative">
-        <div className="absolute left-1/2 transform -translate-x-1/2 top-[120px] z-10">
+        <div className="absolute left-1/2 transform -translate-x-1/2 top-[100px] z-10">
           <img 
             src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
             alt="Logo" 
