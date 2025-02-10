@@ -1,10 +1,31 @@
-
 import { Link } from "react-router-dom";
 import { BookOpen, Brain, Bot, ArrowRight, Sparkles, Users } from "lucide-react";
+import { HeroSection } from "@/components/blocks/hero-section-dark";
 
 const Index = () => {
   return (
     <div className="min-h-[calc(100vh-2rem)] -m-4 md:-m-8 bg-gradient-to-b from-primary-100 to-white">
+      <HeroSection 
+        title="Learn, Adapt, Succeed"
+        subtitle={{
+          regular: "Transform your learning with ",
+          gradient: "AI-powered education",
+        }}
+        description="Experience a revolutionary approach to learning with our AI-enhanced educational platform. Join us and unlock your full potential."
+        ctaText="Get Started"
+        ctaHref="/courses"
+        bottomImage={{
+          light: "/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png",
+          dark: "/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png"
+        }}
+        gridOptions={{
+          angle: 65,
+          opacity: 0.3,
+          cellSize: 50,
+          lightLineColor: "#4a4a4a",
+          darkLineColor: "#2a2a2a",
+        }}
+      />
       <main className="container mx-auto px-4 py-8">
         <section className="text-center mb-16 animate-fadeIn">
           <img 
