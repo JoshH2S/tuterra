@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { BookOpen, Brain, Bot, ArrowRight, Sparkles, Users } from "lucide-react";
 import { HeroSection } from "@/components/blocks/hero-section-dark";
@@ -8,19 +7,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-100 to-white dark:from-gray-950 dark:to-gray-900 -m-4 md:-m-8">
       <div className="relative">
+        <div className="absolute left-1/2 transform -translate-x-1/2 top-24 z-10">
+          <img 
+            src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
+            alt="Logo" 
+            className="w-32 h-32 object-contain"
+          />
+        </div>
         <HeroSection 
-          title={
-            <>
-              <img 
-                src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
-                alt="Logo" 
-                className="w-32 h-32 object-contain mb-8"
-              />
-              <div className="flex items-center gap-4">
-                Learn, Adapt, Succeed
-              </div>
-            </>
-          }
+          title="Learn, Adapt, Succeed"
           subtitle={{
             regular: "Transform your learning with ",
             gradient: "AI-powered education",
