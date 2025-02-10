@@ -1,22 +1,13 @@
-
 import { Link } from "react-router-dom";
 import { BookOpen, Brain, Bot, ArrowRight, Sparkles, Users } from "lucide-react";
 import { HeroSection } from "@/components/blocks/hero-section-dark";
 import { Card } from "@/components/ui/card";
+import { BackgroundPaths } from "@/components/ui/background-paths";
 
 const Index = () => {
   return (
     <div className="min-h-screen">
-      <HeroSection 
-        title="Empowering Education"
-        subtitle={{
-          regular: "Transform your learning with ",
-          gradient: "AI-powered education."
-        }}
-        description="Experience personalized learning at its finest with our innovative platform that combines artificial intelligence with expert-crafted educational content."
-        ctaText="Start Learning"
-        ctaHref="#features"
-      />
+      <BackgroundPaths title="Learn Adapt Succeed" />
       <div className="relative">
         <div className="absolute left-1/2 transform -translate-x-1/2 top-0 z-10">
           <img 
