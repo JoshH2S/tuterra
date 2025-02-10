@@ -26,13 +26,13 @@ const Index = () => {
             <div className="flex gap-4">
               <Link
                 to="/courses"
-                className="inline-flex rounded-full text-center group items-center justify-center bg-gradient-to-tr from-zinc-300/20 via-purple-400/30 to-transparent dark:from-zinc-300/5 dark:via-purple-400/20 text-gray-900 dark:text-white border-input border-[1px] hover:bg-gradient-to-tr hover:from-zinc-300/30 hover:via-purple-400/40 hover:to-transparent dark:hover:from-zinc-300/10 dark:hover:via-purple-400/30 transition-all py-4 px-10"
+                className="inline-flex rounded-full text-center group items-center justify-center bg-gradient-to-tr from-blue-300/20 via-blue-500/30 to-transparent dark:from-blue-300/5 dark:via-blue-500/20 text-gray-900 dark:text-white border-input border-[1px] hover:bg-gradient-to-tr hover:from-blue-300/30 hover:via-blue-500/40 hover:to-transparent dark:hover:from-blue-300/10 dark:hover:via-blue-500/30 transition-all py-4 px-10"
               >
                 Get Started
               </Link>
               <Link
                 to="/tutor"
-                className="inline-flex rounded-full text-center group items-center justify-center bg-gradient-to-tr from-zinc-300/20 via-purple-400/30 to-transparent dark:from-zinc-300/5 dark:via-purple-400/20 text-gray-900 dark:text-white border-input border-[1px] hover:bg-gradient-to-tr hover:from-zinc-300/30 hover:via-purple-400/40 hover:to-transparent dark:hover:from-zinc-300/10 dark:hover:via-purple-400/30 transition-all py-4 px-10"
+                className="inline-flex rounded-full text-center group items-center justify-center bg-gradient-to-tr from-blue-300/20 via-blue-500/30 to-transparent dark:from-blue-300/5 dark:via-blue-500/20 text-gray-900 dark:text-white border-input border-[1px] hover:bg-gradient-to-tr hover:from-blue-300/30 hover:via-blue-500/40 hover:to-transparent dark:hover:from-blue-300/10 dark:hover:via-blue-500/30 transition-all py-4 px-10"
               >
                 Try AI Tutor
               </Link>
@@ -48,7 +48,7 @@ const Index = () => {
         />
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="absolute inset-0 bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10 rounded-3xl backdrop-blur-sm"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-300/20 via-blue-500/10 to-transparent dark:from-blue-300/5 dark:via-blue-500/10 rounded-3xl backdrop-blur-sm"></div>
           <div className="relative">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
@@ -60,10 +60,10 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
+              <Card className="p-6 border-none bg-gradient-to-tr from-blue-300/20 via-blue-500/10 to-transparent dark:from-blue-300/5 dark:via-blue-500/10">
                 <div className="flex flex-col items-start gap-4">
                   <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
-                    <Brain className="h-6 w-6 text-primary-500" />
+                    <Brain className="h-6 w-6 text-blue-500" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Intelligent Assessment</h3>
@@ -74,10 +74,10 @@ const Index = () => {
                 </div>
               </Card>
 
-              <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
+              <Card className="p-6 border-none bg-gradient-to-tr from-blue-300/20 via-blue-500/10 to-transparent dark:from-blue-300/5 dark:via-blue-500/10">
                 <div className="flex flex-col items-start gap-4">
                   <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
-                    <Users className="h-6 w-6 text-primary-500" />
+                    <Users className="h-6 w-6 text-blue-500" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Collaborative Learning</h3>
@@ -88,10 +88,10 @@ const Index = () => {
                 </div>
               </Card>
 
-              <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
+              <Card className="p-6 border-none bg-gradient-to-tr from-blue-300/20 via-blue-500/10 to-transparent dark:from-blue-300/5 dark:via-blue-500/10">
                 <div className="flex flex-col items-start gap-4">
                   <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
-                    <Bot className="h-6 w-6 text-primary-500" />
+                    <Bot className="h-6 w-6 text-blue-500" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg text-gray-900 dark:text-white">AI Tutoring</h3>
@@ -110,3 +110,4 @@ const Index = () => {
 };
 
 export default Index;
+
