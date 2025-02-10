@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { ChevronRight } from "lucide-react"
 
 interface HeroSectionProps extends React.HTMLAttributes<HTMLDivElement> {
-  title?: string
+  title?: React.ReactNode // Changed from string to ReactNode to accept JSX elements
   subtitle?: {
     regular: string
     gradient: string
