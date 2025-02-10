@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -105,7 +104,7 @@ const App = () => {
         <BrowserRouter>
           <SidebarProvider>
             <div className="min-h-screen flex w-full">
-              <Sidebar className="w-[260px] border-r border-border">
+              <Sidebar className="w-[220px] border-r border-border">
                 <SidebarHeader>
                   <Link to="/" className="flex items-center p-4">
                     <span className="text-xl font-semibold text-primary">EduPortal</span>
