@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -104,7 +105,7 @@ const App = () => {
         <BrowserRouter>
           <SidebarProvider>
             <div className="min-h-screen flex w-full">
-              <Sidebar className="w-[160px] border-r border-border">
+              <Sidebar className="w-[260px] border-r border-border">
                 <SidebarHeader>
                   <Link to="/" className="flex items-center p-4">
                     <span className="text-xl font-semibold text-primary">EduPortal</span>
@@ -114,7 +115,7 @@ const App = () => {
                   <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/dashboard">
+                        <Link to="/dashboard" className="flex items-center">
                           <LayoutDashboard className="mr-2 h-4 w-4" />
                           Dashboard
                         </Link>
@@ -122,7 +123,7 @@ const App = () => {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/courses">
+                        <Link to="/courses" className="flex items-center">
                           <BookOpen className="mr-2 h-4 w-4" />
                           Courses
                         </Link>
@@ -130,7 +131,7 @@ const App = () => {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/lesson-planning">
+                        <Link to="/lesson-planning" className="flex items-center">
                           <ClipboardList className="mr-2 h-4 w-4" />
                           Lesson Planning
                         </Link>
@@ -138,7 +139,7 @@ const App = () => {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/quiz-generation">
+                        <Link to="/quiz-generation" className="flex items-center">
                           <FileText className="mr-2 h-4 w-4" />
                           Quiz Generation
                         </Link>
@@ -146,18 +147,18 @@ const App = () => {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/tutor">
+                        <Link to="/tutor" className="flex items-center">
                           <Brain className="mr-2 h-4 w-4" />
                           AI Tutor
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
-                  <SidebarMenu className="mt-auto pt-4">
+                  <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
-                        <Link to="/profile-settings" className="pr-6">
-                          <Avatar className="h-6 w-6 mr-2">
+                        <Link to="/profile-settings" className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
                             <AvatarImage 
                               src={avatarUrl} 
                               alt="Profile" 
@@ -171,7 +172,7 @@ const App = () => {
                             />
                             <AvatarFallback>{firstName?.[0]}{lastName?.[0]}</AvatarFallback>
                           </Avatar>
-                          <span className="text-left break-words leading-tight min-w-0 max-w-[120px]">
+                          <span className="text-left break-words leading-tight min-w-0">
                             {firstName && lastName ? `${firstName} ${lastName}` : "Profile Settings"}
                           </span>
                         </Link>
@@ -181,6 +182,7 @@ const App = () => {
                 </SidebarContent>
               </Sidebar>
               <main className="flex-1 px-4 md:px-8 py-4 md:py-8">
+                <SidebarTrigger />
                 <AppRoutes />
               </main>
             </div>
