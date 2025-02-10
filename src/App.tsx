@@ -30,16 +30,18 @@ const App = () => {
   useEffect(() => {
     const loadFont = async () => {
       const font = new FontFace(
-        'Quicksand',
-        'url(https://fonts.gstatic.com/s/quicksand/v30/6xKtdSZaM9iE8KbpRA_hK1QN.woff2)'
+        'Geist',
+        'url(https://fonts.gstatic.com/s/geist/v1/geistv1.woff2)'
       );
 
       try {
         await font.load();
         document.fonts.add(font);
-        console.log('Quicksand font loaded successfully');
+        console.log('Geist font loaded successfully');
+        // Apply Geist font to the entire app
+        document.body.classList.add('font-geist');
       } catch (error) {
-        console.error('Error loading Quicksand font:', error);
+        console.error('Error loading Geist font:', error);
       }
     };
 
@@ -193,3 +195,4 @@ const App = () => {
 };
 
 export default App;
+
