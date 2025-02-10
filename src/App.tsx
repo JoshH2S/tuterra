@@ -107,7 +107,7 @@ const App = () => {
               <Sidebar className="w-[190px] border-r border-border">
                 <SidebarHeader>
                   <Link to="/" className="flex items-center p-4">
-                    <span className="text-xl font-semibold text-primary">EduPortal</span>
+                    <span className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">EduPortal</span>
                   </Link>
                 </SidebarHeader>
                 <SidebarContent className="flex flex-col justify-between h-[calc(100vh-64px)]">
@@ -116,7 +116,7 @@ const App = () => {
                       <SidebarMenuButton asChild>
                         <Link to="/dashboard" className="flex items-center">
                           <LayoutDashboard className="mr-2 h-4 w-4" />
-                          Dashboard
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">Dashboard</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -124,7 +124,7 @@ const App = () => {
                       <SidebarMenuButton asChild>
                         <Link to="/courses" className="flex items-center">
                           <BookOpen className="mr-2 h-4 w-4" />
-                          Courses
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">Courses</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -132,7 +132,7 @@ const App = () => {
                       <SidebarMenuButton asChild>
                         <Link to="/lesson-planning" className="flex items-center">
                           <ClipboardList className="mr-2 h-4 w-4" />
-                          Lesson Planning
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">Lesson Planning</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -140,7 +140,7 @@ const App = () => {
                       <SidebarMenuButton asChild>
                         <Link to="/quiz-generation" className="flex items-center">
                           <FileText className="mr-2 h-4 w-4" />
-                          Quiz Generation
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">Quiz Generation</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -148,7 +148,7 @@ const App = () => {
                       <SidebarMenuButton asChild>
                         <Link to="/tutor" className="flex items-center">
                           <Brain className="mr-2 h-4 w-4" />
-                          AI Tutor
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">AI Tutor</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -171,7 +171,7 @@ const App = () => {
                             />
                             <AvatarFallback>{firstName?.[0]}{lastName?.[0]}</AvatarFallback>
                           </Avatar>
-                          <span className="text-left break-words leading-tight min-w-0">
+                          <span className="text-left break-words leading-tight min-w-0 text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
                             {firstName && lastName ? `${firstName} ${lastName}` : "Profile Settings"}
                           </span>
                         </Link>
