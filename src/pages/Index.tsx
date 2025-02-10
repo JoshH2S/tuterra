@@ -10,14 +10,16 @@ const Index = () => {
       <div className="relative">
         <HeroSection 
           title={
-            <div className="flex flex-col items-center gap-4">
+            <>
               <img 
                 src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
                 alt="Logo" 
-                className="w-32 h-32 object-contain"
+                className="w-32 h-32 object-contain mb-8"
               />
-              Learn, Adapt, Succeed
-            </div>
+              <div className="flex items-center gap-4">
+                Learn, Adapt, Succeed
+              </div>
+            </>
           }
           subtitle={{
             regular: "Transform your learning with ",
