@@ -20,7 +20,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        geist: ['Geist', 'sans-serif'], // Set Geist as the font
+        sans: ['Quicksand', 'sans-serif'], // Set Quicksand as the default font
       },
       colors: {
         border: "hsl(var(--border))",
@@ -103,4 +103,3 @@ export default {
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
-
