@@ -1,13 +1,12 @@
+
 import { Link } from "react-router-dom";
 import { BookOpen, Brain, Bot, ArrowRight, Sparkles, Users } from "lucide-react";
 import { HeroSection } from "@/components/blocks/hero-section-dark";
 import { Card } from "@/components/ui/card";
-import { BackgroundPaths } from "@/components/ui/background-paths";
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
-      <BackgroundPaths title="Learn Adapt Succeed" />
+    <div className="min-h-screen bg-gradient-to-b from-primary-100 to-white dark:from-gray-950 dark:to-gray-900 -m-4 md:-m-8">
       <div className="relative">
         <div className="absolute left-1/2 transform -translate-x-1/2 top-0 z-10">
           <img 
@@ -16,6 +15,37 @@ const Index = () => {
             className="w-32 h-32 object-contain"
           />
         </div>
+        <HeroSection 
+          title="Learn, Adapt, Succeed"
+          subtitle={{
+            regular: "Transform your learning with ",
+            gradient: "AI-powered education",
+          }}
+          description="Experience a revolutionary approach to learning with our AI-enhanced educational platform. Join us and unlock your full potential."
+          ctaText={
+            <div className="flex gap-4">
+              <Link
+                to="/courses"
+                className="inline-flex rounded-full text-center group items-center justify-center bg-gradient-to-tr from-blue-300/20 via-blue-500/30 to-transparent dark:from-blue-300/5 dark:via-blue-500/20 text-gray-900 dark:text-white border-input border-[1px] hover:bg-gradient-to-tr hover:from-blue-300/30 hover:via-blue-500/40 hover:to-transparent dark:hover:from-blue-300/10 dark:hover:via-blue-500/30 transition-all py-4 px-10"
+              >
+                Get Started
+              </Link>
+              <Link
+                to="/tutor"
+                className="inline-flex rounded-full text-center group items-center justify-center bg-gradient-to-tr from-blue-300/20 via-blue-500/30 to-transparent dark:from-blue-300/5 dark:via-blue-500/20 text-gray-900 dark:text-white border-input border-[1px] hover:bg-gradient-to-tr hover:from-blue-300/30 hover:via-blue-500/40 hover:to-transparent dark:hover:from-blue-300/10 dark:hover:via-blue-500/30 transition-all py-4 px-10"
+              >
+                Try AI Tutor
+              </Link>
+            </div>
+          }
+          gridOptions={{
+            angle: 65,
+            opacity: 0.3,
+            cellSize: 50,
+            lightLineColor: "#4a4a4a",
+            darkLineColor: "#2a2a2a",
+          }}
+        />
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="absolute inset-0 bg-gradient-to-tr from-blue-300/20 via-blue-500/10 to-transparent dark:from-blue-300/5 dark:via-blue-500/10 rounded-3xl backdrop-blur-sm"></div>
@@ -80,3 +110,4 @@ const Index = () => {
 };
 
 export default Index;
+
