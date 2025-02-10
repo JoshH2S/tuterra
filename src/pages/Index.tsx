@@ -9,7 +9,16 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-primary-100 to-white dark:from-gray-950 dark:to-gray-900 -m-4 md:-m-8">
       <div className="relative">
         <HeroSection 
-          title="Learn, Adapt, Succeed"
+          title={
+            <div className="flex flex-col items-center gap-4">
+              <img 
+                src="/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png" 
+                alt="Logo" 
+                className="w-32 h-32 object-contain"
+              />
+              Learn, Adapt, Succeed
+            </div>
+          }
           subtitle={{
             regular: "Transform your learning with ",
             gradient: "AI-powered education",
@@ -103,4 +112,3 @@ const Index = () => {
 };
 
 export default Index;
-
