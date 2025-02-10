@@ -30,10 +30,6 @@ const Index = () => {
           </div>
         }
         ctaHref="#"
-        bottomImage={{
-          light: "/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png",
-          dark: "/lovable-uploads/0b906dbe-8ddf-4736-8e1f-ef3ad2bf047b.png"
-        }}
         gridOptions={{
           angle: 65,
           opacity: 0.3,
