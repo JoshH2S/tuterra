@@ -5,7 +5,7 @@ import { HeroSection } from "@/components/blocks/hero-section-dark";
 
 const Index = () => {
   return (
-    <div className="min-h-[calc(100vh-2rem)] -m-4 md:-m-8 bg-gradient-to-b from-primary-100 to-white">
+    <div className="min-h-[calc(100vh-2rem)] -m-4 md:-m-8 bg-gradient-to-b from-primary-100 to-white dark:from-gray-950 dark:to-gray-900">
       <HeroSection 
         title="Learn, Adapt, Succeed"
         subtitle={{
@@ -42,63 +42,64 @@ const Index = () => {
           darkLineColor: "#2a2a2a",
         }}
       />
-      <main className="container mx-auto px-4 py-8">
-        <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
-          <div className="bg-white/80 backdrop-blur p-8 rounded-xl shadow-lg hover:shadow-xl transition-all">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <Bot className="w-8 h-8 text-primary-500" />
+      <main className="container mx-auto px-4 py-8 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-950/5 to-transparent dark:from-transparent dark:via-purple-400/5 pointer-events-none" />
+        <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16 relative">
+          <div className="bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10 backdrop-blur p-8 rounded-xl border border-white/20 dark:border-white/5 hover:shadow-xl transition-all">
+            <div className="w-16 h-16 bg-gradient-to-tr from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <Bot className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-800">AI in Education</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">AI in Education</h3>
+            <p className="text-gray-600 dark:text-gray-300">
               Revolutionize learning with AI assistance for better comprehension and retention
             </p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur p-8 rounded-xl shadow-lg hover:shadow-xl transition-all">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <Brain className="w-8 h-8 text-primary-500" />
+          <div className="bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10 backdrop-blur p-8 rounded-xl border border-white/20 dark:border-white/5 hover:shadow-xl transition-all">
+            <div className="w-16 h-16 bg-gradient-to-tr from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <Brain className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-800">Smart Learning</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">Smart Learning</h3>
+            <p className="text-gray-600 dark:text-gray-300">
               Personalized learning paths adapted to your unique needs and pace
             </p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur p-8 rounded-xl shadow-lg hover:shadow-xl transition-all">
-            <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <BookOpen className="w-8 h-8 text-primary-500" />
+          <div className="bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10 backdrop-blur p-8 rounded-xl border border-white/20 dark:border-white/5 hover:shadow-xl transition-all">
+            <div className="w-16 h-16 bg-gradient-to-tr from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-800">Course Creation</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">Course Creation</h3>
+            <p className="text-gray-600 dark:text-gray-300">
               Create engaging courses with AI-powered tools and insights
             </p>
           </div>
         </section>
 
-        <section className="bg-white/80 backdrop-blur rounded-2xl p-8 max-w-6xl mx-auto">
+        <section className="bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10 backdrop-blur rounded-2xl p-8 max-w-6xl mx-auto border border-white/20 dark:border-white/5">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-primary-800 mb-4">Featured Benefits</h2>
-            <p className="text-gray-600">Discover how our AI-powered platform can transform your educational journey</p>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">Featured Benefits</h2>
+            <p className="text-gray-600 dark:text-gray-300">Discover how our AI-powered platform can transform your educational journey</p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-6 h-6 text-primary-500" />
+              <div className="w-12 h-12 bg-gradient-to-tr from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-primary-800 mb-2">Intelligent Assessment</h3>
-                <p className="text-gray-600">Get instant feedback and personalized recommendations to improve your learning</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Intelligent Assessment</h3>
+                <p className="text-gray-600 dark:text-gray-300">Get instant feedback and personalized recommendations to improve your learning</p>
               </div>
             </div>
             
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <Users className="w-6 h-6 text-primary-500" />
+              <div className="w-12 h-12 bg-gradient-to-tr from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-primary-800 mb-2">Collaborative Learning</h3>
-                <p className="text-gray-600">Connect with peers and experts in an AI-enhanced learning environment</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Collaborative Learning</h3>
+                <p className="text-gray-600 dark:text-gray-300">Connect with peers and experts in an AI-enhanced learning environment</p>
               </div>
             </div>
           </div>
