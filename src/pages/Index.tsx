@@ -42,35 +42,6 @@ const Index = () => {
           darkLineColor: "#2a2a2a",
         }}
       />
-
-        <section className="bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10 backdrop-blur rounded-2xl p-8 max-w-6xl mx-auto border border-white/20 dark:border-white/5 my-16">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">Featured Benefits</h2>
-            <p className="text-gray-600 dark:text-gray-300">Discover how our AI-powered platform can transform your educational journey</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-gradient-to-tr from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Intelligent Assessment</h3>
-                <p className="text-gray-600 dark:text-gray-300">Get instant feedback and personalized recommendations to improve your learning</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-gradient-to-tr from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/30 rounded-full flex items-center justify-center flex-shrink-0">
-                <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Collaborative Learning</h3>
-                <p className="text-gray-600 dark:text-gray-300">Connect with peers and experts in an AI-enhanced learning environment</p>
-              </div>
-            </div>
-          </div>
-        </section>
     </div>
   );
 };
