@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,6 +6,7 @@ import { TutorChat } from "@/components/tutor/TutorChat";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Book } from "lucide-react";
+import { SplineSceneBasic } from "@/components/ui/code.demo";
 
 const CourseTutor = () => {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
@@ -63,6 +65,8 @@ const CourseTutor = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
+        <SplineSceneBasic />
+        
         <Card>
           <CardHeader>
             <CardTitle>AI Study Assistant</CardTitle>
