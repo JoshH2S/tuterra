@@ -40,58 +40,61 @@ const Index = () => {
           }}
         />
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-              Featured Benefits
-            </h2>
-            <p className="mt-4 text-lg leading-8 text-gray-600 dark:text-gray-300">
-              Discover how our platform can transform your learning experience
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
-              <div className="flex flex-col items-start gap-4">
-                <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
-                  <Brain className="h-6 w-6 text-primary-500" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="absolute inset-0 bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10 rounded-3xl backdrop-blur-sm"></div>
+          <div className="relative">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+                Featured Benefits
+              </h2>
+              <p className="mt-4 text-lg leading-8 text-gray-600 dark:text-gray-300">
+                Discover how our platform can transform your learning experience
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
+                <div className="flex flex-col items-start gap-4">
+                  <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
+                    <Brain className="h-6 w-6 text-primary-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Intelligent Assessment</h3>
+                    <p className="mt-2 text-gray-600 dark:text-gray-300">
+                      AI-powered analysis of your learning patterns to provide personalized feedback and recommendations.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Intelligent Assessment</h3>
-                  <p className="mt-2 text-gray-600 dark:text-gray-300">
-                    AI-powered analysis of your learning patterns to provide personalized feedback and recommendations.
-                  </p>
-                </div>
-              </div>
-            </Card>
+              </Card>
 
-            <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
-              <div className="flex flex-col items-start gap-4">
-                <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
-                  <Users className="h-6 w-6 text-primary-500" />
+              <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
+                <div className="flex flex-col items-start gap-4">
+                  <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
+                    <Users className="h-6 w-6 text-primary-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Collaborative Learning</h3>
+                    <p className="mt-2 text-gray-600 dark:text-gray-300">
+                      Connect with peers and experts in real-time discussion forums and group study sessions.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Collaborative Learning</h3>
-                  <p className="mt-2 text-gray-600 dark:text-gray-300">
-                    Connect with peers and experts in real-time discussion forums and group study sessions.
-                  </p>
-                </div>
-              </div>
-            </Card>
+              </Card>
 
-            <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
-              <div className="flex flex-col items-start gap-4">
-                <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
-                  <Bot className="h-6 w-6 text-primary-500" />
+              <Card className="p-6 border-none bg-gradient-to-tr from-zinc-300/20 via-purple-400/10 to-transparent dark:from-zinc-300/5 dark:via-purple-400/10">
+                <div className="flex flex-col items-start gap-4">
+                  <div className="rounded-lg bg-primary-100/10 dark:bg-primary-100/5 p-3">
+                    <Bot className="h-6 w-6 text-primary-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white">AI Tutoring</h3>
+                    <p className="mt-2 text-gray-600 dark:text-gray-300">
+                      24/7 access to AI tutors that adapt to your learning style and pace.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white">AI Tutoring</h3>
-                  <p className="mt-2 text-gray-600 dark:text-gray-300">
-                    24/7 access to AI tutors that adapt to your learning style and pace.
-                  </p>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
