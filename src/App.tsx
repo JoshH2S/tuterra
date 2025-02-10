@@ -13,9 +13,8 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, UserRound } from "lucide-react";
+import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -182,7 +181,6 @@ const App = () => {
                 </SidebarContent>
               </Sidebar>
               <main className="flex-1 px-4 md:px-8 py-4 md:py-8">
-                <SidebarTrigger />
                 <AppRoutes />
               </main>
             </div>
