@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useConversation } from "./useConversation";
@@ -11,6 +11,13 @@ export const useTutorMessages = () => {
   const { conversationId, setConversationId } = useConversation();
   const { transformMessages } = useMessageTransform();
   const { toast } = useToast();
+
+  // Fetch messages whenever the conversation ID changes
+  useEffect(() => {
+    if (conversationId) {
+      fetchMessages(conversationId);
+    }
+  }, [conversationId]);
 
   const sendMessage = async (message: string, materialPath?: string | null) => {
     if (!message.trim() || isLoading) return;
@@ -51,11 +58,16 @@ export const useTutorMessages = () => {
   };
 
   const fetchMessages = async (conversationId: string) => {
-    const { data: messagesData } = await supabase
+    const { data: messagesData, error } = await supabase
       .from('tutor_messages')
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching messages:', error);
+      return;
+    }
 
     if (messagesData) {
       setMessages(transformMessages(messagesData));
