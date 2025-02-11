@@ -5,10 +5,36 @@ import { toast } from "@/hooks/use-toast";
 
 export const fetchMyStudyGroups = async () => {
   try {
-    // First fetch the study groups
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // First fetch the study groups where the user is a member
+    const { data: memberGroups, error: membershipError } = await supabase
+      .from('study_group_members')
+      .select('group_id')
+      .eq('member_id', user.id);
+
+    if (membershipError) {
+      console.error('Error fetching memberships:', membershipError);
+      toast({
+        title: "Error",
+        description: "Failed to fetch study group memberships. Please try again.",
+        variant: "destructive",
+      });
+      throw membershipError;
+    }
+
+    const groupIds = memberGroups?.map(m => m.group_id) || [];
+
+    if (groupIds.length === 0) {
+      return [];
+    }
+
+    // Then fetch the full study group details
     const { data: groups, error: groupsError } = await supabase
       .from('study_groups')
       .select('*')
+      .in('id', groupIds)
       .order('created_at', { ascending: false });
 
     if (groupsError) {
@@ -21,11 +47,11 @@ export const fetchMyStudyGroups = async () => {
       throw groupsError;
     }
 
-    // Then fetch the member counts for these groups
+    // Fetch member counts in a single query
     const { data: memberCounts, error: countsError } = await supabase
       .from('study_group_members')
       .select('group_id, count')
-      .in('group_id', groups?.map(g => g.id) || [])
+      .in('group_id', groupIds)
       .select('group_id, count(*)')
       .group('group_id');
 
@@ -59,9 +85,22 @@ export const fetchMyStudyGroups = async () => {
 
 export const fetchLatestResources = async () => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Fetch only resources that are either public (no study_group_id) 
+    // or belong to groups the user is a member of
+    const { data: memberGroups } = await supabase
+      .from('study_group_members')
+      .select('group_id')
+      .eq('member_id', user.id);
+
+    const groupIds = memberGroups?.map(m => m.group_id) || [];
+
     const { data: resources, error } = await supabase
       .from('shared_resources')
       .select('*')
+      .or(`study_group_id.is.null,study_group_id.in.(${groupIds.join(',')})`)
       .order('created_at', { ascending: false })
       .limit(5);
 
@@ -81,4 +120,3 @@ export const fetchLatestResources = async () => {
     throw error;
   }
 };
-
