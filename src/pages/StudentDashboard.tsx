@@ -1,7 +1,7 @@
 
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
-import { useStudySessions } from "@/hooks/useStudySessions";
+import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
 import { CourseCard } from "@/components/dashboard/CourseCard";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
