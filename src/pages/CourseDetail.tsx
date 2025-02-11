@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { TutorChat } from "@/components/tutor/TutorChat";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -44,7 +45,7 @@ const CourseDetail = () => {
             </CardHeader>
           </Card>
         )}
-        {courseId && <TutorChat courseId={courseId} />}
+        <TutorChat />
       </div>
     </div>
   );
