@@ -1,10 +1,12 @@
 
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
+import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { CourseCard } from "@/components/dashboard/CourseCard";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
+  const { insights } = useStudentAnalytics(courses, performance);
 
   if (isLoading) {
     return (
