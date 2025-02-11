@@ -5,6 +5,7 @@ import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMateria
 import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
 import { QuizDurationInput } from "@/components/quiz-generation/QuizDurationInput";
 import { useQuizGeneration } from "@/hooks/useQuizGeneration";
+import { useCourseTemplates } from "@/hooks/useCourseTemplates";
 
 const QuizGeneration = () => {
   const {
@@ -21,10 +22,26 @@ const QuizGeneration = () => {
     setDuration,
   } = useQuizGeneration();
 
+  const { createTemplate } = useCourseTemplates();
+
+  const handleSaveTemplate = async () => {
+    if (quizQuestions.length > 0) {
+      await createTemplate(
+        `Quiz Template - ${topics.map(t => t.description).join(", ")}`,
+        {
+          type: "quiz",
+          topics,
+          questions: quizQuestions,
+          duration
+        }
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <QuizGenerationHeader />
+        <QuizGenerationHeader onSaveTemplate={quizQuestions.length > 0 ? handleSaveTemplate : undefined} />
         
         <div className="grid gap-8 md:grid-cols-2">
           <div className="space-y-8">
