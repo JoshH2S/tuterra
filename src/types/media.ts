@@ -18,7 +18,7 @@ export interface CourseTemplate {
   id: string;
   title: string;
   description?: string;
-  content: Record<string, any>;
+  content: Json;  // Changed from Record<string, any> to Json
   metadata?: Json | null;
   teacher_id: string;
   created_at?: string;
