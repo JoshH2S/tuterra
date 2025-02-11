@@ -17,6 +17,7 @@ interface AIInputWithLoadingProps {
   onSubmit?: (value: string) => void | Promise<void>;
   className?: string;
   autoAnimate?: boolean;
+  disabled?: boolean;
 }
 
 export function AIInputWithLoading({
@@ -28,7 +29,8 @@ export function AIInputWithLoading({
   thinkingDuration = 1000,
   onSubmit,
   className,
-  autoAnimate = false
+  autoAnimate = false,
+  disabled = false
 }: AIInputWithLoadingProps) {
   const [inputValue, setInputValue] = useState("");
   const [submitted, setSubmitted] = useState(autoAnimate);
@@ -59,7 +61,7 @@ export function AIInputWithLoading({
   }, [isAnimating, loadingDuration, thinkingDuration]);
 
   const handleSubmit = async () => {
-    if (!inputValue.trim() || submitted) return;
+    if (!inputValue.trim() || submitted || disabled) return;
     
     setSubmitted(true);
     await onSubmit?.(inputValue);
@@ -83,7 +85,8 @@ export function AIInputWithLoading({
               "placeholder:text-black/70 dark:placeholder:text-white/70",
               "border-none ring-black/30 dark:ring-white/30",
               "text-black dark:text-white resize-none text-wrap leading-[1.2]",
-              `min-h-[${minHeight}px]`
+              `min-h-[${minHeight}px]`,
+              disabled && "opacity-50 cursor-not-allowed"
             )}
             ref={textareaRef}
             value={inputValue}
@@ -97,16 +100,17 @@ export function AIInputWithLoading({
                 handleSubmit();
               }
             }}
-            disabled={submitted}
+            disabled={submitted || disabled}
           />
           <button
             onClick={handleSubmit}
             className={cn(
               "absolute right-3 top-1/2 -translate-y-1/2 rounded-xl py-1 px-1",
-              submitted ? "bg-none" : "bg-black/5 dark:bg-white/5"
+              submitted ? "bg-none" : "bg-black/5 dark:bg-white/5",
+              disabled && "opacity-50 cursor-not-allowed"
             )}
             type="button"
-            disabled={submitted}
+            disabled={submitted || disabled}
           >
             {submitted ? (
               <div
