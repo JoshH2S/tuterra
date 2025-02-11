@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MediaItem } from "@/types/media";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export const useMediaLibrary = () => {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   const fetchMediaItems = async () => {
     try {
@@ -16,7 +18,10 @@ export const useMediaLibrary = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMediaItems(data || []);
+      
+      // Explicitly type the data as MediaItem[]
+      const typedData = (data || []) as MediaItem[];
+      setMediaItems(typedData);
     } catch (error) {
       console.error('Error fetching media:', error);
       toast({
@@ -30,6 +35,15 @@ export const useMediaLibrary = () => {
   };
 
   const uploadMedia = async (file: File) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to upload media",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const fileExt = file.name.split('.').pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
@@ -47,6 +61,8 @@ export const useMediaLibrary = () => {
           file_path: filePath,
           file_type: file.type,
           file_size: file.size,
+          teacher_id: user.id,
+          metadata: null
         });
 
       if (dbError) throw dbError;
