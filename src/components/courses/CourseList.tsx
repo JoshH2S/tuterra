@@ -1,3 +1,4 @@
+
 import { Book } from "lucide-react";
 import { Course } from "@/types/course";
 import CourseCard from "./CourseCard";
