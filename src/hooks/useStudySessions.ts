@@ -2,26 +2,21 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { StudySession, CreateStudySessionData } from "@/types/study-sessions";
+import { fetchStudySessions, createStudySession, updateStudySession, deleteStudySession } from "@/api/studySessionsApi";
+import { logStudySessionActivity } from "@/api/activityLogsApi";
 
-export interface StudySession {
-  id: string;
-  title: string;
-  description: string | null;
-  start_time: string;
-  end_time: string;
-  course_id: string | null;
-  status: 'scheduled' | 'completed' | 'missed';
-}
+export type { StudySession };
 
 export const useStudySessions = () => {
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchStudySessions();
+    fetchUserStudySessions();
   }, []);
 
-  const fetchStudySessions = async () => {
+  const fetchUserStudySessions = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -33,17 +28,8 @@ export const useStudySessions = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('study_sessions')
-        .select('*')
-        .eq('student_id', user.id);
-
-      if (error) throw error;
-      
-      setSessions(data?.map(session => ({
-        ...session,
-        status: session.status as 'scheduled' | 'completed' | 'missed'
-      })) || []);
+      const data = await fetchStudySessions(user.id);
+      setSessions(data);
     } catch (error) {
       console.error('Error fetching study sessions:', error);
       toast({
@@ -56,35 +42,7 @@ export const useStudySessions = () => {
     }
   };
 
-  const logActivity = async (description: string, session: StudySession) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const metadata = {
-        session: {
-          id: session.id,
-          title: session.title,
-          description: session.description,
-          start_time: session.start_time,
-          end_time: session.end_time,
-          course_id: session.course_id,
-          status: session.status
-        }
-      };
-
-      await supabase.from('activity_logs').insert({
-        student_id: user.id,
-        activity_type: 'study_session',
-        description,
-        metadata
-      });
-    } catch (error) {
-      console.error('Error logging activity:', error);
-    }
-  };
-
-  const createSession = async (sessionData: Omit<StudySession, 'id' | 'student_id'>) => {
+  const handleCreateSession = async (sessionData: CreateStudySessionData) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -96,36 +54,17 @@ export const useStudySessions = () => {
         return;
       }
 
-      const newSessionData = {
-        ...sessionData,
-        student_id: user.id,
-        status: sessionData.status || 'scheduled',
-        ...(sessionData.course_id ? { course_id: sessionData.course_id } : {})
-      };
-
-      const { data, error } = await supabase
-        .from('study_sessions')
-        .insert([newSessionData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      const newSession = {
-        ...data,
-        status: data.status as 'scheduled' | 'completed' | 'missed'
-      };
-      
+      const newSession = await createStudySession(user.id, sessionData);
       setSessions(prev => [...prev, newSession]);
       
-      await logActivity(`Scheduled a new study session: ${newSession.title}`, newSession);
+      await logStudySessionActivity(user.id, `Scheduled a new study session: ${newSession.title}`, newSession);
       
       toast({
         title: "Success",
         description: "Study session scheduled successfully.",
       });
       
-      return data;
+      return newSession;
     } catch (error) {
       console.error('Error creating study session:', error);
       toast({
@@ -137,7 +76,7 @@ export const useStudySessions = () => {
     }
   };
 
-  const updateSession = async (id: string, updates: Partial<StudySession>) => {
+  const handleUpdateSession = async (id: string, updates: Partial<StudySession>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -149,38 +88,19 @@ export const useStudySessions = () => {
         return;
       }
 
-      const cleanUpdates = {
-        ...updates,
-        ...(updates.course_id ? { course_id: updates.course_id } : {})
-      };
-
-      const { data, error } = await supabase
-        .from('study_sessions')
-        .update(cleanUpdates)
-        .eq('id', id)
-        .eq('student_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      const updatedSession = {
-        ...data,
-        status: data.status as 'scheduled' | 'completed' | 'missed'
-      };
-      
+      const updatedSession = await updateStudySession(user.id, id, updates);
       setSessions(prev => prev.map(session => 
         session.id === id ? updatedSession : session
       ));
       
-      await logActivity(`Updated study session: ${updatedSession.title}`, updatedSession);
+      await logStudySessionActivity(user.id, `Updated study session: ${updatedSession.title}`, updatedSession);
       
       toast({
         title: "Success",
         description: "Study session updated successfully.",
       });
       
-      return data;
+      return updatedSession;
     } catch (error) {
       console.error('Error updating study session:', error);
       toast({
@@ -192,7 +112,7 @@ export const useStudySessions = () => {
     }
   };
 
-  const deleteSession = async (id: string) => {
+  const handleDeleteSession = async (id: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -207,17 +127,10 @@ export const useStudySessions = () => {
       const sessionToDelete = sessions.find(s => s.id === id);
       if (!sessionToDelete) return;
 
-      const { error } = await supabase
-        .from('study_sessions')
-        .delete()
-        .eq('id', id)
-        .eq('student_id', user.id);
-
-      if (error) throw error;
-      
+      await deleteStudySession(user.id, id);
       setSessions(prev => prev.filter(session => session.id !== id));
       
-      await logActivity(`Deleted study session: ${sessionToDelete.title}`, sessionToDelete);
+      await logStudySessionActivity(user.id, `Deleted study session: ${sessionToDelete.title}`, sessionToDelete);
       
       toast({
         title: "Success",
@@ -237,9 +150,9 @@ export const useStudySessions = () => {
   return {
     sessions,
     isLoading,
-    createSession,
-    updateSession,
-    deleteSession,
-    refreshSessions: fetchStudySessions,
+    createSession: handleCreateSession,
+    updateSession: handleUpdateSession,
+    deleteSession: handleDeleteSession,
+    refreshSessions: fetchUserStudySessions,
   };
 };
