@@ -1,16 +1,19 @@
 
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
+import { useStudySessions } from "@/hooks/useStudySessions";
 import { CourseCard } from "@/components/dashboard/CourseCard";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
+import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
   const { insights } = useStudentAnalytics(courses, performance);
+  const { sessions, createSession, isLoading: isLoadingSessions } = useStudySessions();
 
-  if (isLoading) {
+  if (isLoading || isLoadingSessions) {
     return (
       <div className="container mx-auto py-12">
         <div className="animate-pulse space-y-4">
@@ -67,6 +70,12 @@ export default function StudentDashboard() {
           })}
         </div>
       )}
+
+      <StudyCalendar 
+        sessions={sessions}
+        courses={courses}
+        onCreateSession={createSession}
+      />
 
       <PerformanceOverview performance={performance} />
 
