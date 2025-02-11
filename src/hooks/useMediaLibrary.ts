@@ -20,8 +20,7 @@ export const useMediaLibrary = () => {
       if (error) throw error;
       
       // Explicitly type the data as MediaItem[]
-      const typedData = (data || []) as MediaItem[];
-      setMediaItems(typedData);
+      setMediaItems((data || []) as MediaItem[]);
     } catch (error) {
       console.error('Error fetching media:', error);
       toast({
