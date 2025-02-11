@@ -2,7 +2,7 @@
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
-import { AIInputWithLoading } from "@/components/ui/ai-input-with-loading";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TutorChatInputProps {
   message: string;
@@ -14,29 +14,33 @@ interface TutorChatInputProps {
 }
 
 export const TutorChatInput = ({
+  message,
   isLoading,
-  onSubmit,
-  onFileUpload,
   onMessageChange,
+  onSubmit,
+  onKeyPress,
+  onFileUpload,
 }: TutorChatInputProps) => {
-  const handleSubmit = async (value: string) => {
-    onMessageChange(value);
-    const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-    onSubmit(fakeEvent);
-  };
-
   return (
-    <form className="flex gap-2 items-end" onSubmit={(e) => e.preventDefault()}>
+    <form className="flex gap-2 items-end" onSubmit={onSubmit}>
       <div className="flex-1">
-        <AIInputWithLoading
+        <Textarea
           placeholder="Ask a question..."
-          onSubmit={handleSubmit}
-          loadingDuration={3000}
-          className="mb-0"
+          value={message}
+          onChange={(e) => onMessageChange(e.target.value)}
+          onKeyDown={onKeyPress}
+          className="min-h-[50px] resize-none"
           disabled={isLoading}
         />
       </div>
       <div className="flex flex-col gap-2 mb-4">
+        <Button 
+          type="submit" 
+          disabled={isLoading || !message.trim()}
+          className="self-end"
+        >
+          Send
+        </Button>
         <FileUpload 
           onFileSelect={onFileUpload}
           acceptedTypes=".txt,.pdf,.doc,.docx"
@@ -46,6 +50,7 @@ export const TutorChatInput = ({
               variant="outline"
               size="icon"
               className="self-end"
+              disabled={isLoading}
             >
               <Upload className="h-4 w-4" />
             </Button>
