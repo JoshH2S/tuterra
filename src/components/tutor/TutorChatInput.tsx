@@ -9,6 +9,7 @@ interface TutorChatInputProps {
   isLoading: boolean;
   onMessageChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
+  onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onFileUpload?: (file: File) => Promise<void>;
 }
 
@@ -17,6 +18,7 @@ export const TutorChatInput = ({
   isLoading,
   onMessageChange,
   onSubmit,
+  onKeyPress,
   onFileUpload,
 }: TutorChatInputProps) => {
   return (
@@ -25,7 +27,8 @@ export const TutorChatInput = ({
         <Textarea
           value={message}
           onChange={(e) => onMessageChange(e.target.value)}
-          placeholder="Ask a question..."
+          onKeyDown={onKeyPress}
+          placeholder="Ask a question... (Press Enter to send)"
           className="flex-1 min-h-[60px]"
         />
         <div className="flex flex-col gap-2 self-end">

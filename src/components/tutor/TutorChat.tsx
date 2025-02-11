@@ -15,8 +15,10 @@ export const TutorChat = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await sendMessage(message);
-    setMessage("");
+    if (message.trim()) {
+      await sendMessage(message);
+      setMessage("");
+    }
   };
 
   const handleFileUpload = async (file: File) => {
@@ -47,6 +49,16 @@ export const TutorChat = () => {
     }
   };
 
+  const handleKeyPress = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (message.trim()) {
+        await sendMessage(message);
+        setMessage("");
+      }
+    }
+  };
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -63,6 +75,7 @@ export const TutorChat = () => {
             isLoading={isLoading}
             onMessageChange={setMessage}
             onSubmit={handleSubmit}
+            onKeyPress={handleKeyPress}
             onFileUpload={handleFileUpload}
           />
         </div>
@@ -70,4 +83,3 @@ export const TutorChat = () => {
     </Card>
   );
 };
-
