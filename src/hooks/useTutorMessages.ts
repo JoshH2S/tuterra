@@ -12,7 +12,6 @@ export const useTutorMessages = () => {
   const { transformMessages } = useMessageTransform();
   const { toast } = useToast();
 
-  // Fetch messages whenever the conversation ID changes
   useEffect(() => {
     if (conversationId) {
       fetchMessages(conversationId);
@@ -80,3 +79,4 @@ export const useTutorMessages = () => {
     sendMessage,
   };
 };
+
