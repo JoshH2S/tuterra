@@ -22,7 +22,7 @@ export const CanvasRevealEffect = ({
 }) => {
   return (
     <div className={cn("relative h-full w-full bg-white", containerClassName)}>
-      <div className="h-full w-full">
+      <Canvas>
         <DotMatrix
           colors={colors ?? [[0, 255, 255]]}
           dotSize={dotSize ?? 3}
@@ -35,7 +35,7 @@ export const CanvasRevealEffect = ({
           `}
           center={["x", "y"]}
         />
-      </div>
+      </Canvas>
     </div>
   );
 };
@@ -57,7 +57,7 @@ const DotMatrix: React.FC<DotMatrixProps> = ({
   shader = "",
   center = ["x", "y"],
 }) => {
-  const uniforms = React.useMemo(() => {
+  const uniforms = useMemo(() => {
     let colorsArray = [colors[0], colors[0], colors[0], colors[0], colors[0], colors[0]];
     if (colors.length === 2) {
       colorsArray = [colors[0], colors[0], colors[0], colors[1], colors[1], colors[1]];
@@ -154,9 +154,8 @@ const ShaderMaterial = ({
   maxFps = 60,
 }: {
   source: string;
-  hovered?: boolean;
-  maxFps?: number;
   uniforms: Uniforms;
+  maxFps?: number;
 }) => {
   const { size } = useThree();
   const meshRef = useRef<THREE.Mesh>(null);
@@ -181,32 +180,7 @@ const ShaderMaterial = ({
 
     for (const uniformName in uniforms) {
       const uniform = uniforms[uniformName];
-
-      switch (uniform.type) {
-        case "uniform1f":
-          preparedUniforms[uniformName] = { value: uniform.value };
-          break;
-        case "uniform3f":
-          preparedUniforms[uniformName] = { 
-            value: new THREE.Vector3().fromArray(uniform.value as number[])
-          };
-          break;
-        case "uniform1fv":
-          preparedUniforms[uniformName] = { value: uniform.value };
-          break;
-        case "uniform3fv":
-          preparedUniforms[uniformName] = {
-            value: (uniform.value as number[][]).map(v => 
-              new THREE.Vector3().fromArray(v)
-            )
-          };
-          break;
-        case "uniform2f":
-          preparedUniforms[uniformName] = {
-            value: new THREE.Vector2().fromArray(uniform.value as number[])
-          };
-          break;
-      }
+      preparedUniforms[uniformName] = { value: uniform.value };
     }
 
     preparedUniforms.u_time = { value: 0 };
@@ -244,19 +218,13 @@ const ShaderMaterial = ({
 
 interface ShaderProps {
   source: string;
-  uniforms: Record<
-    string,
-    {
-      value: number[] | number[][] | number;
-      type: string;
-    }
-  >;
+  uniforms: Uniforms;
   maxFps?: number;
 }
 
 const Shader: React.FC<ShaderProps> = ({ source, uniforms, maxFps = 60 }) => {
   return (
-    <Canvas className="absolute inset-0 h-full w-full">
+    <Canvas gl={{ alpha: true }}>
       <ShaderMaterial source={source} uniforms={uniforms} maxFps={maxFps} />
     </Canvas>
   );
