@@ -1,3 +1,4 @@
+
 export interface Course {
   id: string;
   title: string;
@@ -5,4 +6,10 @@ export interface Course {
   teacher_id: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface CourseMaterial {
+  id: string;
+  file_name: string;
+  course_id: string;
 }
