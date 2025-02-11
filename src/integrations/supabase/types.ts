@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_type: string
+          course_id: string | null
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          student_id: string
+        }
+        Insert: {
+          activity_type: string
+          course_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          student_id: string
+        }
+        Update: {
+          activity_type?: string
+          course_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_materials: {
         Row: {
           course_id: string
@@ -81,6 +119,53 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_goals: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          progress: number | null
+          status: string
+          student_id: string
+          target_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          progress?: number | null
+          status?: string
+          student_id: string
+          target_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          progress?: number | null
+          status?: string
+          student_id?: string
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_goals_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]
@@ -398,6 +483,50 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_sessions: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          description: string | null
+          end_time: string
+          id: string
+          start_time: string
+          status: string
+          student_id: string
+          title: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          end_time: string
+          id?: string
+          start_time: string
+          status?: string
+          student_id: string
+          title: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          id?: string
+          start_time?: string
+          status?: string
+          student_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sessions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]
