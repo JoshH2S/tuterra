@@ -1,27 +1,21 @@
 
 import { useState } from "react";
-import { useTutorMaterials } from "@/hooks/useTutorMaterials";
 import { useTutorMessages } from "@/hooks/useTutorMessages";
-import { TutorChatHeader } from "./TutorChatHeader";
 import { TutorChatMessages } from "./TutorChatMessages";
 import { TutorChatInput } from "./TutorChatInput";
 import { processFileContent } from "@/utils/file-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-interface TutorChatProps {
-  courseId?: string;
-}
-
-export const TutorChat = ({ courseId }: TutorChatProps) => {
+export const TutorChat = () => {
   const [message, setMessage] = useState("");
-  const { materials, selectedMaterial, setSelectedMaterial } = useTutorMaterials(courseId);
-  const { messages, isLoading, sendMessage } = useTutorMessages(courseId);
+  const { messages, isLoading, sendMessage } = useTutorMessages();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await sendMessage(message, selectedMaterial);
+    await sendMessage(message);
     setMessage("");
   };
 
@@ -29,7 +23,6 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
     try {
       const processedContent = await processFileContent(file);
       
-      // Upload to Supabase Storage
       const filePath = `${crypto.randomUUID()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('tutor_files')
@@ -37,7 +30,6 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
 
       if (uploadError) throw uploadError;
 
-      // Send a message with the file context
       const fileMessage = `I've uploaded a file named "${file.name}". Please analyze its contents and help me understand it better.`;
       await sendMessage(fileMessage, filePath);
 
@@ -49,29 +41,32 @@ export const TutorChat = ({ courseId }: TutorChatProps) => {
       console.error('Error uploading file:', error);
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to upload file',
         variant: "destructive",
       });
     }
   };
 
   return (
-    <div className="flex flex-col h-[600px] bg-white rounded-lg shadow-md">
-      <TutorChatHeader
-        materials={materials}
-        selectedMaterial={selectedMaterial}
-        onMaterialSelect={setSelectedMaterial}
-      />
-      <TutorChatMessages messages={messages} />
-      <div className="p-4 border-t">
-        <TutorChatInput
-          message={message}
-          isLoading={isLoading}
-          onMessageChange={setMessage}
-          onSubmit={handleSubmit}
-          onFileUpload={handleFileUpload}
-        />
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle>Chat with your AI Study Assistant</CardTitle>
+        <CardDescription>
+          Ask me anything about your studies. I can help you understand concepts, create study guides, or answer any academic questions.
+        </CardDescription>
+      </CardHeader>
+      <div className="flex flex-col h-[600px]">
+        <TutorChatMessages messages={messages} />
+        <div className="p-4 border-t">
+          <TutorChatInput
+            message={message}
+            isLoading={isLoading}
+            onMessageChange={setMessage}
+            onSubmit={handleSubmit}
+            onFileUpload={handleFileUpload}
+          />
+        </div>
       </div>
-    </div>
+    </Card>
   );
 };

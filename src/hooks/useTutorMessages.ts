@@ -5,32 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useConversation } from "./useConversation";
 import { useMessageTransform } from "./useMessageTransform";
 
-interface Message {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-}
-
-export const useTutorMessages = (courseId?: string) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+export const useTutorMessages = () => {
+  const [messages, setMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { conversationId, setConversationId } = useConversation(courseId);
+  const { conversationId, setConversationId } = useConversation();
   const { transformMessages } = useMessageTransform();
   const { toast } = useToast();
 
-  const fetchMessages = async (conversationId: string) => {
-    const { data: messagesData } = await supabase
-      .from('tutor_messages')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
-
-    if (messagesData) {
-      setMessages(transformMessages(messagesData));
-    }
-  };
-
-  const sendMessage = async (message: string, selectedMaterial: string | null) => {
+  const sendMessage = async (message: string, materialPath?: string | null) => {
     if (!message.trim() || isLoading) return;
 
     setIsLoading(true);
@@ -42,9 +24,8 @@ export const useTutorMessages = (courseId?: string) => {
         body: {
           message,
           conversationId,
-          courseId,
           studentId: session.user.id,
-          materialPath: selectedMaterial,
+          materialPath,
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -66,6 +47,18 @@ export const useTutorMessages = (courseId?: string) => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchMessages = async (conversationId: string) => {
+    const { data: messagesData } = await supabase
+      .from('tutor_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+
+    if (messagesData) {
+      setMessages(transformMessages(messagesData));
     }
   };
 

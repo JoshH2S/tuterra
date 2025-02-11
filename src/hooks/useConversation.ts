@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useConversation = (courseId?: string) => {
+export const useConversation = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -11,16 +11,11 @@ export const useConversation = (courseId?: string) => {
         const { data: userData } = await supabase.auth.getUser();
         if (!userData.user) return;
 
-        const query = supabase
+        const { data: conversationData } = await supabase
           .from('tutor_conversations')
           .select('id')
-          .eq('student_id', userData.user.id);
-        
-        if (courseId) {
-          query.eq('course_id', courseId);
-        }
-
-        const { data: conversationData } = await query.maybeSingle();
+          .eq('student_id', userData.user.id)
+          .maybeSingle();
 
         if (conversationData) {
           setConversationId(conversationData.id);
@@ -31,7 +26,7 @@ export const useConversation = (courseId?: string) => {
     };
 
     fetchConversation();
-  }, [courseId]);
+  }, []);
 
   return {
     conversationId,
