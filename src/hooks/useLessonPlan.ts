@@ -3,40 +3,28 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
-export interface Objective {
-  description: string;
-  days: number;
-}
-
-export const MAX_CONTENT_LENGTH = 5000;
+import { useFileHandling } from "./lesson-plan/useFileHandling";
+import { useObjectives } from "./lesson-plan/useObjectives";
+import { LessonPlan } from "@/types/lesson";
 
 export const useLessonPlan = () => {
   const navigate = useNavigate();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [objectives, setObjectives] = useState<Objective[]>([{ description: "", days: 1 }]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [lessonPlan, setLessonPlan] = useState<string>("");
-  const [contentLength, setContentLength] = useState<number>(0);
 
-  const handleFileSelect = async (file: File) => {
-    setSelectedFile(file);
-    const content = await file.text();
-    setContentLength(content.length);
-  };
+  const {
+    selectedFile,
+    contentLength,
+    handleFileSelect,
+    processFile,
+  } = useFileHandling();
 
-  const addObjective = () => {
-    setObjectives([...objectives, { description: "", days: 1 }]);
-  };
-
-  const updateObjective = (index: number, field: keyof Objective, value: string | number) => {
-    const newObjectives = [...objectives];
-    newObjectives[index] = {
-      ...newObjectives[index],
-      [field]: value
-    };
-    setObjectives(newObjectives);
-  };
+  const {
+    objectives,
+    addObjective,
+    updateObjective,
+    validateObjectives,
+  } = useObjectives();
 
   const handleSubmit = async () => {
     if (!selectedFile) {
@@ -48,7 +36,7 @@ export const useLessonPlan = () => {
       return;
     }
 
-    if (objectives.some(obj => !obj.description)) {
+    if (!validateObjectives()) {
       toast({
         title: "Error",
         description: "Please fill out all objectives",
@@ -61,8 +49,8 @@ export const useLessonPlan = () => {
     setLessonPlan("");
 
     try {
-      const fileContent = await selectedFile.text();
-      const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
+      const content = await processFile();
+      if (!content) return;
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -85,8 +73,8 @@ export const useLessonPlan = () => {
             'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            content: trimmedContent,
-            objectives: objectives,
+            content,
+            objectives,
             teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
             school: teacherData?.school,
           }),
