@@ -10,26 +10,31 @@ import { format } from "date-fns";
 
 const CourseDetail = () => {
   const { courseId } = useParams();
+  console.log("CourseId from params:", courseId); // Debug log
+  
   const { materials } = useTutorMaterials(courseId || '');
 
-  const { data: course } = useQuery({
+  const { data: course, isLoading: courseLoading, error: courseError } = useQuery({
     queryKey: ['course', courseId],
     queryFn: async () => {
-      if (!courseId) return null;
+      if (!courseId) throw new Error('No course ID provided');
       
       const { data, error } = await supabase
         .from('courses')
         .select('*')
         .eq('id', courseId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Course not found');
+      
+      console.log("Course data:", data); // Debug log
       return data;
     },
     enabled: !!courseId,
   });
 
-  const { data: assignments } = useQuery({
+  const { data: assignments, isLoading: assignmentsLoading } = useQuery({
     queryKey: ['assignments', courseId],
     queryFn: async () => {
       if (!courseId) return [];
@@ -41,12 +46,13 @@ const CourseDetail = () => {
         .order('due_date', { ascending: true });
 
       if (error) throw error;
+      console.log("Assignments data:", data); // Debug log
       return data || [];
     },
     enabled: !!courseId,
   });
 
-  const { data: quizzes } = useQuery({
+  const { data: quizzes, isLoading: quizzesLoading } = useQuery({
     queryKey: ['quizzes', courseId],
     queryFn: async () => {
       if (!courseId) return [];
@@ -58,12 +64,13 @@ const CourseDetail = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log("Quizzes data:", data); // Debug log
       return data || [];
     },
     enabled: !!courseId,
   });
 
-  const { data: performance } = useQuery({
+  const { data: performance, isLoading: performanceLoading } = useQuery({
     queryKey: ['performance', courseId],
     queryFn: async () => {
       if (!courseId) return null;
@@ -72,13 +79,56 @@ const CourseDetail = () => {
         .from('student_performance')
         .select('*')
         .eq('course_id', courseId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
+      console.log("Performance data:", data); // Debug log
       return data;
     },
     enabled: !!courseId,
   });
+
+  if (courseLoading || assignmentsLoading || quizzesLoading || performanceLoading) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-gray-600">Loading course details...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (courseError) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-red-600">Error loading course: {courseError.message}</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-gray-600">Course not found</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">
