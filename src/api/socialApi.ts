@@ -5,30 +5,49 @@ import { toast } from "@/hooks/use-toast";
 
 export const fetchMyStudyGroups = async () => {
   try {
-    const { data: groups, error } = await supabase
+    // First fetch the study groups
+    const { data: groups, error: groupsError } = await supabase
       .from('study_groups')
-      .select(`
-        *,
-        study_group_members!study_group_members_group_id_fkey (
-          count
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching study groups:', error);
+    if (groupsError) {
+      console.error('Error fetching study groups:', groupsError);
       toast({
         title: "Error",
         description: "Failed to fetch study groups. Please try again.",
         variant: "destructive",
       });
-      throw error;
+      throw groupsError;
     }
 
-    // Transform the data to include the current_members count
-    const transformedGroups = groups.map(group => ({
+    // Then fetch the member counts for these groups
+    const { data: memberCounts, error: countsError } = await supabase
+      .from('study_group_members')
+      .select('group_id, count')
+      .in('group_id', groups?.map(g => g.id) || [])
+      .select('group_id, count(*)')
+      .group('group_id');
+
+    if (countsError) {
+      console.error('Error fetching member counts:', countsError);
+      toast({
+        title: "Error",
+        description: "Failed to fetch group member counts. Please try again.",
+        variant: "destructive",
+      });
+      throw countsError;
+    }
+
+    // Create a map of group ID to member count
+    const countMap = new Map(
+      memberCounts?.map(({ group_id, count }) => [group_id, parseInt(count)])
+    );
+
+    // Combine the data
+    const transformedGroups = groups?.map(group => ({
       ...group,
-      current_members: group.study_group_members[0]?.count || 0
+      current_members: countMap.get(group.id) || 0
     }));
 
     return transformedGroups as StudyGroup[];
@@ -62,3 +81,4 @@ export const fetchLatestResources = async () => {
     throw error;
   }
 };
+
