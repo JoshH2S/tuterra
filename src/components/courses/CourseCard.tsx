@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import { Course } from "@/types/course";
-import { Trash2, FileText, Template } from "lucide-react";
+import { Trash2, FileText, Book } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,7 +93,7 @@ const CourseCard = ({ course, onFileSelect, onDelete }: CourseCardProps) => {
           onClick={handleTemplatesClick}
           className="flex items-center gap-2"
         >
-          <Template className="h-4 w-4" />
+          <Book className="h-4 w-4" />
           Manage Templates
         </Button>
         <Button
