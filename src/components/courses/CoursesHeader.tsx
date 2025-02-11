@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { PlusCircle, FileText } from "lucide-react";
+import { PlusCircle, FileText, Template } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface CoursesHeaderProps {
@@ -17,6 +17,10 @@ export const CoursesHeader = ({ onCreateClick }: CoursesHeaderProps) => {
         <p className="text-gray-600">Create and manage your courses</p>
       </div>
       <div className="flex gap-4">
+        <Button variant="outline" onClick={() => navigate('/course-templates')}>
+          <Template className="mr-2 h-4 w-4" />
+          Course Templates
+        </Button>
         <Button variant="outline" onClick={() => navigate('/quizzes')}>
           <FileText className="mr-2 h-4 w-4" />
           View Quizzes

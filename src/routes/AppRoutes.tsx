@@ -16,6 +16,7 @@ import StudentDashboard from "@/pages/StudentDashboard";
 import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
 import { MediaLibrary } from "@/components/media/MediaLibrary";
+import CourseTemplates from "@/pages/CourseTemplates";
 
 export const AppRoutes = () => {
   return (
@@ -61,6 +62,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <CourseDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/course-templates"
+        element={
+          <ProtectedRoute>
+            <CourseTemplates />
           </ProtectedRoute>
         }
       />
@@ -131,4 +140,4 @@ export const AppRoutes = () => {
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
-}
+};
