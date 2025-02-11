@@ -68,13 +68,18 @@ export const useStudySessions = () => {
         return;
       }
 
+      // Create the session data object, handling the course_id properly
+      const newSessionData = {
+        ...sessionData,
+        student_id: user.id,
+        status: sessionData.status || 'scheduled',
+        // Only include course_id if it has a value
+        ...(sessionData.course_id ? { course_id: sessionData.course_id } : {})
+      };
+
       const { data, error } = await supabase
         .from('study_sessions')
-        .insert([{ 
-          ...sessionData, 
-          student_id: user.id,
-          status: sessionData.status || 'scheduled'
-        }])
+        .insert([newSessionData])
         .select()
         .single();
 
@@ -114,9 +119,15 @@ export const useStudySessions = () => {
         return;
       }
 
+      // Clean up the updates object to handle course_id properly
+      const cleanUpdates = {
+        ...updates,
+        ...(updates.course_id ? { course_id: updates.course_id } : {})
+      };
+
       const { data, error } = await supabase
         .from('study_sessions')
-        .update(updates)
+        .update(cleanUpdates)
         .eq('id', id)
         .eq('student_id', user.id)
         .select()
