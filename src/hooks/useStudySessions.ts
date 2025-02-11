@@ -33,7 +33,10 @@ export const useStudySessions = () => {
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      setSessions(data || []);
+      setSessions(data.map(session => ({
+        ...session,
+        status: session.status as 'scheduled' | 'completed' | 'missed'
+      })));
     } catch (error) {
       console.error('Error fetching study sessions:', error);
       toast({
@@ -58,7 +61,10 @@ export const useStudySessions = () => {
         .single();
 
       if (error) throw error;
-      setSessions(prev => [...prev, data]);
+      setSessions(prev => [...prev, {
+        ...data,
+        status: data.status as 'scheduled' | 'completed' | 'missed'
+      }]);
       toast({
         title: "Success",
         description: "Study session scheduled successfully.",
@@ -85,7 +91,10 @@ export const useStudySessions = () => {
         .single();
 
       if (error) throw error;
-      setSessions(prev => prev.map(session => session.id === id ? data : session));
+      setSessions(prev => prev.map(session => session.id === id ? {
+        ...data,
+        status: data.status as 'scheduled' | 'completed' | 'missed'
+      } : session));
       toast({
         title: "Success",
         description: "Study session updated successfully.",

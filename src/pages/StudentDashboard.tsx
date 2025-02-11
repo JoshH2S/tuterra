@@ -28,6 +28,10 @@ export default function StudentDashboard() {
     );
   }
 
+  const handleCreateSession = async (sessionData: Omit<StudySession, 'id' | 'student_id'>) => {
+    await createSession(sessionData);
+  };
+
   return (
     <div className="container mx-auto py-12 space-y-8">
       <div>
@@ -74,7 +78,7 @@ export default function StudentDashboard() {
       <StudyCalendar 
         sessions={sessions}
         courses={courses}
-        onCreateSession={createSession}
+        onCreateSession={handleCreateSession}
       />
 
       <PerformanceOverview performance={performance} />
