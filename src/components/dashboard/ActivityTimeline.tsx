@@ -4,15 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Activity, Calendar, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { StudySession } from "@/hooks/useStudySessions";
+import { Database } from "@/integrations/supabase/types";
 
-interface ActivityLog {
+type ActivityLog = {
   id: string;
   activity_type: string;
   description: string;
   created_at: string;
-  metadata: {
+  metadata: Database["public"]["Tables"]["activity_logs"]["Row"]["metadata"] & {
     session?: StudySession;
-  } | null;
+  };
 }
 
 export function ActivityTimeline() {
@@ -36,7 +37,14 @@ export function ActivityTimeline() {
         .limit(10);
 
       if (error) throw error;
-      setActivities(data || []);
+      
+      // Transform the data to match our ActivityLog type
+      const transformedData: ActivityLog[] = (data || []).map(item => ({
+        ...item,
+        metadata: item.metadata as ActivityLog["metadata"]
+      }));
+      
+      setActivities(transformedData);
     } catch (error) {
       console.error('Error fetching activities:', error);
     } finally {

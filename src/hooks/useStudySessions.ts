@@ -61,11 +61,23 @@ export const useStudySessions = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const metadata = {
+        session: {
+          id: session.id,
+          title: session.title,
+          description: session.description,
+          start_time: session.start_time,
+          end_time: session.end_time,
+          course_id: session.course_id,
+          status: session.status
+        }
+      };
+
       await supabase.from('activity_logs').insert({
         student_id: user.id,
         activity_type: 'study_session',
         description,
-        metadata: { session },
+        metadata
       });
     } catch (error) {
       console.error('Error logging activity:', error);
