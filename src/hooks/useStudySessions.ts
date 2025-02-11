@@ -24,19 +24,26 @@ export const useStudySessions = () => {
   const fetchStudySessions = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to view study sessions.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const { data, error } = await supabase
         .from('study_sessions')
         .select('*')
-        .eq('student_id', user.id)
-        .order('start_time', { ascending: true });
+        .eq('student_id', user.id);
 
       if (error) throw error;
-      setSessions(data.map(session => ({
+      
+      setSessions(data?.map(session => ({
         ...session,
         status: session.status as 'scheduled' | 'completed' | 'missed'
-      })));
+      })) || []);
     } catch (error) {
       console.error('Error fetching study sessions:', error);
       toast({
@@ -52,23 +59,37 @@ export const useStudySessions = () => {
   const createSession = async (sessionData: Omit<StudySession, 'id' | 'student_id'>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create study sessions.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const { data, error } = await supabase
         .from('study_sessions')
-        .insert([{ ...sessionData, student_id: user.id }])
+        .insert([{ 
+          ...sessionData, 
+          student_id: user.id,
+          status: sessionData.status || 'scheduled'
+        }])
         .select()
         .single();
 
       if (error) throw error;
+      
       setSessions(prev => [...prev, {
         ...data,
         status: data.status as 'scheduled' | 'completed' | 'missed'
       }]);
+      
       toast({
         title: "Success",
         description: "Study session scheduled successfully.",
       });
+      
       return data;
     } catch (error) {
       console.error('Error creating study session:', error);
@@ -83,22 +104,38 @@ export const useStudySessions = () => {
 
   const updateSession = async (id: string, updates: Partial<StudySession>) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to update study sessions.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('study_sessions')
         .update(updates)
         .eq('id', id)
+        .eq('student_id', user.id)
         .select()
         .single();
 
       if (error) throw error;
-      setSessions(prev => prev.map(session => session.id === id ? {
-        ...data,
-        status: data.status as 'scheduled' | 'completed' | 'missed'
-      } : session));
+      
+      setSessions(prev => prev.map(session => 
+        session.id === id ? {
+          ...data,
+          status: data.status as 'scheduled' | 'completed' | 'missed'
+        } : session
+      ));
+      
       toast({
         title: "Success",
         description: "Study session updated successfully.",
       });
+      
       return data;
     } catch (error) {
       console.error('Error updating study session:', error);
@@ -113,13 +150,26 @@ export const useStudySessions = () => {
 
   const deleteSession = async (id: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to delete study sessions.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('study_sessions')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('student_id', user.id);
 
       if (error) throw error;
+      
       setSessions(prev => prev.filter(session => session.id !== id));
+      
       toast({
         title: "Success",
         description: "Study session deleted successfully.",
