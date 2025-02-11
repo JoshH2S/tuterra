@@ -75,12 +75,6 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <StudyCalendar 
-        sessions={sessions}
-        courses={courses}
-        onCreateSession={handleCreateSession}
-      />
-
       <PerformanceOverview performance={performance} />
 
       <div>
@@ -100,6 +94,12 @@ export default function StudentDashboard() {
           )}
         </div>
       </div>
+
+      <StudyCalendar 
+        sessions={sessions}
+        courses={courses}
+        onCreateSession={handleCreateSession}
+      />
     </div>
   );
 }
