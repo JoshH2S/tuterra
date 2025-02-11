@@ -56,6 +56,22 @@ export const useStudySessions = () => {
     }
   };
 
+  const logActivity = async (description: string, session: StudySession) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase.from('activity_logs').insert({
+        student_id: user.id,
+        activity_type: 'study_session',
+        description,
+        metadata: { session },
+      });
+    } catch (error) {
+      console.error('Error logging activity:', error);
+    }
+  };
+
   const createSession = async (sessionData: Omit<StudySession, 'id' | 'student_id'>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -68,12 +84,10 @@ export const useStudySessions = () => {
         return;
       }
 
-      // Create the session data object, handling the course_id properly
       const newSessionData = {
         ...sessionData,
         student_id: user.id,
         status: sessionData.status || 'scheduled',
-        // Only include course_id if it has a value
         ...(sessionData.course_id ? { course_id: sessionData.course_id } : {})
       };
 
@@ -85,10 +99,14 @@ export const useStudySessions = () => {
 
       if (error) throw error;
       
-      setSessions(prev => [...prev, {
+      const newSession = {
         ...data,
         status: data.status as 'scheduled' | 'completed' | 'missed'
-      }]);
+      };
+      
+      setSessions(prev => [...prev, newSession]);
+      
+      await logActivity(`Scheduled a new study session: ${newSession.title}`, newSession);
       
       toast({
         title: "Success",
@@ -119,7 +137,6 @@ export const useStudySessions = () => {
         return;
       }
 
-      // Clean up the updates object to handle course_id properly
       const cleanUpdates = {
         ...updates,
         ...(updates.course_id ? { course_id: updates.course_id } : {})
@@ -135,12 +152,16 @@ export const useStudySessions = () => {
 
       if (error) throw error;
       
+      const updatedSession = {
+        ...data,
+        status: data.status as 'scheduled' | 'completed' | 'missed'
+      };
+      
       setSessions(prev => prev.map(session => 
-        session.id === id ? {
-          ...data,
-          status: data.status as 'scheduled' | 'completed' | 'missed'
-        } : session
+        session.id === id ? updatedSession : session
       ));
+      
+      await logActivity(`Updated study session: ${updatedSession.title}`, updatedSession);
       
       toast({
         title: "Success",
@@ -171,6 +192,9 @@ export const useStudySessions = () => {
         return;
       }
 
+      const sessionToDelete = sessions.find(s => s.id === id);
+      if (!sessionToDelete) return;
+
       const { error } = await supabase
         .from('study_sessions')
         .delete()
@@ -180,6 +204,8 @@ export const useStudySessions = () => {
       if (error) throw error;
       
       setSessions(prev => prev.filter(session => session.id !== id));
+      
+      await logActivity(`Deleted study session: ${sessionToDelete.title}`, sessionToDelete);
       
       toast({
         title: "Success",

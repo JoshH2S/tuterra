@@ -5,6 +5,7 @@ import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
 import { CourseCard } from "@/components/dashboard/CourseCard";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
+import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 
@@ -75,31 +76,41 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <PerformanceOverview performance={performance} />
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <PerformanceOverview performance={performance} />
 
-      <div>
-        <h2 className="text-2xl font-semibold mb-6">My Courses</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              performance={performance.find(p => p.course_id === course.course_id)}
-            />
-          ))}
-          {courses.length === 0 && (
-            <div className="col-span-full text-center py-12 text-muted-foreground">
-              <p>You are not enrolled in any courses yet.</p>
+          <div className="mt-8">
+            <h2 className="text-2xl font-semibold mb-6">My Courses</h2>
+            <div className="grid gap-6 md:grid-cols-2">
+              {courses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  performance={performance.find(p => p.course_id === course.course_id)}
+                />
+              ))}
+              {courses.length === 0 && (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  <p>You are not enrolled in any courses yet.</p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          <div className="mt-8">
+            <StudyCalendar 
+              sessions={sessions}
+              courses={courses}
+              onCreateSession={handleCreateSession}
+            />
+          </div>
+        </div>
+
+        <div>
+          <ActivityTimeline />
         </div>
       </div>
-
-      <StudyCalendar 
-        sessions={sessions}
-        courses={courses}
-        onCreateSession={handleCreateSession}
-      />
     </div>
   );
 }
