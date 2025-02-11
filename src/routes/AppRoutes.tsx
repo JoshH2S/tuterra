@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
@@ -14,6 +15,7 @@ import QuizResults from "@/pages/QuizResults";
 import StudentDashboard from "@/pages/StudentDashboard";
 import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
+import StudyGroups from "@/pages/StudyGroups";
 
 export const AppRoutes = () => {
   return (
@@ -115,6 +117,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <QuizResults />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/study-groups"
+        element={
+          <ProtectedRoute>
+            <StudyGroups />
           </ProtectedRoute>
         }
       />
