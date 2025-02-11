@@ -17,8 +17,10 @@ export const TutorChatInput = ({
   isLoading,
   onSubmit,
   onFileUpload,
+  onMessageChange,
 }: TutorChatInputProps) => {
   const handleSubmit = async (value: string) => {
+    onMessageChange(value);
     const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
     onSubmit(fakeEvent);
   };
@@ -31,6 +33,7 @@ export const TutorChatInput = ({
           onSubmit={handleSubmit}
           loadingDuration={3000}
           className="mb-0"
+          disabled={isLoading}
         />
       </div>
       <div className="flex flex-col gap-2 mb-4">
