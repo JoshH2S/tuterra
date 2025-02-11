@@ -15,6 +15,9 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
     : 0;
 
   const totalQuizzes = performance.reduce((acc, curr) => acc + curr.completed_quizzes, 0);
+  const totalCompletionRate = performance.length > 0
+    ? (performance.reduce((acc, curr) => acc + (curr.completed_quizzes / curr.total_quizzes), 0) / performance.length) * 100
+    : 0;
 
   const chartData = performance.map(p => ({
     course: p.course_id,
@@ -36,26 +39,32 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
           <CardTitle>Performance Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Overall Average</p>
-              <p className="text-2xl font-bold">{averageScore.toFixed(1)}%</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Total Quizzes Completed</p>
-              <p className="text-2xl font-bold">{totalQuizzes}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Active Courses</p>
-              <p className="text-2xl font-bold">{performance.length}</p>
-            </div>
+          <div className="grid gap-4 md:grid-cols-3 mb-6">
+            <Card className="p-4 border-l-4 border-l-blue-500">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Overall Average</p>
+                <p className="text-2xl font-bold">{averageScore.toFixed(1)}%</p>
+              </div>
+            </Card>
+            <Card className="p-4 border-l-4 border-l-green-500">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Quizzes Completed</p>
+                <p className="text-2xl font-bold">{totalQuizzes}</p>
+              </div>
+            </Card>
+            <Card className="p-4 border-l-4 border-l-purple-500">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Completion Rate</p>
+                <p className="text-2xl font-bold">{totalCompletionRate.toFixed(1)}%</p>
+              </div>
+            </Card>
           </div>
           
           {chartData.length > 0 && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Score Distribution</h3>
-                <div className="h-[200px]">
+                <h3 className="text-lg font-semibold mb-4">Score Distribution</h3>
+                <div className="h-[250px] bg-card rounded-lg p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <XAxis dataKey="course" />
@@ -66,6 +75,7 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
                         dataKey="score" 
                         stroke="#2563eb" 
                         strokeWidth={2}
+                        dot={{ fill: '#2563eb' }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -73,8 +83,8 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-2">Quiz Completion Rate</h3>
-                <div className="h-[200px]">
+                <h3 className="text-lg font-semibold mb-4">Quiz Completion Progress</h3>
+                <div className="h-[250px] bg-card rounded-lg p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={quizCompletionData}>
                       <XAxis dataKey="course" />
@@ -103,7 +113,7 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
             <Alert key={index} className="bg-green-50 border-green-200">
               <Trophy className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-600">
-                Excellent performance in this course! Average score: {p.average_score.toFixed(1)}%
+                Excellent performance! Keep up the great work in this course.
               </AlertDescription>
             </Alert>
           );
@@ -112,7 +122,7 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
             <Alert key={index} className="bg-yellow-50 border-yellow-200">
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <AlertDescription className="text-yellow-600">
-                Consider completing more quizzes in this course. Current completion rate: {completionRate.toFixed(1)}%
+                Try to complete more quizzes to improve your understanding.
               </AlertDescription>
             </Alert>
           );
@@ -121,7 +131,7 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
             <Alert key={index} className="bg-blue-50 border-blue-200">
               <TrendingUp className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-600">
-                Room for improvement in this course. Keep practicing!
+                You're making progress! Keep practicing to improve your score.
               </AlertDescription>
             </Alert>
           );

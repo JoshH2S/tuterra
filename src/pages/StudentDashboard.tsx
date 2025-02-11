@@ -3,6 +3,8 @@ import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { CourseCard } from "@/components/dashboard/CourseCard";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -31,6 +33,40 @@ export default function StudentDashboard() {
           Track your progress and performance across all your courses
         </p>
       </div>
+
+      {insights.length > 0 && (
+        <div className="grid gap-4">
+          {insights.map((insight, index) => {
+            const Icon = insight.type === 'warning' 
+              ? AlertTriangle 
+              : insight.type === 'achievement' 
+                ? Trophy 
+                : TrendingUp;
+
+            const bgColor = insight.type === 'warning'
+              ? 'bg-yellow-50 border-yellow-200'
+              : insight.type === 'achievement'
+                ? 'bg-green-50 border-green-200'
+                : 'bg-blue-50 border-blue-200';
+
+            const textColor = insight.type === 'warning'
+              ? 'text-yellow-600'
+              : insight.type === 'achievement'
+                ? 'text-green-600'
+                : 'text-blue-600';
+
+            return (
+              <Alert key={index} className={bgColor}>
+                <Icon className={`h-4 w-4 ${textColor}`} />
+                <AlertDescription className={textColor}>
+                  {insight.message}
+                  {insight.metric && ` (${insight.metric.toFixed(1)}${insight.type === 'improvement' ? '%' : ''})`}
+                </AlertDescription>
+              </Alert>
+            );
+          })}
+        </div>
+      )}
 
       <PerformanceOverview performance={performance} />
 
