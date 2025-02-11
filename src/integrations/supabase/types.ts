@@ -88,8 +88,50 @@ export type Database = {
           },
         ]
       }
+      course_templates: {
+        Row: {
+          content: Json
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          teacher_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          teacher_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_templates_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
+          content: Json | null
           created_at: string
           description: string | null
           id: string
@@ -98,6 +140,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          content?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -106,6 +149,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          content?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -246,6 +290,53 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_library: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          metadata: Json | null
+          teacher_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          metadata?: Json | null
+          teacher_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          metadata?: Json | null
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_library_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

@@ -14,6 +14,7 @@ import QuizResults from "@/pages/QuizResults";
 import StudentDashboard from "@/pages/StudentDashboard";
 import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
+import { MediaLibrary } from "@/components/media/MediaLibrary";
 
 export const AppRoutes = () => {
   return (
@@ -115,6 +116,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <QuizResults />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/media-library"
+        element={
+          <ProtectedRoute>
+            <MediaLibrary />
           </ProtectedRoute>
         }
       />
