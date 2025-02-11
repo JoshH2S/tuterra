@@ -1,10 +1,11 @@
 
-import { LessonPlanningHeader } from "@/components/lesson-planning/LessonPlanningHeader";
+import { LessonPlanningHeaderWithTemplates } from "@/components/lesson-planning/LessonPlanningHeaderWithTemplates";
 import { ObjectiveInput } from "@/components/lesson-planning/ObjectiveInput";
 import { ObjectivesCard } from "@/components/lesson-planning/ObjectivesCard";
 import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
 import { LessonPlanOutput } from "@/components/lesson-planning/LessonPlanOutput";
 import { useLessonPlan } from "@/hooks/useLessonPlan";
+import { useCourseTemplates } from "@/hooks/useCourseTemplates";
 
 const LessonPlanning = () => {
   const {
@@ -19,10 +20,25 @@ const LessonPlanning = () => {
     handleSubmit,
   } = useLessonPlan();
 
+  const { createTemplate } = useCourseTemplates();
+
+  const handleSaveTemplate = async () => {
+    if (lessonPlan) {
+      await createTemplate(
+        `Lesson Plan Template - ${objectives.map(obj => obj.description).join(", ")}`,
+        {
+          type: "lesson_plan",
+          objectives,
+          content: lessonPlan
+        }
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        <LessonPlanningHeader />
+        <LessonPlanningHeaderWithTemplates onSaveTemplate={lessonPlan ? handleSaveTemplate : undefined} />
         
         <div className="grid gap-8 md:grid-cols-2">
           <div className="space-y-8">
