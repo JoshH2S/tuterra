@@ -6,6 +6,7 @@ import { CourseCard } from "@/components/dashboard/CourseCard";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
+import { SocialSection } from "@/components/dashboard/SocialSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 
@@ -104,6 +105,10 @@ export default function StudentDashboard() {
               courses={courses}
               onCreateSession={handleCreateSession}
             />
+          </div>
+
+          <div className="mt-8">
+            <SocialSection />
           </div>
         </div>
 
