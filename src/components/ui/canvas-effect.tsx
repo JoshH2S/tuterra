@@ -22,7 +22,7 @@ export const CanvasRevealEffect = ({
 }) => {
   return (
     <div className={cn("relative h-full w-full bg-white", containerClassName)}>
-      <Canvas>
+      <Canvas camera={{ position: [0, 0, 1] }}>
         <DotMatrix
           colors={colors ?? [[0, 255, 255]]}
           dotSize={dotSize ?? 3}
@@ -66,166 +66,69 @@ const DotMatrix: React.FC<DotMatrixProps> = ({
     }
 
     return {
-      u_colors: {
-        value: colorsArray.map((color) => [
-          color[0] / 255,
-          color[1] / 255,
-          color[2] / 255,
-        ]),
-        type: "uniform3fv",
-      },
-      u_opacities: {
-        value: opacities,
-        type: "uniform1fv",
-      },
-      u_total_size: {
-        value: totalSize,
-        type: "uniform1f",
-      },
-      u_dot_size: {
-        value: dotSize,
-        type: "uniform1f",
-      },
+      u_colors: { value: colorsArray.map((color) => [color[0] / 255, color[1] / 255, color[2] / 255]) },
+      u_opacities: { value: opacities },
+      u_total_size: { value: totalSize },
+      u_dot_size: { value: dotSize },
     };
   }, [colors, opacities, totalSize, dotSize]);
 
   return (
-    <Shader
-      source={`
-        precision mediump float;
-        in vec2 fragCoord;
-        uniform float u_time;
-        uniform float u_opacities[10];
-        uniform vec3 u_colors[6];
-        uniform float u_total_size;
-        uniform float u_dot_size;
-        uniform vec2 u_resolution;
-        out vec4 fragColor;
-        float PHI = 1.61803398874989484820459;
-        float random(vec2 xy) {
+    <mesh>
+      <planeGeometry args={[2, 2]} />
+      <shaderMaterial
+        vertexShader={`
+          varying vec2 fragCoord;
+          void main() {
+            gl_Position = vec4(position, 1.0);
+            fragCoord = (position.xy + vec2(1.0)) * 0.5;
+          }
+        `}
+        fragmentShader={`
+          uniform float u_time;
+          uniform float u_opacities[10];
+          uniform vec3 u_colors[6];
+          uniform float u_total_size;
+          uniform float u_dot_size;
+          uniform vec2 u_resolution;
+          varying vec2 fragCoord;
+
+          float PHI = 1.61803398874989484820459;
+          
+          float random(vec2 xy) {
             return fract(tan(distance(xy * PHI, xy) * 0.5) * xy.x);
-        }
-        float map(float value, float min1, float max1, float min2, float max2) {
-            return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
-        }
-        void main() {
-            vec2 st = fragCoord.xy;
-            ${
-              center.includes("x")
-                ? "st.x -= abs(floor((mod(u_resolution.x, u_total_size) - u_dot_size) * 0.5));"
-                : ""
-            }
-            ${
-              center.includes("y")
-                ? "st.y -= abs(floor((mod(u_resolution.y, u_total_size) - u_dot_size) * 0.5));"
-                : ""
-            }
+          }
+          
+          void main() {
+            vec2 st = fragCoord * u_resolution;
+            vec2 st2 = vec2(int(st.x / u_total_size), int(st.y / u_total_size));
+            
             float opacity = step(0.0, st.x);
             opacity *= step(0.0, st.y);
-            vec2 st2 = vec2(int(st.x / u_total_size), int(st.y / u_total_size));
+            
             float frequency = 5.0;
             float show_offset = random(st2);
             float rand = random(st2 * floor((u_time / frequency) + show_offset + frequency) + 1.0);
+            
             opacity *= u_opacities[int(rand * 10.0)];
             opacity *= 1.0 - step(u_dot_size / u_total_size, fract(st.x / u_total_size));
             opacity *= 1.0 - step(u_dot_size / u_total_size, fract(st.y / u_total_size));
+            
             vec3 color = u_colors[int(show_offset * 6.0)];
             ${shader}
-            fragColor = vec4(color, opacity);
-            fragColor.rgb *= fragColor.a;
-        }`}
-      uniforms={uniforms}
-      maxFps={60}
-    />
-  );
-};
-
-type Uniforms = Record<
-  string,
-  {
-    value: number[] | number[][] | number;
-    type: string;
-  }
->;
-
-const ShaderMaterial = ({
-  source,
-  uniforms,
-  maxFps = 60,
-}: {
-  source: string;
-  uniforms: Uniforms;
-  maxFps?: number;
-}) => {
-  const { size } = useThree();
-  const meshRef = useRef<THREE.Mesh>(null);
-  let lastFrameTime = 0;
-
-  useFrame(({ clock }) => {
-    if (!meshRef.current?.material) return;
-    const timestamp = clock.getElapsedTime();
-    if (timestamp - lastFrameTime < 1 / maxFps) {
-      return;
-    }
-    lastFrameTime = timestamp;
-
-    const material = meshRef.current.material as THREE.ShaderMaterial;
-    if (material.uniforms?.u_time) {
-      material.uniforms.u_time.value = timestamp;
-    }
-  });
-
-  const shaderMaterial = useMemo(() => {
-    const preparedUniforms: { [key: string]: THREE.IUniform } = {};
-
-    for (const uniformName in uniforms) {
-      const uniform = uniforms[uniformName];
-      preparedUniforms[uniformName] = { value: uniform.value };
-    }
-
-    preparedUniforms.u_time = { value: 0 };
-    preparedUniforms.u_resolution = {
-      value: new THREE.Vector2(size.width * 2, size.height * 2)
-    };
-
-    return new THREE.ShaderMaterial({
-      vertexShader: `
-        precision mediump float;
-        uniform vec2 u_resolution;
-        out vec2 fragCoord;
-        void main() {
-          gl_Position = vec4(position, 1.0);
-          fragCoord = (position.xy + vec2(1.0)) * 0.5 * u_resolution;
-          fragCoord.y = u_resolution.y - fragCoord.y;
-        }
-      `,
-      fragmentShader: source,
-      uniforms: preparedUniforms,
-      transparent: true,
-      blending: THREE.CustomBlending,
-      blendSrc: THREE.SrcAlphaFactor,
-      blendDst: THREE.OneFactor,
-    });
-  }, [size.width, size.height, source, uniforms]);
-
-  return (
-    <mesh ref={meshRef}>
-      <planeGeometry args={[2, 2]} />
-      <primitive object={shaderMaterial} attach="material" />
+            
+            gl_FragColor = vec4(color, opacity);
+            gl_FragColor.rgb *= gl_FragColor.a;
+          }
+        `}
+        uniforms={{
+          ...uniforms,
+          u_time: { value: 0 },
+          u_resolution: { value: new THREE.Vector2(1, 1) }
+        }}
+        transparent={true}
+      />
     </mesh>
   );
 };
 
-interface ShaderProps {
-  source: string;
-  uniforms: Uniforms;
-  maxFps?: number;
-}
-
-const Shader: React.FC<ShaderProps> = ({ source, uniforms, maxFps = 60 }) => {
-  return (
-    <Canvas gl={{ alpha: true }}>
-      <ShaderMaterial source={source} uniforms={uniforms} maxFps={maxFps} />
-    </Canvas>
-  );
-};
