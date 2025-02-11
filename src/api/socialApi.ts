@@ -7,15 +7,21 @@ export const fetchMyStudyGroups = async () => {
     .from('study_groups')
     .select(`
       *,
-      study_group_members!inner (
-        member_id
+      study_group_members!study_group_members_group_id_fkey (
+        count
       )
     `)
-    .eq('study_group_members.member_id', (await supabase.auth.getUser()).data.user?.id)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return groups as StudyGroup[];
+
+  // Transform the data to include the current_members count
+  const transformedGroups = groups.map(group => ({
+    ...group,
+    current_members: group.study_group_members[0]?.count || 0
+  }));
+
+  return transformedGroups as StudyGroup[];
 };
 
 export const fetchLatestResources = async () => {

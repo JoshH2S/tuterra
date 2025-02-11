@@ -27,7 +27,7 @@ export interface StudyGroup {
   max_members: number;
   created_at: string;
   updated_at: string;
-  current_members?: number;
+  current_members: number;
 }
 
 export interface SharedResource {
