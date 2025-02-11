@@ -32,7 +32,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
-                active={location.pathname === item.url}
+                isActive={location.pathname === item.url}
                 onClick={() => navigate(item.url)}
               >
                 <div className="flex items-center gap-2 px-2 py-1">
