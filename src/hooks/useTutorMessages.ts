@@ -33,6 +33,9 @@ export const useTutorMessages = () => {
           studentId: session.user.id,
           materialPath,
         },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (response.error) throw response.error;
@@ -54,25 +57,19 @@ export const useTutorMessages = () => {
   };
 
   const fetchMessages = async (conversationId: string) => {
-    try {
-      const { data: messagesData, error } = await supabase
-        .from('tutor_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+    const { data: messagesData, error } = await supabase
+      .from('tutor_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
 
-      if (error) throw error;
-
-      if (messagesData) {
-        setMessages(transformMessages(messagesData));
-      }
-    } catch (error: any) {
+    if (error) {
       console.error('Error fetching messages:', error);
-      toast({
-        title: "Error fetching messages",
-        description: error.message,
-        variant: "destructive",
-      });
+      return;
+    }
+
+    if (messagesData) {
+      setMessages(transformMessages(messagesData));
     }
   };
 
@@ -82,3 +79,4 @@ export const useTutorMessages = () => {
     sendMessage,
   };
 };
+

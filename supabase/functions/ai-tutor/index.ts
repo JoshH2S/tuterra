@@ -1,4 +1,5 @@
 
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 
@@ -42,7 +43,7 @@ serve(async (req) => {
       throw new Error('OpenAI API key is not configured');
     }
 
-    const { message, conversationId, studentId, materialPath } = await req.json();
+    const { message, conversationId, courseId, studentId, materialPath } = await req.json();
     
     if (!message) {
       throw new Error('Message is required');
@@ -55,7 +56,7 @@ serve(async (req) => {
       try {
         console.log('Fetching material from path:', materialPath);
         const { data: fileData, error: downloadError } = await supabase.storage
-          .from('tutor_files')
+          .from('course_materials')
           .download(materialPath);
 
         if (downloadError) {
@@ -82,7 +83,10 @@ serve(async (req) => {
     if (!currentConversationId) {
       const { data: conversation, error: convError } = await supabase
         .from('tutor_conversations')
-        .insert([{ student_id: studentId }])
+        .insert([{ 
+          student_id: studentId,
+          course_id: courseId || null 
+        }])
         .select()
         .single();
 
@@ -123,7 +127,7 @@ Be encouraging, clear, and helpful in your responses. When course materials are 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemMessage },
           { role: 'user', content: message }

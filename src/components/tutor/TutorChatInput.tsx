@@ -1,8 +1,8 @@
 
-import { Upload } from "lucide-react";
+import { Send, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import FileUpload from "@/components/FileUpload";
 import { Textarea } from "@/components/ui/textarea";
+import FileUpload from "@/components/FileUpload";
 
 interface TutorChatInputProps {
   message: string;
@@ -22,40 +22,38 @@ export const TutorChatInput = ({
   onFileUpload,
 }: TutorChatInputProps) => {
   return (
-    <form className="flex gap-2 items-end" onSubmit={onSubmit}>
-      <div className="flex-1">
+    <form onSubmit={onSubmit}>
+      <div className="flex gap-2">
         <Textarea
-          placeholder="Ask a question..."
           value={message}
           onChange={(e) => onMessageChange(e.target.value)}
           onKeyDown={onKeyPress}
-          className="min-h-[50px] resize-none"
-          disabled={isLoading}
+          placeholder="Ask a question... (Press Enter to send)"
+          className="flex-1 min-h-[60px]"
         />
-      </div>
-      <div className="flex flex-col gap-2 mb-4">
-        <Button 
-          type="submit" 
-          disabled={isLoading || !message.trim()}
-          className="self-end"
-        >
-          Send
-        </Button>
-        <FileUpload 
-          onFileSelect={onFileUpload}
-          acceptedTypes=".txt,.pdf,.doc,.docx"
-          trigger={
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="self-end"
-              disabled={isLoading}
-            >
-              <Upload className="h-4 w-4" />
-            </Button>
-          }
-        />
+        <div className="flex flex-col gap-2 self-end">
+          <FileUpload 
+            onFileSelect={onFileUpload}
+            acceptedTypes=".txt,.pdf,.doc,.docx"
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="self-end"
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+            }
+          />
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            size="icon"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </form>
   );
