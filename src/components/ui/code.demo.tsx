@@ -6,8 +6,11 @@ import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function SplineSceneBasic() {
+  const isMobile = useIsMobile();
+  
   const { data: profile } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
@@ -26,26 +29,38 @@ export function SplineSceneBasic() {
   });
 
   return (
-    <Card className="w-full h-[500px] bg-black/[0.96] relative overflow-hidden">
+    <Card className="w-full bg-black/[0.96] relative overflow-hidden">
       <Spotlight
         className="-top-40 left-0 md:left-60 md:-top-20"
         fill="white"
       />
       
-      <div className="flex h-full">
+      <div className={`flex ${isMobile ? 'flex-col h-auto' : 'h-[500px]'}`}>
         {/* Left content */}
-        <div className="flex-1 p-8 relative z-10 flex flex-col justify-center">
-          <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+        <div className={`
+          flex-1 relative z-10 flex flex-col justify-center
+          ${isMobile ? 'p-6 pb-4' : 'p-8'}
+        `}>
+          <h1 className={`
+            font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400
+            ${isMobile ? 'text-3xl' : 'text-4xl md:text-5xl'}
+          `}>
             {profile ? `Welcome, ${profile.first_name}!` : 'Welcome!'}
           </h1>
-          <p className="mt-4 text-neutral-300 max-w-lg">
+          <p className={`
+            mt-4 text-neutral-300 max-w-lg
+            ${isMobile ? 'text-sm' : ''}
+          `}>
             I'm your AI Study Assistant, ready to help you learn and understand your course materials. 
             Let's work together to enhance your learning experience.
           </p>
         </div>
 
         {/* Right content */}
-        <div className="flex-1 relative">
+        <div className={`
+          relative flex-1
+          ${isMobile ? 'h-[300px]' : ''}
+        `}>
           <SplineScene 
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
             className="w-full h-full"
