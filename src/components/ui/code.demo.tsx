@@ -39,7 +39,7 @@ export function SplineSceneBasic() {
         {/* Left content */}
         <div className={`
           flex-1 relative z-10 flex flex-col justify-center
-          ${isMobile ? 'p-6 pb-4' : 'p-8'}
+          ${isMobile ? 'p-6' : 'p-8'}
         `}>
           <h1 className={`
             font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400
@@ -56,16 +56,15 @@ export function SplineSceneBasic() {
           </p>
         </div>
 
-        {/* Right content */}
-        <div className="relative flex-1" style={{ 
-          height: isMobile ? '300px' : '500px',
-          maxHeight: isMobile ? '300px' : '500px'
-        }}>
-          <SplineScene 
-            scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-            className="w-full h-full"
-          />
-        </div>
+        {/* Right content - only show on desktop */}
+        {!isMobile && (
+          <div className="relative flex-1" style={{ height: '500px' }}>
+            <SplineScene 
+              scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+              className="w-full h-full"
+            />
+          </div>
+        )}
       </div>
     </Card>
   )
