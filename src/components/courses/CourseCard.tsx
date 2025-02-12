@@ -1,0 +1,28 @@
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Course } from "@/types/course";
+import { Calendar } from "lucide-react";
+import { format } from "date-fns";
+
+interface CourseCardProps {
+  course: Course;
+}
+
+export const CourseCard = ({ course }: CourseCardProps) => {
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardHeader>
+        <CardTitle className="text-xl">{course.title}</CardTitle>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Calendar className="mr-2 h-4 w-4" />
+          <span>Created {format(new Date(course.created_at!), 'MMM d, yyyy')}</span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">
+          {course.description || "No description available"}
+        </p>
+      </CardContent>
+    </Card>
+  );
+};

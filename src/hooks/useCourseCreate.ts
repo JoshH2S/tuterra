@@ -1,7 +1,6 @@
 
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Course } from "@/types/course";
 
 export const useCourseCreate = () => {
   const createCourse = async (title: string) => {
