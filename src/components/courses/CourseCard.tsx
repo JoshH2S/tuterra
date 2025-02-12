@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import { Course } from "@/types/course";
-import { Book, FileText, MoreVertical, Trash2 } from "lucide-react";
+import { Trash2, FileText, Book } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,12 +15,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface CourseCardProps {
   course: Course;
@@ -52,57 +46,66 @@ const CourseCard = ({ course, onFileSelect, onDelete }: CourseCardProps) => {
         >
           {course.title}
         </h2>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-5 w-5" />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-500 hover:text-red-600"
+            >
+              <Trash2 className="h-5 w-5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={handleCourseClick}>
-              <FileText className="h-4 w-4 mr-2" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleTemplatesClick}>
-              <Book className="h-4 w-4 mr-2" />
-              Manage Templates
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleQuizGenerationClick}>
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Quiz
-            </DropdownMenuItem>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <DropdownMenuItem className="text-red-600" onSelect={(e) => e.preventDefault()}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Course
-                </DropdownMenuItem>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Course</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete "{course.title}"? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-red-600 hover:bg-red-700"
-                    onClick={() => onDelete(course.id)}
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Course</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{course.title}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => onDelete(course.id)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       <FileUpload 
         onFileSelect={(file) => onFileSelect(file, course.id)}
         acceptedTypes=".pdf,.doc,.docx,.txt"
       />
+      <div className="mt-4 flex justify-end space-x-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleCourseClick}
+        >
+          View Course Details
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleTemplatesClick}
+          className="flex items-center gap-2"
+        >
+          <Book className="h-4 w-4" />
+          Manage Templates
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleQuizGenerationClick}
+          className="flex items-center gap-2"
+        >
+          <FileText className="h-4 w-4" />
+          Generate Quiz
+        </Button>
+      </div>
     </div>
   );
 };

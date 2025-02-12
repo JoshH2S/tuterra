@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +14,8 @@ export const useCourseFetch = () => {
 
       const { data: coursesData, error } = await supabase
         .from('courses')
-        .select('*');
+        .select('*')
+        .eq('teacher_id', user.id);
 
       if (error) throw error;
       setCourses(coursesData || []);
