@@ -8,18 +8,20 @@ import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
   const { insights } = useStudentAnalytics(courses, performance);
   const { sessions, createSession, isLoading: isLoadingSessions } = useStudySessions();
+  const isMobile = useIsMobile();
 
   if (isLoading || isLoadingSessions) {
     return (
-      <div className="container mx-auto py-12">
+      <div className={`container mx-auto ${isMobile ? 'py-6 px-4' : 'py-12'}`}>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-64 bg-gray-200 rounded"></div>
             ))}
@@ -34,16 +36,16 @@ export default function StudentDashboard() {
   };
 
   return (
-    <div className="container mx-auto py-12 space-y-8">
+    <div className={`container mx-auto ${isMobile ? 'py-6 px-4' : 'py-12'} space-y-6 md:space-y-8`}>
       <div>
-        <h1 className="text-4xl font-bold mb-2">My Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-bold mb-2`}>My Dashboard</h1>
+        <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
           Track your progress and performance across all your courses
         </p>
       </div>
 
       {insights.length > 0 && (
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {insights.map((insight, index) => {
             const Icon = insight.type === 'warning' 
               ? AlertTriangle 
@@ -64,9 +66,9 @@ export default function StudentDashboard() {
                 : 'text-blue-600';
 
             return (
-              <Alert key={index} className={bgColor}>
+              <Alert key={index} className={`${bgColor} ${isMobile ? 'p-3' : ''}`}>
                 <Icon className={`h-4 w-4 ${textColor}`} />
-                <AlertDescription className={textColor}>
+                <AlertDescription className={`${textColor} ${isMobile ? 'text-sm' : ''}`}>
                   {insight.message}
                   {insight.metric && ` (${insight.metric.toFixed(1)}${insight.type === 'improvement' ? '%' : ''})`}
                 </AlertDescription>
@@ -76,13 +78,13 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
           <PerformanceOverview performance={performance} />
 
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-6">My Courses</h2>
-            <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-semibold mb-4`}>My Courses</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
               {courses.map((course) => (
                 <CourseCard
                   key={course.id}
@@ -91,14 +93,14 @@ export default function StudentDashboard() {
                 />
               ))}
               {courses.length === 0 && (
-                <div className="col-span-full text-center py-12 text-muted-foreground">
+                <div className="col-span-full text-center py-8 text-muted-foreground">
                   <p>You are not enrolled in any courses yet.</p>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mt-8">
+          <div>
             <StudyCalendar 
               sessions={sessions}
               courses={courses}
@@ -107,7 +109,7 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        <div>
+        <div className={isMobile ? 'mt-6' : ''}>
           <ActivityTimeline />
         </div>
       </div>
