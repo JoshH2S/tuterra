@@ -10,9 +10,11 @@ import {
 import { Brain, FileText, History, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export function TutorSidebar() {
   const isMobile = useIsMobile();
+  const { openMobile } = useSidebar();
 
   const menuItems = [
     {
@@ -39,6 +41,7 @@ export function TutorSidebar() {
 
   return (
     <Sidebar
+      data-opened={openMobile}
       className={`
         ${isMobile ? 'fixed left-0 top-0 h-full -translate-x-full data-[opened=true]:translate-x-0 transition-transform duration-300' : 'w-[200px]'}
         bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-40
