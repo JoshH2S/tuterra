@@ -50,15 +50,13 @@ export default function CourseGrades() {
 
         if (scoresError) throw scoresError;
 
-        // Fetch course average
-        const { data: grades, error: gradesError } = await supabase
+        // Fetch course average using maybeSingle() instead of single()
+        const { data: grades } = await supabase
           .from('course_grades')
           .select('*')
           .eq('student_id', user.id)
           .eq('course_id', courseId)
-          .single();
-
-        if (gradesError && gradesError.code !== 'PGRST116') throw gradesError;
+          .maybeSingle();
 
         setQuizScores(scores || []);
         setCourseGrade(grades || null);
