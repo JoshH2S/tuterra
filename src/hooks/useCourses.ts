@@ -1,23 +1,22 @@
-
 import { useCourseFetch } from "./useCourseFetch";
 import { useCourseCreate } from "./useCourseCreate";
 import { useCourseFileUpload } from "./useCourseFileUpload";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export const useCourses = () => {
-  const { courses, isLoading, error, setCourses } = useCourseFetch();
+  const { courses, isLoading, setCourses } = useCourseFetch();
   const { createCourse } = useCourseCreate(setCourses);
   const { handleFileUpload } = useCourseFileUpload();
 
   const deleteCourse = async (courseId: string) => {
     try {
-      const { error: deleteError } = await supabase
+      const { error } = await supabase
         .from('courses')
         .delete()
         .eq('id', courseId);
 
-      if (deleteError) throw deleteError;
+      if (error) throw error;
 
       setCourses(prevCourses => prevCourses.filter(course => course.id !== courseId));
       
@@ -38,7 +37,6 @@ export const useCourses = () => {
   return {
     courses,
     isLoading,
-    error,
     createCourse,
     handleFileUpload,
     deleteCourse

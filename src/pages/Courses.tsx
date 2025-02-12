@@ -5,10 +5,9 @@ import { CourseList } from "@/components/courses/CourseList";
 import { CreateCourseForm } from "@/components/courses/CreateCourseForm";
 import { CoursesHeader } from "@/components/courses/CoursesHeader";
 import { useCourses } from "@/hooks/useCourses";
-import { CourseStateCard } from "@/components/courses/CourseStateCard";
 
 const Courses = () => {
-  const { courses, isLoading, error, createCourse, handleFileUpload, deleteCourse } = useCourses();
+  const { courses, isLoading, createCourse, handleFileUpload, deleteCourse } = useCourses();
   const [isCreating, setIsCreating] = useState(false);
   const [newCourseTitle, setNewCourseTitle] = useState("");
 
@@ -28,10 +27,6 @@ const Courses = () => {
     setNewCourseTitle("");
     setIsCreating(false);
   };
-
-  if (error) {
-    return <CourseStateCard message={error} isError={true} />;
-  }
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
@@ -59,7 +54,7 @@ const Courses = () => {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <CourseStateCard message="Loading courses..." />
+            <div className="text-center py-4">Loading courses...</div>
           ) : (
             <CourseList 
               courses={courses} 
