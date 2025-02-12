@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { QuizHeader } from "@/components/quiz-taking/QuizHeader";
 import { QuizQuestion } from "@/components/quiz-taking/QuizQuestion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function TakeQuiz() {
   const { id } = useParams();
@@ -17,6 +17,7 @@ export default function TakeQuiz() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -171,17 +172,17 @@ export default function TakeQuiz() {
   if (!quiz || !questions.length) return <div>Loading...</div>;
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <Card>
+    <div className={`container mx-auto ${isMobile ? 'p-2' : 'py-6'} space-y-4`}>
+      <Card className="animate-fadeIn">
         <QuizHeader 
-          title={quiz.title}
+          title={quiz?.title}
           timeRemaining={timeRemaining}
           onTimeUp={handleSubmit}
         />
-        <CardContent className="space-y-6">
+        <CardContent className={`space-y-6 ${isMobile ? 'p-3' : ''}`}>
           {timeRemaining === 0 && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>
+            <Alert variant="destructive" className={isMobile ? 'p-3' : ''}>
+              <AlertDescription className={isMobile ? 'text-sm' : ''}>
                 Time's up! Your quiz has been automatically submitted.
               </AlertDescription>
             </Alert>
@@ -200,7 +201,7 @@ export default function TakeQuiz() {
           <Button 
             onClick={handleSubmit} 
             disabled={isSubmitting || timeRemaining === 0}
-            className="mt-6"
+            className={`mt-6 ${isMobile ? 'w-full py-6 text-base' : ''}`}
           >
             Submit Quiz
           </Button>
