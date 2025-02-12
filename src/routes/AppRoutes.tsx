@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
+import CourseGrades from "@/pages/CourseGrades";
 import LessonPlanning from "@/pages/LessonPlanning";
 import QuizGeneration from "@/pages/QuizGeneration";
 import CourseTutor from "@/pages/CourseTutor";
@@ -62,6 +63,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <CourseDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/courses/:id/grades"
+        element={
+          <ProtectedRoute>
+            <CourseGrades />
           </ProtectedRoute>
         }
       />

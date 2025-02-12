@@ -2,8 +2,10 @@
 import { StudentCourse, StudentPerformance } from "@/types/student";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Book, Clock } from "lucide-react";
+import { Book, Clock, GraduationCap } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 interface CourseCardProps {
   course: StudentCourse;
@@ -48,6 +50,12 @@ export const CourseCard = ({ course, performance }: CourseCardProps) => {
                 </p>
               </div>
             </div>
+            <Link to={`/courses/${course.course_id}/grades`}>
+              <Button variant="outline" className="w-full mt-4">
+                <GraduationCap className="mr-2 h-4 w-4" />
+                View Detailed Grades
+              </Button>
+            </Link>
           </>
         )}
         {!performance && (

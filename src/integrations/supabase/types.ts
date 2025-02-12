@@ -888,6 +888,58 @@ export type Database = {
           },
         ]
       }
+      student_quiz_scores: {
+        Row: {
+          course_id: string
+          id: string
+          max_score: number
+          quiz_id: string
+          score: number
+          student_id: string
+          taken_at: string | null
+        }
+        Insert: {
+          course_id: string
+          id?: string
+          max_score: number
+          quiz_id: string
+          score: number
+          student_id: string
+          taken_at?: string | null
+        }
+        Update: {
+          course_id?: string
+          id?: string
+          max_score?: number
+          quiz_id?: string
+          score?: number
+          student_id?: string
+          taken_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_quiz_scores_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_quiz_scores_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_quiz_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_group_members: {
         Row: {
           group_id: string
@@ -1134,7 +1186,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      course_grades: {
+        Row: {
+          average_grade: number | null
+          course_id: string | null
+          student_id: string | null
+          total_quizzes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_quiz_scores_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_quiz_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       validate_course_material_content: {

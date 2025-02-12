@@ -125,6 +125,18 @@ export default function TakeQuiz() {
 
       if (responseError) throw responseError;
 
+      const { error: scoreError } = await supabase
+        .from('student_quiz_scores')
+        .insert({
+          quiz_id: id,
+          student_id: (await supabase.auth.getUser()).data.user?.id,
+          course_id: quiz.course_id,
+          score: score,
+          max_score: totalPoints
+        });
+
+      if (scoreError) throw scoreError;
+
       const { error: questionResponseError } = await supabase
         .from('question_responses')
         .insert(questionResponses.map(response => ({
