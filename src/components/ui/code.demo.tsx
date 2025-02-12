@@ -6,8 +6,6 @@ import { Card } from "@/components/ui/card"
 import { Spotlight } from "@/components/ui/spotlight"
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AIInputWithLoading } from "@/components/ui/ai-input-with-loading";
-import { useState } from "react";
 
 export function SplineSceneBasic() {
   const { data: profile } = useQuery({
@@ -27,13 +25,6 @@ export function SplineSceneBasic() {
     },
   });
 
-  const [messages, setMessages] = useState<string[]>([]);
-
-  const simulateResponse = async (message: string) => {
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    setMessages(prev => [...prev, message]);
-  };
-
   return (
     <Card className="w-full h-[500px] bg-black/[0.96] relative overflow-hidden">
       <Spotlight
@@ -51,14 +42,6 @@ export function SplineSceneBasic() {
             I'm your AI Study Assistant, ready to help you learn and understand your course materials. 
             Let's work together to enhance your learning experience.
           </p>
-          <div className="mt-8">
-            <AIInputWithLoading 
-              onSubmit={simulateResponse}
-              loadingDuration={3000}
-              placeholder="Ask me anything about your studies..."
-              className="bg-transparent"
-            />
-          </div>
         </div>
 
         {/* Right content */}

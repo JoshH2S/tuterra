@@ -1114,6 +1114,24 @@ export type Database = {
           },
         ]
       }
+      welcome_section_config: {
+        Row: {
+          created_at: string
+          id: string
+          show_chat_input: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          show_chat_input?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          show_chat_input?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
