@@ -3,6 +3,7 @@ import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import { AIInputWithLoading } from "@/components/ui/ai-input-with-loading";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TutorChatInputProps {
   message: string;
@@ -19,6 +20,8 @@ export const TutorChatInput = ({
   onFileUpload,
   onMessageChange,
 }: TutorChatInputProps) => {
+  const isMobile = useIsMobile();
+  
   const handleSubmit = async (value: string) => {
     onMessageChange(value);
     const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
@@ -32,7 +35,7 @@ export const TutorChatInput = ({
           placeholder="Ask a question..."
           onSubmit={handleSubmit}
           loadingDuration={3000}
-          className="mb-0"
+          className={`mb-0 ${isMobile ? 'text-sm' : ''}`}
           disabled={isLoading}
         />
       </div>
@@ -44,10 +47,10 @@ export const TutorChatInput = ({
             <Button
               type="button"
               variant="outline"
-              size="icon"
+              size={isMobile ? "sm" : "icon"}
               className="self-end"
             >
-              <Upload className="h-4 w-4" />
+              <Upload className={`${isMobile ? 'h-4 w-4' : 'h-4 w-4'}`} />
             </Button>
           }
         />

@@ -7,11 +7,13 @@ import { processFileContent } from "@/utils/file-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const TutorChat = () => {
   const [message, setMessage] = useState("");
   const { messages, isLoading, sendMessage } = useTutorMessages();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,16 +62,16 @@ export const TutorChat = () => {
   };
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle>Chat with your AI Study Assistant</CardTitle>
-        <CardDescription>
+    <Card className={`shadow-lg ${isMobile ? 'mx-0' : ''}`}>
+      <CardHeader className={isMobile ? 'p-3 space-y-1' : ''}>
+        <CardTitle className={isMobile ? 'text-lg' : ''}>Chat with your AI Study Assistant</CardTitle>
+        <CardDescription className={isMobile ? 'text-sm' : ''}>
           Ask me anything about your studies. I can help you understand concepts, create study guides, or answer any academic questions.
         </CardDescription>
       </CardHeader>
-      <div className="flex flex-col h-[600px]">
+      <div className={`flex flex-col ${isMobile ? 'h-[500px]' : 'h-[600px]'}`}>
         <TutorChatMessages messages={messages} />
-        <div className="p-4 border-t">
+        <div className={`p-3 border-t ${isMobile ? 'pb-4' : ''}`}>
           <TutorChatInput
             message={message}
             isLoading={isLoading}
