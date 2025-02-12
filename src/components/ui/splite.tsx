@@ -46,10 +46,10 @@ export function SplineScene({ scene, className }: SplineSceneProps) {
   return (
     <div 
       ref={containerRef} 
-      className={className}
+      className={`overflow-hidden ${className}`}
       style={{ 
         touchAction: isMobile ? 'none' : 'auto',
-        userSelect: 'none'
+        userSelect: 'none',
       }}
     >
       <Suspense 

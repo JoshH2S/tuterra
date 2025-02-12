@@ -35,7 +35,7 @@ export function SplineSceneBasic() {
         fill="white"
       />
       
-      <div className={`flex ${isMobile ? 'flex-col h-auto' : 'h-[500px]'}`}>
+      <div className="flex flex-col md:flex-row">
         {/* Left content */}
         <div className={`
           flex-1 relative z-10 flex flex-col justify-center
@@ -57,10 +57,10 @@ export function SplineSceneBasic() {
         </div>
 
         {/* Right content */}
-        <div className={`
-          relative flex-1
-          ${isMobile ? 'h-[300px]' : ''}
-        `}>
+        <div className="relative flex-1" style={{ 
+          height: isMobile ? '300px' : '500px',
+          maxHeight: isMobile ? '300px' : '500px'
+        }}>
           <SplineScene 
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
             className="w-full h-full"
