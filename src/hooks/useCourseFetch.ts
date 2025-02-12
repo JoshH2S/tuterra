@@ -19,8 +19,7 @@ export const useCourseFetch = () => {
 
       const { data: coursesData, error: supabaseError } = await supabase
         .from('courses')
-        .select('*')
-        .eq('teacher_id', user.id);
+        .select('*');
 
       if (supabaseError) {
         console.error('Supabase error:', supabaseError);
