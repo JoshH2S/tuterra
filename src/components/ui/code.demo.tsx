@@ -7,7 +7,6 @@ import { Spotlight } from "@/components/ui/spotlight"
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Bot } from "lucide-react";
 
 export function SplineSceneBasic() {
   const isMobile = useIsMobile();
@@ -42,15 +41,12 @@ export function SplineSceneBasic() {
           flex-1 relative z-10 flex flex-col justify-center
           ${isMobile ? 'p-6' : 'p-8'}
         `}>
-          <div className="flex items-center gap-3">
-            <h1 className={`
-              font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400
-              ${isMobile ? 'text-3xl' : 'text-4xl md:text-5xl'}
-            `}>
-              {profile ? `Welcome, ${profile.first_name}!` : 'Welcome!'}
-            </h1>
-            {isMobile && <Bot className="w-6 h-6 text-neutral-300" />}
-          </div>
+          <h1 className={`
+            font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400
+            ${isMobile ? 'text-3xl' : 'text-4xl md:text-5xl'}
+          `}>
+            {profile ? `Welcome, ${profile.first_name}!` : 'Welcome!'}
+          </h1>
           <p className={`
             mt-4 text-neutral-300 max-w-lg
             ${isMobile ? 'text-sm' : ''}
