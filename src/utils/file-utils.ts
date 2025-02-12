@@ -1,10 +1,11 @@
+
 interface ProcessedContent {
   content: string;
   wasContentTrimmed: boolean;
   originalLength: number;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const readBinaryFile = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -57,7 +58,7 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
   });
 
   if (file.size > MAX_FILE_SIZE) {
-    throw new Error('File size exceeds 10MB limit');
+    throw new Error('File size exceeds 50MB limit');
   }
 
   let content: string;

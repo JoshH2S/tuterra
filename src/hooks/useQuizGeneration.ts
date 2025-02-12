@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -22,7 +21,7 @@ export interface Question {
   points: number;
 }
 
-export const MAX_CONTENT_LENGTH = 5000;
+export const MAX_CONTENT_LENGTH = 50 * 1024 * 1024; // 50MB
 
 export const useQuizGeneration = () => {
   const navigate = useNavigate();
