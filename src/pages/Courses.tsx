@@ -1,13 +1,12 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CourseList } from "@/components/courses/CourseList";
 import { CreateCourseForm } from "@/components/courses/CreateCourseForm";
 import { CoursesHeader } from "@/components/courses/CoursesHeader";
 import { useCourses } from "@/hooks/useCourses";
 
 const Courses = () => {
-  const { courses, isLoading, createCourse, handleFileUpload, deleteCourse } = useCourses();
+  const { createCourse } = useCourses();
   const [isCreating, setIsCreating] = useState(false);
   const [newCourseTitle, setNewCourseTitle] = useState("");
 
@@ -47,23 +46,6 @@ const Courses = () => {
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Courses</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-4">Loading courses...</div>
-          ) : (
-            <CourseList 
-              courses={courses} 
-              onFileSelect={handleFileUpload}
-              onDelete={deleteCourse}
-            />
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

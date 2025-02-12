@@ -1,8 +1,9 @@
+
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Course } from "@/types/course";
 
-export const useCourseCreate = (setCourses: React.Dispatch<React.SetStateAction<Course[]>>) => {
+export const useCourseCreate = () => {
   const createCourse = async (title: string) => {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -11,19 +12,14 @@ export const useCourseCreate = (setCourses: React.Dispatch<React.SetStateAction<
         throw new Error('User not authenticated');
       }
 
-      const { data: courseData, error: courseError } = await supabase
+      const { error: courseError } = await supabase
         .from('courses')
         .insert([{ 
           title,
           teacher_id: user.id
-        }])
-        .select()
-        .single();
+        }]);
 
       if (courseError) throw courseError;
-
-      const newCourse = courseData as Course;
-      setCourses(prevCourses => [...prevCourses, newCourse]);
       
       toast({
         title: "Course created",
