@@ -1,7 +1,8 @@
 
 import { useState } from "react";
 import { ProcessedFile } from "@/types/file";
-import { MAX_CONTENT_LENGTH } from "@/hooks/useQuizGeneration";
+
+export const MAX_CONTENT_LENGTH = 50 * 1024 * 1024; // 50MB
 
 export const useQuizFile = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

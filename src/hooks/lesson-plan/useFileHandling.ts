@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 
-export const MAX_CONTENT_LENGTH = 5000;
+export const MAX_CONTENT_LENGTH = 50 * 1024 * 1024; // 50MB
 
 export const useFileHandling = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
