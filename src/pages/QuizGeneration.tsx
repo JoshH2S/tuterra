@@ -4,8 +4,17 @@ import { TopicsCard } from "@/components/quiz-generation/TopicsCard";
 import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
 import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
 import { QuizDurationInput } from "@/components/quiz-generation/QuizDurationInput";
-import { useQuizGeneration } from "@/hooks/useQuizGeneration";
+import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
 import { useCourseTemplates } from "@/hooks/useCourseTemplates";
+import { useCourses } from "@/hooks/useCourses";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue, 
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const QuizGeneration = () => {
   const {
@@ -15,14 +24,17 @@ const QuizGeneration = () => {
     quizQuestions,
     contentLength,
     duration,
+    selectedCourseId,
     handleFileSelect,
     addTopic,
     updateTopic,
     handleSubmit,
     setDuration,
+    setSelectedCourseId,
   } = useQuizGeneration();
 
   const { createTemplate } = useCourseTemplates();
+  const { courses, isLoading: isLoadingCourses } = useCourses();
 
   const handleSaveTemplate = async () => {
     if (quizQuestions.length > 0) {
@@ -45,13 +57,37 @@ const QuizGeneration = () => {
         
         <div className="grid gap-8 md:grid-cols-2">
           <div className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Course</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select
+                  value={selectedCourseId}
+                  onValueChange={setSelectedCourseId}
+                  disabled={isLoadingCourses}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
             <TopicsCard 
               topics={topics}
               onTopicChange={updateTopic}
               onAddTopic={addTopic}
               onSubmit={handleSubmit}
               isProcessing={isProcessing}
-              isSubmitDisabled={isProcessing || !selectedFile || topics.some(topic => !topic.description)}
+              isSubmitDisabled={isProcessing || !selectedFile || !selectedCourseId || topics.some(topic => !topic.description)}
             />
             <QuizDurationInput 
               duration={duration}

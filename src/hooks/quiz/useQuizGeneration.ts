@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -15,6 +14,7 @@ export const useQuizGeneration = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [duration, setDuration] = useState<number>(0);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
 
   const {
     selectedFile,
@@ -40,12 +40,9 @@ export const useQuizGeneration = () => {
     const quizData = {
       title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
       teacher_id: session.user.id,
-      duration_minutes: duration
+      duration_minutes: duration,
+      course_id: selectedCourseId,
     };
-
-    if (courseId) {
-      Object.assign(quizData, { course_id: courseId });
-    }
 
     const { data: quiz, error: quizError } = await supabase
       .from('quizzes')
@@ -160,10 +157,12 @@ export const useQuizGeneration = () => {
     quizQuestions,
     contentLength,
     duration,
+    selectedCourseId,
     handleFileSelect,
     addTopic,
     updateTopic,
     handleSubmit,
     setDuration,
+    setSelectedCourseId,
   };
 };
