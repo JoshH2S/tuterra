@@ -10,13 +10,14 @@ interface PerformanceOverviewProps {
 }
 
 export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) => {
+  // Calculate the average score by using the actual scores from all performances
   const averageScore = performance.length > 0
-    ? performance.reduce((acc, curr) => acc + curr.average_score, 0) / performance.length
+    ? performance.reduce((acc, curr) => acc + (curr.average_score || 0), 0) / performance.length
     : 0;
 
   const totalQuizzes = performance.reduce((acc, curr) => acc + curr.completed_quizzes, 0);
   const totalCompletionRate = performance.length > 0
-    ? (performance.reduce((acc, curr) => acc + (curr.completed_quizzes / curr.total_quizzes), 0) / performance.length) * 100
+    ? (performance.reduce((acc, curr) => acc + ((curr.completed_quizzes / curr.total_quizzes) * 100), 0) / performance.length)
     : 0;
 
   const chartData = performance.map(p => ({
