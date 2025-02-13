@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { quizResponseId, correctAnswers, totalQuestions, score, questionResponses, topicPerformance } = await req.json();
+    const { quizResponseId, correctAnswers, totalQuestions, score, questionResponses } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -43,6 +43,27 @@ serve(async (req) => {
 
     const percentage = (correctAnswers / totalQuestions) * 100;
     const questions = responseData.quiz.quiz_questions;
+    
+    // Calculate topic performance from question responses
+    const topicPerformanceMap = questionResponses.reduce((acc: Record<string, { total: number; correct: number }>, response: any) => {
+      const topic = response.topic;
+      if (!acc[topic]) {
+        acc[topic] = { total: 0, correct: 0 };
+      }
+      acc[topic].total++;
+      if (response.is_correct) {
+        acc[topic].correct++;
+      }
+      return acc;
+    }, {});
+
+    // Convert topic performance to array format
+    const topicPerformance = Object.entries(topicPerformanceMap).map(([topic, data]) => ({
+      topic,
+      total: data.total,
+      correct: data.correct,
+      percentage: (data.correct / data.total) * 100
+    }));
     
     // Generate feedback using GPT
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -75,8 +96,8 @@ serve(async (req) => {
               ).join('\n')}
 
               Question Details:
-              ${questions.map((q, i) => {
-                const response = questionResponses.find(r => r.question_id === q.id);
+              ${questions.map((q: any, i: number) => {
+                const response = questionResponses.find((r: any) => r.question_id === q.id);
                 return `
                   Q${i + 1}. Topic: ${q.topic}
                   Question: ${q.question}
@@ -115,12 +136,12 @@ serve(async (req) => {
       };
     }
 
-    // Update the quiz response with AI feedback
+    // Update the quiz response with AI feedback and topic performance
     const { error: updateError } = await supabase
       .from('quiz_responses')
       .update({ 
         ai_feedback: feedback,
-        topic_performance: topicPerformance || responseData.topic_performance
+        topic_performance: topicPerformance
       })
       .eq('id', quizResponseId);
 
