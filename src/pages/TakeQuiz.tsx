@@ -102,13 +102,33 @@ export default function TakeQuiz() {
       const questionResponses = questions.map(question => ({
         question_id: question.id,
         student_answer: answers[question.id] || null,
-        is_correct: answers[question.id] === question.correct_answer
+        is_correct: answers[question.id] === question.correct_answer,
+        topic: question.topic
       }));
 
       const correctAnswers = questionResponses.filter(response => response.is_correct).length;
       const totalQuestions = questions.length;
       const totalPoints = questions.reduce((sum, q) => sum + (q.points || 1), 0);
       const score = Math.round((correctAnswers / totalQuestions) * totalPoints);
+
+      const topicPerformance = questions.reduce((acc, question) => {
+        const topic = question.topic;
+        if (!acc[topic]) {
+          acc[topic] = { total: 0, correct: 0 };
+        }
+        acc[topic].total++;
+        if (answers[question.id] === question.correct_answer) {
+          acc[topic].correct++;
+        }
+        return acc;
+      }, {});
+
+      const topicPerformanceArray = Object.entries(topicPerformance).map(([topic, data]) => ({
+        topic,
+        total: data.total,
+        correct: data.correct,
+        percentage: (data.correct / data.total) * 100
+      }));
 
       const { data: quizResponse, error: responseError } = await supabase
         .from('quiz_responses')
@@ -118,7 +138,8 @@ export default function TakeQuiz() {
           score: score,
           correct_answers: correctAnswers,
           total_questions: totalQuestions,
-          completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString(),
+          topic_performance: topicPerformanceArray
         })
         .select()
         .single();
@@ -141,7 +162,8 @@ export default function TakeQuiz() {
         .from('question_responses')
         .insert(questionResponses.map(response => ({
           ...response,
-          quiz_response_id: quizResponse.id
+          quiz_response_id: quizResponse.id,
+          topic: response.topic
         })));
 
       if (questionResponseError) throw questionResponseError;

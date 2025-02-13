@@ -551,6 +551,7 @@ export type Database = {
           question_id: string
           quiz_response_id: string
           student_answer: string | null
+          topic: string | null
         }
         Insert: {
           created_at?: string
@@ -559,6 +560,7 @@ export type Database = {
           question_id: string
           quiz_response_id: string
           student_answer?: string | null
+          topic?: string | null
         }
         Update: {
           created_at?: string
@@ -567,6 +569,7 @@ export type Database = {
           question_id?: string
           quiz_response_id?: string
           student_answer?: string | null
+          topic?: string | null
         }
         Relationships: [
           {
