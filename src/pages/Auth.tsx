@@ -158,7 +158,10 @@ const Auth = ({ mode }: AuthProps = {}) => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="mb-[50px] text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
+        EduPortal
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-center">Welcome to EduPortal</CardTitle>
