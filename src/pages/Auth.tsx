@@ -159,8 +159,12 @@ const Auth = ({ mode }: AuthProps = {}) => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-[50px] text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
-        EduPortal
+      <div className="mb-[50px] w-[200px]">
+        <img 
+          src="/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png" 
+          alt="EduPortal Logo"
+          className="w-full h-auto"
+        />
       </div>
       <Card className="w-full max-w-md">
         <CardHeader>
