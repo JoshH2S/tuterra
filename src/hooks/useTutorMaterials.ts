@@ -1,12 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
-interface CourseMaterial {
-  id: string;
-  file_name: string;
-  storage_path: string;
-}
+import { CourseMaterial } from "@/types/course";
 
 export const useTutorMaterials = (courseId: string) => {
   const [materials, setMaterials] = useState<CourseMaterial[]>([]);
@@ -18,11 +14,11 @@ export const useTutorMaterials = (courseId: string) => {
       try {
         const { data, error } = await supabase
           .from('course_materials')
-          .select('id, file_name, storage_path')
+          .select('*')
           .eq('course_id', courseId);
 
         if (error) throw error;
-        if (data) setMaterials(data);
+        setMaterials(data || []);
       } catch (error) {
         console.error('Error fetching materials:', error);
         toast({

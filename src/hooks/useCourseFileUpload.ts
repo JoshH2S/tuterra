@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,15 +25,13 @@ export const useCourseFileUpload = () => {
       // Insert metadata into course_materials table
       const { error: dbError } = await supabase
         .from('course_materials')
-        .insert([
-          {
-            course_id: courseId,
-            file_name: file.name,
-            file_type: file.type,
-            storage_path: uniqueFilePath,
-            size: file.size
-          }
-        ]);
+        .insert([{
+          course_id: courseId,
+          file_name: file.name,
+          file_type: file.type,
+          storage_path: uniqueFilePath,
+          size: file.size
+        }]);
 
       if (dbError) {
         console.error('Database error:', dbError);
