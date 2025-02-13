@@ -1,13 +1,15 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 
 export default function QuizResults() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [results, setResults] = useState<any>(null);
   const [quiz, setQuiz] = useState<any>(null);
 
@@ -18,7 +20,11 @@ export default function QuizResults() {
           .from('quiz_responses')
           .select(`
             *,
-            quiz:quizzes(title)
+            quiz:quizzes(
+              id,
+              title,
+              allow_retakes
+            )
           `)
           .eq('id', id)
           .single();
@@ -187,6 +193,22 @@ export default function QuizResults() {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        <div className="flex justify-center gap-4 pt-6">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/quizzes')}
+          >
+            Back to Quizzes
+          </Button>
+          {quiz.allow_retakes && (
+            <Button
+              onClick={() => navigate(`/take-quiz/${quiz.id}`)}
+            >
+              Retake Quiz
+            </Button>
+          )}
         </div>
       </div>
     </div>
