@@ -20,13 +20,18 @@ export const CourseCard = ({ course, performance }: CourseCardProps) => {
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">{course.course.title}</CardTitle>
+        <CardTitle className="text-xl">{course.course.title}</CardTitle>
         <div className="flex items-center text-sm text-muted-foreground">
           <Clock className="mr-2 h-4 w-4" />
           Last accessed {format(new Date(course.last_accessed), 'MMM d, yyyy')}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {course.course.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {course.course.description}
+          </p>
+        )}
         {performance && (
           <>
             <div className="space-y-2">
