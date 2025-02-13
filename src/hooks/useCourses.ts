@@ -15,37 +15,21 @@ export const useCourses = () => {
   const fetchCourses = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in to view courses.",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (!user) throw new Error('Not authenticated');
 
-      // Simplified query - RLS will handle the teacher_id filter
       const { data, error } = await supabase
         .from('courses')
         .select('*')
+        .eq('teacher_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching courses:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load courses. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      if (error) throw error;
       setCourses(data || []);
     } catch (error) {
-      console.error('Error in fetchCourses:', error);
+      console.error('Error fetching courses:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: "Failed to load courses. Please try again.",
         variant: "destructive",
       });
     } finally {
