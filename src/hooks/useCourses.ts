@@ -24,10 +24,10 @@ export const useCourses = () => {
         return;
       }
 
+      // Simplified query - RLS will handle the teacher_id filter
       const { data, error } = await supabase
         .from('courses')
         .select('*')
-        .eq('teacher_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
