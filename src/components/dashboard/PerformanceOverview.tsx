@@ -20,13 +20,13 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
     : 0;
 
   const chartData = performance.map(p => ({
-    course: p.course_id,
+    course: `Course ${p.course_id.slice(0, 5)}`, // Using a shortened, more readable format
     score: p.average_score,
     quizzes: p.completed_quizzes,
   }));
 
   const quizCompletionData = performance.map(p => ({
-    course: p.course_id,
+    course: `Course ${p.course_id.slice(0, 5)}`, // Using a shortened, more readable format
     completed: p.completed_quizzes,
     total: p.total_quizzes,
     completion: (p.completed_quizzes / p.total_quizzes) * 100,
