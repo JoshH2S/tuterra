@@ -44,7 +44,13 @@ export const useStudentDashboard = () => {
         const { data: performanceData, error: performanceError } = await supabase
           .from('student_performance')
           .select(`
-            *,
+            id,
+            student_id,
+            course_id,
+            total_quizzes,
+            completed_quizzes,
+            average_score,
+            last_activity,
             courses (
               title
             )
@@ -58,13 +64,15 @@ export const useStudentDashboard = () => {
           id: p.id,
           student_id: p.student_id,
           course_id: p.course_id,
-          total_quizzes: p.total_quizzes,
-          completed_quizzes: p.completed_quizzes,
-          average_score: p.average_score,
+          total_quizzes: p.total_quizzes || 0,
+          completed_quizzes: p.completed_quizzes || 0,
+          average_score: Number(p.average_score) || 0, // Ensure we convert to number
           last_activity: p.last_activity,
           course_title: p.courses?.title || 'Unnamed Course',
           courses: p.courses
         }));
+
+        console.log('Transformed performance data:', transformedPerformanceData);
 
         setCourses(typedCoursesData);
         setPerformance(transformedPerformanceData);

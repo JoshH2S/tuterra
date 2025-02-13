@@ -10,9 +10,10 @@ interface PerformanceOverviewProps {
 }
 
 export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) => {
-  // Calculate the average score by using the actual scores from all performances
-  const averageScore = performance.length > 0
-    ? performance.reduce((acc, curr) => acc + (curr.average_score || 0), 0) / performance.length
+  // Calculate the weighted average score based on completed quizzes
+  const totalCompletedQuizzes = performance.reduce((acc, curr) => acc + curr.completed_quizzes, 0);
+  const averageScore = totalCompletedQuizzes > 0
+    ? performance.reduce((acc, curr) => acc + (curr.average_score * curr.completed_quizzes), 0) / totalCompletedQuizzes
     : 0;
 
   const totalQuizzes = performance.reduce((acc, curr) => acc + curr.completed_quizzes, 0);
