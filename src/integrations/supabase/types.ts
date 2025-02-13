@@ -1195,30 +1195,7 @@ export type Database = {
       }
     }
     Views: {
-      course_grades: {
-        Row: {
-          average_grade: number | null
-          course_id: string | null
-          student_id: string | null
-          total_quizzes: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_quiz_scores_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_quiz_scores_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       validate_course_material_content: {
