@@ -638,6 +638,7 @@ export type Database = {
       quiz_responses: {
         Row: {
           ai_feedback: Json | null
+          attempt_number: number | null
           completed_at: string | null
           correct_answers: number | null
           created_at: string
@@ -651,6 +652,7 @@ export type Database = {
         }
         Insert: {
           ai_feedback?: Json | null
+          attempt_number?: number | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string
@@ -664,6 +666,7 @@ export type Database = {
         }
         Update: {
           ai_feedback?: Json | null
+          attempt_number?: number | null
           completed_at?: string | null
           correct_answers?: number | null
           created_at?: string
@@ -694,6 +697,7 @@ export type Database = {
       }
       quizzes: {
         Row: {
+          allow_retakes: boolean | null
           course_id: string | null
           created_at: string
           duration_minutes: number | null
@@ -704,6 +708,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_retakes?: boolean | null
           course_id?: string | null
           created_at?: string
           duration_minutes?: number | null
@@ -714,6 +719,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_retakes?: boolean | null
           course_id?: string | null
           created_at?: string
           duration_minutes?: number | null

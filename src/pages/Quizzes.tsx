@@ -7,14 +7,23 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { Course } from "@/types/course";
 import { useCourses } from "@/hooks/useCourses";
+import { Loader2 } from "lucide-react";
 
 interface Quiz {
   id: string;
   title: string;
   course_id: string;
+  duration_minutes: number;
+  allow_retakes: boolean;
   profiles: {
     first_name: string;
     last_name: string;
+  };
+  latest_response?: {
+    id: string;
+    score: number;
+    total_questions: number;
+    attempt_number: number;
   };
 }
 
@@ -24,12 +33,16 @@ interface QuizzesByCourse {
 
 export default function Quizzes() {
   const [quizzesByCourse, setQuizzesByCourse] = useState<QuizzesByCourse>({});
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { courses } = useCourses();
 
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
         const { data, error } = await supabase
           .from('quizzes')
           .select(`
@@ -37,18 +50,37 @@ export default function Quizzes() {
             profiles:teacher_id (
               first_name,
               last_name
+            ),
+            quiz_responses!quiz_responses_quiz_id_fkey (
+              id,
+              score,
+              total_questions,
+              attempt_number
             )
           `)
           .eq('published', true);
 
         if (error) throw error;
 
+        // Process the quizzes and organize by course
         const quizzesByCourseTmp: QuizzesByCourse = {};
-        data.forEach((quiz: Quiz) => {
+        data.forEach((quiz: any) => {
+          // Get the latest response if any exists
+          const latestResponse = quiz.quiz_responses.length > 0
+            ? quiz.quiz_responses.reduce((latest: any, current: any) =>
+                !latest || current.attempt_number > latest.attempt_number ? current : latest
+              )
+            : undefined;
+
+          const processedQuiz: Quiz = {
+            ...quiz,
+            latest_response: latestResponse,
+          };
+
           if (!quizzesByCourseTmp[quiz.course_id]) {
             quizzesByCourseTmp[quiz.course_id] = [];
           }
-          quizzesByCourseTmp[quiz.course_id].push(quiz);
+          quizzesByCourseTmp[quiz.course_id].push(processedQuiz);
         });
         setQuizzesByCourse(quizzesByCourseTmp);
       } catch (error) {
@@ -58,11 +90,29 @@ export default function Quizzes() {
           description: "Failed to load quizzes",
           variant: "destructive",
         });
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchQuizzes();
   }, []);
+
+  const handleQuizAction = (quiz: Quiz) => {
+    if (quiz.latest_response) {
+      navigate(`/quiz-results/${quiz.latest_response.id}`);
+    } else {
+      navigate(`/take-quiz/${quiz.id}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-8">
@@ -79,17 +129,46 @@ export default function Quizzes() {
             <h2 className="text-xl font-semibold">{course.title}</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {courseQuizzes.map((quiz) => (
-                <Card key={quiz.id}>
+                <Card key={quiz.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <CardTitle>{quiz.title}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
                       Teacher: {quiz.profiles.first_name} {quiz.profiles.last_name}
                     </p>
-                    <Button onClick={() => navigate(`/take-quiz/${quiz.id}`)}>
-                      Take Quiz
-                    </Button>
+                    {quiz.duration_minutes > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Duration: {quiz.duration_minutes} minutes
+                      </p>
+                    )}
+                    {quiz.latest_response && (
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">
+                          Previous Score: {quiz.latest_response.score}/{quiz.latest_response.total_questions}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Attempt #{quiz.latest_response.attempt_number}
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Button 
+                        className="w-full" 
+                        onClick={() => handleQuizAction(quiz)}
+                      >
+                        {quiz.latest_response ? 'View Results' : 'Take Quiz'}
+                      </Button>
+                      {quiz.latest_response && quiz.allow_retakes && (
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => navigate(`/take-quiz/${quiz.id}`)}
+                        >
+                          Retake Quiz
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
