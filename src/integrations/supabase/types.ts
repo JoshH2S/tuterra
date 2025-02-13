@@ -37,15 +37,7 @@ export type Database = {
           metadata?: Json | null
           student_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "activity_logs_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       assignment_submissions: {
         Row: {
@@ -78,97 +70,7 @@ export type Database = {
           submission_url?: string | null
           submitted_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "assignment_submissions_assignment_id_fkey"
-            columns: ["assignment_id"]
-            isOneToOne: false
-            referencedRelation: "assignments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      assignments: {
-        Row: {
-          course_id: string
-          created_at: string
-          description: string | null
-          due_date: string | null
-          id: string
-          max_points: number | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          course_id: string
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          max_points?: number | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          course_id?: string
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          max_points?: number | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assignments_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      course_materials: {
-        Row: {
-          course_id: string
-          created_at: string
-          file_name: string
-          file_type: string
-          id: string
-          size: number
-          storage_path: string
-          updated_at: string
-        }
-        Insert: {
-          course_id: string
-          created_at?: string
-          file_name: string
-          file_type: string
-          id?: string
-          size: number
-          storage_path: string
-          updated_at?: string
-        }
-        Update: {
-          course_id?: string
-          created_at?: string
-          file_name?: string
-          file_type?: string
-          id?: string
-          size?: number
-          storage_path?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "course_materials_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       course_templates: {
         Row: {
@@ -213,7 +115,6 @@ export type Database = {
       }
       courses: {
         Row: {
-          content: Json | null
           created_at: string
           description: string | null
           id: string
@@ -222,7 +123,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          content?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -231,7 +131,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          content?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -239,15 +138,7 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "courses_teacher_id_fkey"
-            columns: ["teacher_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       forum_posts: {
         Row: {
@@ -319,15 +210,7 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "forums_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       learning_goals: {
         Row: {
@@ -366,15 +249,7 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "learning_goals_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       media_library: {
         Row: {
@@ -731,13 +606,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "quizzes_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "quizzes_teacher_id_fkey"
             columns: ["teacher_id"]
             isOneToOne: false
@@ -788,13 +656,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "shared_resources_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "shared_resources_shared_by_fkey"
             columns: ["shared_by"]
             isOneToOne: false
@@ -806,48 +667,6 @@ export type Database = {
             columns: ["study_group_id"]
             isOneToOne: false
             referencedRelation: "study_groups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      student_courses: {
-        Row: {
-          course_id: string
-          enrolled_at: string
-          id: string
-          last_accessed: string
-          status: string
-          student_id: string
-        }
-        Insert: {
-          course_id: string
-          enrolled_at?: string
-          id?: string
-          last_accessed?: string
-          status?: string
-          student_id: string
-        }
-        Update: {
-          course_id?: string
-          enrolled_at?: string
-          id?: string
-          last_accessed?: string
-          status?: string
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_courses_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_courses_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -881,13 +700,6 @@ export type Database = {
           total_quizzes?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "student_performance_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "student_performance_student_id_fkey"
             columns: ["student_id"]
@@ -926,13 +738,6 @@ export type Database = {
           taken_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "student_quiz_scores_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "student_quiz_scores_quiz_id_fkey"
             columns: ["quiz_id"]
@@ -1018,13 +823,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "study_groups_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "study_groups_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -1067,15 +865,7 @@ export type Database = {
           student_id?: string
           title?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "study_sessions_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       temp_files: {
         Row: {
@@ -1127,13 +917,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "tutor_conversations_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "tutor_conversations_student_id_fkey"
             columns: ["student_id"]

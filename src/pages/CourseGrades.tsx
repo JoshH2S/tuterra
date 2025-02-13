@@ -24,7 +24,10 @@ interface CourseGrade {
 export default function CourseGrades() {
   const { id: courseId } = useParams();
   const [quizScores, setQuizScores] = useState<QuizScore[]>([]);
-  const [courseGrade, setCourseGrade] = useState<CourseGrade | null>(null);
+  const [courseGrade, setCourseGrade] = useState<CourseGrade>({
+    total_quizzes: 0,
+    average_grade: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -50,16 +53,18 @@ export default function CourseGrades() {
 
         if (scoresError) throw scoresError;
 
-        // Fetch course average using maybeSingle() instead of single()
-        const { data: grades } = await supabase
-          .from('course_grades')
-          .select('*')
-          .eq('student_id', user.id)
-          .eq('course_id', courseId)
-          .maybeSingle();
+        // Calculate course average
+        if (scores && scores.length > 0) {
+          const totalScores = scores.reduce((acc, curr) => acc + ((curr.score / curr.max_score) * 100), 0);
+          const averageGrade = totalScores / scores.length;
+          
+          setCourseGrade({
+            total_quizzes: scores.length,
+            average_grade: averageGrade
+          });
+        }
 
         setQuizScores(scores || []);
-        setCourseGrade(grades || null);
       } catch (error) {
         console.error('Error fetching grades:', error);
       } finally {
