@@ -46,18 +46,29 @@ export const MainSidebar = () => {
 
     fetchUserProfile();
 
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        fetchUserProfile();
+      } else if (event === 'SIGNED_OUT') {
+        setFirstName("");
+        setLastName("");
+        setAvatarUrl("");
+      }
+    });
+
     // Subscribe to profile changes
     const profileChannel = supabase
-      .channel('profile-updates')
+      .channel('profiles')
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'profiles'
+          table: 'profiles',
+          filter: `id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
         },
         (payload) => {
-          // Update local state when profile is updated
           const newData = payload.new as { first_name: string; last_name: string; avatar_url: string };
           setFirstName(newData.first_name || "");
           setLastName(newData.last_name || "");
@@ -67,6 +78,7 @@ export const MainSidebar = () => {
       .subscribe();
 
     return () => {
+      subscription.unsubscribe();
       profileChannel.unsubscribe();
     };
   }, []);
