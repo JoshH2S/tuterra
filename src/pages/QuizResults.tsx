@@ -142,7 +142,10 @@ export default function QuizResults() {
                         {topic.correct}/{topic.total} ({topic.percentage.toFixed(1)}%)
                       </span>
                     </div>
-                    <Progress value={topic.percentage} className="h-2" />
+                    <Progress 
+                      value={topic.percentage} 
+                      className="h-2 [&::-webkit-progress-bar]:bg-[hsl(45,70%,98%)] [&::-webkit-progress-value]:bg-[#B8860B]"
+                    />
                   </div>
                 ))}
               </div>
@@ -212,5 +215,4 @@ export default function QuizResults() {
         </div>
       </div>
     </div>
-  );
-}
+  
