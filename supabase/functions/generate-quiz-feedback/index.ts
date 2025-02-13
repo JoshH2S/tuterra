@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { quizResponseId, correctAnswers, totalQuestions, score, questionResponses } = await req.json();
+    const { quizResponseId, correctAnswers, totalQuestions, score, questionResponses, topicPerformance } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -44,27 +44,6 @@ serve(async (req) => {
     const percentage = (correctAnswers / totalQuestions) * 100;
     const questions = responseData.quiz.quiz_questions;
     
-    // Group questions by topic for analysis
-    const topicPerformance = questions.reduce((acc, q) => {
-      if (!acc[q.topic]) {
-        acc[q.topic] = { total: 0, correct: 0 };
-      }
-      acc[q.topic].total++;
-      const questionResponse = questionResponses.find(r => r.question_id === q.id);
-      if (questionResponse?.is_correct) {
-        acc[q.topic].correct++;
-      }
-      return acc;
-    }, {});
-
-    // Calculate performance by topic
-    const topicAnalysis = Object.entries(topicPerformance).map(([topic, stats]) => ({
-      topic,
-      percentage: (stats.correct / stats.total) * 100,
-      correct: stats.correct,
-      total: stats.total
-    }));
-
     // Generate feedback using GPT
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -91,7 +70,7 @@ serve(async (req) => {
               Overall Percentage: ${percentage}%
 
               Topic Performance:
-              ${topicAnalysis.map(t => 
+              ${topicPerformance.map(t => 
                 `${t.topic}: ${t.correct}/${t.total} (${t.percentage.toFixed(1)}%)`
               ).join('\n')}
 
@@ -136,12 +115,12 @@ serve(async (req) => {
       };
     }
 
-    // Update the quiz response with AI feedback and topic performance
+    // Update the quiz response with AI feedback
     const { error: updateError } = await supabase
       .from('quiz_responses')
       .update({ 
         ai_feedback: feedback,
-        topic_performance: topicAnalysis
+        topic_performance: topicPerformance || responseData.topic_performance
       })
       .eq('id', quizResponseId);
 
