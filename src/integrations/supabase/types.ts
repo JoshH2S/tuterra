@@ -777,6 +777,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "student_performance_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "student_performance_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false

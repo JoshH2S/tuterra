@@ -53,11 +53,18 @@ export const useStudentDashboard = () => {
 
         if (performanceError) throw performanceError;
 
-        // Transform the performance data to include course title
-        const transformedPerformanceData = performanceData?.map(p => ({
-          ...p,
-          course_title: p.courses?.title || 'Unnamed Course'
-        })) || [];
+        // Transform and type the performance data
+        const transformedPerformanceData: StudentPerformance[] = (performanceData || []).map(p => ({
+          id: p.id,
+          student_id: p.student_id,
+          course_id: p.course_id,
+          total_quizzes: p.total_quizzes,
+          completed_quizzes: p.completed_quizzes,
+          average_score: p.average_score,
+          last_activity: p.last_activity,
+          course_title: p.courses?.title || 'Unnamed Course',
+          courses: p.courses
+        }));
 
         setCourses(typedCoursesData);
         setPerformance(transformedPerformanceData);
