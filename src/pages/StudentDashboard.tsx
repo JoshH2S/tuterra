@@ -2,7 +2,6 @@
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
-import { CourseCard } from "@/components/dashboard/CourseCard";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
@@ -81,24 +80,6 @@ export default function StudentDashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <PerformanceOverview performance={performance} />
-
-          <div>
-            <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-semibold mb-4`}>My Courses</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {courses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  performance={performance.find(p => p.course_id === course.course_id)}
-                />
-              ))}
-              {courses.length === 0 && (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  <p>You are not enrolled in any courses yet.</p>
-                </div>
-              )}
-            </div>
-          </div>
 
           <div>
             <StudyCalendar 
