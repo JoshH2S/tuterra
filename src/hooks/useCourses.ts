@@ -15,7 +15,14 @@ export const useCourses = () => {
   const fetchCourses = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in to view courses.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const { data, error } = await supabase
         .from('courses')
@@ -23,13 +30,22 @@ export const useCourses = () => {
         .eq('teacher_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching courses:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load courses. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setCourses(data || []);
     } catch (error) {
-      console.error('Error fetching courses:', error);
+      console.error('Error in fetchCourses:', error);
       toast({
         title: "Error",
-        description: "Failed to load courses. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
