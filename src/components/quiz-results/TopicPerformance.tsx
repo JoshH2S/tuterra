@@ -32,6 +32,7 @@ export function TopicPerformance({ topics }: TopicPerformanceProps) {
               <Progress 
                 value={topic.percentage} 
                 className="h-2 [&::-webkit-progress-bar]:bg-[hsl(45,70%,98%)] [&::-webkit-progress-value]:bg-[#B8860B]"
+                indicatorClassName="bg-[#B8860B]"
               />
             </div>
           ))}
