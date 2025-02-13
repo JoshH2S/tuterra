@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +26,7 @@ const App = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadFont = async () => {
@@ -105,6 +105,7 @@ const App = () => {
         title: "Success",
         description: "You have been logged out successfully.",
       });
+      navigate("/auth");
     } catch (error) {
       console.error('Error logging out:', error);
       toast({
@@ -222,4 +223,3 @@ const App = () => {
 };
 
 export default App;
-
