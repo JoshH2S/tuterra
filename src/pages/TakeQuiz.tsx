@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { QuizHeader } from "@/components/quiz-taking/QuizHeader";
 import { QuizQuestion } from "@/components/quiz-taking/QuizQuestion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuizSubmission } from "@/hooks/quiz/useQuizSubmission";
+import { useQuizTimer } from "@/hooks/quiz/useQuizTimer";
 
 export default function TakeQuiz() {
   const { id } = useParams();
@@ -15,9 +18,12 @@ export default function TakeQuiz() {
   const [quiz, setQuiz] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const isMobile = useIsMobile();
+  const { isSubmitting, handleSubmit } = useQuizSubmission();
+  const { timeRemaining } = useQuizTimer(
+    quiz?.duration_minutes ?? null,
+    () => handleSubmit({ id: id!, questions, answers, quiz })
+  );
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -41,10 +47,6 @@ export default function TakeQuiz() {
         }
 
         setQuiz(quizData);
-
-        if (quizData.duration_minutes > 0) {
-          setTimeRemaining(quizData.duration_minutes * 60);
-        }
 
         const { data: questionData, error: questionError } = await supabase
           .from('quiz_questions')
@@ -78,131 +80,6 @@ export default function TakeQuiz() {
     fetchQuiz();
   }, [id, navigate]);
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (timeRemaining !== null && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev === null || prev <= 1) {
-            clearInterval(timer);
-            handleSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [timeRemaining]);
-
-  const handleSubmit = async () => {
-    try {
-      setIsSubmitting(true);
-
-      const questionResponses = questions.map(question => ({
-        question_id: question.id,
-        student_answer: answers[question.id] || null,
-        is_correct: answers[question.id] === question.correct_answer,
-        topic: question.topic
-      }));
-
-      const correctAnswers = questionResponses.filter(response => response.is_correct).length;
-      const totalQuestions = questions.length;
-      const totalPoints = questions.reduce((sum, q) => sum + (q.points || 1), 0);
-      const score = Math.round((correctAnswers / totalQuestions) * totalPoints);
-
-      const topicPerformance = questions.reduce((acc, question) => {
-        const topic = question.topic;
-        if (!acc[topic]) {
-          acc[topic] = { total: 0, correct: 0 };
-        }
-        acc[topic].total++;
-        if (answers[question.id] === question.correct_answer) {
-          acc[topic].correct++;
-        }
-        return acc;
-      }, {});
-
-      const topicPerformanceArray = Object.entries(topicPerformance).map(([topic, data]) => ({
-        topic,
-        total: data.total,
-        correct: data.correct,
-        percentage: (data.correct / data.total) * 100
-      }));
-
-      const { data: quizResponse, error: responseError } = await supabase
-        .from('quiz_responses')
-        .insert({
-          quiz_id: id,
-          student_id: (await supabase.auth.getUser()).data.user?.id,
-          score: score,
-          correct_answers: correctAnswers,
-          total_questions: totalQuestions,
-          completed_at: new Date().toISOString(),
-          topic_performance: topicPerformanceArray
-        })
-        .select()
-        .single();
-
-      if (responseError) throw responseError;
-
-      const { error: scoreError } = await supabase
-        .from('student_quiz_scores')
-        .insert({
-          quiz_id: id,
-          student_id: (await supabase.auth.getUser()).data.user?.id,
-          course_id: quiz.course_id,
-          score: score,
-          max_score: totalPoints
-        });
-
-      if (scoreError) throw scoreError;
-
-      const { error: questionResponseError } = await supabase
-        .from('question_responses')
-        .insert(questionResponses.map(response => ({
-          ...response,
-          quiz_response_id: quizResponse.id,
-          topic: response.topic
-        })));
-
-      if (questionResponseError) throw questionResponseError;
-
-      const feedbackResponse = await fetch(
-        'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-quiz-feedback',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
-          body: JSON.stringify({
-            quizResponseId: quizResponse.id,
-            correctAnswers,
-            totalQuestions,
-            score,
-            questionResponses,
-          }),
-        }
-      );
-
-      if (!feedbackResponse.ok) {
-        console.error('Error generating feedback:', await feedbackResponse.text());
-      }
-
-      navigate(`/quiz-results/${quizResponse.id}`);
-    } catch (error) {
-      console.error('Error submitting quiz:', error);
-      toast({
-        title: "Error",
-        description: "Failed to submit quiz",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   if (!quiz || !questions.length) return <div>Loading...</div>;
 
   return (
@@ -211,7 +88,7 @@ export default function TakeQuiz() {
         <QuizHeader 
           title={quiz?.title}
           timeRemaining={timeRemaining}
-          onTimeUp={handleSubmit}
+          onTimeUp={() => handleSubmit({ id: id!, questions, answers, quiz })}
         />
         <CardContent className={`space-y-6 ${isMobile ? 'p-3' : ''}`}>
           {timeRemaining === 0 && (
@@ -233,7 +110,7 @@ export default function TakeQuiz() {
             />
           ))}
           <Button 
-            onClick={handleSubmit} 
+            onClick={() => handleSubmit({ id: id!, questions, answers, quiz })}
             disabled={isSubmitting || timeRemaining === 0}
             className={`mt-6 ${isMobile ? 'w-full py-6 text-base' : ''}`}
           >
