@@ -20,4 +20,8 @@ export interface StudentPerformance {
   completed_quizzes: number;
   average_score: number;
   last_activity: string;
+  course_title?: string;
+  courses?: {
+    title: string;
+  };
 }

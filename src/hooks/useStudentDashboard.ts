@@ -40,16 +40,27 @@ export const useStudentDashboard = () => {
           status: course.status as StudentCourse['status']
         })) || [];
 
-        // Fetch performance data
+        // Fetch performance data with course titles
         const { data: performanceData, error: performanceError } = await supabase
           .from('student_performance')
-          .select('*')
+          .select(`
+            *,
+            courses (
+              title
+            )
+          `)
           .eq('student_id', user.id);
 
         if (performanceError) throw performanceError;
 
+        // Transform the performance data to include course title
+        const transformedPerformanceData = performanceData?.map(p => ({
+          ...p,
+          course_title: p.courses?.title || 'Unnamed Course'
+        })) || [];
+
         setCourses(typedCoursesData);
-        setPerformance(performanceData || []);
+        setPerformance(transformedPerformanceData);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
