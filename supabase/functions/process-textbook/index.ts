@@ -37,60 +37,82 @@ Focus on:
 
 Keep the summary clear and structured.`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are an expert educator specializing in creating concise, informative summaries of educational content.' },
-        { role: 'user', content: prompt }
-      ],
-    }),
-  });
+  try {
+    console.log('Sending request to OpenAI...');
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'You are an expert educator specializing in creating concise, informative summaries of educational content.' },
+          { role: 'user', content: prompt }
+        ],
+      }),
+    });
 
-  if (!response.ok) {
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error generating summary:', error);
     throw new Error('Failed to generate summary');
   }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Log the incoming request
+    console.log('Received request:', req.method);
+    
     const { filePath, contentType, title, parentId } = await req.json();
+    console.log('Request payload:', { filePath, contentType, title, parentId });
     
     if (!filePath || !contentType || !title) {
       throw new Error('Missing required parameters');
     }
 
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Download the file from storage
+    console.log('Downloading file from storage:', filePath);
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('textbooks')
       .download(filePath);
 
     if (downloadError) {
+      console.error('Download error:', downloadError);
       throw new Error(`Failed to download file: ${downloadError.message}`);
     }
 
     // Extract text from PDF
+    console.log('Extracting text from PDF...');
     const arrayBuffer = await fileData.arrayBuffer();
     const extractedText = await extractTextFromPDF(arrayBuffer);
 
     // Generate AI summary
+    console.log('Generating summary...');
     const summary = await generateSummary(extractedText, contentType);
 
     // Store processed content
+    console.log('Storing processed content...');
     const { data: contentData, error: contentError } = await supabase
       .from('processed_textbook_content')
       .insert({
@@ -105,6 +127,7 @@ serve(async (req) => {
       .single();
 
     if (contentError) {
+      console.error('Content storage error:', contentError);
       throw new Error(`Failed to store processed content: ${contentError.message}`);
     }
 
@@ -113,7 +136,12 @@ serve(async (req) => {
         success: true,
         data: contentData,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
   } catch (error) {
     console.error('Error in process-textbook function:', error);
