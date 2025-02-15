@@ -7,27 +7,6 @@ interface ProcessedContent {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-const readBinaryFile = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (reader.result instanceof ArrayBuffer) {
-        // Convert ArrayBuffer to Base64 string
-        const bytes = new Uint8Array(reader.result);
-        let binary = '';
-        for (let i = 0; i < bytes.byteLength; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        resolve(btoa(binary));
-      } else {
-        reject(new Error('Failed to read binary file'));
-      }
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsArrayBuffer(file);
-  });
-};
-
 const readTextFile = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -61,44 +40,36 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
     throw new Error('File size exceeds 50MB limit');
   }
 
-  let content: string;
-  const originalLength = file.size;
-
   try {
-    if (file.type === 'application/pdf') {
-      console.log('Processing PDF file');
-      content = await readBinaryFile(file);
-    } else {
-      console.log('Processing text file');
-      const rawContent = await readTextFile(file);
-      content = sanitizeContent(rawContent);
-      
-      // Extract relevant content using the new utility
-      const { sections, keyTerms, totalLength } = extractRelevantContent(content);
-      
-      // Combine sections and key terms into a structured format
-      content = sections.map(section => 
-        `${section.title}\n${section.content}`
-      ).join('\n\n') + '\n\nKey Terms:\n' + keyTerms.join('\n');
-      
-      console.log('Content processed:', {
-        originalLength: rawContent.length,
-        processedLength: content.length,
-        sections: sections.length,
-        keyTerms: keyTerms.length
-      });
-    }
+    console.log('Processing text file');
+    const rawContent = await readTextFile(file);
+    const content = sanitizeContent(rawContent);
+    
+    // Extract relevant content using the utility
+    const { sections, keyTerms, totalLength } = extractRelevantContent(content);
+    
+    // Combine sections and key terms into a structured format
+    const processedContent = sections.map(section => 
+      `${section.title}\n${section.content}`
+    ).join('\n\n') + '\n\nKey Terms:\n' + keyTerms.join('\n');
+    
+    console.log('Content processed:', {
+      originalLength: rawContent.length,
+      processedLength: processedContent.length,
+      sections: sections.length,
+      keyTerms: keyTerms.length
+    });
 
-    if (!content) {
+    if (!processedContent) {
       throw new Error('File appears to be empty');
     }
 
-    const wasContentTrimmed = content.length < originalLength;
+    const wasContentTrimmed = processedContent.length < rawContent.length;
 
     return {
-      content,
+      content: processedContent,
       wasContentTrimmed,
-      originalLength
+      originalLength: rawContent.length
     };
   } catch (error) {
     console.error('Error processing file:', error);
