@@ -423,6 +423,53 @@ export type Database = {
           },
         ]
       }
+      processed_textbook_content: {
+        Row: {
+          content: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string
+          id: string
+          metadata: Json | null
+          original_file_path: string
+          parent_id: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          original_file_path: string
+          parent_id?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          original_file_path?: string
+          parent_id?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processed_textbook_content_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "processed_textbook_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -977,6 +1024,35 @@ export type Database = {
         }
         Relationships: []
       }
+      textbook_embeddings: {
+        Row: {
+          content_id: string
+          created_at: string
+          embedding: string | null
+          id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "textbook_embeddings_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "processed_textbook_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tutor_conversations: {
         Row: {
           course_id: string | null
@@ -1064,14 +1140,187 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      binary_quantize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+      halfvec_avg: {
+        Args: {
+          "": number[]
+        }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      l2_norm:
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      l2_normalize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+      sparsevec_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
       validate_course_material_content: {
         Args: {
           content_to_validate: string
         }
         Returns: boolean
       }
+      vector_avg: {
+        Args: {
+          "": number[]
+        }
+        Returns: string
+      }
+      vector_dims:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      vector_norm: {
+        Args: {
+          "": string
+        }
+        Returns: number
+      }
+      vector_out: {
+        Args: {
+          "": string
+        }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: {
+          "": string
+        }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
     }
     Enums: {
+      content_type: "chapter" | "section" | "definition" | "formula" | "example"
       user_type: "teacher" | "student"
     }
     CompositeTypes: {
