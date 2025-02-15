@@ -15,6 +15,7 @@ interface TutorChatInputProps {
 }
 
 export const TutorChatInput = ({
+  message,
   isLoading,
   onSubmit,
   onFileUpload,
@@ -37,6 +38,8 @@ export const TutorChatInput = ({
           loadingDuration={3000}
           className={`mb-0 ${isMobile ? 'text-sm' : ''}`}
           disabled={isLoading}
+          value={message}
+          onChange={(e) => onMessageChange(e.target.value)}
         />
       </div>
       <div className="flex flex-col gap-2 mb-4">
