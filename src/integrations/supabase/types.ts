@@ -428,6 +428,7 @@ export type Database = {
           content: string
           content_type: Database["public"]["Enums"]["content_type"]
           created_at: string
+          embedding: string | null
           id: string
           metadata: Json | null
           original_file_path: string
@@ -440,6 +441,7 @@ export type Database = {
           content: string
           content_type: Database["public"]["Enums"]["content_type"]
           created_at?: string
+          embedding?: string | null
           id?: string
           metadata?: Json | null
           original_file_path: string
@@ -452,6 +454,7 @@ export type Database = {
           content?: string
           content_type?: Database["public"]["Enums"]["content_type"]
           created_at?: string
+          embedding?: string | null
           id?: string
           metadata?: Json | null
           original_file_path?: string

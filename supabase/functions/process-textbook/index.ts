@@ -68,14 +68,23 @@ Keep the summary clear and structured.`;
   }
 }
 
+async function generateEmbeddings(supabase: any, contentId: string, text: string) {
+  try {
+    await supabase.functions.invoke('generate-embeddings', {
+      body: { contentId, text },
+    });
+  } catch (error) {
+    console.error('Error generating embeddings:', error);
+    // Don't throw here - we want to continue even if embedding generation fails
+  }
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Log the incoming request
     console.log('Received request:', req.method);
     
     const { filePath, contentType, title, parentId } = await req.json();
@@ -91,7 +100,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Download the file from storage
     console.log('Downloading file from storage:', filePath);
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('textbooks')
@@ -102,16 +110,13 @@ serve(async (req) => {
       throw new Error(`Failed to download file: ${downloadError.message}`);
     }
 
-    // Extract text from PDF
     console.log('Extracting text from PDF...');
     const arrayBuffer = await fileData.arrayBuffer();
     const extractedText = await extractTextFromPDF(arrayBuffer);
 
-    // Generate AI summary
     console.log('Generating summary...');
     const summary = await generateSummary(extractedText, contentType);
 
-    // Store processed content
     console.log('Storing processed content...');
     const { data: contentData, error: contentError } = await supabase
       .from('processed_textbook_content')
@@ -130,6 +135,9 @@ serve(async (req) => {
       console.error('Content storage error:', contentError);
       throw new Error(`Failed to store processed content: ${contentError.message}`);
     }
+
+    // Generate embeddings for the content
+    await generateEmbeddings(supabase, contentData.id, extractedText);
 
     return new Response(
       JSON.stringify({
