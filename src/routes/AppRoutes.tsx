@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
@@ -18,6 +17,7 @@ import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
 import { MediaLibrary } from "@/components/media/MediaLibrary";
 import CourseTemplates from "@/pages/CourseTemplates";
+import TextbookProcessing from "@/pages/TextbookProcessing";
 
 export const AppRoutes = () => {
   return (
@@ -143,6 +143,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MediaLibrary />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/textbook-processing"
+        element={
+          <ProtectedRoute>
+            <TextbookProcessing />
           </ProtectedRoute>
         }
       />
