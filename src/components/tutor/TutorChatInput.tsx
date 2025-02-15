@@ -10,7 +10,7 @@ interface TutorChatInputProps {
   isLoading: boolean;
   onMessageChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
-  onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onFileUpload?: (file: File) => Promise<void>;
 }
 
