@@ -51,16 +51,6 @@ export const TutorChat = () => {
     }
   };
 
-  const handleKeyPress = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (message.trim()) {
-        await sendMessage(message);
-        setMessage("");
-      }
-    }
-  };
-
   return (
     <Card className={`shadow-lg ${isMobile ? 'mx-0' : ''}`}>
       <CardHeader className={isMobile ? 'p-3 space-y-1' : ''}>
@@ -77,7 +67,6 @@ export const TutorChat = () => {
             isLoading={isLoading}
             onMessageChange={setMessage}
             onSubmit={handleSubmit}
-            onKeyPress={handleKeyPress}
             onFileUpload={handleFileUpload}
           />
         </div>
