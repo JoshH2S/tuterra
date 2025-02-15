@@ -18,6 +18,8 @@ interface AIInputWithLoadingProps {
   className?: string;
   autoAnimate?: boolean;
   disabled?: boolean;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
 export function AIInputWithLoading({
@@ -30,9 +32,11 @@ export function AIInputWithLoading({
   onSubmit,
   className,
   autoAnimate = false,
-  disabled = false
+  disabled = false,
+  value,
+  onChange
 }: AIInputWithLoadingProps) {
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState(value || "");
   const [submitted, setSubmitted] = useState(autoAnimate);
   const [isAnimating, setIsAnimating] = useState(autoAnimate);
   
@@ -40,6 +44,12 @@ export function AIInputWithLoading({
     minHeight,
     maxHeight,
   });
+
+  useEffect(() => {
+    if (value !== undefined) {
+      setInputValue(value);
+    }
+  }, [value]);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -65,12 +75,24 @@ export function AIInputWithLoading({
     
     setSubmitted(true);
     await onSubmit?.(inputValue);
-    setInputValue("");
-    adjustHeight(true);
+    
+    if (!onChange) { // Only clear if not controlled
+      setInputValue("");
+      adjustHeight(true);
+    }
     
     setTimeout(() => {
       setSubmitted(false);
     }, loadingDuration);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (onChange) {
+      onChange(e);
+    } else {
+      setInputValue(e.target.value);
+    }
+    adjustHeight();
   };
 
   return (
@@ -89,11 +111,8 @@ export function AIInputWithLoading({
               disabled && "opacity-50 cursor-not-allowed"
             )}
             ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value);
-              adjustHeight();
-            }}
+            value={value !== undefined ? value : inputValue}
+            onChange={handleChange}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
