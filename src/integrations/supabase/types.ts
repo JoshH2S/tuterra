@@ -1292,6 +1292,20 @@ export type Database = {
             }
             Returns: unknown
           }
+      match_content_chunks: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: string
+          content_id: string
+          chunk_text: string
+          chunk_index: number
+          similarity: number
+        }[]
+      }
       sparsevec_out: {
         Args: {
           "": unknown
