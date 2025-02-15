@@ -12,6 +12,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function chunkText(text: string, maxChunkSize = 1000): string[] {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+  const chunks: string[] = [];
+  let currentChunk = '';
+
+  for (const sentence of sentences) {
+    if ((currentChunk + sentence).length <= maxChunkSize) {
+      currentChunk += sentence;
+    } else {
+      if (currentChunk) chunks.push(currentChunk.trim());
+      currentChunk = sentence;
+    }
+  }
+
+  if (currentChunk) chunks.push(currentChunk.trim());
+  return chunks;
+}
+
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   try {
     const decoder = new TextDecoder('utf-8');
@@ -68,14 +86,51 @@ Keep the summary clear and structured.`;
   }
 }
 
-async function generateEmbeddings(supabase: any, contentId: string, text: string) {
-  try {
-    await supabase.functions.invoke('generate-embeddings', {
-      body: { contentId, text },
-    });
-  } catch (error) {
-    console.error('Error generating embeddings:', error);
-    // Don't throw here - we want to continue even if embedding generation fails
+async function generateEmbedding(text: string): Promise<number[]> {
+  const response = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      input: text,
+      model: 'text-embedding-ada-002',
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to generate embedding');
+  }
+
+  const { data } = await response.json();
+  return data[0].embedding;
+}
+
+async function processChunks(supabase: any, contentId: string, chunks: string[]) {
+  console.log(`Processing ${chunks.length} chunks for content ${contentId}`);
+  
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    try {
+      const embedding = await generateEmbedding(chunk);
+      
+      const { error } = await supabase
+        .from('content_chunks')
+        .insert({
+          content_id: contentId,
+          chunk_text: chunk,
+          chunk_index: i,
+          embedding,
+          metadata: { position: i, total_chunks: chunks.length }
+        });
+
+      if (error) {
+        console.error(`Error storing chunk ${i}:`, error);
+      }
+    } catch (error) {
+      console.error(`Error processing chunk ${i}:`, error);
+    }
   }
 }
 
@@ -136,8 +191,10 @@ serve(async (req) => {
       throw new Error(`Failed to store processed content: ${contentError.message}`);
     }
 
-    // Generate embeddings for the content
-    await generateEmbeddings(supabase, contentData.id, extractedText);
+    // Generate chunks and process them
+    console.log('Chunking content and generating embeddings...');
+    const chunks = chunkText(extractedText);
+    await processChunks(supabase, contentData.id, chunks);
 
     return new Response(
       JSON.stringify({

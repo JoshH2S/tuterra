@@ -72,6 +72,44 @@ export type Database = {
         }
         Relationships: []
       }
+      content_chunks: {
+        Row: {
+          chunk_index: number
+          chunk_text: string
+          content_id: string
+          created_at: string
+          embedding: string | null
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          chunk_index: number
+          chunk_text: string
+          content_id: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          chunk_index?: number
+          chunk_text?: string
+          content_id?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_chunks_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "processed_textbook_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_materials: {
         Row: {
           course_id: string
