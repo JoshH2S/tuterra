@@ -7,9 +7,12 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+// Updated CORS headers to be more permissive for development
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Request-Headers': '*'
 };
 
 function chunkText(text: string, maxChunkSize = 1000): string[] {
@@ -187,8 +190,12 @@ async function processChunks(supabase: any, contentId: string, chunks: string[])
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
   }
 
   try {
@@ -297,7 +304,6 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    // Log the complete error object for debugging
     console.error('Error in process-textbook function:', {
       message: error.message,
       stack: error.stack,
