@@ -157,7 +157,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
 }
 
 async function processChunks(supabase: any, contentId: string, chunks: string[]) {
-  console.log(`Starting to process ${chunks.length} chunks for content ${contentId}`);
+  console.log(`Processing ${chunks.length} chunks for content ${contentId}`);
   
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
