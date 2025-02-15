@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
@@ -5,7 +6,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const BATCH_SIZE = 100; // Process 100 chunks per batch
 
 // Updated CORS headers to be more permissive for development
 const corsHeaders = {
@@ -159,143 +159,38 @@ async function generateEmbedding(text: string): Promise<number[]> {
   }
 }
 
-async function processChunkBatch(supabase: any, job: any, chunks: string[], startIndex: number) {
-  const batchEnd = Math.min(startIndex + BATCH_SIZE, chunks.length);
-  console.log(`Processing batch from ${startIndex} to ${batchEnd - 1}`);
-
-  for (let i = startIndex; i < batchEnd; i++) {
+async function processChunks(supabase: any, contentId: string, chunks: string[]) {
+  console.log(`Processing ${chunks.length} chunks for content ${contentId}`);
+  
+  for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     try {
       console.log(`Processing chunk ${i + 1}/${chunks.length}`);
       const embedding = await generateEmbedding(chunk);
       
-      const { error: chunkError } = await supabase
+      const { error } = await supabase
         .from('content_chunks')
         .insert({
-          content_id: job.content_id, // Use content_id from the job record
+          content_id: contentId,
           chunk_text: chunk,
           chunk_index: i,
           embedding,
           metadata: { position: i, total_chunks: chunks.length }
         });
 
-      if (chunkError) {
-        console.error(`Error storing chunk ${i}:`, chunkError);
-        throw chunkError;
+      if (error) {
+        console.error(`Error storing chunk ${i}:`, error);
+      } else {
+        console.log(`Successfully stored chunk ${i + 1}`);
       }
-
-      // Update progress in processing_jobs
-      const { error: updateError } = await supabase
-        .from('processing_jobs')
-        .update({ 
-          processed_chunks: i + 1,
-          current_batch: Math.floor(i / BATCH_SIZE),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', job.id);
-
-      if (updateError) {
-        console.error('Error updating job progress:', updateError);
-        throw updateError;
-      }
-
-      console.log(`Successfully processed chunk ${i + 1}`);
     } catch (error) {
       console.error(`Error processing chunk ${i}:`, error);
-      throw error;
     }
-  }
-
-  return batchEnd;
-}
-
-async function initiateProcessing(supabase: any, contentData: any, chunks: string[]) {
-  // Create processing job
-  const { data: job, error: jobError } = await supabase
-    .from('processing_jobs')
-    .insert({
-      content_id: contentData.id,
-      total_chunks: chunks.length,
-      status: 'processing',
-      metadata: { 
-        title: contentData.title,
-        content_type: contentData.content_type
-      }
-    })
-    .select()
-    .single();
-
-  if (jobError) {
-    console.error('Error creating processing job:', jobError);
-    throw jobError;
-  }
-
-  console.log('Created processing job:', job.id);
-  return job;
-}
-
-async function processBatchesAsync(supabase: any, job: any, chunks: string[]) {
-  try {
-    let processedIndex = 0;
-    while (processedIndex < chunks.length) {
-      processedIndex = await processChunkBatch(supabase, job, chunks, processedIndex);
-      
-      // If there are more chunks to process, trigger the next batch asynchronously
-      if (processedIndex < chunks.length) {
-        const response = await fetch(
-          `${supabaseUrl}/functions/v1/process-textbook`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              jobId: job.id,
-              resumeFromIndex: processedIndex
-            })
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to trigger next batch processing');
-        }
-
-        break; // Exit the loop as the next batch will be handled by the new function call
-      }
-    }
-
-    // If all chunks are processed, update job status to completed
-    if (processedIndex >= chunks.length) {
-      const { error: updateError } = await supabase
-        .from('processing_jobs')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', job.id);
-
-      if (updateError) {
-        console.error('Error updating job status:', updateError);
-        throw updateError;
-      }
-    }
-  } catch (error) {
-    console.error('Error in batch processing:', error);
-    // Update job status to failed
-    await supabase
-      .from('processing_jobs')
-      .update({ 
-        status: 'failed',
-        error_message: error.message,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', job.id);
-    throw error;
   }
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -319,42 +214,7 @@ serve(async (req) => {
       console.error('Error parsing request body:', error);
       throw new Error('Invalid request body');
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Check if this is a batch continuation request
-    if (requestBody.jobId && requestBody.resumeFromIndex !== undefined) {
-      const { data: job, error: jobError } = await supabase
-        .from('processing_jobs')
-        .select('*')
-        .eq('id', requestBody.jobId)
-        .single();
-
-      if (jobError) {
-        throw new Error(`Failed to retrieve job: ${jobError.message}`);
-      }
-
-      // Retrieve content data to get chunks
-      const { data: contentData, error: contentError } = await supabase
-        .from('processed_textbook_content')
-        .select('*')
-        .eq('id', job.content_id)
-        .single();
-
-      if (contentError) {
-        throw new Error(`Failed to retrieve content: ${contentError.message}`);
-      }
-
-      const chunks = chunkText(contentData.content);
-      await processBatchesAsync(supabase, job, chunks);
-
-      return new Response(
-        JSON.stringify({ success: true, jobId: job.id }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Handle initial processing request
+    
     const { filePath, contentType, title, parentId } = requestBody;
     
     if (!filePath || !contentType || !title) {
@@ -364,6 +224,13 @@ serve(async (req) => {
       if (!title) missingParams.push('title');
       throw new Error(`Missing required parameters: ${missingParams.join(', ')}`);
     }
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase configuration is missing');
+      throw new Error('Missing Supabase configuration');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('Downloading file from storage:', filePath);
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -416,18 +283,25 @@ serve(async (req) => {
 
     console.log('Content stored successfully, ID:', contentData.id);
 
-    // Initialize processing job and start first batch
+    // Generate chunks and process them
+    console.log('Chunking content...');
     const chunks = chunkText(extractedText);
-    const job = await initiateProcessing(supabase, contentData, chunks);
-    await processBatchesAsync(supabase, job, chunks);
+    console.log(`Generated ${chunks.length} chunks`);
+    
+    await processChunks(supabase, contentData.id, chunks);
+    console.log('All chunks processed successfully');
 
     return new Response(
       JSON.stringify({
         success: true,
         data: contentData,
-        jobId: job.id
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
   } catch (error) {
     console.error('Error in process-textbook function:', {

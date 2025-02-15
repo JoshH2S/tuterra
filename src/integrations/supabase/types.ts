@@ -511,53 +511,6 @@ export type Database = {
           },
         ]
       }
-      processing_jobs: {
-        Row: {
-          content_id: string | null
-          created_at: string | null
-          current_batch: number | null
-          error_message: string | null
-          id: string
-          metadata: Json | null
-          processed_chunks: number | null
-          status: string | null
-          total_chunks: number
-          updated_at: string | null
-        }
-        Insert: {
-          content_id?: string | null
-          created_at?: string | null
-          current_batch?: number | null
-          error_message?: string | null
-          id?: string
-          metadata?: Json | null
-          processed_chunks?: number | null
-          status?: string | null
-          total_chunks: number
-          updated_at?: string | null
-        }
-        Update: {
-          content_id?: string | null
-          created_at?: string | null
-          current_batch?: number | null
-          error_message?: string | null
-          id?: string
-          metadata?: Json | null
-          processed_chunks?: number | null
-          status?: string | null
-          total_chunks?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "processing_jobs_content_id_fkey"
-            columns: ["content_id"]
-            isOneToOne: false
-            referencedRelation: "processed_textbook_content"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           avatar_url: string | null
