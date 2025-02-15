@@ -159,7 +159,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
   }
 }
 
-async function processChunkBatch(supabase: any, jobId: string, chunks: string[], startIndex: number) {
+async function processChunkBatch(supabase: any, job: any, chunks: string[], startIndex: number) {
   const batchEnd = Math.min(startIndex + BATCH_SIZE, chunks.length);
   console.log(`Processing batch from ${startIndex} to ${batchEnd - 1}`);
 
@@ -172,7 +172,7 @@ async function processChunkBatch(supabase: any, jobId: string, chunks: string[],
       const { error: chunkError } = await supabase
         .from('content_chunks')
         .insert({
-          content_id: jobId,
+          content_id: job.content_id, // Use content_id from the job record
           chunk_text: chunk,
           chunk_index: i,
           embedding,
@@ -192,7 +192,7 @@ async function processChunkBatch(supabase: any, jobId: string, chunks: string[],
           current_batch: Math.floor(i / BATCH_SIZE),
           updated_at: new Date().toISOString()
         })
-        .eq('id', jobId);
+        .eq('id', job.id);
 
       if (updateError) {
         console.error('Error updating job progress:', updateError);
@@ -238,7 +238,7 @@ async function processBatchesAsync(supabase: any, job: any, chunks: string[]) {
   try {
     let processedIndex = 0;
     while (processedIndex < chunks.length) {
-      processedIndex = await processChunkBatch(supabase, job.id, chunks, processedIndex);
+      processedIndex = await processChunkBatch(supabase, job, chunks, processedIndex);
       
       // If there are more chunks to process, trigger the next batch asynchronously
       if (processedIndex < chunks.length) {
