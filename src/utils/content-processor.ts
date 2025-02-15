@@ -1,3 +1,4 @@
+
 interface ProcessedContent {
   sections: {
     title: string;
@@ -51,6 +52,14 @@ export const extractRelevantContent = (rawContent: string): ProcessedContent => 
     sections[sections.length - 1].content += rawContent.slice(lastIndex).trim();
   }
 
+  // If no sections were found, create a default section
+  if (sections.length === 0) {
+    sections.push({
+      title: 'Content',
+      content: cleanContent(rawContent)
+    });
+  }
+
   // Extract key terms (definitions, important concepts)
   const keyTermPattern = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*(?::|is|are|refers to|means)\s+([^.!?]+[.!?])/g;
   const keyTerms: string[] = [];
@@ -82,14 +91,22 @@ export const extractRelevantContent = (rawContent: string): ProcessedContent => 
  */
 const cleanContent = (content: string): string => {
   return content
+    // Normalize unicode characters
+    .normalize('NFKC')
+    // Replace smart quotes with regular quotes
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    // Replace other common special characters
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2026/g, '...')
     // Remove footnotes
     .replace(/\[\d+\]|\[note\s*\d*\]/gi, '')
     // Remove references
     .replace(/\((?:[^()]*\d{4}[^()]*)\)/g, '')
     // Remove URLs
     .replace(/https?:\/\/\S+/g, '')
-    // Remove extra whitespace
-    .replace(/\s+/g, ' ')
+    // Preserve important whitespace characters
+    .replace(/[^\S\n\t]+/g, ' ')
     // Remove empty parentheses
     .replace(/\(\s*\)/g, '')
     // Normalize line endings

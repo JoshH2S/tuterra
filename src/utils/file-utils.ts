@@ -23,8 +23,20 @@ const readTextFile = (file: File): Promise<string> => {
 };
 
 const sanitizeContent = (content: string): string => {
-  // Remove control characters except newlines and tabs
-  return content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  // Normalize unicode characters and remove only truly problematic characters
+  return content
+    .normalize('NFKC')
+    // Remove only control characters that could cause issues
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    // Replace smart quotes with regular quotes
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    // Replace other common special characters
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2026/g, '...')
+    // Normalize whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 import { extractRelevantContent } from './content-processor';
