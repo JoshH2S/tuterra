@@ -12,25 +12,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function truncateText(text: string, maxTokens = 8000) {
-  const maxChars = maxTokens * 4;
-  if (text.length > maxChars) {
-    console.log(`Truncating content from ${text.length} characters to ${maxChars}`);
-    return text.slice(0, maxChars) + "\n[Content truncated to fit within model's context limit...]";
-  }
-  return text;
+async function generateEmbedding(text: string): Promise<number[]> {
+  const response = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openAIApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      input: text,
+      model: 'text-embedding-ada-002',
+    }),
+  });
+
+  const { data } = await response.json();
+  return data[0].embedding;
 }
 
-async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
-  try {
-    const decoder = new TextDecoder('utf-8');
-    const text = decoder.decode(buffer);
-    console.log('Extracted text length:', text.length);
-    return text;
-  } catch (error) {
-    console.error('Error processing PDF:', error);
-    throw new Error('Failed to process PDF content');
-  }
+async function searchRelevantContent(supabase: any, queryEmbedding: number[], limit = 3) {
+  const { data: chunks, error } = await supabase.rpc('match_content_chunks', {
+    query_embedding: queryEmbedding,
+    match_threshold: 0.7,
+    match_count: limit
+  });
+
+  if (error) throw error;
+  return chunks;
 }
 
 serve(async (req) => {
@@ -50,33 +57,18 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-    let context = "";
     
-    if (materialPath) {
-      try {
-        console.log('Fetching material from path:', materialPath);
-        const { data: fileData, error: downloadError } = await supabase.storage
-          .from('course_materials')
-          .download(materialPath);
-
-        if (downloadError) {
-          console.error('Error downloading material:', downloadError);
-          context = "";
-        } else {
-          let text;
-          if (materialPath.toLowerCase().endsWith('.pdf')) {
-            const arrayBuffer = await fileData.arrayBuffer();
-            text = await extractTextFromPDF(arrayBuffer);
-          } else {
-            text = await fileData.text();
-          }
-          context = truncateText(text);
-          console.log(`Context length after truncation: ${context.length} characters`);
-        }
-      } catch (error) {
-        console.error('Error processing material:', error);
-        context = "";
-      }
+    // Generate embedding for the user's question
+    const queryEmbedding = await generateEmbedding(message);
+    
+    // Search for relevant content chunks
+    const relevantChunks = await searchRelevantContent(supabase, queryEmbedding);
+    
+    // Prepare context from relevant chunks
+    let context = "";
+    if (relevantChunks && relevantChunks.length > 0) {
+      context = "Based on the following relevant content:\n\n" + 
+        relevantChunks.map(chunk => chunk.chunk_text).join("\n\n");
     }
 
     let currentConversationId = conversationId;
@@ -107,9 +99,9 @@ serve(async (req) => {
     }
 
     const systemMessage = `You are an AI tutor assistant. ${
-      context ? 'You have access to the following course material:' + context 
+      context ? 'You have access to the following relevant course material:\n' + context 
       : 'You are ready to help with any academic questions or learning needs.'
-    }\n\nHelp students with:
+    }\n\nHelp students by:
 - Understanding complex topics and concepts
 - Creating study guides and summaries
 - Generating practice questions
