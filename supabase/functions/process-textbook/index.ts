@@ -32,8 +32,13 @@ function chunkText(text: string, maxChunkSize = 1000): string[] {
 
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   try {
+    console.log('Starting text extraction from PDF...');
+    console.log('Buffer size:', buffer.byteLength);
+    
     const decoder = new TextDecoder('utf-8');
     let text = decoder.decode(buffer);
+    
+    console.log('Raw text length:', text.length);
     
     // Basic cleaning of the extracted text
     text = text.replace(/\x00/g, '') // Remove null bytes
@@ -41,7 +46,7 @@ async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
               .replace(/\s+/g, ' ') // Normalize whitespace
               .trim();
     
-    console.log('Extracted text length:', text.length);
+    console.log('Cleaned text length:', text.length);
     console.log('First 100 characters:', text.substring(0, 100));
     
     if (text.length === 0) {
@@ -50,7 +55,7 @@ async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
     
     return text;
   } catch (error) {
-    console.error('Error processing PDF:', error);
+    console.error('Error in extractTextFromPDF:', error);
     throw new Error(`Failed to process PDF content: ${error.message}`);
   }
 }
@@ -152,11 +157,12 @@ async function generateEmbedding(text: string): Promise<number[]> {
 }
 
 async function processChunks(supabase: any, contentId: string, chunks: string[]) {
-  console.log(`Processing ${chunks.length} chunks for content ${contentId}`);
+  console.log(`Starting to process ${chunks.length} chunks for content ${contentId}`);
   
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     try {
+      console.log(`Processing chunk ${i + 1}/${chunks.length}`);
       const embedding = await generateEmbedding(chunk);
       
       const { error } = await supabase
@@ -171,6 +177,8 @@ async function processChunks(supabase: any, contentId: string, chunks: string[])
 
       if (error) {
         console.error(`Error storing chunk ${i}:`, error);
+      } else {
+        console.log(`Successfully stored chunk ${i + 1}`);
       }
     } catch (error) {
       console.error(`Error processing chunk ${i}:`, error);
@@ -185,19 +193,33 @@ serve(async (req) => {
 
   try {
     if (!openAIApiKey) {
+      console.error('OpenAI API key is missing');
       throw new Error('OpenAI API key is not configured');
     }
 
-    console.log('Received request:', req.method);
+    console.log('Starting request processing...');
     
-    const { filePath, contentType, title, parentId } = await req.json();
-    console.log('Request payload:', { filePath, contentType, title, parentId });
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('Request payload:', requestBody);
+    } catch (error) {
+      console.error('Error parsing request body:', error);
+      throw new Error('Invalid request body');
+    }
+    
+    const { filePath, contentType, title, parentId } = requestBody;
     
     if (!filePath || !contentType || !title) {
-      throw new Error('Missing required parameters');
+      const missingParams = [];
+      if (!filePath) missingParams.push('filePath');
+      if (!contentType) missingParams.push('contentType');
+      if (!title) missingParams.push('title');
+      throw new Error(`Missing required parameters: ${missingParams.join(', ')}`);
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase configuration is missing');
       throw new Error('Missing Supabase configuration');
     }
 
@@ -217,9 +239,13 @@ serve(async (req) => {
       throw new Error('No file data received from storage');
     }
 
-    console.log('Extracting text from PDF...');
+    console.log('Converting file to ArrayBuffer...');
     const arrayBuffer = await fileData.arrayBuffer();
+    console.log('File size:', arrayBuffer.byteLength, 'bytes');
+
+    console.log('Extracting text from PDF...');
     const extractedText = await extractTextFromPDF(arrayBuffer);
+    console.log('Extracted text length:', extractedText.length);
 
     if (!extractedText || extractedText.length === 0) {
       throw new Error('No text could be extracted from the file');
@@ -227,6 +253,7 @@ serve(async (req) => {
 
     console.log('Generating summary...');
     const summary = await generateSummary(extractedText, contentType);
+    console.log('Summary generated, length:', summary.length);
 
     console.log('Storing processed content...');
     const { data: contentData, error: contentError } = await supabase
@@ -247,10 +274,15 @@ serve(async (req) => {
       throw new Error(`Failed to store processed content: ${contentError.message}`);
     }
 
+    console.log('Content stored successfully, ID:', contentData.id);
+
     // Generate chunks and process them
-    console.log('Chunking content and generating embeddings...');
+    console.log('Chunking content...');
     const chunks = chunkText(extractedText);
+    console.log(`Generated ${chunks.length} chunks`);
+    
     await processChunks(supabase, contentData.id, chunks);
+    console.log('All chunks processed successfully');
 
     return new Response(
       JSON.stringify({
@@ -265,11 +297,18 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in process-textbook function:', error);
+    // Log the complete error object for debugging
+    console.error('Error in process-textbook function:', {
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause,
+    });
+    
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
+        details: error.stack,
       }),
       { 
         status: 500,
