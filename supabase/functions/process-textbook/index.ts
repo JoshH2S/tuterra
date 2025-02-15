@@ -33,12 +33,25 @@ function chunkText(text: string, maxChunkSize = 1000): string[] {
 async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
   try {
     const decoder = new TextDecoder('utf-8');
-    const text = decoder.decode(buffer);
+    let text = decoder.decode(buffer);
+    
+    // Basic cleaning of the extracted text
+    text = text.replace(/\x00/g, '') // Remove null bytes
+              .replace(/[\r\n]+/g, '\n') // Normalize line endings
+              .replace(/\s+/g, ' ') // Normalize whitespace
+              .trim();
+    
     console.log('Extracted text length:', text.length);
+    console.log('First 100 characters:', text.substring(0, 100));
+    
+    if (text.length === 0) {
+      throw new Error('Extracted text is empty');
+    }
+    
     return text;
   } catch (error) {
     console.error('Error processing PDF:', error);
-    throw new Error('Failed to process PDF content');
+    throw new Error(`Failed to process PDF content: ${error.message}`);
   }
 }
 
@@ -47,9 +60,15 @@ async function generateSummary(content: string, type: string): Promise<string> {
     throw new Error('OpenAI API key is not configured');
   }
 
+  // Limit content length for the OpenAI API
+  const maxContentLength = 4000;
+  const truncatedContent = content.length > maxContentLength 
+    ? content.substring(0, maxContentLength) + "..."
+    : content;
+
   const prompt = `Summarize the following ${type} content concisely while preserving key information:
 
-${content}
+${truncatedContent}
 
 Focus on:
 1. Main concepts and ideas
@@ -61,6 +80,8 @@ Keep the summary clear and structured.`;
 
   try {
     console.log('Sending request to OpenAI...');
+    console.log('Content length:', content.length);
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -68,7 +89,7 @@ Keep the summary clear and structured.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',  // Changed from 'gpt-4o-mini' to 'gpt-3.5-turbo'
+        model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: 'You are an expert educator specializing in creating concise, informative summaries of educational content.' },
           { role: 'user', content: prompt }
@@ -81,17 +102,21 @@ Keep the summary clear and structured.`;
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${JSON.stringify(errorData)}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response received');
+    
     if (!data.choices?.[0]?.message?.content) {
+      console.error('Invalid OpenAI response:', data);
       throw new Error('Invalid response from OpenAI API');
     }
+    
     return data.choices[0].message.content;
   } catch (error) {
     console.error('Error generating summary:', error);
-    throw new Error('Failed to generate summary');
+    throw new Error(`Failed to generate summary: ${error.message}`);
   }
 }
 
@@ -100,24 +125,30 @@ async function generateEmbedding(text: string): Promise<number[]> {
     throw new Error('OpenAI API key is not configured');
   }
 
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      input: text,
-      model: 'text-embedding-ada-002',
-    }),
-  });
+  try {
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        input: text,
+        model: 'text-embedding-ada-002',
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to generate embedding');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to generate embedding: ${response.status} - ${JSON.stringify(errorData)}`);
+    }
+
+    const { data } = await response.json();
+    return data[0].embedding;
+  } catch (error) {
+    console.error('Error generating embedding:', error);
+    throw new Error(`Failed to generate embedding: ${error.message}`);
   }
-
-  const { data } = await response.json();
-  return data[0].embedding;
 }
 
 async function processChunks(supabase: any, contentId: string, chunks: string[]) {
@@ -182,9 +213,17 @@ serve(async (req) => {
       throw new Error(`Failed to download file: ${downloadError.message}`);
     }
 
+    if (!fileData) {
+      throw new Error('No file data received from storage');
+    }
+
     console.log('Extracting text from PDF...');
     const arrayBuffer = await fileData.arrayBuffer();
     const extractedText = await extractTextFromPDF(arrayBuffer);
+
+    if (!extractedText || extractedText.length === 0) {
+      throw new Error('No text could be extracted from the file');
+    }
 
     console.log('Generating summary...');
     const summary = await generateSummary(extractedText, contentType);
