@@ -43,6 +43,10 @@ async function extractTextFromPDF(buffer: ArrayBuffer): Promise<string> {
 }
 
 async function generateSummary(content: string, type: string): Promise<string> {
+  if (!openAIApiKey) {
+    throw new Error('OpenAI API key is not configured');
+  }
+
   const prompt = `Summarize the following ${type} content concisely while preserving key information:
 
 ${content}
@@ -64,7 +68,7 @@ Keep the summary clear and structured.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: 'You are an expert educator specializing in creating concise, informative summaries of educational content.' },
           { role: 'user', content: prompt }
@@ -79,6 +83,9 @@ Keep the summary clear and structured.`;
     }
 
     const data = await response.json();
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response from OpenAI API');
+    }
     return data.choices[0].message.content;
   } catch (error) {
     console.error('Error generating summary:', error);
@@ -87,6 +94,10 @@ Keep the summary clear and structured.`;
 }
 
 async function generateEmbedding(text: string): Promise<number[]> {
+  if (!openAIApiKey) {
+    throw new Error('OpenAI API key is not configured');
+  }
+
   const response = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
@@ -140,6 +151,10 @@ serve(async (req) => {
   }
 
   try {
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
+
     console.log('Received request:', req.method);
     
     const { filePath, contentType, title, parentId } = await req.json();
