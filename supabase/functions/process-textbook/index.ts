@@ -68,11 +68,13 @@ Keep the summary clear and structured.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',  // Changed from 'gpt-4o-mini' to 'gpt-3.5-turbo'
         messages: [
           { role: 'system', content: 'You are an expert educator specializing in creating concise, informative summaries of educational content.' },
           { role: 'user', content: prompt }
         ],
+        temperature: 0.7,
+        max_tokens: 1500
       }),
     });
 
