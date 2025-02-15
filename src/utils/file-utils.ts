@@ -28,6 +28,7 @@ const sanitizeContent = (content: string): string => {
 };
 
 import { extractRelevantContent } from './content-processor';
+import { supabase } from '@/integrations/supabase/client';
 
 export const processFileContent = async (file: File): Promise<ProcessedContent> => {
   console.log('Processing file:', {
@@ -41,9 +42,36 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
   }
 
   try {
-    console.log('Processing text file');
-    const rawContent = await readTextFile(file);
-    const content = sanitizeContent(rawContent);
+    let content: string;
+    
+    if (file.type === 'application/pdf') {
+      console.log('Processing PDF file');
+      
+      // Upload PDF to storage first
+      const filePath = `${crypto.randomUUID()}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from('tutor_files')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+      }
+      
+      // Process PDF using the Edge Function
+      const { data, error } = await supabase.functions.invoke('process-pdf', {
+        body: { filePath }
+      });
+      
+      if (error) {
+        throw new Error(`Failed to process PDF: ${error.message}`);
+      }
+      
+      content = data.text;
+    } else {
+      console.log('Processing text file');
+      const rawContent = await readTextFile(file);
+      content = sanitizeContent(rawContent);
+    }
     
     // Extract relevant content using the utility
     const { sections, keyTerms, totalLength } = extractRelevantContent(content);
@@ -54,7 +82,7 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
     ).join('\n\n') + '\n\nKey Terms:\n' + keyTerms.join('\n');
     
     console.log('Content processed:', {
-      originalLength: rawContent.length,
+      originalLength: content.length,
       processedLength: processedContent.length,
       sections: sections.length,
       keyTerms: keyTerms.length
@@ -64,12 +92,12 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
       throw new Error('File appears to be empty');
     }
 
-    const wasContentTrimmed = processedContent.length < rawContent.length;
+    const wasContentTrimmed = processedContent.length < content.length;
 
     return {
       content: processedContent,
       wasContentTrimmed,
-      originalLength: rawContent.length
+      originalLength: content.length
     };
   } catch (error) {
     console.error('Error processing file:', error);
