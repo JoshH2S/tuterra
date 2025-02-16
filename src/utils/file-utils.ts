@@ -3,6 +3,7 @@ interface ProcessedContent {
   content: string;
   wasContentTrimmed: boolean;
   originalLength: number;
+  fileId?: string;
 }
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -47,9 +48,10 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
     console.log('File processed with OpenAI:', data);
 
     return {
-      content: `File uploaded successfully. OpenAI File ID: ${data.fileId}`,
+      content: "",  // Return empty content since we don't want to send a message yet
       wasContentTrimmed: false,
-      originalLength: file.size
+      originalLength: file.size,
+      fileId: data.fileId  // Return the fileId for later use
     };
   } catch (error) {
     console.error('Error processing file:', error);

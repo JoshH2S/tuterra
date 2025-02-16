@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export const TutorChat = () => {
   const [message, setMessage] = useState("");
+  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
   const { messages, isLoading, sendMessage } = useTutorMessages();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -17,8 +18,9 @@ export const TutorChat = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      await sendMessage(message);
+      await sendMessage(message, uploadedFileId);
       setMessage("");
+      setUploadedFileId(null);  // Reset the file ID after sending
     }
   };
 
@@ -29,12 +31,13 @@ export const TutorChat = () => {
       
       console.log('File processed:', processedContent);
       
-      await sendMessage(`I've uploaded a file named "${file.name}". Please analyze its contents and help me understand it better.`);
-      
-      toast({
-        title: "File uploaded successfully",
-        description: "You can now ask questions about the file content.",
-      });
+      if (processedContent.fileId) {
+        setUploadedFileId(processedContent.fileId);
+        toast({
+          title: "File uploaded successfully",
+          description: "You can now ask questions about the file content.",
+        });
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({
