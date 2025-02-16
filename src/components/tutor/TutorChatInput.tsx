@@ -1,62 +1,61 @@
 
-import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Upload } from "lucide-react";
 import FileUpload from "@/components/FileUpload";
-import { AIInputWithLoading } from "@/components/ui/ai-input-with-loading";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TutorChatInputProps {
   message: string;
   isLoading: boolean;
-  onMessageChange: (value: string) => void;
+  onMessageChange: (message: string) => void;
   onSubmit: (e: React.FormEvent) => void;
-  onKeyPress?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  onFileUpload?: (file: File) => Promise<void>;
+  onFileUpload: (file: File) => Promise<void>;
 }
 
 export const TutorChatInput = ({
   message,
   isLoading,
+  onMessageChange,
   onSubmit,
   onFileUpload,
-  onMessageChange,
 }: TutorChatInputProps) => {
   const isMobile = useIsMobile();
-  
-  const handleSubmit = async (value: string) => {
-    onMessageChange(value);
-    const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-    onSubmit(fakeEvent);
-  };
+
+  const uploadButton = (
+    <Button 
+      variant="ghost" 
+      size="icon"
+      className="flex-shrink-0"
+      type="button"
+    >
+      <Upload className="h-5 w-5" />
+    </Button>
+  );
 
   return (
-    <form className="flex gap-2 items-end" onSubmit={(e) => e.preventDefault()}>
-      <div className="flex-1">
-        <AIInputWithLoading
-          placeholder="Ask a question..."
-          onSubmit={handleSubmit}
-          loadingDuration={3000}
-          className={`mb-0 ${isMobile ? 'text-sm' : ''}`}
-          disabled={isLoading}
-          value={message}
-          onChange={(e) => onMessageChange(e.target.value)}
-        />
-      </div>
-      <div className="flex flex-col gap-2 mb-4">
-        <FileUpload 
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="flex gap-2">
+        <FileUpload
           onFileSelect={onFileUpload}
           acceptedTypes=".txt,.pdf,.doc,.docx"
-          trigger={
-            <Button
-              type="button"
-              variant="outline"
-              size={isMobile ? "sm" : "icon"}
-              className="self-end"
-            >
-              <Upload className={`${isMobile ? 'h-4 w-4' : 'h-4 w-4'}`} />
-            </Button>
-          }
+          trigger={uploadButton}
         />
+        <div className="flex-1">
+          <Textarea
+            value={message}
+            onChange={(e) => onMessageChange(e.target.value)}
+            placeholder="Ask me anything..."
+            className={`resize-none ${isMobile ? 'h-[80px]' : 'h-[60px]'}`}
+          />
+        </div>
+        <Button 
+          type="submit" 
+          disabled={isLoading || !message.trim()}
+          className="flex-shrink-0"
+        >
+          {isLoading ? "Sending..." : "Send"}
+        </Button>
       </div>
     </form>
   );
