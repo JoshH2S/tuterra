@@ -39,7 +39,6 @@ const sanitizeContent = (content: string): string => {
     .trim();
 };
 
-import { extractRelevantContent } from './content-processor';
 import { supabase } from '@/integrations/supabase/client';
 
 export const processFileContent = async (file: File): Promise<ProcessedContent> => {
@@ -54,62 +53,37 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
   }
 
   try {
-    let content: string;
-    
-    if (file.type === 'application/pdf') {
-      console.log('Processing PDF file');
+    // Upload file to storage first
+    const filePath = `${crypto.randomUUID()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('tutor_files')
+      .upload(filePath, file);
       
-      // Upload PDF to storage first
-      const filePath = `${crypto.randomUUID()}.pdf`;
-      const { error: uploadError } = await supabase.storage
-        .from('tutor_files')
-        .upload(filePath, file);
-        
-      if (uploadError) {
-        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
-      }
-      
-      // Process PDF using the Edge Function
-      const { data, error } = await supabase.functions.invoke('process-pdf', {
-        body: { filePath }
-      });
-      
-      if (error) {
-        throw new Error(`Failed to process PDF: ${error.message}`);
-      }
-      
-      content = data.text;
-    } else {
-      console.log('Processing text file');
-      const rawContent = await readTextFile(file);
-      content = sanitizeContent(rawContent);
+    if (uploadError) {
+      throw new Error(`Failed to upload file: ${uploadError.message}`);
     }
     
-    // Extract relevant content using the utility
-    const { sections, keyTerms, totalLength } = extractRelevantContent(content);
+    // Process file using GPT
+    const { data, error } = await supabase.functions.invoke('process-with-gpt', {
+      body: { filePath }
+    });
     
-    // Combine sections and key terms into a structured format
-    const processedContent = sections.map(section => 
-      `${section.title}\n${section.content}`
-    ).join('\n\n') + '\n\nKey Terms:\n' + keyTerms.join('\n');
+    if (error) {
+      throw new Error(`Failed to process file with GPT: ${error.message}`);
+    }
     
-    console.log('Content processed:', {
-      originalLength: content.length,
-      processedLength: processedContent.length,
-      sections: sections.length,
-      keyTerms: keyTerms.length
+    console.log('Content processed with GPT:', {
+      processedLength: data.content.length
     });
 
-    if (!processedContent) {
-      throw new Error('File appears to be empty');
+    if (!data.content) {
+      throw new Error('Failed to extract content from file');
     }
 
-    const wasContentTrimmed = processedContent.length < content.length;
-
     return {
-      content: processedContent,
-      wasContentTrimmed,
-      originalLength: content.length
+      content: data.content,
+      wasContentTrimmed: false,
+      originalLength: file.size
     };
   } catch (error) {
     console.error('Error processing file:', error);
