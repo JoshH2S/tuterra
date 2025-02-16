@@ -27,7 +27,17 @@ export const TutorChatInput = ({
       variant="ghost" 
       size="icon"
       className="flex-shrink-0"
+      aria-label="Upload file"
       type="button"
+      onClick={(e) => {
+        // Prevent the button's default action
+        e.preventDefault();
+        // Let the label's click event handle the file input
+        const fileInput = document.getElementById('file-upload');
+        if (fileInput) {
+          fileInput.click();
+        }
+      }}
     >
       <Upload className="h-5 w-5" />
     </Button>
