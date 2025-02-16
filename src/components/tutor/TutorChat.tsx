@@ -4,7 +4,6 @@ import { useTutorMessages } from "@/hooks/useTutorMessages";
 import { TutorChatMessages } from "./TutorChatMessages";
 import { TutorChatInput } from "./TutorChatInput";
 import { processFileContent } from "@/utils/file-utils";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -25,18 +24,13 @@ export const TutorChat = () => {
 
   const handleFileUpload = async (file: File) => {
     try {
+      console.log('Starting file upload process...', file);
       const processedContent = await processFileContent(file);
       
-      const filePath = `${crypto.randomUUID()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('tutor_files')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const fileMessage = `I've uploaded a file named "${file.name}". Please analyze its contents and help me understand it better.`;
-      await sendMessage(fileMessage, filePath);
-
+      console.log('File processed:', processedContent);
+      
+      await sendMessage(`I've uploaded a file named "${file.name}". Please analyze its contents and help me understand it better.`);
+      
       toast({
         title: "File uploaded successfully",
         description: "You can now ask questions about the file content.",

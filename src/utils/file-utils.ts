@@ -28,8 +28,11 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
       .upload(filePath, file);
       
     if (uploadError) {
+      console.error('Upload error:', uploadError);
       throw new Error(`Failed to upload file: ${uploadError.message}`);
     }
+    
+    console.log('File uploaded successfully, processing with OpenAI...');
     
     // Process file using OpenAI
     const { data, error } = await supabase.functions.invoke('process-with-openai', {
@@ -37,6 +40,7 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
     });
     
     if (error) {
+      console.error('OpenAI processing error:', error);
       throw new Error(`Failed to process file: ${error.message}`);
     }
 
@@ -49,6 +53,6 @@ export const processFileContent = async (file: File): Promise<ProcessedContent> 
     };
   } catch (error) {
     console.error('Error processing file:', error);
-    throw new Error(`Failed to process file: ${error.message}`);
+    throw error;
   }
 };
