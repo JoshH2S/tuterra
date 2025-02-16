@@ -39,7 +39,7 @@ const FileUpload = ({ onFileSelect, acceptedTypes, trigger }: FileUploadProps) =
       
       setUploadSuccess(true);
       setUploadError(null);
-    } catch (error) {
+    } catch (error: any) {
       setUploadError(error.message);
       setUploadSuccess(false);
       setSelectedFile(null);
@@ -50,10 +50,11 @@ const FileUpload = ({ onFileSelect, acceptedTypes, trigger }: FileUploadProps) =
 
   if (trigger) {
     return (
-      <>
-        <label>
+      <div className="relative">
+        <label htmlFor="file-upload" className="cursor-pointer">
           {trigger}
           <input
+            id="file-upload"
             type="file"
             className="hidden"
             onChange={handleFileSelect}
@@ -61,13 +62,15 @@ const FileUpload = ({ onFileSelect, acceptedTypes, trigger }: FileUploadProps) =
           />
         </label>
         {(uploadSuccess || uploadError) && (
-          <UploadStatus
-            isSuccess={uploadSuccess}
-            isError={!!uploadError}
-            errorMessage={uploadError || undefined}
-          />
+          <div className="absolute bottom-full left-0 mb-2">
+            <UploadStatus
+              isSuccess={uploadSuccess}
+              isError={!!uploadError}
+              errorMessage={uploadError || undefined}
+            />
+          </div>
         )}
-      </>
+      </div>
     );
   }
 
@@ -85,11 +88,13 @@ const FileUpload = ({ onFileSelect, acceptedTypes, trigger }: FileUploadProps) =
         />
       )}
       
-      <UploadStatus
-        isSuccess={uploadSuccess}
-        isError={!!uploadError}
-        errorMessage={uploadError || undefined}
-      />
+      {(isUploading || uploadSuccess || uploadError) && (
+        <UploadStatus
+          isSuccess={uploadSuccess}
+          isError={!!uploadError}
+          errorMessage={uploadError || undefined}
+        />
+      )}
     </div>
   );
 };
