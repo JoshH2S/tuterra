@@ -377,6 +377,39 @@ export type Database = {
           },
         ]
       }
+      openai_file_references: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          openai_file_id: string | null
+          original_file_path: string
+          status: Database["public"]["Enums"]["processing_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          openai_file_id?: string | null
+          original_file_path: string
+          status?: Database["public"]["Enums"]["processing_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          openai_file_id?: string | null
+          original_file_path?: string
+          status?: Database["public"]["Enums"]["processing_status"] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       post_comments: {
         Row: {
           author_id: string
@@ -1423,6 +1456,7 @@ export type Database = {
     }
     Enums: {
       content_type: "chapter" | "section" | "definition" | "formula" | "example"
+      processing_status: "pending" | "processing" | "completed" | "failed"
       user_type: "teacher" | "student"
     }
     CompositeTypes: {
