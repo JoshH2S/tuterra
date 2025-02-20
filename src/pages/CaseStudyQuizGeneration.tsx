@@ -7,21 +7,52 @@ import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
 import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCourses } from "@/hooks/useCourses";
+
+interface TopicInput {
+  description: string;
+  numQuestions: number;
+}
 
 const CaseStudyQuizGeneration = () => {
-  const [topic, setTopic] = useState("");
+  const [topics, setTopics] = useState<TopicInput[]>([
+    { description: "", numQuestions: 3 }
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const { quizQuestions, setQuizQuestions } = useQuizGeneration();
   const [context, setContext] = useState("");
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const { courses, isLoading: isLoadingCourses } = useCourses();
+
+  const addTopic = () => {
+    setTopics([...topics, { description: "", numQuestions: 3 }]);
+  };
+
+  const removeTopic = (index: number) => {
+    if (topics.length > 1) {
+      const newTopics = topics.filter((_, i) => i !== index);
+      setTopics(newTopics);
+    }
+  };
+
+  const updateTopic = (index: number, field: keyof TopicInput, value: string | number) => {
+    const newTopics = [...topics];
+    newTopics[index] = {
+      ...newTopics[index],
+      [field]: field === "numQuestions" ? Number(value) : value
+    };
+    setTopics(newTopics);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!topic.trim()) {
+    if (topics.some(topic => !topic.description.trim())) {
       toast({
         title: "Error",
-        description: "Please enter a topic",
+        description: "Please fill in all topic fields",
         variant: "destructive",
       });
       return;
@@ -29,7 +60,6 @@ const CaseStudyQuizGeneration = () => {
 
     setIsLoading(true);
     try {
-      // Get the session to include the access token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Authentication required');
@@ -42,8 +72,9 @@ const CaseStudyQuizGeneration = () => {
           'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ 
-          topic,
-          context: context.trim() || undefined 
+          topics,
+          context: context.trim() || undefined,
+          courseId: selectedCourseId || undefined
         }),
       });
 
@@ -80,21 +111,82 @@ const CaseStudyQuizGeneration = () => {
           <div className="space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle>Enter Topic</CardTitle>
+                <CardTitle>Quiz Configuration</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <Input
-                    placeholder="e.g., Artificial Intelligence in Healthcare"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                  />
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-4">
+                    <label className="font-medium text-sm">Course (Optional)</label>
+                    <Select
+                      value={selectedCourseId}
+                      onValueChange={setSelectedCourseId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course.id} value={course.id}>
+                            {course.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-4">
+                    {topics.map((topic, index) => (
+                      <div key={index} className="space-y-4 p-4 border rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium">Topic {index + 1}</h3>
+                          {topics.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeTopic(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <Input
+                          placeholder="Enter topic"
+                          value={topic.description}
+                          onChange={(e) => updateTopic(index, "description", e.target.value)}
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm">Number of questions:</label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={topic.numQuestions}
+                            onChange={(e) => updateTopic(index, "numQuestions", e.target.value)}
+                            className="w-24"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={addTopic}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Another Topic
+                    </Button>
+                  </div>
+
                   <Textarea
                     placeholder="Optional: Add specific focus areas or context (e.g., ethical implications, economic impact)"
                     className="h-32"
                     value={context}
                     onChange={(e) => setContext(e.target.value)}
                   />
+                  
                   <Button type="submit" disabled={isLoading} className="w-full">
                     {isLoading ? (
                       <>
