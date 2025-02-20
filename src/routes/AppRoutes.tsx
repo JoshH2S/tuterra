@@ -18,6 +18,7 @@ import UpdatePassword from "@/pages/UpdatePassword";
 import { MediaLibrary } from "@/components/media/MediaLibrary";
 import CourseTemplates from "@/pages/CourseTemplates";
 import TextbookProcessing from "@/pages/TextbookProcessing";
+import CaseStudyQuizGeneration from "@/pages/CaseStudyQuizGeneration";
 
 export const AppRoutes = () => {
   return (
@@ -95,6 +96,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <QuizGeneration />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/case-study-quiz"
+        element={
+          <ProtectedRoute>
+            <CaseStudyQuizGeneration />
           </ProtectedRoute>
         }
       />
