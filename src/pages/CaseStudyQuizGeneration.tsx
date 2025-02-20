@@ -8,6 +8,7 @@ import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const CaseStudyQuizGeneration = () => {
   const [topic, setTopic] = useState("");
@@ -28,10 +29,17 @@ const CaseStudyQuizGeneration = () => {
 
     setIsLoading(true);
     try {
+      // Get the session to include the access token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Authentication required');
+      }
+
       const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-case-study-quiz', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ 
           topic,
