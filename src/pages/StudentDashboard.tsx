@@ -6,6 +6,7 @@ import { CourseCard } from "@/components/dashboard/CourseCard";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
+import { NewsFeed } from "@/components/dashboard/NewsFeed";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -43,6 +44,8 @@ export default function StudentDashboard() {
           Track your progress and performance across all your courses
         </p>
       </div>
+
+      <NewsFeed courses={courses} />
 
       {insights.length > 0 && (
         <div className="grid gap-3">
@@ -115,4 +118,4 @@ export default function StudentDashboard() {
       </div>
     </div>
   );
-}
+};
