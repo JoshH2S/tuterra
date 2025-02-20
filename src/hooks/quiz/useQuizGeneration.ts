@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -164,5 +165,6 @@ export const useQuizGeneration = () => {
     handleSubmit,
     setDuration,
     setSelectedCourseId,
+    setQuizQuestions, // Now exposing this setter
   };
 };

@@ -13,6 +13,7 @@ const CaseStudyQuizGeneration = () => {
   const [topic, setTopic] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { quizQuestions, setQuizQuestions } = useQuizGeneration();
+  const [context, setContext] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +33,10 @@ const CaseStudyQuizGeneration = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ topic }),
+        body: JSON.stringify({ 
+          topic,
+          context: context.trim() || undefined 
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to generate quiz');
@@ -80,6 +84,8 @@ const CaseStudyQuizGeneration = () => {
                   <Textarea
                     placeholder="Optional: Add specific focus areas or context (e.g., ethical implications, economic impact)"
                     className="h-32"
+                    value={context}
+                    onChange={(e) => setContext(e.target.value)}
                   />
                   <Button type="submit" disabled={isLoading} className="w-full">
                     {isLoading ? (
