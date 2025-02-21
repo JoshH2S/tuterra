@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Newspaper, ExternalLink, Loader2 } from "lucide-react";
+import { Newspaper, ExternalLink, Loader2, AlertCircle } from "lucide-react";
 import { StudentCourse } from "@/types/student";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface NewsItem {
   title: string;
@@ -20,9 +21,12 @@ interface NewsFeedProps {
 export const NewsFeed = ({ courses }: NewsFeedProps) => {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNews = async () => {
+      setError(null);
+      
       if (courses.length === 0) {
         setIsLoading(false);
         return;
@@ -32,9 +36,24 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error('Not authenticated');
 
+        // Create a more focused search query by using course titles and descriptions
         const searchTerms = courses
-          .map(course => course.course.title)
+          .map(course => {
+            const terms = [course.course.title];
+            if (course.course.description) {
+              // Extract key terms from description, exclude common words
+              const keyTerms = course.course.description
+                .split(' ')
+                .filter(word => word.length > 3)
+                .slice(0, 3)
+                .join(' ');
+              terms.push(keyTerms);
+            }
+            return `"${terms.join(' ')}"`;
+          })
           .join(' OR ');
+
+        console.log('Searching news with terms:', searchTerms);
 
         const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/fetch-course-news`, {
           method: 'POST',
@@ -45,12 +64,28 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
           body: JSON.stringify({ searchTerms }),
         });
 
-        if (!response.ok) throw new Error('Failed to fetch news');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch news');
+        }
         
         const data = await response.json();
-        setNewsItems(data.articles);
+        
+        if (!data.articles || data.articles.length === 0) {
+          console.log('No news articles found for terms:', searchTerms);
+        } else {
+          console.log('Found articles:', data.articles.length);
+        }
+
+        setNewsItems(data.articles || []);
       } catch (error) {
         console.error('Error fetching news:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch news');
+        toast({
+          title: "Error fetching news",
+          description: "Unable to load course-related news. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -69,7 +104,27 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
     );
   }
 
-  if (newsItems.length === 0 && !isLoading) {
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (courses.length === 0) {
+    return (
+      <Alert className="mb-6">
+        <Newspaper className="h-4 w-4" />
+        <AlertDescription>
+          Enroll in courses to see relevant news and updates.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (newsItems.length === 0) {
     return (
       <Alert className="mb-6">
         <Newspaper className="h-4 w-4" />
