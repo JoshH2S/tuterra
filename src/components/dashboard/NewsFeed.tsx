@@ -32,26 +32,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
         if (!session) throw new Error('Not authenticated');
 
         // Default economics-related search terms
-        let searchTerms = '"economics" OR "finance" OR "market analysis" OR "economic trends"';
-        
-        // Add course-specific terms if available
-        if (courses.length > 0) {
-          const courseTerms = courses
-            .map(course => {
-              const terms = [course.course.title];
-              if (course.course.description) {
-                const keyTerms = course.course.description
-                  .split(' ')
-                  .filter(word => word.length > 3)
-                  .slice(0, 3)
-                  .join(' ');
-                terms.push(keyTerms);
-              }
-              return `"${terms.join(' ')}"`;
-            })
-            .join(' OR ');
-          searchTerms = `${searchTerms} OR ${courseTerms}`;
-        }
+        const searchTerms = '"economics news" OR "financial markets" OR "economic trends"';
 
         console.log('Searching news with terms:', searchTerms);
 
@@ -70,9 +51,10 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
         }
         
         const data = await response.json();
+        console.log('News API response:', data);
         
         if (!data.articles || data.articles.length === 0) {
-          console.log('No news articles found for terms:', searchTerms);
+          console.log('No news articles found');
         } else {
           console.log('Found articles:', data.articles.length);
         }
@@ -83,7 +65,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
         setError(error instanceof Error ? error.message : 'Failed to fetch news');
         toast({
           title: "Error fetching news",
-          description: "Unable to load course-related news. Please try again later.",
+          description: "Unable to load economics news. Please try again later.",
           variant: "destructive",
         });
       } finally {
@@ -92,7 +74,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
     };
 
     fetchNews();
-  }, [courses]);
+  }, []);
 
   if (isLoading) {
     return (

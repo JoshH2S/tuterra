@@ -57,15 +57,20 @@ Deno.serve(async (req) => {
 
     // Fetch news from News API
     const newsApiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchTerms)}&sortBy=publishedAt&language=en&pageSize=5&apiKey=${newsApiKey}`
+    console.log('Fetching news from:', newsApiUrl.replace(newsApiKey, '[REDACTED]'));
+    
     const response = await fetch(newsApiUrl)
     if (!response.ok) {
-      throw new Error('Failed to fetch news')
+      const errorData = await response.json()
+      console.error('News API error:', errorData);
+      throw new Error(errorData.message || 'Failed to fetch news')
     }
 
     const newsData: NewsApiResponse = await response.json()
+    console.log(`Found ${newsData.articles?.length || 0} articles`);
 
     // Transform the response to match our interface
-    const articles = newsData.articles.map(article => ({
+    const articles = (newsData.articles || []).map(article => ({
       title: article.title,
       url: article.url,
       source: article.source.name,
