@@ -27,31 +27,31 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
     const fetchNews = async () => {
       setError(null);
       
-      if (courses.length === 0) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error('Not authenticated');
 
-        // Create a more focused search query by using course titles and descriptions
-        const searchTerms = courses
-          .map(course => {
-            const terms = [course.course.title];
-            if (course.course.description) {
-              // Extract key terms from description, exclude common words
-              const keyTerms = course.course.description
-                .split(' ')
-                .filter(word => word.length > 3)
-                .slice(0, 3)
-                .join(' ');
-              terms.push(keyTerms);
-            }
-            return `"${terms.join(' ')}"`;
-          })
-          .join(' OR ');
+        // Default economics-related search terms
+        let searchTerms = '"economics" OR "finance" OR "market analysis" OR "economic trends"';
+        
+        // Add course-specific terms if available
+        if (courses.length > 0) {
+          const courseTerms = courses
+            .map(course => {
+              const terms = [course.course.title];
+              if (course.course.description) {
+                const keyTerms = course.course.description
+                  .split(' ')
+                  .filter(word => word.length > 3)
+                  .slice(0, 3)
+                  .join(' ');
+                terms.push(keyTerms);
+              }
+              return `"${terms.join(' ')}"`;
+            })
+            .join(' OR ');
+          searchTerms = `${searchTerms} OR ${courseTerms}`;
+        }
 
         console.log('Searching news with terms:', searchTerms);
 
@@ -113,23 +113,12 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
     );
   }
 
-  if (courses.length === 0) {
-    return (
-      <Alert className="mb-6">
-        <Newspaper className="h-4 w-4" />
-        <AlertDescription>
-          Enroll in courses to see relevant news and updates.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
   if (newsItems.length === 0) {
     return (
       <Alert className="mb-6">
         <Newspaper className="h-4 w-4" />
         <AlertDescription>
-          No recent news found for your courses. Check back later for updates.
+          No recent economics news found. Check back later for updates.
         </AlertDescription>
       </Alert>
     );
@@ -140,7 +129,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Newspaper className="h-5 w-5" />
-          Latest Course-Related News
+          Latest Economics News
         </CardTitle>
       </CardHeader>
       <CardContent>
