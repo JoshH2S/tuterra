@@ -1242,6 +1242,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          industry_specific: string | null
           topics: Database["public"]["Enums"]["news_topic"][] | null
           updated_at: string
           user_id: string
@@ -1249,6 +1250,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          industry_specific?: string | null
           topics?: Database["public"]["Enums"]["news_topic"][] | null
           updated_at?: string
           user_id: string
@@ -1256,6 +1258,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          industry_specific?: string | null
           topics?: Database["public"]["Enums"]["news_topic"][] | null
           updated_at?: string
           user_id?: string
@@ -1481,16 +1484,16 @@ export type Database = {
     Enums: {
       content_type: "chapter" | "section" | "definition" | "formula" | "example"
       news_topic:
-        | "economics"
-        | "finance"
-        | "business"
-        | "technology"
-        | "education"
-        | "policy"
-        | "markets"
-        | "entrepreneurship"
-        | "innovation"
-        | "sustainability"
+        | "business_economics"
+        | "political_science_law"
+        | "science_technology"
+        | "healthcare_medicine"
+        | "engineering_applied_sciences"
+        | "arts_humanities_social_sciences"
+        | "education_pedagogy"
+        | "mathematics_statistics"
+        | "industry_specific"
+        | "cybersecurity_it"
       processing_status: "pending" | "processing" | "completed" | "failed"
       user_type: "teacher" | "student"
     }

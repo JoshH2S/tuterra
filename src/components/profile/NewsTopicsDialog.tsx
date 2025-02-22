@@ -11,33 +11,34 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 type NewsTopic = 
-  | 'economics'
-  | 'finance'
-  | 'business'
-  | 'technology'
-  | 'education'
-  | 'policy'
-  | 'markets'
-  | 'entrepreneurship'
-  | 'innovation'
-  | 'sustainability';
+  | 'business_economics'
+  | 'political_science_law'
+  | 'science_technology'
+  | 'healthcare_medicine'
+  | 'engineering_applied_sciences'
+  | 'arts_humanities_social_sciences'
+  | 'education_pedagogy'
+  | 'mathematics_statistics'
+  | 'industry_specific'
+  | 'cybersecurity_it';
 
 const NEWS_TOPICS = [
-  { value: 'economics' as NewsTopic, label: 'Economics' },
-  { value: 'finance' as NewsTopic, label: 'Finance' },
-  { value: 'business' as NewsTopic, label: 'Business' },
-  { value: 'technology' as NewsTopic, label: 'Technology' },
-  { value: 'education' as NewsTopic, label: 'Education' },
-  { value: 'policy' as NewsTopic, label: 'Policy' },
-  { value: 'markets' as NewsTopic, label: 'Markets' },
-  { value: 'entrepreneurship' as NewsTopic, label: 'Entrepreneurship' },
-  { value: 'innovation' as NewsTopic, label: 'Innovation' },
-  { value: 'sustainability' as NewsTopic, label: 'Sustainability' },
+  { value: 'business_economics' as NewsTopic, label: 'Business & Economics' },
+  { value: 'political_science_law' as NewsTopic, label: 'Political Science & Law' },
+  { value: 'science_technology' as NewsTopic, label: 'Science & Technology' },
+  { value: 'healthcare_medicine' as NewsTopic, label: 'Healthcare & Medicine' },
+  { value: 'engineering_applied_sciences' as NewsTopic, label: 'Engineering & Applied Sciences' },
+  { value: 'arts_humanities_social_sciences' as NewsTopic, label: 'Arts, Humanities & Social Sciences' },
+  { value: 'education_pedagogy' as NewsTopic, label: 'Education & Pedagogy' },
+  { value: 'mathematics_statistics' as NewsTopic, label: 'Mathematics & Statistics' },
+  { value: 'industry_specific' as NewsTopic, label: 'Industry-Specific & Vocational Studies' },
+  { value: 'cybersecurity_it' as NewsTopic, label: 'Cybersecurity & IT' },
 ] as const;
 
 interface NewsTopicsDialogProps {
@@ -52,6 +53,7 @@ export const NewsTopicsDialog = ({
   isFirstTimeSetup = false,
 }: NewsTopicsDialogProps) => {
   const [selectedTopics, setSelectedTopics] = useState<NewsTopic[]>([]);
+  const [industrySpecific, setIndustrySpecific] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -61,14 +63,15 @@ export const NewsTopicsDialog = ({
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const { data, error } = await supabase
+        const { data: preferences } = await supabase
           .from('user_news_preferences')
-          .select('topics')
-          .single();
+          .select('topics:topics, industry_specific')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
 
-        if (error) throw error;
-        if (data) {
-          setSelectedTopics(data.topics || []);
+        if (preferences) {
+          setSelectedTopics(preferences.topics || []);
+          setIndustrySpecific(preferences.industry_specific || '');
         }
       } catch (error) {
         console.error('Error fetching topics:', error);
@@ -93,6 +96,7 @@ export const NewsTopicsDialog = ({
         .upsert({
           user_id: session.user.id,
           topics: selectedTopics,
+          industry_specific: industrySpecific
         }, {
           onConflict: 'user_id'
         });
@@ -138,23 +142,37 @@ export const NewsTopicsDialog = ({
             {isFirstTimeSetup && " You can always change these later in your profile settings."}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-          {NEWS_TOPICS.map((topic) => (
-            <div key={topic.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={topic.value}
-                checked={selectedTopics.includes(topic.value)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setSelectedTopics([...selectedTopics, topic.value]);
-                  } else {
-                    setSelectedTopics(selectedTopics.filter(t => t !== topic.value));
-                  }
-                }}
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-1 gap-4">
+            {NEWS_TOPICS.map((topic) => (
+              <div key={topic.value} className="flex items-center space-x-2">
+                <Checkbox
+                  id={topic.value}
+                  checked={selectedTopics.includes(topic.value)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setSelectedTopics([...selectedTopics, topic.value]);
+                    } else {
+                      setSelectedTopics(selectedTopics.filter(t => t !== topic.value));
+                    }
+                  }}
+                />
+                <Label htmlFor={topic.value}>{topic.label}</Label>
+              </div>
+            ))}
+          </div>
+          
+          {selectedTopics.includes('industry_specific') && (
+            <div className="space-y-2">
+              <Label htmlFor="industry-specific">Specify your industry of interest</Label>
+              <Input
+                id="industry-specific"
+                placeholder="Enter your specific industry"
+                value={industrySpecific}
+                onChange={(e) => setIndustrySpecific(e.target.value)}
               />
-              <Label htmlFor={topic.value}>{topic.label}</Label>
             </div>
-          ))}
+          )}
         </div>
         <DialogFooter>
           <Button 
