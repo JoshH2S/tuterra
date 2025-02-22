@@ -68,7 +68,11 @@ export const NewsTopicsDialog = ({
           .select('topics, industry_specific')
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching topics:', error);
+          return;
+        }
+
         if (data) {
           setSelectedTopics(data.topics || []);
           setIndustrySpecific(data.industry_specific || '');
