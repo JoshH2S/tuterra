@@ -11,6 +11,32 @@ interface NewsApiResponse {
   }[];
 }
 
+// Define trusted sources
+const TRUSTED_DOMAINS = [
+  'bbc.com',
+  'bbc.co.uk',
+  'reuters.com',
+  'nytimes.com',
+  'wsj.com',
+  'ft.com',
+  'economist.com',
+  'wired.com',
+  'technologyreview.com',
+  'bloomberg.com',
+  'washingtonpost.com',
+  'politico.com',
+  'forbes.com',
+  'edsurge.com',
+  'insidehighered.com',
+  'hbr.org'
+];
+
+// Convert domains to News API source format
+const TRUSTED_SOURCES = TRUSTED_DOMAINS.map(domain => {
+  const parts = domain.split('.');
+  return parts[0] === 'www' ? parts[1] : parts[0];
+}).join(',');
+
 Deno.serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -55,8 +81,8 @@ Deno.serve(async (req) => {
       throw new Error('News API key not configured')
     }
 
-    // Fetch news from News API
-    const newsApiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchTerms)}&sortBy=publishedAt&language=en&pageSize=5&apiKey=${newsApiKey}`
+    // Construct URL with domains filter
+    const newsApiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchTerms)}&domains=${TRUSTED_DOMAINS.join(',')}&sortBy=publishedAt&language=en&pageSize=10&apiKey=${newsApiKey}`
     console.log('Fetching news from:', newsApiUrl.replace(newsApiKey, '[REDACTED]'));
     
     const response = await fetch(newsApiUrl)
@@ -67,15 +93,21 @@ Deno.serve(async (req) => {
     }
 
     const newsData: NewsApiResponse = await response.json()
-    console.log(`Found ${newsData.articles?.length || 0} articles`);
+    console.log(`Found ${newsData.articles?.length || 0} articles from trusted sources`);
 
-    // Transform the response to match our interface
-    const articles = (newsData.articles || []).map(article => ({
-      title: article.title,
-      url: article.url,
-      source: article.source.name,
-      publishedAt: article.publishedAt
-    }))
+    // Transform and filter the response
+    const articles = (newsData.articles || [])
+      .filter(article => {
+        // Extract domain from URL
+        const url = new URL(article.url);
+        return TRUSTED_DOMAINS.some(domain => url.hostname.includes(domain));
+      })
+      .map(article => ({
+        title: article.title,
+        url: article.url,
+        source: article.source.name,
+        publishedAt: article.publishedAt
+      }));
 
     // Return the transformed articles
     return new Response(
