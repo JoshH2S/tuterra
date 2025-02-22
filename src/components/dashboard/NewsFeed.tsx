@@ -32,17 +32,18 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const { data: preferences } = await supabase
+        const { data, error } = await supabase
           .from('user_news_preferences')
-          .select('topics:topics')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+          .select('topics')
+          .single();
+
+        if (error) throw error;
         
-        if (!preferences?.topics || preferences.topics.length === 0) {
+        if (!data || data.topics.length === 0) {
           setShowTopicsDialog(true);
         } else {
           setHasTopics(true);
-          fetchNews(preferences.topics);
+          fetchNews(data.topics);
         }
       } catch (error) {
         console.error('Error checking topics:', error);
