@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,10 +7,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Checkbox,
+  Label,
+  Input,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -63,15 +62,11 @@ export const NewsTopicsDialog = ({
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('user_news_preferences')
           .select('topics, industry_specific')
-          .single();
-
-        if (error) {
-          console.error('Error fetching topics:', error);
-          return;
-        }
+          .eq('user_id', session.user.id)
+          .maybeSingle();
 
         if (data) {
           setSelectedTopics(data.topics || []);

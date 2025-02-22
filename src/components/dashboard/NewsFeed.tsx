@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -32,14 +31,13 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
 
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('user_news_preferences')
           .select('topics')
-          .single();
-
-        if (error) throw error;
+          .eq('user_id', session.user.id)
+          .maybeSingle();
         
-        if (!data || data.topics.length === 0) {
+        if (!data || !data.topics || data.topics.length === 0) {
           setShowTopicsDialog(true);
         } else {
           setHasTopics(true);
