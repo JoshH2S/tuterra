@@ -6,6 +6,7 @@ import { Newspaper, ExternalLink, Loader2, AlertCircle } from "lucide-react";
 import { StudentCourse } from "@/types/student";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { NewsTopicsDialog } from "@/components/profile/NewsTopicsDialog";
 
 interface NewsItem {
   title: string;
@@ -22,59 +23,130 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTopicsDialog, setShowTopicsDialog] = useState(false);
+  const [hasTopics, setHasTopics] = useState(false);
 
   useEffect(() => {
-    const fetchNews = async () => {
-      setError(null);
-      
+    const checkUserTopics = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('Not authenticated');
+        if (!session) return;
 
-        // Default economics-related search terms
-        const searchTerms = '"economics news" OR "financial markets" OR "economic trends"';
+        const { data, error } = await supabase
+          .from('user_news_preferences')
+          .select('topics')
+          .single();
 
-        console.log('Searching news with terms:', searchTerms);
-
-        const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/fetch-course-news`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ searchTerms }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch news');
-        }
+        if (error) throw error;
         
-        const data = await response.json();
-        console.log('News API response:', data);
-        
-        if (!data.articles || data.articles.length === 0) {
-          console.log('No news articles found');
+        if (!data || data.topics.length === 0) {
+          setShowTopicsDialog(true);
         } else {
-          console.log('Found articles:', data.articles.length);
+          setHasTopics(true);
+          fetchNews(data.topics);
         }
-
-        setNewsItems(data.articles || []);
       } catch (error) {
-        console.error('Error fetching news:', error);
-        setError(error instanceof Error ? error.message : 'Failed to fetch news');
-        toast({
-          title: "Error fetching news",
-          description: "Unable to load economics news. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+        console.error('Error checking topics:', error);
+        setError('Failed to load news preferences');
       }
     };
 
-    fetchNews();
+    checkUserTopics();
   }, []);
+
+  const fetchNews = async (topics: string[]) => {
+    setError(null);
+    setIsLoading(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      // Create search terms from user's selected topics
+      const searchTerms = topics.map(topic => `"${topic}"`).join(' OR ');
+      console.log('Searching news with terms:', searchTerms);
+
+      const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/fetch-course-news`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ searchTerms }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch news');
+      }
+      
+      const data = await response.json();
+      console.log('News API response:', data);
+      
+      if (!data.articles || data.articles.length === 0) {
+        console.log('No news articles found');
+      } else {
+        console.log('Found articles:', data.articles.length);
+      }
+
+      setNewsItems(data.articles || []);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch news');
+      toast({
+        title: "Error fetching news",
+        description: "Unable to load news. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTopicsDialogClose = () => {
+    setShowTopicsDialog(false);
+    // Refresh the news feed after closing the dialog
+    checkUserTopics();
+  };
+
+  const checkUserTopics = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('user_news_preferences')
+        .select('topics')
+        .single();
+
+      if (error) throw error;
+      
+      if (data && data.topics.length > 0) {
+        setHasTopics(true);
+        fetchNews(data.topics);
+      }
+    } catch (error) {
+      console.error('Error checking topics:', error);
+    }
+  };
+
+  if (!hasTopics) {
+    return (
+      <>
+        <Alert className="mb-6">
+          <Newspaper className="h-4 w-4" />
+          <AlertDescription>
+            Select your topics of interest to personalize your news feed
+          </AlertDescription>
+        </Alert>
+        <NewsTopicsDialog
+          open={showTopicsDialog}
+          onClose={handleTopicsDialogClose}
+          isFirstTimeSetup={true}
+        />
+      </>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -100,7 +172,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       <Alert className="mb-6">
         <Newspaper className="h-4 w-4" />
         <AlertDescription>
-          No recent economics news found. Check back later for updates.
+          No recent news found for your selected topics. Try selecting different topics in your profile settings.
         </AlertDescription>
       </Alert>
     );
@@ -111,7 +183,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Newspaper className="h-5 w-5" />
-          Latest Economics News
+          Latest News
         </CardTitle>
       </CardHeader>
       <CardContent>

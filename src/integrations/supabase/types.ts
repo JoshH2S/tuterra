@@ -1238,6 +1238,30 @@ export type Database = {
           },
         ]
       }
+      user_news_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          topics: Database["public"]["Enums"]["news_topic"][] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          topics?: Database["public"]["Enums"]["news_topic"][] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          topics?: Database["public"]["Enums"]["news_topic"][] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       welcome_section_config: {
         Row: {
           created_at: string
@@ -1456,6 +1480,17 @@ export type Database = {
     }
     Enums: {
       content_type: "chapter" | "section" | "definition" | "formula" | "example"
+      news_topic:
+        | "economics"
+        | "finance"
+        | "business"
+        | "technology"
+        | "education"
+        | "policy"
+        | "markets"
+        | "entrepreneurship"
+        | "innovation"
+        | "sustainability"
       processing_status: "pending" | "processing" | "completed" | "failed"
       user_type: "teacher" | "student"
     }
