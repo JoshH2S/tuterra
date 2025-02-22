@@ -1243,6 +1243,7 @@ export type Database = {
           created_at: string
           id: string
           industry_specific: string | null
+          topics: Database["public"]["Enums"]["news_topic"][] | null
           updated_at: string
           user_id: string
         }
@@ -1250,6 +1251,7 @@ export type Database = {
           created_at?: string
           id?: string
           industry_specific?: string | null
+          topics?: Database["public"]["Enums"]["news_topic"][] | null
           updated_at?: string
           user_id: string
         }
@@ -1257,6 +1259,7 @@ export type Database = {
           created_at?: string
           id?: string
           industry_specific?: string | null
+          topics?: Database["public"]["Enums"]["news_topic"][] | null
           updated_at?: string
           user_id?: string
         }
