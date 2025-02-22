@@ -15,17 +15,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
+type NewsTopic = 
+  | 'economics'
+  | 'finance'
+  | 'business'
+  | 'technology'
+  | 'education'
+  | 'policy'
+  | 'markets'
+  | 'entrepreneurship'
+  | 'innovation'
+  | 'sustainability';
+
 const NEWS_TOPICS = [
-  { value: 'economics', label: 'Economics' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'business', label: 'Business' },
-  { value: 'technology', label: 'Technology' },
-  { value: 'education', label: 'Education' },
-  { value: 'policy', label: 'Policy' },
-  { value: 'markets', label: 'Markets' },
-  { value: 'entrepreneurship', label: 'Entrepreneurship' },
-  { value: 'innovation', label: 'Innovation' },
-  { value: 'sustainability', label: 'Sustainability' },
+  { value: 'economics' as NewsTopic, label: 'Economics' },
+  { value: 'finance' as NewsTopic, label: 'Finance' },
+  { value: 'business' as NewsTopic, label: 'Business' },
+  { value: 'technology' as NewsTopic, label: 'Technology' },
+  { value: 'education' as NewsTopic, label: 'Education' },
+  { value: 'policy' as NewsTopic, label: 'Policy' },
+  { value: 'markets' as NewsTopic, label: 'Markets' },
+  { value: 'entrepreneurship' as NewsTopic, label: 'Entrepreneurship' },
+  { value: 'innovation' as NewsTopic, label: 'Innovation' },
+  { value: 'sustainability' as NewsTopic, label: 'Sustainability' },
 ] as const;
 
 interface NewsTopicsDialogProps {
@@ -39,7 +51,7 @@ export const NewsTopicsDialog = ({
   onClose,
   isFirstTimeSetup = false,
 }: NewsTopicsDialogProps) => {
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<NewsTopic[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -56,7 +68,7 @@ export const NewsTopicsDialog = ({
 
         if (error) throw error;
         if (data) {
-          setSelectedTopics(data.topics);
+          setSelectedTopics(data.topics || []);
         }
       } catch (error) {
         console.error('Error fetching topics:', error);
@@ -81,6 +93,8 @@ export const NewsTopicsDialog = ({
         .upsert({
           user_id: session.user.id,
           topics: selectedTopics,
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;
