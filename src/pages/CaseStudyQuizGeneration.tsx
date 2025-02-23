@@ -3,86 +3,107 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
-import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
-import { toast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCourses } from "@/hooks/useCourses";
+import { Question } from "@/types/quiz";
+import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
 
-interface TopicInput {
+interface Topic {
   description: string;
   numQuestions: number;
 }
 
 const CaseStudyQuizGeneration = () => {
-  const [topics, setTopics] = useState<TopicInput[]>([
-    { description: "", numQuestions: 3 }
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { quizQuestions, setQuizQuestions } = useQuizGeneration();
-  const [context, setContext] = useState("");
+  const [topic, setTopic] = useState<string>("");
+  const [numQuestions, setNumQuestions] = useState<number>(6);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const { courses, isLoading: isLoadingCourses } = useCourses();
 
-  const addTopic = () => {
-    setTopics([...topics, { description: "", numQuestions: 3 }]);
-  };
-
-  const removeTopic = (index: number) => {
-    if (topics.length > 1) {
-      const newTopics = topics.filter((_, i) => i !== index);
-      setTopics(newTopics);
-    }
-  };
-
-  const updateTopic = (index: number, field: keyof TopicInput, value: string | number) => {
-    const newTopics = [...topics];
-    newTopics[index] = {
-      ...newTopics[index],
-      [field]: field === "numQuestions" ? Number(value) : value
-    };
-    setTopics(newTopics);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (topics.some(topic => !topic.description.trim())) {
+  const handleGenerate = async () => {
+    if (!topic || !selectedCourseId) {
       toast({
         title: "Error",
-        description: "Please fill in all topic fields",
+        description: "Please fill out all fields",
         variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
+    setIsGenerating(true);
+    setQuizQuestions([]);
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error('Authentication required');
+        throw new Error('No session');
       }
 
-      const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-case-study-quiz', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ 
-          topics,
-          context: context.trim() || undefined,
-          courseId: selectedCourseId || undefined
-        }),
-      });
+      const { data: teacherData } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, school')
+        .eq('id', session.user.id)
+        .single();
 
-      if (!response.ok) throw new Error('Failed to generate quiz');
+      const response = await fetch(
+        'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-case-study-quiz',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            topic,
+            numQuestions,
+            courseId: selectedCourseId,
+            teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
+            school: teacherData?.school,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to generate quiz');
+      }
 
       const data = await response.json();
       setQuizQuestions(data.quizQuestions);
-      
+
+      // Save quiz to database
+      const quizData = {
+        title: `Case Study Quiz - ${topic}`,
+        teacher_id: session.user.id,
+        course_id: selectedCourseId,
+      };
+
+      const { data: quiz, error: quizError } = await supabase
+        .from('quizzes')
+        .insert(quizData)
+        .select()
+        .single();
+
+      if (quizError) throw quizError;
+
+      const questionsToInsert = data.quizQuestions.map((q: Question) => ({
+        quiz_id: quiz.id,
+        question: q.question,
+        correct_answer: q.correctAnswer,
+        topic: q.topic,
+        points: q.points,
+        options: q.options
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('quiz_questions')
+        .insert(questionsToInsert);
+
+      if (questionsError) throw questionsError;
+
       toast({
         title: "Success",
         description: "Case study quiz generated successfully!",
@@ -91,120 +112,85 @@ const CaseStudyQuizGeneration = () => {
       console.error('Error generating case study quiz:', error);
       toast({
         title: "Error",
-        description: "Failed to generate case study quiz. Please try again.",
+        description: "Failed to generate quiz. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Case Study Quiz Generation</h1>
-          <p className="text-gray-600">Generate quizzes based on recent events and case studies</p>
-        </div>
-
-        <div className="grid gap-8 md:grid-cols-2">
-          <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiz Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-4">
-                    <label className="font-medium text-sm">Course (Optional)</label>
-                    <Select
-                      value={selectedCourseId}
-                      onValueChange={setSelectedCourseId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a course" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {courses.map((course) => (
-                          <SelectItem key={course.id} value={course.id}>
-                            {course.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-4">
-                    {topics.map((topic, index) => (
-                      <div key={index} className="space-y-4 p-4 border rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">Topic {index + 1}</h3>
-                          {topics.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeTopic(index)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <Input
-                          placeholder="Enter topic"
-                          value={topic.description}
-                          onChange={(e) => updateTopic(index, "description", e.target.value)}
-                        />
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm">Number of questions:</label>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="10"
-                            value={topic.numQuestions}
-                            onChange={(e) => updateTopic(index, "numQuestions", e.target.value)}
-                            className="w-24"
-                          />
-                        </div>
-                      </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid gap-8 md:grid-cols-2">
+        <div className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Generate Case Study Quiz</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="course" className="text-sm font-medium">Select Course</label>
+                <Select
+                  value={selectedCourseId}
+                  onValueChange={setSelectedCourseId}
+                  disabled={isLoadingCourses}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
                     ))}
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={addTopic}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Another Topic
-                    </Button>
-                  </div>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  <Textarea
-                    placeholder="Optional: Add specific focus areas or context (e.g., ethical implications, economic impact)"
-                    className="h-32"
-                    value={context}
-                    onChange={(e) => setContext(e.target.value)}
-                  />
-                  
-                  <Button type="submit" disabled={isLoading} className="w-full">
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating Quiz...
-                      </>
-                    ) : (
-                      'Generate Case Study Quiz'
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
+              <div className="space-y-2">
+                <label htmlFor="topic" className="text-sm font-medium">Topic</label>
+                <Input
+                  id="topic"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="Enter the topic for the case study"
+                />
+              </div>
 
-          <QuizOutput questions={quizQuestions} />
+              <div className="space-y-2">
+                <label htmlFor="numQuestions" className="text-sm font-medium">Number of Questions</label>
+                <Input
+                  id="numQuestions"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={numQuestions}
+                  onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+                />
+              </div>
+
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating || !topic || !selectedCourseId}
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Quiz...
+                  </>
+                ) : (
+                  'Generate Quiz'
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+
+        <QuizOutput questions={quizQuestions} />
+      </div>
     </div>
   );
 };
