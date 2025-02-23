@@ -60,7 +60,10 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const searchTerms = topics.map(topic => `"${topic}"`).join(' OR ');
+      // Convert topic names to search terms by replacing underscores with spaces
+      const searchTerms = topics
+        .map(topic => topic.replace(/_/g, ' '))
+        .join(' OR ');
       console.log('Searching news with terms:', searchTerms);
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/fetch-course-news`, {
