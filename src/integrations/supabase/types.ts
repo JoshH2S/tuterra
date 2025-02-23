@@ -1490,7 +1490,7 @@ export type Database = {
         | "healthcare_medicine"
         | "engineering_applied_sciences"
         | "arts_humanities_social_sciences"
-        | "education_pedagogy"
+        | "education"
         | "mathematics_statistics"
         | "industry_specific"
         | "cybersecurity_it"
