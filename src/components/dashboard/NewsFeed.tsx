@@ -26,32 +26,29 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
   const [showTopicsDialog, setShowTopicsDialog] = useState(false);
   const [hasTopics, setHasTopics] = useState(false);
 
-  useEffect(() => {
-    const checkUserTopics = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
+  const checkUserTopics = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-        const { data: preferences } = await supabase
-          .from('user_news_preferences')
-          .select('topics:topics')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        
-        if (!preferences?.topics || preferences.topics.length === 0) {
-          setShowTopicsDialog(true);
-        } else {
-          setHasTopics(true);
-          fetchNews(preferences.topics);
-        }
-      } catch (error) {
-        console.error('Error checking topics:', error);
-        setError('Failed to load news preferences');
+      const { data: preferences } = await supabase
+        .from('user_news_preferences')
+        .select('topics')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (!preferences?.topics || preferences.topics.length === 0) {
+        setShowTopicsDialog(true);
+        setHasTopics(false);
+      } else {
+        setHasTopics(true);
+        await fetchNews(preferences.topics);
       }
-    };
-
-    checkUserTopics();
-  }, []);
+    } catch (error) {
+      console.error('Error checking topics:', error);
+      setError('Failed to load news preferences');
+    }
+  };
 
   const fetchNews = async (topics: string[]) => {
     setError(null);
@@ -61,11 +58,10 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // Create search terms from user's selected topics
       const searchTerms = topics.map(topic => `"${topic}"`).join(' OR ');
       console.log('Searching news with terms:', searchTerms);
 
-      const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/fetch-course-news`, {
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/fetch-course-news`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,17 +71,14 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch news');
+        throw new Error('Failed to fetch news');
       }
-      
+
       const data = await response.json();
       console.log('News API response:', data);
-      
+
       if (!data.articles || data.articles.length === 0) {
         console.log('No news articles found');
-      } else {
-        console.log('Found articles:', data.articles.length);
       }
 
       setNewsItems(data.articles || []);
@@ -102,31 +95,13 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
     }
   };
 
-  const handleTopicsDialogClose = () => {
-    setShowTopicsDialog(false);
-    // Refresh the news feed after closing the dialog
+  useEffect(() => {
     checkUserTopics();
-  };
+  }, []);
 
-  const checkUserTopics = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase
-        .from('user_news_preferences')
-        .select('topics')
-        .single();
-
-      if (error) throw error;
-      
-      if (data && data.topics.length > 0) {
-        setHasTopics(true);
-        fetchNews(data.topics);
-      }
-    } catch (error) {
-      console.error('Error checking topics:', error);
-    }
+  const handleTopicsDialogClose = async () => {
+    setShowTopicsDialog(false);
+    await checkUserTopics();
   };
 
   if (!hasTopics) {
