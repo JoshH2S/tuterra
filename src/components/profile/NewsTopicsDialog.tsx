@@ -23,7 +23,7 @@ type NewsTopic =
   | 'healthcare_medicine'
   | 'engineering_applied_sciences'
   | 'arts_humanities_social_sciences'
-  | 'education_pedagogy'
+  | 'education'
   | 'mathematics_statistics'
   | 'industry_specific'
   | 'cybersecurity_it';
@@ -35,7 +35,7 @@ const NEWS_TOPICS = [
   { value: 'healthcare_medicine' as NewsTopic, label: 'Healthcare & Medicine' },
   { value: 'engineering_applied_sciences' as NewsTopic, label: 'Engineering & Applied Sciences' },
   { value: 'arts_humanities_social_sciences' as NewsTopic, label: 'Arts, Humanities & Social Sciences' },
-  { value: 'education_pedagogy' as NewsTopic, label: 'Education & Pedagogy' },
+  { value: 'education' as NewsTopic, label: 'Education' },
   { value: 'mathematics_statistics' as NewsTopic, label: 'Mathematics & Statistics' },
   { value: 'industry_specific' as NewsTopic, label: 'Industry-Specific & Vocational Studies' },
   { value: 'cybersecurity_it' as NewsTopic, label: 'Cybersecurity & IT' },
