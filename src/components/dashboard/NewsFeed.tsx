@@ -19,6 +19,8 @@ interface NewsFeedProps {
   courses: StudentCourse[];
 }
 
+const SUPABASE_URL = "https://nhlsrtubyvggtkyrhkuu.supabase.co";
+
 export const NewsFeed = ({ courses }: NewsFeedProps) => {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +63,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       const searchTerms = topics.map(topic => `"${topic}"`).join(' OR ');
       console.log('Searching news with terms:', searchTerms);
 
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/fetch-course-news`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/fetch-course-news`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
