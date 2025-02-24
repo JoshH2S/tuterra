@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -17,7 +16,7 @@ export const useQuizGeneration = () => {
   const [contentLength, setContentLength] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courseId || "");
-  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("intermediate");
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("high_school");
 
   const { saveQuizToDatabase } = useQuizSave();
   const { generateQuiz } = useQuizAPI();

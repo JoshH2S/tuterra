@@ -1,4 +1,3 @@
-
 import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
 import { TopicsCard } from "@/components/quiz-generation/TopicsCard";
 import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
@@ -87,19 +86,19 @@ const QuizGeneration = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Question Difficulty</label>
+                  <label className="text-sm font-medium mb-2 block">Education Level</label>
                   <Select
                     value={difficulty}
                     onValueChange={(value: QuestionDifficulty) => setDifficulty(value)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select difficulty" />
+                      <SelectValue placeholder="Select education level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                      <SelectItem value="expert">Expert</SelectItem>
+                      <SelectItem value="middle_school">Middle School</SelectItem>
+                      <SelectItem value="high_school">High School</SelectItem>
+                      <SelectItem value="university">University</SelectItem>
+                      <SelectItem value="post_graduate">Post Graduate</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

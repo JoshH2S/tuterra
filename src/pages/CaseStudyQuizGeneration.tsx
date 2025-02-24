@@ -3,28 +3,41 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCourses } from "@/hooks/useCourses";
 import { Question, QuestionDifficulty } from "@/types/quiz";
 import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
+import { Topic } from "@/types/quiz-generation";
 
 const CaseStudyQuizGeneration = () => {
-  const [topic, setTopic] = useState<string>("");
-  const [numQuestions, setNumQuestions] = useState<number>(6);
+  const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("intermediate");
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("high_school");
   const { courses, isLoading: isLoadingCourses } = useCourses();
 
+  const addTopic = () => {
+    setTopics([...topics, { description: "", numQuestions: 3 }]);
+  };
+
+  const updateTopic = (index: number, field: keyof Topic, value: string | number) => {
+    const newTopics = [...topics];
+    newTopics[index] = {
+      ...newTopics[index],
+      [field]: value
+    };
+    setTopics(newTopics);
+  };
+
   const handleGenerate = async () => {
-    if (!topic || !selectedCourseId) {
+    if (!topics[0].description || !selectedCourseId) {
       toast({
         title: "Error",
-        description: "Please fill out all fields",
+        description: "Please fill out all required fields",
         variant: "destructive",
       });
       return;
@@ -54,8 +67,7 @@ const CaseStudyQuizGeneration = () => {
             'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            topic,
-            numQuestions,
+            topics,
             courseId: selectedCourseId,
             difficulty,
             teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
@@ -73,7 +85,7 @@ const CaseStudyQuizGeneration = () => {
 
       // Save quiz to database
       const quizData = {
-        title: `Case Study Quiz - ${topic}`,
+        title: `Case Study Quiz - ${topics.map(t => t.description).join(", ")}`,
         teacher_id: session.user.id,
         course_id: selectedCourseId,
       };
@@ -148,48 +160,60 @@ const CaseStudyQuizGeneration = () => {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="difficulty" className="text-sm font-medium">Question Difficulty</label>
+                <label htmlFor="difficulty" className="text-sm font-medium">Education Level</label>
                 <Select
                   value={difficulty}
                   onValueChange={(value: QuestionDifficulty) => setDifficulty(value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select difficulty" />
+                    <SelectValue placeholder="Select education level" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
-                    <SelectItem value="expert">Expert</SelectItem>
+                    <SelectItem value="middle_school">Middle School</SelectItem>
+                    <SelectItem value="high_school">High School</SelectItem>
+                    <SelectItem value="university">University</SelectItem>
+                    <SelectItem value="post_graduate">Post Graduate</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="topic" className="text-sm font-medium">Topic</label>
-                <Input
-                  id="topic"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Enter the topic for the case study"
-                />
-              </div>
+              {topics.map((topic, index) => (
+                <div key={index} className="space-y-4 p-4 border rounded-lg">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Topic {index + 1}</label>
+                    <Input
+                      value={topic.description}
+                      onChange={(e) => updateTopic(index, "description", e.target.value)}
+                      placeholder="Enter topic to cover"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Number of Questions</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={topic.numQuestions}
+                      onChange={(e) => updateTopic(index, "numQuestions", parseInt(e.target.value))}
+                      className="w-24"
+                    />
+                  </div>
+                </div>
+              ))}
 
-              <div className="space-y-2">
-                <label htmlFor="numQuestions" className="text-sm font-medium">Number of Questions</label>
-                <Input
-                  id="numQuestions"
-                  type="number"
-                  min={1}
-                  max={10}
-                  value={numQuestions}
-                  onChange={(e) => setNumQuestions(parseInt(e.target.value))}
-                />
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addTopic}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Another Topic
+              </Button>
 
               <Button
                 onClick={handleGenerate}
-                disabled={isGenerating || !topic || !selectedCourseId}
+                disabled={isGenerating || !topics[0].description || !selectedCourseId}
                 className="w-full"
               >
                 {isGenerating ? (

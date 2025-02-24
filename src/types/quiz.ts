@@ -1,5 +1,5 @@
 
-export type QuestionDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+export type QuestionDifficulty = 'middle_school' | 'high_school' | 'university' | 'post_graduate';
 
 export interface Topic {
   description: string;
@@ -22,9 +22,8 @@ export interface Question {
 }
 
 export const DIFFICULTY_COLORS = {
-  beginner: 'bg-green-100 text-green-800',
-  intermediate: 'bg-blue-100 text-blue-800',
-  advanced: 'bg-purple-100 text-purple-800',
-  expert: 'bg-red-100 text-red-800',
+  middle_school: 'bg-green-100 text-green-800',
+  high_school: 'bg-blue-100 text-blue-800',
+  university: 'bg-purple-100 text-purple-800',
+  post_graduate: 'bg-red-100 text-red-800',
 } as const;
-
