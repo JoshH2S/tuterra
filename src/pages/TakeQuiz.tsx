@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -16,13 +17,31 @@ import { Label } from "@/components/ui/label";
 import { useQuizTimer } from "@/hooks/useQuizTimer";
 import { QuestionDifficulty } from "@/types/quiz";
 
+interface QuizQuestion {
+  id: string;
+  question: string;
+  options: Record<string, string>;
+  correct_answer: string;
+  topic: string;
+  points: number;
+  difficulty: "beginner" | "intermediate" | "advanced" | "expert";
+}
+
+interface Quiz {
+  id: string;
+  title: string;
+  duration_minutes: number;
+  quiz_questions: QuizQuestion[];
+}
+
 const TakeQuiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
-  const [remainingTime, setTimer] = useQuizTimer(0);
+  const [remainingTime] = useQuizTimer(0);
+
   const { data: quiz, isLoading: isLoadingQuiz } = useQuery({
     queryKey: ['quiz', id],
     queryFn: async () => {
@@ -34,6 +53,8 @@ const TakeQuiz = () => {
             id,
             question,
             options,
+            correct_answer,
+            topic,
             points,
             difficulty
           )
@@ -42,7 +63,7 @@ const TakeQuiz = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Quiz;
     },
   });
 
@@ -70,8 +91,8 @@ const TakeQuiz = () => {
 
       const score = correctAnswersCount / questions.length;
 
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.user) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.user) {
         throw new Error("Not authenticated");
       }
 
@@ -93,7 +114,7 @@ const TakeQuiz = () => {
         .insert([
           {
             quiz_id: id,
-            student_id: session.user.id,
+            student_id: sessionData.session.user.id,
             score: score,
             correct_answers: correctAnswersCount,
             total_questions: questions.length,
