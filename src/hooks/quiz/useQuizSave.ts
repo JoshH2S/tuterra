@@ -36,7 +36,7 @@ export const useQuizSave = () => {
 
       if (quizError) throw quizError;
 
-      // Insert all questions
+      // Map questions to the database schema
       const questionsToInsert = questions.map(q => ({
         quiz_id: quiz.id,
         question: q.question,
@@ -44,7 +44,7 @@ export const useQuizSave = () => {
         topic: q.topic,
         points: q.points,
         options: q.options,
-        difficulty: q.difficulty
+        difficulty: mapDifficultyToDatabase(q.difficulty)
       }));
 
       const { error: questionsError } = await supabase
@@ -67,6 +67,22 @@ export const useQuizSave = () => {
         variant: "destructive",
       });
       return false;
+    }
+  };
+
+  // Helper function to map our difficulty levels to database values
+  const mapDifficultyToDatabase = (difficulty: string): "beginner" | "intermediate" | "advanced" | "expert" => {
+    switch (difficulty) {
+      case "middle_school":
+        return "beginner";
+      case "high_school":
+        return "intermediate";
+      case "university":
+        return "advanced";
+      case "post_graduate":
+        return "expert";
+      default:
+        return "intermediate";
     }
   };
 

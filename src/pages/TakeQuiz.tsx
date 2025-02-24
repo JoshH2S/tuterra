@@ -1,147 +1,196 @@
-
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { QuizHeader } from "@/components/quiz-taking/QuizHeader";
-import { QuizQuestion } from "@/components/quiz-taking/QuizQuestion";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useQuizSubmission } from "@/hooks/quiz/useQuizSubmission";
-import { useQuizTimer } from "@/hooks/quiz/useQuizTimer";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useQuizTimer } from "@/hooks/useQuizTimer";
 import { QuestionDifficulty } from "@/types/quiz";
 
-export default function TakeQuiz() {
+const TakeQuiz = () => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
-  const [quiz, setQuiz] = useState<any>(null);
-  const [questions, setQuestions] = useState<any[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty>('intermediate');
-  const isMobile = useIsMobile();
-  const { isSubmitting, handleSubmit } = useQuizSubmission();
-  const { timeRemaining } = useQuizTimer(
-    quiz?.duration_minutes ?? null,
-    () => handleSubmit({ id: id!, questions, answers, quiz })
-  );
+  const [remainingTime, setTimer] = useQuizTimer(0);
+  const { data: quiz, isLoading: isLoadingQuiz } = useQuery({
+    queryKey: ['quiz', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quizzes')
+        .select(`
+          *,
+          quiz_questions (
+            id,
+            question,
+            options,
+            points,
+            difficulty
+          )
+        `)
+        .eq('id', id)
+        .single();
 
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      try {
-        const { data: quizData, error: quizError } = await supabase
-          .from('quizzes')
-          .select('*')
-          .eq('id', id)
-          .eq('published', true)
-          .single();
+      if (error) throw error;
+      return data;
+    },
+  });
 
-        if (quizError) throw quizError;
-        if (!quizData) {
-          toast({
-            title: "Error",
-            description: "Quiz not found or not published",
-            variant: "destructive",
-          });
-          navigate('/quizzes');
-          return;
-        }
+  if (isLoadingQuiz) {
+    return <div>Loading quiz...</div>;
+  }
 
-        setQuiz(quizData);
+  if (!quiz || !quiz.quiz_questions) {
+    return <div>Quiz not found or no questions available.</div>;
+  }
 
-        const { data: questionData, error: questionError } = await supabase
-          .from('quiz_questions')
-          .select('*')
-          .eq('quiz_id', id)
-          .eq('difficulty', selectedDifficulty);
+  const questions = quiz.quiz_questions;
 
-        if (questionError) throw questionError;
-        setQuestions(questionData);
+  const handleAnswerSelect = (questionIndex: number, answer: string) => {
+    setSelectedAnswers({ ...selectedAnswers, [questionIndex]: answer });
+  };
 
-        if (quizData.duration_minutes > 0) {
-          const { error: startError } = await supabase
-            .from('quiz_responses')
-            .insert({
-              quiz_id: id,
-              student_id: (await supabase.auth.getUser()).data.user?.id,
-              start_time: new Date().toISOString()
-            });
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const correctAnswersCount = questions.reduce((count, question, index) => {
+        const selectedAnswer = selectedAnswers[index];
+        return selectedAnswer === question.correct_answer ? count + 1 : count;
+      }, 0);
 
-          if (startError) throw startError;
-        }
-      } catch (error) {
-        console.error('Error fetching quiz:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load quiz",
-          variant: "destructive",
-        });
+      const score = correctAnswersCount / questions.length;
+
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error("Not authenticated");
       }
-    };
 
-    fetchQuiz();
-  }, [id, navigate, selectedDifficulty]);
+      // Prepare topic performance data
+      const topicPerformance: Record<string, { correct: number; total: number }> = {};
+      questions.forEach((question, index) => {
+          const topic = question.topic;
+          if (!topicPerformance[topic]) {
+              topicPerformance[topic] = { correct: 0, total: 0 };
+          }
+          topicPerformance[topic].total++;
+          if (selectedAnswers[index] === question.correct_answer) {
+              topicPerformance[topic].correct++;
+          }
+      });
 
-  if (!quiz || !questions.length) return <div>Loading...</div>;
+      const { data, error } = await supabase
+        .from('quiz_responses')
+        .insert([
+          {
+            quiz_id: id,
+            student_id: session.user.id,
+            score: score,
+            correct_answers: correctAnswersCount,
+            total_questions: questions.length,
+            topic_performance: topicPerformance,
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Quiz submitted successfully!",
+      });
+      navigate(`/quiz-results/${data.id}`);
+    } catch (error: any) {
+      console.error("Error submitting quiz:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit quiz. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Update the difficulty mapping function
+  const mapDifficultyToDisplay = (dbDifficulty: string): QuestionDifficulty => {
+    switch (dbDifficulty) {
+      case "beginner":
+        return "middle_school";
+      case "intermediate":
+        return "high_school";
+      case "advanced":
+        return "university";
+      case "expert":
+        return "post_graduate";
+      default:
+        return "high_school";
+    }
+  };
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'p-2' : 'py-6'} space-y-4`}>
-      <Card className="animate-fadeIn">
-        <QuizHeader 
-          title={quiz?.title}
-          timeRemaining={timeRemaining}
-          onTimeUp={() => handleSubmit({ id: id!, questions, answers, quiz })}
-        />
-        <CardContent className={`space-y-6 ${isMobile ? 'p-3' : ''}`}>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Difficulty</label>
-            <Select
-              value={selectedDifficulty}
-              onValueChange={(value: QuestionDifficulty) => setSelectedDifficulty(value)}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select difficulty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-                <SelectItem value="expert">Expert</SelectItem>
-              </SelectContent>
-            </Select>
+    <div className="container mx-auto py-10">
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Take Quiz</CardTitle>
+          <CardDescription>Answer the questions below</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="mb-4">
+            <p className="text-lg font-semibold">
+              Question {currentQuestion + 1} / {questions.length}
+            </p>
+            <p className="text-gray-600">{questions[currentQuestion].question}</p>
           </div>
-
-          {timeRemaining === 0 && (
-            <Alert variant="destructive" className={isMobile ? 'p-3' : ''}>
-              <AlertDescription className={isMobile ? 'text-sm' : ''}>
-                Time's up! Your quiz has been automatically submitted.
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {questions.map((question, index) => (
-            <QuizQuestion
-              key={question.id}
-              question={question}
-              index={index}
-              selectedAnswer={answers[question.id] || ''}
-              onAnswerChange={(questionId, answer) => 
-                setAnswers(prev => ({ ...prev, [questionId]: answer }))
-              }
-            />
-          ))}
-          
-          <Button 
-            onClick={() => handleSubmit({ id: id!, questions, answers, quiz })}
-            disabled={isSubmitting || timeRemaining === 0}
-            className={`mt-6 ${isMobile ? 'w-full py-6 text-base' : ''}`}
+          <RadioGroup
+            defaultValue={selectedAnswers[currentQuestion]}
+            onValueChange={(value) => handleAnswerSelect(currentQuestion, value)}
           >
-            Submit Quiz
-          </Button>
+            {Object.entries(questions[currentQuestion].options).map(
+              ([key, value]) => (
+                <div key={key} className="flex items-center space-x-2">
+                  <RadioGroupItem value={key} id={key} className="border-2" />
+                  <Label htmlFor={key}>{value}</Label>
+                </div>
+              )
+            )}
+          </RadioGroup>
+          <div className="flex justify-between">
+            <Button
+              variant="outline"
+              disabled={currentQuestion === 0}
+              onClick={() => setCurrentQuestion(currentQuestion - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              disabled={currentQuestion === questions.length - 1}
+              onClick={() => setCurrentQuestion(currentQuestion + 1)}
+            >
+              Next
+            </Button>
+          </div>
+          {currentQuestion === questions.length - 1 && (
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit Quiz"}
+            </Button>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 };
+
+export default TakeQuiz;

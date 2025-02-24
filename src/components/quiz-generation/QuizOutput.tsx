@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import { useState } from "react";
 import { QuizDurationInput } from "./QuizDurationInput";
@@ -145,10 +145,7 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
           {questions.map((question: Question, index: number) => (
             <QuizQuestionItem 
               key={index}
-              question={{
-                ...question,
-                difficulty: question.difficulty || 'intermediate' // Provide default difficulty if missing
-              }}
+              question={question}
               index={index}
             />
           ))}
