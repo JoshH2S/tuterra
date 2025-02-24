@@ -1,74 +1,118 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuizFile } from "./useQuizFile";
-import { useQuizTopics } from "./useQuizTopics";
-import { Question } from "@/types/quiz";
+import { QuestionDifficulty } from "@/types/quiz";
 
-export const MAX_CONTENT_LENGTH = 5000;
+export interface Topic {
+  description: string;
+  numQuestions: number;
+}
+
+export interface Question {
+  question: string;
+  options: {
+    A: string;
+    B: string;
+    C: string;
+    D: string;
+  };
+  correctAnswer: string;
+  topic: string;
+  points: number;
+  difficulty: QuestionDifficulty;
+}
+
+export const MAX_CONTENT_LENGTH = 50 * 1024 * 1024; // 50MB
 
 export const useQuizGeneration = () => {
   const navigate = useNavigate();
   const { id: courseId } = useParams();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [contentLength, setContentLength] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(courseId || "");
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("intermediate");
 
-  const {
-    selectedFile,
-    contentLength,
-    handleFileSelect,
-    processFile,
-  } = useQuizFile();
+  const handleFileSelect = async (file: File) => {
+    setSelectedFile(file);
+    const content = await file.text();
+    setContentLength(content.length);
+  };
 
-  const {
-    topics,
-    addTopic,
-    updateTopic,
-    validateTopics,
-  } = useQuizTopics();
+  const addTopic = () => {
+    setTopics([...topics, { description: "", numQuestions: 3 }]);
+  };
+
+  const updateTopic = (index: number, field: keyof Topic, value: string | number) => {
+    const newTopics = [...topics];
+    newTopics[index] = {
+      ...newTopics[index],
+      [field]: value
+    };
+    setTopics(newTopics);
+  };
 
   const saveQuizToDatabase = async (questions: Question[]) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/auth');
-      return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+
+      // Create the quiz with title, teacher_id, and duration
+      const quizData = {
+        title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
+        teacher_id: session.user.id,
+        duration_minutes: duration
+      };
+
+      // Only add course_id if it exists
+      if (courseId) {
+        Object.assign(quizData, { course_id: courseId });
+      }
+
+      const { data: quiz, error: quizError } = await supabase
+        .from('quizzes')
+        .insert(quizData)
+        .select()
+        .single();
+
+      if (quizError) throw quizError;
+
+      // Insert all questions
+      const questionsToInsert = questions.map(q => ({
+        quiz_id: quiz.id,
+        question: q.question,
+        correct_answer: q.correctAnswer,
+        topic: q.topic,
+        points: q.points,
+        options: q.options,
+        difficulty: q.difficulty
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('quiz_questions')
+        .insert(questionsToInsert);
+
+      if (questionsError) throw questionsError;
+
+      toast({
+        title: "Success",
+        description: "Quiz saved successfully!",
+      });
+    } catch (error) {
+      console.error('Error saving quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save quiz. Please try again.",
+        variant: "destructive",
+      });
     }
-
-    const quizData = {
-      title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
-      teacher_id: session.user.id,
-      duration_minutes: duration,
-      course_id: selectedCourseId,
-    };
-
-    const { data: quiz, error: quizError } = await supabase
-      .from('quizzes')
-      .insert(quizData)
-      .select()
-      .single();
-
-    if (quizError) throw quizError;
-
-    const questionsToInsert = questions.map(q => ({
-      quiz_id: quiz.id,
-      question: q.question,
-      correct_answer: q.correctAnswer,
-      topic: q.topic,
-      points: q.points,
-      options: q.options
-    }));
-
-    const { error: questionsError } = await supabase
-      .from('quiz_questions')
-      .insert(questionsToInsert);
-
-    if (questionsError) throw questionsError;
-
-    return quiz;
   };
 
   const handleSubmit = async () => {
@@ -81,7 +125,7 @@ export const useQuizGeneration = () => {
       return;
     }
 
-    if (!validateTopics()) {
+    if (topics.some(topic => !topic.description)) {
       toast({
         title: "Error",
         description: "Please fill out all topics",
@@ -94,9 +138,9 @@ export const useQuizGeneration = () => {
     setQuizQuestions([]);
 
     try {
-      const processedFile = await processFile();
-      if (!processedFile) return;
-
+      const fileContent = await selectedFile.text();
+      const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate('/auth');
@@ -118,8 +162,9 @@ export const useQuizGeneration = () => {
             'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            content: processedFile.content,
+            content: trimmedContent,
             topics: topics,
+            difficulty,
             teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
             school: teacherData?.school,
           }),
@@ -131,9 +176,17 @@ export const useQuizGeneration = () => {
       }
 
       const data = await response.json();
-      setQuizQuestions(data.quizQuestions);
       
-      await saveQuizToDatabase(data.quizQuestions);
+      // Add difficulty to each question
+      const questionsWithDifficulty = data.quizQuestions.map((q: Question) => ({
+        ...q,
+        difficulty
+      }));
+      
+      setQuizQuestions(questionsWithDifficulty);
+      
+      // Save the generated quiz to the database
+      await saveQuizToDatabase(questionsWithDifficulty);
 
       toast({
         title: "Success",
@@ -159,12 +212,13 @@ export const useQuizGeneration = () => {
     contentLength,
     duration,
     selectedCourseId,
+    difficulty,
     handleFileSelect,
     addTopic,
     updateTopic,
     handleSubmit,
     setDuration,
     setSelectedCourseId,
-    setQuizQuestions, // Now exposing this setter
+    setDifficulty,
   };
 };

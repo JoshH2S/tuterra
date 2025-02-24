@@ -8,13 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCourses } from "@/hooks/useCourses";
-import { Question } from "@/types/quiz";
+import { Question, QuestionDifficulty } from "@/types/quiz";
 import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
-
-interface Topic {
-  description: string;
-  numQuestions: number;
-}
 
 const CaseStudyQuizGeneration = () => {
   const [topic, setTopic] = useState<string>("");
@@ -22,6 +17,7 @@ const CaseStudyQuizGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("intermediate");
   const { courses, isLoading: isLoadingCourses } = useCourses();
 
   const handleGenerate = async () => {
@@ -61,6 +57,7 @@ const CaseStudyQuizGeneration = () => {
             topic,
             numQuestions,
             courseId: selectedCourseId,
+            difficulty,
             teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
             school: teacherData?.school,
           }),
@@ -96,7 +93,7 @@ const CaseStudyQuizGeneration = () => {
         topic: q.topic,
         points: q.points,
         options: q.options,
-        difficulty: q.difficulty || 'intermediate' // Add default difficulty
+        difficulty
       }));
 
       const { error: questionsError } = await supabase
@@ -146,6 +143,24 @@ const CaseStudyQuizGeneration = () => {
                         {course.title}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="difficulty" className="text-sm font-medium">Question Difficulty</label>
+                <Select
+                  value={difficulty}
+                  onValueChange={(value: QuestionDifficulty) => setDifficulty(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="expert">Expert</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

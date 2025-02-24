@@ -15,6 +15,7 @@ import {
   SelectValue, 
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { QuestionDifficulty } from "@/types/quiz";
 
 const QuizGeneration = () => {
   const {
@@ -25,12 +26,14 @@ const QuizGeneration = () => {
     contentLength,
     duration,
     selectedCourseId,
+    difficulty,
     handleFileSelect,
     addTopic,
     updateTopic,
     handleSubmit,
     setDuration,
     setSelectedCourseId,
+    setDifficulty,
   } = useQuizGeneration();
 
   const { createTemplate } = useCourseTemplates();
@@ -44,7 +47,8 @@ const QuizGeneration = () => {
           type: "quiz",
           topics,
           questions: quizQuestions,
-          duration
+          duration,
+          difficulty
         }
       );
     }
@@ -59,25 +63,46 @@ const QuizGeneration = () => {
           <div className="space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle>Select Course</CardTitle>
+                <CardTitle>Quiz Settings</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Select
-                  value={selectedCourseId}
-                  onValueChange={setSelectedCourseId}
-                  disabled={isLoadingCourses}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Select Course</label>
+                  <Select
+                    value={selectedCourseId}
+                    onValueChange={setSelectedCourseId}
+                    disabled={isLoadingCourses}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((course) => (
+                        <SelectItem key={course.id} value={course.id}>
+                          {course.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Question Difficulty</label>
+                  <Select
+                    value={difficulty}
+                    onValueChange={(value: QuestionDifficulty) => setDifficulty(value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                      <SelectItem value="expert">Expert</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
 
