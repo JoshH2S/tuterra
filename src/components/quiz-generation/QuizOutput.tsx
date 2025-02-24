@@ -7,22 +7,7 @@ import { useState } from "react";
 import { QuizDurationInput } from "./QuizDurationInput";
 import { QuizActions } from "./QuizActions";
 import { QuizQuestionItem } from "./QuizQuestionItem";
-
-interface Option {
-  A: string;
-  B: string;
-  C: string;
-  D: string;
-}
-
-interface Question {
-  question: string;
-  options: Option;
-  correctAnswer: string;
-  topic: string;
-  points: number;
-  explanation?: string;
-}
+import { Question, QuestionDifficulty } from "@/types/quiz";
 
 interface QuizOutputProps {
   questions: Question[];
@@ -157,10 +142,13 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
           onChange={setDuration}
         />
         <div className="space-y-6">
-          {questions.map((question, index) => (
+          {questions.map((question: Question, index: number) => (
             <QuizQuestionItem 
               key={index}
-              question={question}
+              question={{
+                ...question,
+                difficulty: question.difficulty || 'intermediate' // Provide default difficulty if missing
+              }}
               index={index}
             />
           ))}
