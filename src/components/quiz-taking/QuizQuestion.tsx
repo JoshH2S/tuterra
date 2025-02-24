@@ -2,12 +2,15 @@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
+import { DIFFICULTY_COLORS, QuestionDifficulty } from "@/types/quiz";
 
 interface QuizQuestionProps {
   question: {
     id: string;
     question: string;
     options: Record<string, string>;
+    difficulty: QuestionDifficulty;
   };
   index: number;
   selectedAnswer: string;
@@ -27,7 +30,17 @@ export const QuizQuestion = ({
       <div className="flex items-start gap-2">
         <span className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{index + 1}.</span>
         <div className="flex-1">
-          <p className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{question.question}</p>
+          <div className="flex items-center gap-2">
+            <p className={`font-medium ${isMobile ? 'text-sm' : ''}`}>
+              {question.question}
+            </p>
+            <Badge 
+              variant="secondary" 
+              className={`${DIFFICULTY_COLORS[question.difficulty]} capitalize ml-2`}
+            >
+              {question.difficulty}
+            </Badge>
+          </div>
           <RadioGroup
             value={selectedAnswer}
             onValueChange={(value) => onAnswerChange(question.id, value)}

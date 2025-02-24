@@ -11,6 +11,8 @@ import { QuizQuestion } from "@/components/quiz-taking/QuizQuestion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuizSubmission } from "@/hooks/quiz/useQuizSubmission";
 import { useQuizTimer } from "@/hooks/quiz/useQuizTimer";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { QuestionDifficulty } from "@/types/quiz";
 
 export default function TakeQuiz() {
   const { id } = useParams();
@@ -18,6 +20,7 @@ export default function TakeQuiz() {
   const [quiz, setQuiz] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty>('intermediate');
   const isMobile = useIsMobile();
   const { isSubmitting, handleSubmit } = useQuizSubmission();
   const { timeRemaining } = useQuizTimer(
@@ -51,7 +54,8 @@ export default function TakeQuiz() {
         const { data: questionData, error: questionError } = await supabase
           .from('quiz_questions')
           .select('*')
-          .eq('quiz_id', id);
+          .eq('quiz_id', id)
+          .eq('difficulty', selectedDifficulty);
 
         if (questionError) throw questionError;
         setQuestions(questionData);
@@ -78,7 +82,7 @@ export default function TakeQuiz() {
     };
 
     fetchQuiz();
-  }, [id, navigate]);
+  }, [id, navigate, selectedDifficulty]);
 
   if (!quiz || !questions.length) return <div>Loading...</div>;
 
@@ -91,6 +95,24 @@ export default function TakeQuiz() {
           onTimeUp={() => handleSubmit({ id: id!, questions, answers, quiz })}
         />
         <CardContent className={`space-y-6 ${isMobile ? 'p-3' : ''}`}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Difficulty</label>
+            <Select
+              value={selectedDifficulty}
+              onValueChange={(value: QuestionDifficulty) => setSelectedDifficulty(value)}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Beginner</SelectItem>
+                <SelectItem value="intermediate">Intermediate</SelectItem>
+                <SelectItem value="advanced">Advanced</SelectItem>
+                <SelectItem value="expert">Expert</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {timeRemaining === 0 && (
             <Alert variant="destructive" className={isMobile ? 'p-3' : ''}>
               <AlertDescription className={isMobile ? 'text-sm' : ''}>
@@ -98,6 +120,7 @@ export default function TakeQuiz() {
               </AlertDescription>
             </Alert>
           )}
+          
           {questions.map((question, index) => (
             <QuizQuestion
               key={question.id}
@@ -109,6 +132,7 @@ export default function TakeQuiz() {
               }
             />
           ))}
+          
           <Button 
             onClick={() => handleSubmit({ id: id!, questions, answers, quiz })}
             disabled={isSubmitting || timeRemaining === 0}
@@ -120,4 +144,4 @@ export default function TakeQuiz() {
       </Card>
     </div>
   );
-}
+};

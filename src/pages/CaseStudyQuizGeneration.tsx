@@ -95,7 +95,8 @@ const CaseStudyQuizGeneration = () => {
         correct_answer: q.correctAnswer,
         topic: q.topic,
         points: q.points,
-        options: q.options
+        options: q.options,
+        difficulty: q.difficulty || 'intermediate' // Add default difficulty
       }));
 
       const { error: questionsError } = await supabase

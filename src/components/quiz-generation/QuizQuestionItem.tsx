@@ -1,21 +1,7 @@
 
 import { Label } from "@/components/ui/label";
-
-interface Option {
-  A: string;
-  B: string;
-  C: string;
-  D: string;
-}
-
-interface Question {
-  question: string;
-  options: Option;
-  correctAnswer: string;
-  topic: string;
-  points: number;
-  explanation?: string;
-}
+import { DIFFICULTY_COLORS, Question, QuestionDifficulty } from "@/types/quiz";
+import { Badge } from "@/components/ui/badge";
 
 interface QuizQuestionItemProps {
   question: Question;
@@ -28,7 +14,15 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
       <div className="flex items-start gap-2">
         <span className="font-medium">{index + 1}.</span>
         <div className="flex-1">
-          <p className="font-medium">{question.question}</p>
+          <div className="flex items-center gap-2 mb-2">
+            <p className="font-medium">{question.question}</p>
+            <Badge 
+              variant="secondary" 
+              className={`${DIFFICULTY_COLORS[question.difficulty]} capitalize ml-2`}
+            >
+              {question.difficulty}
+            </Badge>
+          </div>
           <div className="mt-2 space-y-1">
             {Object.entries(question.options).map(([letter, text]) => (
               <div key={letter} className="flex items-start gap-2">

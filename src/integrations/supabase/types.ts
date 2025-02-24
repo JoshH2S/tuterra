@@ -676,6 +676,7 @@ export type Database = {
         Row: {
           correct_answer: string
           created_at: string
+          difficulty: Database["public"]["Enums"]["question_difficulty"]
           explanation: string | null
           id: string
           options: Json
@@ -688,6 +689,7 @@ export type Database = {
         Insert: {
           correct_answer: string
           created_at?: string
+          difficulty?: Database["public"]["Enums"]["question_difficulty"]
           explanation?: string | null
           id?: string
           options?: Json
@@ -700,6 +702,7 @@ export type Database = {
         Update: {
           correct_answer?: string
           created_at?: string
+          difficulty?: Database["public"]["Enums"]["question_difficulty"]
           explanation?: string | null
           id?: string
           options?: Json
@@ -1495,6 +1498,7 @@ export type Database = {
         | "industry_specific"
         | "cybersecurity_it"
       processing_status: "pending" | "processing" | "completed" | "failed"
+      question_difficulty: "beginner" | "intermediate" | "advanced" | "expert"
       user_type: "teacher" | "student"
     }
     CompositeTypes: {
