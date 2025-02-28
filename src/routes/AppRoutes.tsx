@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
@@ -19,6 +20,9 @@ import { MediaLibrary } from "@/components/media/MediaLibrary";
 import CourseTemplates from "@/pages/CourseTemplates";
 import TextbookProcessing from "@/pages/TextbookProcessing";
 import CaseStudyQuizGeneration from "@/pages/CaseStudyQuizGeneration";
+import SkillAssessments from "@/pages/SkillAssessments";
+import TakeSkillAssessment from "@/pages/TakeSkillAssessment";
+import SkillAssessmentResults from "@/pages/SkillAssessmentResults";
 
 export const AppRoutes = () => {
   return (
@@ -160,6 +164,30 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <TextbookProcessing />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/skill-assessments"
+        element={
+          <ProtectedRoute>
+            <SkillAssessments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/take-skill-assessment/:id"
+        element={
+          <ProtectedRoute>
+            <TakeSkillAssessment />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/skill-assessment-results/:id"
+        element={
+          <ProtectedRoute>
+            <SkillAssessmentResults />
           </ProtectedRoute>
         }
       />
