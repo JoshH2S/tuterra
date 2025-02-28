@@ -69,7 +69,7 @@ const CaseStudyQuizGeneration = () => {
           body: JSON.stringify({
             topics,
             courseId: selectedCourseId,
-            difficulty,
+            difficulty, // Send the difficulty as a string
             teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
             school: teacherData?.school,
           }),
@@ -77,7 +77,9 @@ const CaseStudyQuizGeneration = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to generate quiz');
+        const errorData = await response.json();
+        console.error("Error response:", errorData);
+        throw new Error(`Failed to generate quiz: ${errorData.error || 'Unknown error'}`);
       }
 
       const data = await response.json();
@@ -88,6 +90,7 @@ const CaseStudyQuizGeneration = () => {
         title: `Case Study Quiz - ${topics.map(t => t.description).join(", ")}`,
         teacher_id: session.user.id,
         course_id: selectedCourseId,
+        duration_minutes: 30, // Default duration
       };
 
       const { data: quiz, error: quizError } = await supabase
@@ -98,6 +101,9 @@ const CaseStudyQuizGeneration = () => {
 
       if (quizError) throw quizError;
 
+      // Map the difficulty to the database enum values
+      const dbDifficulty = mapDifficultyToDatabase(difficulty);
+      
       const questionsToInsert = data.quizQuestions.map((q: Question) => ({
         quiz_id: quiz.id,
         question: q.question,
@@ -105,14 +111,17 @@ const CaseStudyQuizGeneration = () => {
         topic: q.topic,
         points: q.points,
         options: q.options,
-        difficulty
+        difficulty: dbDifficulty
       }));
 
       const { error: questionsError } = await supabase
         .from('quiz_questions')
         .insert(questionsToInsert);
 
-      if (questionsError) throw questionsError;
+      if (questionsError) {
+        console.error("Error inserting questions:", questionsError);
+        throw questionsError;
+      }
 
       toast({
         title: "Success",
@@ -122,11 +131,29 @@ const CaseStudyQuizGeneration = () => {
       console.error('Error generating case study quiz:', error);
       toast({
         title: "Error",
-        description: "Failed to generate quiz. Please try again.",
+        description: typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : "Failed to generate quiz. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Helper function to map difficulty to database enum values
+  const mapDifficultyToDatabase = (difficulty: QuestionDifficulty): string => {
+    switch (difficulty) {
+      case "middle_school":
+        return "beginner";
+      case "high_school":
+        return "intermediate";
+      case "university":
+        return "advanced";
+      case "post_graduate":
+        return "expert";
+      default:
+        return "intermediate";
     }
   };
 

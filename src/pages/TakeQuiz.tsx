@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useQuizTimer } from "@/hooks/useQuizTimer";
+import { useQuizTimer } from "@/hooks/quiz/useQuizTimer";
 import { QuestionDifficulty } from "@/types/quiz";
 
 interface QuizQuestion {
@@ -99,14 +99,14 @@ const TakeQuiz = () => {
       // Prepare topic performance data
       const topicPerformance: Record<string, { correct: number; total: number }> = {};
       questions.forEach((question, index) => {
-          const topic = question.topic;
-          if (!topicPerformance[topic]) {
-              topicPerformance[topic] = { correct: 0, total: 0 };
-          }
-          topicPerformance[topic].total++;
-          if (selectedAnswers[index] === question.correct_answer) {
-              topicPerformance[topic].correct++;
-          }
+        const topic = question.topic;
+        if (!topicPerformance[topic]) {
+          topicPerformance[topic] = { correct: 0, total: 0 };
+        }
+        topicPerformance[topic].total++;
+        if (selectedAnswers[index] === question.correct_answer) {
+          topicPerformance[topic].correct++;
+        }
       });
 
       const { data, error } = await supabase
@@ -145,7 +145,7 @@ const TakeQuiz = () => {
     }
   };
 
-  // Update the difficulty mapping function
+  // Updated difficulty mapping function
   const mapDifficultyToDisplay = (dbDifficulty: string): QuestionDifficulty => {
     switch (dbDifficulty) {
       case "beginner":
@@ -176,7 +176,7 @@ const TakeQuiz = () => {
             <p className="text-gray-600">{questions[currentQuestion].question}</p>
           </div>
           <RadioGroup
-            defaultValue={selectedAnswers[currentQuestion]}
+            value={selectedAnswers[currentQuestion]}
             onValueChange={(value) => handleAnswerSelect(currentQuestion, value)}
           >
             {Object.entries(questions[currentQuestion].options).map(

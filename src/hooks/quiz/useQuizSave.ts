@@ -71,7 +71,7 @@ export const useQuizSave = () => {
   };
 
   // Helper function to map our difficulty levels to database values
-  const mapDifficultyToDatabase = (difficulty: string): "beginner" | "intermediate" | "advanced" | "expert" => {
+  const mapDifficultyToDatabase = (difficulty: string): string => {
     switch (difficulty) {
       case "middle_school":
         return "beginner";

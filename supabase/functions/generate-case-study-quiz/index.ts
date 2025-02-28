@@ -21,6 +21,14 @@ serve(async (req) => {
       throw new Error('At least one topic is required');
     }
 
+    console.log("Received request with:", {
+      topicsCount: topics.length,
+      courseId,
+      difficulty,
+      hasTeacherName: !!teacherName,
+      hasSchool: !!school
+    });
+
     const topicsString = topics.map((t: { description: string }) => t.description).join(", ");
 
     const prompt = `
@@ -43,6 +51,8 @@ serve(async (req) => {
       ${teacherName ? `Created by ${teacherName}` : ''}
       ${school ? `for ${school}` : ''}
     `;
+
+    console.log("Sending prompt to OpenAI...");
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -70,6 +80,8 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log("Received response from OpenAI");
+    
     let content = data.choices[0].message.content;
     
     // Clean up the JSON string if needed
@@ -77,24 +89,31 @@ serve(async (req) => {
       content = content.replace(/```json\n|\n```|```/g, '');
     }
 
-    const quizQuestions = JSON.parse(content);
+    try {
+      const quizQuestions = JSON.parse(content);
+      console.log(`Successfully parsed ${quizQuestions.length} questions`);
 
-    return new Response(
-      JSON.stringify({ 
-        quizQuestions,
-        metadata: {
-          courseId,
-          difficulty,
-          topics: topicsString
+      return new Response(
+        JSON.stringify({ 
+          quizQuestions,
+          metadata: {
+            courseId,
+            difficulty,
+            topics: topicsString
+          }
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
         }
-      }),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+      );
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.error("Received content:", content);
+      throw new Error("Failed to parse response from AI service");
+    }
   } catch (error) {
     console.error('Error in generate-case-study-quiz:', error);
     return new Response(
