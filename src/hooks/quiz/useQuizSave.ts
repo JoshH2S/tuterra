@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Question } from "@/types/quiz-generation";
 import { toast } from "@/components/ui/use-toast";
 
+// Define the valid difficulty types to match the database enum
+type QuestionDifficulty = "beginner" | "intermediate" | "advanced" | "expert";
+
 export const useQuizSave = () => {
   const saveQuizToDatabase = async (
     questions: Question[], 
@@ -44,7 +47,7 @@ export const useQuizSave = () => {
         topic: q.topic,
         points: q.points,
         options: q.options,
-        difficulty: mapDifficultyToDatabase(q.difficulty)
+        difficulty: mapDifficultyToDatabase(q.difficulty) as QuestionDifficulty
       }));
 
       const { error: questionsError } = await supabase
@@ -71,7 +74,7 @@ export const useQuizSave = () => {
   };
 
   // Helper function to map our difficulty levels to database values
-  const mapDifficultyToDatabase = (difficulty: string): string => {
+  const mapDifficultyToDatabase = (difficulty: string): QuestionDifficulty => {
     switch (difficulty) {
       case "middle_school":
         return "beginner";

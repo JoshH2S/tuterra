@@ -40,7 +40,9 @@ const TakeQuiz = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
-  const remainingTime = useQuizTimer(0);
+  
+  // Pass both required arguments: initialTime and onTimeEnd callback
+  const remainingTime = useQuizTimer(0, () => console.log("Time ended"));
 
   const { data: quiz, isLoading: isLoadingQuiz } = useQuery({
     queryKey: ['quiz', id],
