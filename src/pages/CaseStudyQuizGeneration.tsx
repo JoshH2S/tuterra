@@ -1,9 +1,9 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, ExternalLink, NewspaperIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +11,14 @@ import { useCourses } from "@/hooks/useCourses";
 import { Question, QuestionDifficulty } from "@/types/quiz";
 import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
 import { Topic } from "@/types/quiz-generation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useQuizSave } from "@/hooks/quiz/useQuizSave";
+
+interface NewsSource {
+  title: string;
+  source: string;
+  url: string;
+}
 
 const CaseStudyQuizGeneration = () => {
   const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
@@ -18,7 +26,9 @@ const CaseStudyQuizGeneration = () => {
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [difficulty, setDifficulty] = useState<QuestionDifficulty>("high_school");
+  const [newsSources, setNewsSources] = useState<NewsSource[]>([]);
   const { courses, isLoading: isLoadingCourses } = useCourses();
+  const { saveQuizToDatabase } = useQuizSave();
 
   const addTopic = () => {
     setTopics([...topics, { description: "", numQuestions: 3 }]);
@@ -45,6 +55,7 @@ const CaseStudyQuizGeneration = () => {
 
     setIsGenerating(true);
     setQuizQuestions([]);
+    setNewsSources([]);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -69,7 +80,7 @@ const CaseStudyQuizGeneration = () => {
           body: JSON.stringify({
             topics,
             courseId: selectedCourseId,
-            difficulty, // Send the difficulty as a string
+            difficulty,
             teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
             school: teacherData?.school,
           }),
@@ -84,49 +95,26 @@ const CaseStudyQuizGeneration = () => {
 
       const data = await response.json();
       setQuizQuestions(data.quizQuestions);
-
-      // Save quiz to database
-      const quizData = {
-        title: `Case Study Quiz - ${topics.map(t => t.description).join(", ")}`,
-        teacher_id: session.user.id,
-        course_id: selectedCourseId,
-        duration_minutes: 30, // Default duration
-      };
-
-      const { data: quiz, error: quizError } = await supabase
-        .from('quizzes')
-        .insert(quizData)
-        .select()
-        .single();
-
-      if (quizError) throw quizError;
-
-      // Map the difficulty to the database enum values
-      const dbDifficulty = mapDifficultyToDatabase(difficulty);
       
-      const questionsToInsert = data.quizQuestions.map((q: Question) => ({
-        quiz_id: quiz.id,
-        question: q.question,
-        correct_answer: q.correctAnswer,
-        topic: q.topic,
-        points: q.points,
-        options: q.options,
-        difficulty: dbDifficulty
-      }));
-
-      const { error: questionsError } = await supabase
-        .from('quiz_questions')
-        .insert(questionsToInsert);
-
-      if (questionsError) {
-        console.error("Error inserting questions:", questionsError);
-        throw questionsError;
+      // Store news sources if available
+      if (data.metadata && data.metadata.newsSourcesUsed) {
+        setNewsSources(data.metadata.newsSourcesUsed);
       }
 
-      toast({
-        title: "Success",
-        description: "Case study quiz generated successfully!",
-      });
+      // Save quiz to database using the shared hook
+      const success = await saveQuizToDatabase(
+        data.quizQuestions, 
+        topics, 
+        30, // Default duration
+        selectedCourseId
+      );
+
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Case study quiz generated and saved successfully!",
+        });
+      }
     } catch (error) {
       console.error('Error generating case study quiz:', error);
       toast({
@@ -141,29 +129,14 @@ const CaseStudyQuizGeneration = () => {
     }
   };
 
-  // Helper function to map difficulty to database enum values
-  const mapDifficultyToDatabase = (difficulty: QuestionDifficulty): string => {
-    switch (difficulty) {
-      case "middle_school":
-        return "beginner";
-      case "high_school":
-        return "intermediate";
-      case "university":
-        return "advanced";
-      case "post_graduate":
-        return "expert";
-      default:
-        return "intermediate";
-    }
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Generate Case Study Quiz</CardTitle>
+              <CardTitle>Generate Real-World Case Study Quiz</CardTitle>
+              <CardDescription>Creates case studies based on current news stories</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -254,6 +227,37 @@ const CaseStudyQuizGeneration = () => {
               </Button>
             </CardContent>
           </Card>
+
+          {newsSources.length > 0 && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <NewspaperIcon className="h-5 w-5" />
+                  News Sources Used
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {newsSources.map((source, index) => (
+                    <div key={index} className="flex justify-between items-center border-b pb-2 last:border-0">
+                      <div>
+                        <p className="font-medium">{source.title}</p>
+                        <p className="text-sm text-muted-foreground">{source.source}</p>
+                      </div>
+                      <a 
+                        href={source.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <QuizOutput questions={quizQuestions} />

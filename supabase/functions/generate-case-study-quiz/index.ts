@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const newsAPIKey = Deno.env.get('NEWS_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,18 +30,60 @@ serve(async (req) => {
       hasSchool: !!school
     });
 
+    // Extract topics for the news search
+    const topicDescriptions = topics.map((t: { description: string }) => t.description);
+    const searchQuery = topicDescriptions.join(" OR ");
+    
+    console.log("Fetching relevant news stories for:", searchQuery);
+    
+    // Fetch relevant news stories using News API
+    const newsResponse = await fetch(
+      `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&sortBy=relevancy&pageSize=5&language=en`,
+      {
+        headers: {
+          'X-Api-Key': newsAPIKey || ''
+        }
+      }
+    );
+    
+    if (!newsResponse.ok) {
+      console.error("News API error:", await newsResponse.text());
+      throw new Error('Failed to fetch news stories');
+    }
+    
+    const newsData = await newsResponse.json();
+    const newsArticles = newsData.articles || [];
+    
+    console.log(`Retrieved ${newsArticles.length} news articles for case studies`);
+    
+    // Format news articles for context
+    const newsContext = newsArticles.map((article: any) => ({
+      title: article.title,
+      description: article.description,
+      content: article.content,
+      url: article.url,
+      source: article.source.name,
+      publishedAt: article.publishedAt
+    }));
+
     const topicsString = topics.map((t: { description: string }) => t.description).join(", ");
 
     const prompt = `
-      Create a case study-based quiz about ${topicsString}. The quiz should:
-      1. Use practical, real-world scenarios that test understanding
-      2. Focus on analysis and critical thinking
-      3. Include questions about potential implications and solutions
-      4. Incorporate key terminology and concepts
-      5. Match the ${difficulty} education level
+      Create a case study-based quiz about ${topicsString} using the following REAL news stories as context for your case studies:
+      
+      ${JSON.stringify(newsContext, null, 2)}
+      
+      For each case study:
+      1. Use one of the real news stories provided above as the foundation
+      2. Include the source and approximate date of the news story in the case description
+      3. Create a detailed scenario based on the news story that tests understanding
+      4. Focus on analysis and critical thinking about REAL situations
+      5. Include questions about potential implications, ethical considerations, and solutions
+      6. Incorporate key terminology and concepts from ${topicsString}
+      7. Match the ${difficulty} education level
 
       Format your response as a JSON array with questions that have these properties:
-      - question: detailed scenario followed by the question
+      - question: detailed scenario from a real news story followed by the specific question
       - options: object with A, B, C, D keys containing possible answers
       - correctAnswer: one of "A", "B", "C", or "D"
       - topic: the specific topic this question relates to
@@ -52,7 +95,7 @@ serve(async (req) => {
       ${school ? `for ${school}` : ''}
     `;
 
-    console.log("Sending prompt to OpenAI...");
+    console.log("Sending prompt to OpenAI with real news context...");
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -61,11 +104,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert at creating case study based quizzes that focus on analysis and critical thinking.'
+            content: 'You are an expert at creating case study based quizzes that focus on analysis and critical thinking using REAL news stories as context. Always cite the source and date of the news article in your case studies.'
           },
           { role: 'user', content: prompt }
         ],
@@ -91,7 +134,7 @@ serve(async (req) => {
 
     try {
       const quizQuestions = JSON.parse(content);
-      console.log(`Successfully parsed ${quizQuestions.length} questions`);
+      console.log(`Successfully parsed ${quizQuestions.length} questions based on real news stories`);
 
       return new Response(
         JSON.stringify({ 
@@ -99,7 +142,12 @@ serve(async (req) => {
           metadata: {
             courseId,
             difficulty,
-            topics: topicsString
+            topics: topicsString,
+            newsSourcesUsed: newsArticles.map((a: any) => ({ 
+              title: a.title, 
+              source: a.source.name,
+              url: a.url
+            }))
           }
         }),
         { 
