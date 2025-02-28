@@ -1,120 +1,133 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
+import { corsHeaders } from "../_shared/cors.ts";
 
-const openAiApiKey = Deno.env.get("OPENAI_API_KEY");
-const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+// OpenAI API configuration
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const supabase = createClient(supabaseUrl!, supabaseKey!);
-
-    if (!openAiApiKey) {
-      throw new Error("Missing OpenAI API key");
-    }
-
-    // Get request body
-    const { industry, role, additionalInfo } = await req.json();
-
-    if (!industry || !role) {
-      return new Response(
-        JSON.stringify({ error: "Industry and role are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Prepare the prompt for GPT
-    const systemPrompt = `Create a comprehensive skill assessment for the ${role} role in the ${industry} industry. 
-    The assessment should:
-    1. Include 10 multiple-choice questions with 4 options each (A, B, C, D)
-    2. Cover key skills, technologies, and knowledge areas relevant to the role
-    3. Vary in difficulty (easy, medium, hard)
-    4. Include a brief description of the assessment
-    5. Include a list of skills being tested
-
-    ${additionalInfo ? `Additional focus areas: ${additionalInfo}` : ""}
+const generatePrompt = (industry: string, role: string, additionalInfo: string) => {
+  return `
+    Create a comprehensive skill assessment for a ${role} position in the ${industry} industry.
     
-    Format the response as a JSON object with the following structure:
+    ${additionalInfo ? `Additional information about the role: ${additionalInfo}` : ""}
+    
+    Your task is to generate:
+    
+    1. A brief description of the skills required for this role (1-2 paragraphs).
+    2. A list of key skills being tested in this assessment.
+    3. 10 multiple-choice or multiple-answer questions that assess these skills.
+    
+    For each question:
+    - Provide a clear, concise question
+    - For multiple-choice questions, provide 4 options labeled A, B, C, D
+    - For multiple-answer questions, provide 4-6 options labeled A, B, C, D, etc.
+    - Indicate the correct answer(s)
+    - Assign a skill category to each question
+    
+    Format your response as a JSON object with the following structure:
+    
     {
-      "description": "Brief description of the assessment",
-      "skills_tested": ["skill1", "skill2", "skill3"],
+      "description": "Description text here...",
+      "skills_tested": ["Skill 1", "Skill 2", ...],
       "questions": [
         {
-          "question": "Question text",
-          "type": "multiple_choice",
+          "question": "Question text here...",
+          "type": "multiple_choice", // or "multiple_answer"
           "options": {
             "A": "Option A text",
             "B": "Option B text",
             "C": "Option C text",
             "D": "Option D text"
           },
-          "correctAnswer": "A", // or the correct option letter
-          "skill": "Specific skill being tested",
-          "difficulty": "easy"  // easy, medium, or hard
-        }
+          "correctAnswer": "B", // or ["A", "C"] for multiple-answer
+          "skill": "Relevant skill category"
+        },
+        // More questions...
       ]
-    }`;
+    }
+    
+    Make sure the questions adequately assess both fundamental and advanced skills for the role. Include scenario-based questions where appropriate.
+  `;
+};
 
-    console.log("Generating assessment for:", { industry, role });
+serve(async (req) => {
+  // Handle CORS
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    // Parse request body
+    const { industry, role, additionalInfo } = await req.json();
+
+    if (!industry || !role) {
+      return new Response(
+        JSON.stringify({ error: "Industry and role are required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Call OpenAI API
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const prompt = generatePrompt(industry, role, additionalInfo || "");
+
+    const openAIResponse = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openAiApiKey}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-3.5-turbo-16k",
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Generate a skill assessment for ${role} in ${industry}.` },
+          {
+            role: "system",
+            content: "You are an expert in creating skill assessments for job roles. Provide detailed, accurate, and relevant questions that truly test a candidate's abilities.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
         ],
-        temperature: 0.7,
+        temperature: 0.3,
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("OpenAI API error:", errorData);
-      throw new Error("Failed to generate assessment");
+    if (!openAIResponse.ok) {
+      const error = await openAIResponse.json();
+      throw new Error(JSON.stringify(error));
     }
 
-    const data = await response.json();
-    const generatedContent = data.choices[0].message.content;
+    const data = await openAIResponse.json();
+    const responseContent = data.choices[0].message.content;
+    
+    // Parse the JSON from the response
+    const assessment = JSON.parse(responseContent);
 
-    // Parse the JSON response from GPT
-    let assessment;
-    try {
-      assessment = JSON.parse(generatedContent);
-    } catch (error) {
-      console.error("Error parsing OpenAI response:", error);
-      throw new Error("Invalid response format from assessment generator");
-    }
-
-    // Return the generated assessment
     return new Response(
       JSON.stringify({ assessment }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   } catch (error) {
-    console.error("Error generating skill assessment:", error);
-    
+    console.error("Error:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Failed to generate assessment", details: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });

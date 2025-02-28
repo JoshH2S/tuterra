@@ -883,6 +883,86 @@ export type Database = {
           },
         ]
       }
+      skill_assessment_results: {
+        Row: {
+          answers: Json | null
+          assessment_id: string
+          created_at: string
+          detailed_results: Json | null
+          id: string
+          score: number
+          time_spent: number | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          assessment_id: string
+          created_at?: string
+          detailed_results?: Json | null
+          id?: string
+          score: number
+          time_spent?: number | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          assessment_id?: string
+          created_at?: string
+          detailed_results?: Json | null
+          id?: string
+          score?: number
+          time_spent?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_assessment_results_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "skill_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skill_assessments: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          industry: string
+          questions: Json
+          role: string
+          skills_tested: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          industry: string
+          questions?: Json
+          role: string
+          skills_tested?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          industry?: string
+          questions?: Json
+          role?: string
+          skills_tested?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_courses: {
         Row: {
           course_id: string

@@ -8,14 +8,39 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, CheckCircle2, XCircle, Award, ChevronLeft } from "lucide-react";
 
+// Define proper types for our data
+type AssessmentResult = {
+  id: string;
+  assessment_id: string;
+  user_id: string;
+  score: number;
+  detailed_results: Array<{
+    question: string;
+    correct: boolean;
+    userAnswer: string | string[];
+    correctAnswer: string | string[];
+    skill?: string;
+  }>;
+  created_at: string;
+};
+
+type Assessment = {
+  id: string;
+  title: string;
+  description: string;
+  industry: string;
+  role: string;
+  questions: any[];
+};
+
 export default function SkillAssessmentResults() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [result, setResult] = useState<any>(null);
-  const [assessment, setAssessment] = useState<any>(null);
+  const [result, setResult] = useState<AssessmentResult | null>(null);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +57,7 @@ export default function SkillAssessmentResults() {
           .single();
 
         if (resultError) throw resultError;
-        setResult(resultData);
+        setResult(resultData as AssessmentResult);
 
         // Fetch the assessment
         const { data: assessmentData, error: assessmentError } = await supabase
@@ -42,7 +67,7 @@ export default function SkillAssessmentResults() {
           .single();
 
         if (assessmentError) throw assessmentError;
-        setAssessment(assessmentData);
+        setAssessment(assessmentData as Assessment);
       } catch (error) {
         console.error("Error fetching results:", error);
         toast({
@@ -85,7 +110,7 @@ export default function SkillAssessmentResults() {
   // Group results by skill
   const skillResults: Record<string, { correct: number, total: number }> = {};
   
-  (result.detailed_results || []).forEach((item: any) => {
+  (result.detailed_results || []).forEach((item) => {
     const skill = item.skill || "General";
     if (!skillResults[skill]) {
       skillResults[skill] = { correct: 0, total: 0 };
@@ -171,7 +196,7 @@ export default function SkillAssessmentResults() {
           </CardHeader>
           <CardContent className="max-h-[500px] overflow-y-auto">
             <div className="space-y-6">
-              {(result.detailed_results || []).map((item: any, index: number) => (
+              {(result.detailed_results || []).map((item, index) => (
                 <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
                   <div className="flex items-start gap-2">
                     {item.correct ? (

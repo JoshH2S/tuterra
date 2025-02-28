@@ -10,13 +10,30 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ChevronLeft, ChevronRight, Flag, Clock } from "lucide-react";
 
+// Define proper types for our data
+type SkillAssessment = {
+  id: string;
+  title: string;
+  industry: string;
+  role: string;
+  description: string;
+  questions: Array<{
+    question: string;
+    type: string;
+    options: Record<string, string>;
+    correctAnswer: string | string[];
+    skill?: string;
+  }>;
+  time_limit?: number;
+};
+
 export default function TakeSkillAssessment() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [assessment, setAssessment] = useState<any>(null);
+  const [assessment, setAssessment] = useState<SkillAssessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
@@ -35,7 +52,7 @@ export default function TakeSkillAssessment() {
           .single();
 
         if (error) throw error;
-        setAssessment(data);
+        setAssessment(data as SkillAssessment);
         
         // Set timer based on question count (2 minutes per question, min 30 minutes, max 2 hours)
         const questionCount = data.questions?.length || 0;
@@ -103,7 +120,7 @@ export default function TakeSkillAssessment() {
       let correctCount = 0;
       const questions = assessment.questions || [];
       
-      const detailedResults = questions.map((question: any, index: number) => {
+      const detailedResults = questions.map((question, index) => {
         const userAnswer = answers[index];
         const isCorrect = Array.isArray(userAnswer)
           ? JSON.stringify(userAnswer.sort()) === JSON.stringify(question.correctAnswer.sort())
@@ -235,7 +252,7 @@ export default function TakeSkillAssessment() {
                   onValueChange={(value) => handleAnswerChange(value)}
                   className="space-y-3"
                 >
-                  {Object.entries(currentQuestion.options).map(([key, value]: [string, any]) => (
+                  {Object.entries(currentQuestion.options).map(([key, value]) => (
                     <div key={key} className="flex items-center space-x-2 border p-3 rounded-md">
                       <RadioGroupItem value={key} id={`option-${key}`} />
                       <label 
@@ -249,7 +266,7 @@ export default function TakeSkillAssessment() {
                 </RadioGroup>
               ) : currentQuestion.type === 'multiple_answer' ? (
                 <div className="space-y-3">
-                  {Object.entries(currentQuestion.options).map(([key, value]: [string, any]) => {
+                  {Object.entries(currentQuestion.options).map(([key, value]) => {
                     const currentAnswers = (answers[currentQuestionIndex] as string[]) || [];
                     const isChecked = currentAnswers.includes(key);
                     

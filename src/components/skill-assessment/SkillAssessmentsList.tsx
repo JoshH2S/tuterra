@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Award } from "lucide-react";
 
+// Define the proper type for skill assessments
 type SkillAssessment = {
   id: string;
   title: string;
@@ -37,7 +38,7 @@ export function SkillAssessmentsList({ onViewAssessment }: SkillAssessmentsListP
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        setAssessments(data || []);
+        setAssessments(data as SkillAssessment[] || []);
       } catch (error) {
         console.error("Error fetching assessments:", error);
       } finally {
