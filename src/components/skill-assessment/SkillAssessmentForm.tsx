@@ -23,6 +23,7 @@ import {
 const formSchema = z.object({
   industry: z.string().min(2, "Industry must be at least 2 characters"),
   role: z.string().min(2, "Role must be at least 2 characters"),
+  questionCount: z.number().min(10, "Minimum of 10 questions required").max(50, "Maximum of 50 questions allowed"),
   additionalInfo: z.string().optional(),
 });
 
@@ -43,6 +44,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
     defaultValues: {
       industry: "",
       role: "",
+      questionCount: 10,
       additionalInfo: "",
     },
   });
@@ -65,6 +67,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
         body: {
           industry: data.industry,
           role: data.role,
+          questionCount: data.questionCount,
           additionalInfo: data.additionalInfo || "",
         },
       });
@@ -134,6 +137,28 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
               <FormLabel>Job Role</FormLabel>
               <FormControl>
                 <Input placeholder="e.g., Frontend Developer, Data Analyst" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="questionCount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Number of Questions</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  min={10}
+                  max={50}
+                  className="w-32"
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value) || 10)}
+                  value={field.value}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
