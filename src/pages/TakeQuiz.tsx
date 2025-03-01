@@ -149,6 +149,9 @@ const TakeQuiz = () => {
         title: "Success",
         description: "Quiz submitted successfully!",
       });
+      
+      // Ensure we navigate to the quiz results page with the new response ID
+      console.log("Navigating to quiz results:", `/quiz-results/${data.id}`);
       navigate(`/quiz-results/${data.id}`);
     } catch (error: any) {
       console.error("Error submitting quiz:", error);
@@ -179,7 +182,7 @@ const TakeQuiz = () => {
   };
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 px-4 sm:px-6">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Take Quiz</CardTitle>
@@ -200,30 +203,45 @@ const TakeQuiz = () => {
           >
             {Object.entries(questions[currentQuestion].options).map(
               ([key, value]) => (
-                <div key={key} className="flex items-center space-x-2">
+                <div key={key} className="flex items-center space-x-2 mb-2 p-2 hover:bg-gray-50 rounded-md">
                   <RadioGroupItem value={key} id={key} className="border-2" />
-                  <Label htmlFor={key}>{value}</Label>
+                  <Label htmlFor={key} className="flex-1 cursor-pointer">{value}</Label>
                 </div>
               )
             )}
           </RadioGroup>
-          <div className="flex justify-between">
+          <div className="flex justify-between mt-6">
             <Button
               variant="outline"
               disabled={currentQuestion === 0}
               onClick={() => setCurrentQuestion(currentQuestion - 1)}
+              className="min-w-[100px]"
             >
               Previous
             </Button>
-            <Button
-              disabled={currentQuestion === questions.length - 1}
-              onClick={() => setCurrentQuestion(currentQuestion + 1)}
-            >
-              Next
-            </Button>
+            {currentQuestion < questions.length - 1 ? (
+              <Button
+                onClick={() => setCurrentQuestion(currentQuestion + 1)}
+                className="min-w-[100px]"
+              >
+                Next
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting}
+                className="min-w-[100px] bg-green-600 hover:bg-green-700"
+              >
+                {isSubmitting ? "Submitting..." : "Submit"}
+              </Button>
+            )}
           </div>
           {currentQuestion === questions.length - 1 && (
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full mt-4">
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting} 
+              className="w-full mt-6 py-6 text-lg bg-green-600 hover:bg-green-700"
+            >
               {isSubmitting ? "Submitting..." : "Submit Quiz"}
             </Button>
           )}
