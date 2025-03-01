@@ -8,10 +8,24 @@ interface AIFeedback {
 }
 
 interface DetailedFeedbackProps {
-  feedback: AIFeedback;
+  feedback: AIFeedback | null | undefined;
 }
 
 export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
+  // Handle case when feedback is null or undefined
+  if (!feedback) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-[#091747]">Detailed Feedback</h2>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground">Feedback not available for this quiz yet.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-[#091747]">Detailed Feedback</h2>
