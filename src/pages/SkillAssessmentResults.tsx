@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, CheckCircle2, XCircle, Award, ChevronLeft } from "lucide-react";
+import { Json } from "@/integrations/supabase/types";
 
 // Define proper types for our data
 type AssessmentResult = {
@@ -57,7 +58,14 @@ export default function SkillAssessmentResults() {
           .single();
 
         if (resultError) throw resultError;
-        setResult(resultData as AssessmentResult);
+        
+        // Cast the JSON detailed_results to the correct type
+        const typedResult: AssessmentResult = {
+          ...resultData,
+          detailed_results: resultData.detailed_results as AssessmentResult['detailed_results']
+        };
+        
+        setResult(typedResult);
 
         // Fetch the assessment
         const { data: assessmentData, error: assessmentError } = await supabase
@@ -67,7 +75,14 @@ export default function SkillAssessmentResults() {
           .single();
 
         if (assessmentError) throw assessmentError;
-        setAssessment(assessmentData as Assessment);
+        
+        // Cast the JSON questions to the correct type
+        const typedAssessment: Assessment = {
+          ...assessmentData,
+          questions: assessmentData.questions as Assessment['questions']
+        };
+        
+        setAssessment(typedAssessment);
       } catch (error) {
         console.error("Error fetching results:", error);
         toast({

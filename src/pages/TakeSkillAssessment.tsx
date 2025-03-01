@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ChevronLeft, ChevronRight, Flag, Clock } from "lucide-react";
+import { Json } from "@/integrations/supabase/types";
 
 // Define proper types for our data
 type SkillAssessment = {
@@ -52,10 +53,17 @@ export default function TakeSkillAssessment() {
           .single();
 
         if (error) throw error;
-        setAssessment(data as SkillAssessment);
+        
+        // Cast the JSON questions to the correct type
+        const typedAssessment: SkillAssessment = {
+          ...data,
+          questions: data.questions as SkillAssessment['questions']
+        };
+        
+        setAssessment(typedAssessment);
         
         // Set timer based on question count (2 minutes per question, min 30 minutes, max 2 hours)
-        const questionCount = data.questions?.length || 0;
+        const questionCount = typedAssessment.questions?.length || 0;
         const calculatedTime = Math.max(30 * 60, Math.min(120 * 60, questionCount * 120));
         setTimeRemaining(calculatedTime);
       } catch (error) {
@@ -99,7 +107,7 @@ export default function TakeSkillAssessment() {
   };
 
   const goToNextQuestion = () => {
-    if (currentQuestionIndex < (assessment?.questions?.length || 0) - 1) {
+    if (assessment && currentQuestionIndex < assessment.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -122,9 +130,16 @@ export default function TakeSkillAssessment() {
       
       const detailedResults = questions.map((question, index) => {
         const userAnswer = answers[index];
-        const isCorrect = Array.isArray(userAnswer)
-          ? JSON.stringify(userAnswer.sort()) === JSON.stringify(question.correctAnswer.sort())
-          : userAnswer === question.correctAnswer;
+        let isCorrect = false;
+        
+        if (Array.isArray(userAnswer) && Array.isArray(question.correctAnswer)) {
+          // Sort both arrays to ensure order doesn't matter for comparison
+          const sortedUserAnswer = [...userAnswer].sort();
+          const sortedCorrectAnswer = [...question.correctAnswer].sort();
+          isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer);
+        } else if (!Array.isArray(userAnswer) && !Array.isArray(question.correctAnswer)) {
+          isCorrect = userAnswer === question.correctAnswer;
+        }
         
         if (isCorrect) correctCount++;
         
