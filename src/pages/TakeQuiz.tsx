@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,8 +41,14 @@ const TakeQuiz = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  // Pass both required arguments: initialTime and onTimeEnd callback
-  const remainingTime = useQuizTimer(0, () => console.log("Time ended"));
+  const handleTimeEnd = () => {
+    toast({
+      title: "Time's up!",
+      description: "Your quiz time has ended. Submitting your answers now.",
+      variant: "destructive",
+    });
+    handleSubmit();
+  };
 
   const { data: quiz, isLoading: isLoadingQuiz } = useQuery({
     queryKey: ['quiz', id],
@@ -69,6 +75,12 @@ const TakeQuiz = () => {
     },
   });
 
+  // Initialize timer once quiz data is loaded
+  const remainingTime = useQuizTimer(
+    quiz?.duration_minutes || 0, 
+    handleTimeEnd
+  );
+
   if (isLoadingQuiz) {
     return <div>Loading quiz...</div>;
   }
@@ -84,6 +96,8 @@ const TakeQuiz = () => {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevent double submission
+    
     setIsSubmitting(true);
     try {
       const correctAnswersCount = questions.reduce((count, question, index) => {
@@ -91,7 +105,8 @@ const TakeQuiz = () => {
         return selectedAnswer === question.correct_answer ? count + 1 : count;
       }, 0);
 
-      const score = correctAnswersCount / questions.length;
+      // Calculate score as a percentage (0-100) instead of a decimal
+      const scorePercentage = Math.round((correctAnswersCount / questions.length) * 100);
 
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.user) {
@@ -117,7 +132,7 @@ const TakeQuiz = () => {
           {
             quiz_id: id,
             student_id: sessionData.session.user.id,
-            score: score,
+            score: scorePercentage, // Use integer percentage (0-100) instead of decimal
             correct_answers: correctAnswersCount,
             total_questions: questions.length,
             topic_performance: topicPerformance,
@@ -168,7 +183,9 @@ const TakeQuiz = () => {
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Take Quiz</CardTitle>
-          <CardDescription>Answer the questions below</CardDescription>
+          <CardDescription>
+            {quiz.title} - {remainingTime ? `Time remaining: ${remainingTime}` : "No time limit"}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="mb-4">
@@ -206,7 +223,7 @@ const TakeQuiz = () => {
             </Button>
           </div>
           {currentQuestion === questions.length - 1 && (
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full mt-4">
               {isSubmitting ? "Submitting..." : "Submit Quiz"}
             </Button>
           )}
