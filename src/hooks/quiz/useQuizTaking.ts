@@ -107,16 +107,25 @@ export const useQuizTaking = (
         }
       });
 
+      // Create initial AI feedback structure
+      const initialAiFeedback = {
+        strengths: [],
+        areas_for_improvement: [],
+        advice: ""
+      };
+
       const { data, error } = await supabase
         .from('quiz_responses')
         .insert([
           {
             quiz_id: quizId,
             student_id: sessionData.session.user.id,
-            score: scorePercentage, // Use integer percentage (0-100) instead of decimal
+            score: scorePercentage,
             correct_answers: correctAnswersCount,
             total_questions: questions.length,
             topic_performance: topicPerformance,
+            ai_feedback: initialAiFeedback,
+            completed_at: new Date().toISOString()
           },
         ])
         .select()

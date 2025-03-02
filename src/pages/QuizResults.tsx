@@ -75,6 +75,16 @@ export default function QuizResults() {
     try {
       setGeneratingFeedback(true);
       
+      // First update results with a placeholder for better UX
+      setResults(prev => ({
+        ...prev,
+        ai_feedback: {
+          strengths: ["Generating feedback..."],
+          areas_for_improvement: ["Analyzing your answers..."],
+          advice: "Please wait while we analyze your quiz performance."
+        }
+      }));
+      
       const { data, error } = await supabase.functions.invoke('generate-quiz-feedback', {
         body: { quizResponseId: id }
       });
@@ -89,6 +99,8 @@ export default function QuizResults() {
         .single();
         
       if (responseError) throw responseError;
+      
+      console.log("Updated feedback from database:", responseData.ai_feedback);
       
       // Update only the ai_feedback field in the results state
       setResults(prev => ({
@@ -107,6 +119,14 @@ export default function QuizResults() {
         description: error.message || "Failed to generate feedback",
         variant: "destructive",
       });
+      
+      // Reset the placeholder if there was an error
+      if (results?.ai_feedback?.strengths?.[0] === "Generating feedback...") {
+        setResults(prev => ({
+          ...prev,
+          ai_feedback: null
+        }));
+      }
     } finally {
       setGeneratingFeedback(false);
     }
@@ -143,6 +163,12 @@ export default function QuizResults() {
     return "Keep practicing";
   };
 
+  // Ensure ai_feedback is properly structured
+  const hasFeedback = results.ai_feedback && 
+    (Array.isArray(results.ai_feedback.strengths) || 
+     Array.isArray(results.ai_feedback.areas_for_improvement) || 
+     results.ai_feedback.advice);
+
   return (
     <div className="container mx-auto py-8">
       <div className={`max-w-4xl mx-auto space-y-6 px-${isMobile ? '2' : '6'}`}>
@@ -168,7 +194,7 @@ export default function QuizResults() {
         
         <DetailedFeedback feedback={results.ai_feedback} />
         
-        {!results.ai_feedback && (
+        {!hasFeedback && (
           <div className="flex justify-center">
             <Button 
               onClick={generateFeedback} 
