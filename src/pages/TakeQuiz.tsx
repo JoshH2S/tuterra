@@ -9,6 +9,7 @@ import { QuizQuestionCard } from "@/components/quiz-taking/QuizQuestionCard";
 import { QuizNavigation } from "@/components/quiz-taking/QuizNavigation";
 import { QuizSubmitButton } from "@/components/quiz-taking/QuizSubmitButton";
 import { useQuizTaking } from "@/hooks/quiz/useQuizTaking";
+import { useState, useEffect } from "react";
 
 interface QuizQuestion {
   id: string;
@@ -29,16 +30,8 @@ interface Quiz {
 
 const TakeQuiz = () => {
   const { id } = useParams();
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
   
-  const handleTimeEnd = () => {
-    toast({
-      title: "Time's up!",
-      description: "Your quiz time has ended. Submitting your answers now.",
-      variant: "destructive",
-    });
-    // We'll call handleSubmit from the hook after quiz is loaded
-  };
-
   const { data: quiz, isLoading: isLoadingQuiz, error: quizError } = useQuery({
     queryKey: ['quiz', id],
     queryFn: async () => {
@@ -75,6 +68,34 @@ const TakeQuiz = () => {
     },
   });
 
+  // Initialize these variables with safe defaults first
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizId, setQuizId] = useState<string>("");
+
+  // Update the state variables once quiz data is loaded
+  useEffect(() => {
+    if (quiz && quiz.quiz_questions && quiz.quiz_questions.length > 0) {
+      setQuizQuestions(quiz.quiz_questions);
+      setQuizId(quiz.id);
+    }
+  }, [quiz]);
+
+  const handleTimeEnd = () => {
+    if (quizSubmitted) return;
+    
+    toast({
+      title: "Time's up!",
+      description: "Your quiz time has ended. Submitting your answers now.",
+      variant: "destructive",
+    });
+    
+    // Only try to submit if we have the quiz loaded
+    if (quiz && quizId) {
+      handleSubmit();
+    }
+  };
+
   // Initialize timer once quiz data is loaded
   const { timeRemaining } = useQuizTimer(
     quiz?.duration_minutes || 0, 
@@ -88,6 +109,17 @@ const TakeQuiz = () => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Use the custom hook for quiz taking - always call it regardless of loading state
+  const {
+    currentQuestion,
+    selectedAnswers,
+    isSubmitting,
+    handleAnswerSelect,
+    handleNextQuestion,
+    handlePreviousQuestion,
+    handleSubmit
+  } = useQuizTaking(quizId, quizQuestions, () => setQuizSubmitted(true));
 
   // Handle error states properly
   if (quizError) {
@@ -124,17 +156,6 @@ const TakeQuiz = () => {
     );
   }
 
-  // Use the custom hook for quiz taking
-  const {
-    currentQuestion,
-    selectedAnswers,
-    isSubmitting,
-    handleAnswerSelect,
-    handleNextQuestion,
-    handlePreviousQuestion,
-    handleSubmit
-  } = useQuizTaking(quiz.id, quiz.quiz_questions);
-
   const questions = quiz.quiz_questions;
   const currentQuestionData = questions[currentQuestion];
 
@@ -163,20 +184,24 @@ const TakeQuiz = () => {
             />
             
             {currentQuestion === questions.length - 1 && (
-              <QuizSubmitButton
-                isSubmitting={isSubmitting}
-                onSubmit={handleSubmit}
-              />
+              <div className="hidden sm:block">
+                <QuizSubmitButton
+                  isSubmitting={isSubmitting}
+                  onSubmit={handleSubmit}
+                />
+              </div>
             )}
           </div>
           
           {/* Submit button for mobile view when on last question */}
           {currentQuestion === questions.length - 1 && (
-            <QuizSubmitButton
-              isSubmitting={isSubmitting}
-              onSubmit={handleSubmit}
-              isLastQuestion={true}
-            />
+            <div className="sm:hidden mt-4">
+              <QuizSubmitButton
+                isSubmitting={isSubmitting}
+                onSubmit={handleSubmit}
+                isLastQuestion={true}
+              />
+            </div>
           )}
         </CardContent>
       </div>

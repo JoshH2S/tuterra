@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -14,18 +14,31 @@ interface QuizQuestion {
   difficulty: string;
 }
 
-export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
+export const useQuizTaking = (
+  quizId: string,
+  questions: QuizQuestion[],
+  onSubmitSuccess?: () => void
+) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  // Reset state when quiz changes
+  useEffect(() => {
+    if (quizId && questions.length > 0) {
+      setCurrentQuestion(0);
+      setSelectedAnswers({});
+      setIsSubmitting(false);
+    }
+  }, [quizId, questions]);
 
   const handleAnswerSelect = useCallback((questionIndex: number, answer: string) => {
     setSelectedAnswers(prev => ({ ...prev, [questionIndex]: answer }));
   }, []);
 
   const handleNextQuestion = useCallback(() => {
-    if (currentQuestion < questions.length - 1) {
+    if (questions.length > 0 && currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   }, [currentQuestion, questions.length]);
@@ -39,6 +52,7 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return; // Prevent double submission
     
+    // Validation checks
     if (!quizId) {
       toast({
         title: "Error",
@@ -48,7 +62,7 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
       return;
     }
     
-    if (questions.length === 0) {
+    if (!questions || questions.length === 0) {
       toast({
         title: "Error",
         description: "No questions found for this quiz.",
@@ -59,6 +73,8 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
     
     setIsSubmitting(true);
     try {
+      console.log("Submitting quiz", quizId, "with answers:", selectedAnswers);
+      
       // Calculate how many answers are correct
       const correctAnswersCount = questions.reduce((count, question, index) => {
         const selectedAnswer = selectedAnswers[index];
@@ -116,6 +132,11 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
         description: "Quiz submitted successfully!",
       });
       
+      // Call the success callback if provided
+      if (onSubmitSuccess) {
+        onSubmitSuccess();
+      }
+      
       // Ensure we navigate to the quiz results page with the new response ID
       console.log("Navigating to quiz results:", `/quiz-results/${data.id}`);
       navigate(`/quiz-results/${data.id}`);
@@ -129,7 +150,7 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [quizId, questions, selectedAnswers, navigate, isSubmitting]);
+  }, [quizId, questions, selectedAnswers, navigate, isSubmitting, onSubmitSuccess]);
 
   return {
     currentQuestion,
