@@ -1,7 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.32.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,156 +9,169 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { quizResponseId, correctAnswers, totalQuestions, score, questionResponses } = await req.json();
+    // Get the request body
+    const { quizResponseId } = await req.json();
+    console.log("Generating feedback for quiz response:", quizResponseId);
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    if (!quizResponseId) {
+      throw new Error("Missing quiz response ID");
+    }
 
-    // Fetch the quiz questions to analyze topics and patterns
-    const { data: responseData, error: responseError } = await supabase
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Fetch quiz response data with details needed for feedback
+    const { data: quizResponse, error: quizResponseError } = await supabase
       .from('quiz_responses')
       .select(`
         *,
+        question_responses(
+          question_id,
+          student_answer,
+          is_correct,
+          topic
+        ),
         quiz:quizzes(
           title,
           quiz_questions(
+            id,
             question,
             correct_answer,
+            options,
             topic,
-            options
+            explanation
           )
         )
       `)
       .eq('id', quizResponseId)
       .single();
 
-    if (responseError) throw responseError;
-
-    const percentage = (correctAnswers / totalQuestions) * 100;
-    const questions = responseData.quiz.quiz_questions;
-    
-    // Calculate topic performance from question responses
-    const topicPerformanceMap = questionResponses.reduce((acc: Record<string, { total: number; correct: number }>, response: any) => {
-      const topic = response.topic;
-      if (!acc[topic]) {
-        acc[topic] = { total: 0, correct: 0 };
-      }
-      acc[topic].total++;
-      if (response.is_correct) {
-        acc[topic].correct++;
-      }
-      return acc;
-    }, {});
-
-    // Convert topic performance to array format
-    const topicPerformance = Object.entries(topicPerformanceMap).map(([topic, data]) => ({
-      topic,
-      total: data.total,
-      correct: data.correct,
-      percentage: (data.correct / data.total) * 100
-    }));
-    
-    // Generate feedback using GPT
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini', // Changed to use the correct model name
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an educational assistant providing detailed, constructive feedback on quiz performance. Focus on specific topics and provide actionable advice.'
-          },
-          {
-            role: 'user',
-            content: `
-              Please analyze this quiz performance and provide specific, actionable feedback:
-              
-              Quiz Title: ${responseData.quiz.title}
-              Overall Score: ${score}
-              Correct Answers: ${correctAnswers}
-              Total Questions: ${totalQuestions}
-              Overall Percentage: ${percentage}%
-
-              Topic Performance:
-              ${topicPerformance.map(t => 
-                `${t.topic}: ${t.correct}/${t.total} (${t.percentage.toFixed(1)}%)`
-              ).join('\n')}
-
-              Question Details:
-              ${questions.map((q: any, i: number) => {
-                const response = questionResponses.find((r: any) => r.question_id === q.id);
-                return `
-                  Q${i + 1}. Topic: ${q.topic}
-                  Question: ${q.question}
-                  Correct Answer: ${q.correct_answer}
-                  Student Answer: ${response?.student_answer || 'Not answered'}
-                  Result: ${response?.is_correct ? 'Correct' : 'Incorrect'}
-                `;
-              }).join('\n')}
-
-              Provide feedback in this JSON format:
-              {
-                "strengths": ["specific strength point based on topics performed well in"],
-                "areas_for_improvement": ["specific improvement point based on topics that need work"],
-                "advice": "detailed advice paragraph focusing on how to improve in the weaker topics and maintain performance in stronger ones"
-              }
-
-              Make the feedback specific to the actual topics, questions, and performance shown in the data.
-            `
-          }
-        ]
-      })
-    });
-
-    const aiResponse = await openAIResponse.json();
-    console.log("AI Response:", aiResponse);
-    
-    let feedback;
-    try {
-      feedback = JSON.parse(aiResponse.choices[0].message.content);
-    } catch (e) {
-      console.error("Error parsing AI response:", e);
-      feedback = {
-        strengths: ["Unable to analyze strengths at this time"],
-        areas_for_improvement: ["Unable to analyze areas for improvement at this time"],
-        advice: "Please try again later for detailed feedback"
-      };
+    if (quizResponseError) {
+      console.error("Error fetching quiz response:", quizResponseError);
+      throw new Error(`Error fetching quiz response: ${quizResponseError.message}`);
     }
 
-    // Update the quiz response with AI feedback and topic performance
+    if (!quizResponse) {
+      throw new Error("Quiz response not found");
+    }
+
+    // Group question responses by topic to analyze performance by topic
+    const topicResponses = {};
+    quizResponse.question_responses.forEach(qr => {
+      if (!qr.topic) return;
+      
+      if (!topicResponses[qr.topic]) {
+        topicResponses[qr.topic] = {
+          total: 0,
+          correct: 0
+        };
+      }
+      
+      topicResponses[qr.topic].total++;
+      if (qr.is_correct) {
+        topicResponses[qr.topic].correct++;
+      }
+    });
+
+    // Identify strengths and areas for improvement
+    const strengths = [];
+    const areasForImprovement = [];
+
+    Object.entries(topicResponses).forEach(([topic, data]) => {
+      const percentage = (data.correct / data.total) * 100;
+      
+      if (percentage >= 70) {
+        strengths.push(`You demonstrated good understanding of ${topic} concepts (${Math.round(percentage)}% correct).`);
+      } else {
+        areasForImprovement.push(`You might need more practice with ${topic} concepts (${Math.round(percentage)}% correct).`);
+      }
+    });
+
+    // If no specific topics are identified, provide general feedback
+    if (strengths.length === 0) {
+      if (quizResponse.score >= 70) {
+        strengths.push("You demonstrated good overall knowledge of the subject matter.");
+      } else if (quizResponse.score >= 50) {
+        strengths.push("You have a basic understanding of the key concepts covered in this quiz.");
+      } else {
+        strengths.push("You attempted all questions, which shows commitment to learning the material.");
+      }
+    }
+
+    if (areasForImprovement.length === 0) {
+      if (quizResponse.score < 70) {
+        areasForImprovement.push("You may benefit from a general review of the core concepts covered in this quiz.");
+      } else if (quizResponse.score < 90) {
+        areasForImprovement.push("Although you did well overall, reviewing specific questions you missed could improve your understanding.");
+      }
+    }
+
+    // Generate advice based on performance
+    let advice = "";
+    if (quizResponse.score >= 90) {
+      advice = "Excellent work! To further enhance your knowledge, consider exploring advanced topics or helping peers understand these concepts.";
+    } else if (quizResponse.score >= 70) {
+      advice = "Good job! Review the questions you missed and focus on understanding why the correct answers are correct. Consider creating flashcards for concepts you find challenging.";
+    } else if (quizResponse.score >= 50) {
+      advice = "You're on the right track! Try creating a study schedule focusing on the topics where you scored lower. Consider seeking additional resources or asking for help with specific concepts.";
+    } else {
+      advice = "Don't get discouraged! Learning takes time. Consider revisiting the foundational concepts, breaking them down into smaller pieces, and practicing regularly. Reach out to your instructor for additional support.";
+    }
+
+    // Compile the AI feedback
+    const aiFeedback = {
+      strengths,
+      areas_for_improvement: areasForImprovement,
+      advice
+    };
+
+    console.log("Generated AI feedback:", aiFeedback);
+
+    // Update the quiz response with the AI feedback
     const { error: updateError } = await supabase
       .from('quiz_responses')
-      .update({ 
-        ai_feedback: feedback,
-        topic_performance: topicPerformance
-      })
+      .update({ ai_feedback: aiFeedback })
       .eq('id', quizResponseId);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error("Error updating quiz response with AI feedback:", updateError);
+      throw new Error(`Error updating quiz response: ${updateError.message}`);
+    }
 
     return new Response(
-      JSON.stringify({ message: 'Feedback generated and saved successfully' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error) {
-    console.error('Error in generate-quiz-feedback:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: true, 
+        message: "AI feedback generated successfully",
+        feedback: aiFeedback
+      }),
       { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    );
+  } catch (error) {
+    console.error("Error in generate-quiz-feedback function:", error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
       }
     );
   }

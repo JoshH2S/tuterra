@@ -4,146 +4,145 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
-interface QuizSubmissionData {
-  id: string;
-  questions: any[];
-  answers: Record<string, string>;
-  quiz: any;
-}
-
-interface TopicPerformance {
-  total: number;
-  correct: number;
-}
-
 export const useQuizSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const calculateTopicPerformance = (questions: any[], answers: Record<string, string>) => {
-    const topicPerformance = questions.reduce<Record<string, TopicPerformance>>((acc, question) => {
-      const topic = question.topic;
-      if (!acc[topic]) {
-        acc[topic] = { total: 0, correct: 0 };
-      }
-      acc[topic].total++;
-      if (answers[question.id] === question.correct_answer) {
-        acc[topic].correct++;
-      }
-      return acc;
-    }, {});
-
-    return Object.entries(topicPerformance).map(([topic, data]) => ({
-      topic,
-      total: data.total,
-      correct: data.correct,
-      percentage: (data.correct / data.total) * 100
-    }));
-  };
-
-  const handleSubmit = async ({ id, questions, answers, quiz }: QuizSubmissionData) => {
+  const submitQuiz = async (quizId: string, answers: Record<string, string>, timer: number | null = null) => {
+    setIsSubmitting(true);
+    
     try {
-      setIsSubmitting(true);
+      // First, get the quiz data to calculate the score
+      const { data: quizData, error: quizError } = await supabase
+        .from("quizzes")
+        .select(`
+          id,
+          title,
+          quiz_questions (
+            id,
+            question,
+            correct_answer,
+            options,
+            topic,
+            points,
+            difficulty
+          )
+        `)
+        .eq("id", quizId)
+        .single();
 
-      const questionResponses = questions.map(question => ({
-        question_id: question.id,
-        student_answer: answers[question.id] || null,
-        is_correct: answers[question.id] === question.correct_answer,
-        topic: question.topic
-      }));
+      if (quizError) {
+        throw new Error(`Failed to fetch quiz data: ${quizError.message}`);
+      }
 
-      const correctAnswers = questionResponses.filter(response => response.is_correct).length;
+      // Calculate score and collect data for question responses
+      const questions = quizData.quiz_questions;
       const totalQuestions = questions.length;
-      const totalPoints = questions.reduce((sum, q) => sum + (q.points || 1), 0);
-      const score = Math.round((correctAnswers / totalQuestions) * totalPoints);
+      let correctAnswers = 0;
+      
+      // Track performance by topic
+      const topicPerformance = {};
+      
+      // Create question responses
+      const questionResponses = questions.map(question => {
+        const studentAnswer = answers[question.id];
+        const isCorrect = studentAnswer === question.correct_answer;
+        
+        if (isCorrect) {
+          correctAnswers++;
+        }
+        
+        // Record topic performance
+        if (question.topic) {
+          if (!topicPerformance[question.topic]) {
+            topicPerformance[question.topic] = {
+              correct: 0,
+              total: 0
+            };
+          }
+          
+          topicPerformance[question.topic].total++;
+          if (isCorrect) {
+            topicPerformance[question.topic].correct++;
+          }
+        }
+        
+        return {
+          question_id: question.id,
+          student_answer: studentAnswer,
+          is_correct: isCorrect,
+          topic: question.topic
+        };
+      });
+      
+      // Calculate percentage score
+      const score = Math.round((correctAnswers / totalQuestions) * 100);
 
-      const topicPerformanceArray = calculateTopicPerformance(questions, answers);
-
-      const { data: quizResponse, error: responseError } = await supabase
-        .from('quiz_responses')
+      // Submit quiz response
+      const { data: responseData, error: responseError } = await supabase
+        .from("quiz_responses")
         .insert({
-          quiz_id: id,
+          quiz_id: quizId,
           student_id: (await supabase.auth.getUser()).data.user?.id,
-          score: score,
-          correct_answers: correctAnswers,
-          total_questions: totalQuestions,
+          start_time: new Date(Date.now() - (timer || 0) * 1000).toISOString(),
           completed_at: new Date().toISOString(),
-          topic_performance: topicPerformanceArray
+          score,
+          total_questions: totalQuestions,
+          correct_answers: correctAnswers,
+          topic_performance: topicPerformance
         })
         .select()
         .single();
 
-      if (responseError) throw responseError;
+      if (responseError) {
+        throw new Error(`Failed to submit quiz: ${responseError.message}`);
+      }
 
-      const { error: scoreError } = await supabase
-        .from('student_quiz_scores')
-        .insert({
-          quiz_id: id,
-          student_id: (await supabase.auth.getUser()).data.user?.id,
-          course_id: quiz.course_id,
-          score: score,
-          max_score: totalPoints
+      // Submit individual question responses
+      const { error: questionsError } = await supabase
+        .from("question_responses")
+        .insert(
+          questionResponses.map(qr => ({
+            ...qr,
+            quiz_response_id: responseData.id
+          }))
+        );
+
+      if (questionsError) {
+        console.error("Error submitting question responses:", questionsError);
+        // Continue execution - this is not a critical failure
+      }
+
+      // Generate AI feedback for the quiz response
+      try {
+        await supabase.functions.invoke('generate-quiz-feedback', {
+          body: { quizResponseId: responseData.id }
         });
+      } catch (feedbackError) {
+        console.error("Error generating AI feedback:", feedbackError);
+        // Continue execution - feedback generation is not critical for submission
+      }
 
-      if (scoreError) throw scoreError;
+      toast({
+        title: "Quiz Submitted",
+        description: "Your quiz has been submitted successfully.",
+      });
 
-      const { error: questionResponseError } = await supabase
-        .from('question_responses')
-        .insert(questionResponses.map(response => ({
-          ...response,
-          quiz_response_id: quizResponse.id,
-          topic: response.topic
-        })));
-
-      if (questionResponseError) throw questionResponseError;
-
-      await generateQuizFeedback(quizResponse.id, correctAnswers, totalQuestions, score, questionResponses);
-
-      navigate(`/quiz-results/${quizResponse.id}`);
+      // Navigate to the quiz results page
+      navigate(`/quiz-results/${responseData.id}`);
+      return responseData;
     } catch (error) {
-      console.error('Error submitting quiz:', error);
+      console.error("Error submitting quiz:", error);
       toast({
         title: "Error",
-        description: "Failed to submit quiz",
+        description: error.message || "Failed to submit quiz. Please try again.",
         variant: "destructive",
       });
+      return null;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return {
-    isSubmitting,
-    handleSubmit
-  };
+  return { submitQuiz, isSubmitting };
 };
-
-async function generateQuizFeedback(
-  quizResponseId: string,
-  correctAnswers: number,
-  totalQuestions: number,
-  score: number,
-  questionResponses: any[]
-) {
-  const feedbackResponse = await fetch(
-    'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-quiz-feedback',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-      },
-      body: JSON.stringify({
-        quizResponseId,
-        correctAnswers,
-        totalQuestions,
-        score,
-        questionResponses,
-      }),
-    }
-  );
-
-  if (!feedbackResponse.ok) {
-    console.error('Error generating feedback:', await feedbackResponse.text());
-  }
-}
