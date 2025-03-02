@@ -39,7 +39,7 @@ const TakeQuiz = () => {
     // We'll call handleSubmit from the hook after quiz is loaded
   };
 
-  const { data: quiz, isLoading: isLoadingQuiz } = useQuery({
+  const { data: quiz, isLoading: isLoadingQuiz, error: quizError } = useQuery({
     queryKey: ['quiz', id],
     queryFn: async () => {
       if (!id) throw new Error("Quiz ID is required");
@@ -68,6 +68,7 @@ const TakeQuiz = () => {
       
       if (!data || !data.quiz_questions || data.quiz_questions.length === 0) {
         console.error("No questions found for quiz:", id);
+        throw new Error("No questions found for this quiz");
       }
       
       return data as Quiz;
@@ -88,12 +89,39 @@ const TakeQuiz = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Handle error states properly
+  if (quizError) {
+    return (
+      <div className="container mx-auto py-10 px-4 sm:px-6">
+        <div className="max-w-2xl mx-auto bg-red-50 p-4 rounded-md border border-red-200">
+          <h2 className="text-lg font-semibold text-red-700 mb-2">Error Loading Quiz</h2>
+          <p className="text-sm text-red-600">{quizError instanceof Error ? quizError.message : "Unknown error occurred"}</p>
+          <p className="text-sm text-gray-600 mt-4">Please try again later or contact support if this problem persists.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoadingQuiz) {
-    return <div className="container mx-auto py-10 px-4 sm:px-6">Loading quiz...</div>;
+    return (
+      <div className="container mx-auto py-10 px-4 sm:px-6">
+        <div className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+          <p className="text-gray-600">Loading quiz...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!quiz || !quiz.quiz_questions || quiz.quiz_questions.length === 0) {
-    return <div className="container mx-auto py-10 px-4 sm:px-6">Quiz not found or no questions available.</div>;
+    return (
+      <div className="container mx-auto py-10 px-4 sm:px-6">
+        <div className="max-w-2xl mx-auto bg-yellow-50 p-4 rounded-md border border-yellow-200">
+          <h2 className="text-lg font-semibold text-yellow-700 mb-2">Quiz Not Available</h2>
+          <p className="text-sm text-yellow-600">This quiz has no questions or is not available.</p>
+        </div>
+      </div>
+    );
   }
 
   // Use the custom hook for quiz taking
@@ -142,6 +170,7 @@ const TakeQuiz = () => {
             )}
           </div>
           
+          {/* Submit button for mobile view when on last question */}
           {currentQuestion === questions.length - 1 && (
             <QuizSubmitButton
               isSubmitting={isSubmitting}

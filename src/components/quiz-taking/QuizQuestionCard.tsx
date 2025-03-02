@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { QuestionDifficulty } from "@/types/quiz";
 
 interface QuizQuestion {
   id: string;
@@ -35,6 +34,25 @@ export const QuizQuestionCard = ({
   selectedAnswer,
   onAnswerSelect,
 }: QuizQuestionCardProps) => {
+  // Safety check in case question is undefined
+  if (!question) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Take Quiz</CardTitle>
+          <CardDescription>
+            Question {currentIndex + 1} / {totalQuestions}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="py-8 text-center text-amber-600">
+            Error loading question. Please try refreshing the page.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
@@ -53,14 +71,18 @@ export const QuizQuestionCard = ({
         <RadioGroup
           value={selectedAnswer}
           onValueChange={(value) => onAnswerSelect(value)}
+          className="space-y-1 sm:space-y-2"
         >
           {Object.entries(question.options).map(([key, value]) => (
             <div
               key={key}
-              className="flex items-center space-x-2 mb-2 p-2 hover:bg-gray-50 rounded-md"
+              className="flex items-center space-x-2 mb-2 p-2 hover:bg-gray-50 rounded-md transition-colors"
             >
-              <RadioGroupItem value={key} id={key} className="border-2" />
-              <Label htmlFor={key} className="flex-1 cursor-pointer">
+              <RadioGroupItem value={key} id={`option-${key}`} className="border-2" />
+              <Label 
+                htmlFor={`option-${key}`} 
+                className="flex-1 cursor-pointer py-2 px-1 rounded-md hover:bg-gray-50 transition-colors"
+              >
                 {value}
               </Label>
             </div>

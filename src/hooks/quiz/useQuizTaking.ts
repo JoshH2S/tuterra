@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -20,24 +20,42 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleAnswerSelect = (questionIndex: number, answer: string) => {
-    setSelectedAnswers({ ...selectedAnswers, [questionIndex]: answer });
-  };
+  const handleAnswerSelect = useCallback((questionIndex: number, answer: string) => {
+    setSelectedAnswers(prev => ({ ...prev, [questionIndex]: answer }));
+  }, []);
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = useCallback(() => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
-  };
+  }, [currentQuestion, questions.length]);
 
-  const handlePreviousQuestion = () => {
+  const handlePreviousQuestion = useCallback(() => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
     }
-  };
+  }, [currentQuestion]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (isSubmitting) return; // Prevent double submission
+    
+    if (!quizId) {
+      toast({
+        title: "Error",
+        description: "Quiz ID is missing. Cannot submit quiz.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (questions.length === 0) {
+      toast({
+        title: "Error",
+        description: "No questions found for this quiz.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -50,7 +68,12 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
       // Calculate score as a percentage (0-100) instead of a decimal
       const scorePercentage = Math.round((correctAnswersCount / questions.length) * 100);
 
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Authentication error:", sessionError);
+        throw new Error("Authentication error");
+      }
+      
       if (!sessionData?.session?.user) {
         throw new Error("Not authenticated");
       }
@@ -84,6 +107,7 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
         .single();
 
       if (error) {
+        console.error("Error submitting quiz:", error);
         throw error;
       }
 
@@ -105,7 +129,7 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [quizId, questions, selectedAnswers, navigate, isSubmitting]);
 
   return {
     currentQuestion,
