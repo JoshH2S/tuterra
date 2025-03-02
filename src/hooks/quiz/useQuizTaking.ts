@@ -41,6 +41,7 @@ export const useQuizTaking = (quizId: string, questions: QuizQuestion[]) => {
     
     setIsSubmitting(true);
     try {
+      // Calculate how many answers are correct
       const correctAnswersCount = questions.reduce((count, question, index) => {
         const selectedAnswer = selectedAnswers[index];
         return selectedAnswer === question.correct_answer ? count + 1 : count;

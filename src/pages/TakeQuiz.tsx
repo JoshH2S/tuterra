@@ -42,6 +42,8 @@ const TakeQuiz = () => {
   const { data: quiz, isLoading: isLoadingQuiz } = useQuery({
     queryKey: ['quiz', id],
     queryFn: async () => {
+      if (!id) throw new Error("Quiz ID is required");
+      
       const { data, error } = await supabase
         .from('quizzes')
         .select(`
@@ -59,7 +61,15 @@ const TakeQuiz = () => {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching quiz:", error);
+        throw error;
+      }
+      
+      if (!data || !data.quiz_questions || data.quiz_questions.length === 0) {
+        console.error("No questions found for quiz:", id);
+      }
+      
       return data as Quiz;
     },
   });
