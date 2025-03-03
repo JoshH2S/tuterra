@@ -3,13 +3,14 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { CardContent } from "@/components/ui/card";
 import { useQuizTimer } from "@/hooks/quiz/useQuizTimer";
 import { QuizQuestionCard } from "@/components/quiz-taking/QuizQuestionCard";
-import { QuizNavigation } from "@/components/quiz-taking/QuizNavigation";
-import { QuizSubmitButton } from "@/components/quiz-taking/QuizSubmitButton";
 import { useQuizTaking } from "@/hooks/quiz/useQuizTaking";
 import { useState, useEffect } from "react";
+import { QuizLoading } from "@/components/quiz-taking/QuizLoading";
+import { QuizError } from "@/components/quiz-taking/QuizError";
+import { QuizEmpty } from "@/components/quiz-taking/QuizEmpty";
+import { QuizControls } from "@/components/quiz-taking/QuizControls";
 
 interface QuizQuestion {
   id: string;
@@ -31,6 +32,9 @@ interface Quiz {
 const TakeQuiz = () => {
   const { id } = useParams();
   const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizId, setQuizId] = useState<string>("");
   
   const { data: quiz, isLoading: isLoadingQuiz, error: quizError } = useQuery({
     queryKey: ['quiz', id],
@@ -68,11 +72,6 @@ const TakeQuiz = () => {
     },
   });
 
-  // Initialize these variables with safe defaults first
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
-  const [quizId, setQuizId] = useState<string>("");
-
   // Update the state variables once quiz data is loaded
   useEffect(() => {
     if (quiz && quiz.quiz_questions && quiz.quiz_questions.length > 0) {
@@ -102,15 +101,7 @@ const TakeQuiz = () => {
     handleTimeEnd
   );
 
-  // Format remaining time for display
-  const formatTime = (seconds: number | null) => {
-    if (seconds === null) return "No time limit";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Use the custom hook for quiz taking - always call it regardless of loading state
+  // Use the custom hook for quiz taking
   const {
     currentQuestion,
     selectedAnswers,
@@ -121,39 +112,17 @@ const TakeQuiz = () => {
     handleSubmit
   } = useQuizTaking(quizId, quizQuestions, () => setQuizSubmitted(true));
 
-  // Handle error states properly
+  // Handle various states
   if (quizError) {
-    return (
-      <div className="container mx-auto py-10 px-4 sm:px-6">
-        <div className="max-w-2xl mx-auto bg-red-50 p-4 rounded-md border border-red-200">
-          <h2 className="text-lg font-semibold text-red-700 mb-2">Error Loading Quiz</h2>
-          <p className="text-sm text-red-600">{quizError instanceof Error ? quizError.message : "Unknown error occurred"}</p>
-          <p className="text-sm text-gray-600 mt-4">Please try again later or contact support if this problem persists.</p>
-        </div>
-      </div>
-    );
+    return <QuizError error={quizError} />;
   }
 
   if (isLoadingQuiz) {
-    return (
-      <div className="container mx-auto py-10 px-4 sm:px-6">
-        <div className="max-w-2xl mx-auto flex flex-col items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-          <p className="text-gray-600">Loading quiz...</p>
-        </div>
-      </div>
-    );
+    return <QuizLoading />;
   }
 
   if (!quiz || !quiz.quiz_questions || quiz.quiz_questions.length === 0) {
-    return (
-      <div className="container mx-auto py-10 px-4 sm:px-6">
-        <div className="max-w-2xl mx-auto bg-yellow-50 p-4 rounded-md border border-yellow-200">
-          <h2 className="text-lg font-semibold text-yellow-700 mb-2">Quiz Not Available</h2>
-          <p className="text-sm text-yellow-600">This quiz has no questions or is not available.</p>
-        </div>
-      </div>
-    );
+    return <QuizEmpty />;
   }
 
   const questions = quiz.quiz_questions;
@@ -169,42 +138,15 @@ const TakeQuiz = () => {
         onAnswerSelect={(answer) => handleAnswerSelect(currentQuestion, answer)}
       />
       
-      <div className="max-w-2xl mx-auto mt-4">
-        <CardContent className="space-y-4">
-          <div className="text-right text-sm font-medium text-gray-500">
-            Time remaining: {formatTime(timeRemaining)}
-          </div>
-          
-          <div className="flex justify-between mt-6">
-            <QuizNavigation
-              currentQuestion={currentQuestion}
-              totalQuestions={questions.length}
-              onNext={handleNextQuestion}
-              onPrevious={handlePreviousQuestion}
-            />
-            
-            {currentQuestion === questions.length - 1 && (
-              <div className="hidden sm:block">
-                <QuizSubmitButton
-                  isSubmitting={isSubmitting}
-                  onSubmit={handleSubmit}
-                />
-              </div>
-            )}
-          </div>
-          
-          {/* Submit button for mobile view when on last question */}
-          {currentQuestion === questions.length - 1 && (
-            <div className="sm:hidden mt-4">
-              <QuizSubmitButton
-                isSubmitting={isSubmitting}
-                onSubmit={handleSubmit}
-                isLastQuestion={true}
-              />
-            </div>
-          )}
-        </CardContent>
-      </div>
+      <QuizControls
+        currentQuestion={currentQuestion}
+        totalQuestions={questions.length}
+        isSubmitting={isSubmitting}
+        timeRemaining={timeRemaining}
+        onNext={handleNextQuestion}
+        onPrevious={handlePreviousQuestion}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 };
