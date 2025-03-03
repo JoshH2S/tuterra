@@ -1,20 +1,14 @@
 
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { ScoreCard } from "@/components/quiz-results/ScoreCard";
-import { StatisticsCard } from "@/components/quiz-results/StatisticsCard";
-import { TopicPerformance } from "@/components/quiz-results/TopicPerformance";
-import { DetailedFeedback } from "@/components/quiz-results/DetailedFeedback";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { ResultsLoader } from "@/components/quiz-results/ResultsLoader";
+import { ResultsError } from "@/components/quiz-results/ResultsError";
+import { ResultsContainer } from "@/components/quiz-results/ResultsContainer";
 
 export default function QuizResults() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [results, setResults] = useState<any>(null);
   const [quiz, setQuiz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -132,105 +126,18 @@ export default function QuizResults() {
     }
   };
 
-  if (loading) return (
-    <div className="container mx-auto py-8 text-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-      <p className="text-lg mt-2">Loading quiz results...</p>
-    </div>
-  );
+  if (loading) return <ResultsLoader />;
 
-  if (error || !results || !quiz) return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-md mx-auto text-center space-y-4">
-        <h1 className="text-2xl font-bold text-red-600">Error Loading Results</h1>
-        <p>{error || "Could not find the requested quiz results."}</p>
-        <Button onClick={() => navigate('/quizzes')}>
-          Return to Quizzes
-        </Button>
-      </div>
-    </div>
-  );
-
-  // Calculate percentage score correctly
-  const percentageScore = results.total_questions > 0 
-    ? Math.round((results.correct_answers / results.total_questions) * 100) 
-    : 0;
-
-  const getPerformanceMessage = (score: number) => {
-    if (score >= 90) return "Excellent work!";
-    if (score >= 80) return "Great job!";
-    if (score >= 70) return "Good job!";
-    return "Keep practicing";
-  };
-
-  // Ensure ai_feedback is properly structured
-  const hasFeedback = results.ai_feedback && 
-    (Array.isArray(results.ai_feedback.strengths) || 
-     Array.isArray(results.ai_feedback.areas_for_improvement) || 
-     results.ai_feedback.advice);
+  if (error || !results || !quiz) return <ResultsError error={error} />;
 
   return (
     <div className="container mx-auto py-8">
-      <div className={`max-w-4xl mx-auto space-y-6 px-${isMobile ? '2' : '6'}`}>
-        <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-bold mb-2 text-[#091747]`}>{quiz.title}</h1>
-        <p className="text-muted-foreground text-lg mb-6">
-          Here's how you performed on this quiz
-        </p>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <ScoreCard 
-            percentageScore={results.score || percentageScore}
-            getPerformanceMessage={getPerformanceMessage}
-          />
-          <StatisticsCard 
-            correctAnswers={results.correct_answers}
-            totalQuestions={results.total_questions}
-          />
-        </div>
-
-        {results.topic_performance && Object.keys(results.topic_performance).length > 0 && (
-          <TopicPerformance topics={results.topic_performance} />
-        )}
-        
-        <DetailedFeedback feedback={results.ai_feedback} />
-        
-        {!hasFeedback && (
-          <div className="flex justify-center">
-            <Button 
-              onClick={generateFeedback} 
-              disabled={generatingFeedback}
-              className="mt-2"
-            >
-              {generatingFeedback ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Feedback...
-                </>
-              ) : (
-                "Generate AI Feedback"
-              )}
-            </Button>
-          </div>
-        )}
-
-        <div className="flex flex-wrap justify-center gap-4 pt-6">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/quizzes')}
-            className="min-w-[140px]"
-          >
-            Back to Quizzes
-          </Button>
-          {quiz.allow_retakes && (
-            <Button
-              onClick={() => navigate(`/take-quiz/${quiz.id}`)}
-              className="min-w-[140px]"
-            >
-              Retake Quiz
-            </Button>
-          )}
-        </div>
-      </div>
+      <ResultsContainer 
+        results={results}
+        quiz={quiz}
+        generateFeedback={generateFeedback}
+        generatingFeedback={generatingFeedback}
+      />
     </div>
   );
 }
