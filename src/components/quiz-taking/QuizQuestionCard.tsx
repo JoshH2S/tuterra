@@ -11,6 +11,9 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useRef, useEffect } from "react";
+import { CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface QuizQuestion {
   id: string;
@@ -20,6 +23,7 @@ interface QuizQuestion {
   topic: string;
   points: number;
   difficulty: "beginner" | "intermediate" | "advanced" | "expert";
+  explanation?: string;
 }
 
 interface QuizQuestionCardProps {
@@ -30,6 +34,7 @@ interface QuizQuestionCardProps {
   onAnswerSelect: (answer: string) => void;
   onNext?: () => void;
   onPrevious?: () => void;
+  showFeedback: boolean;
 }
 
 export const QuizQuestionCard = ({
@@ -40,6 +45,7 @@ export const QuizQuestionCard = ({
   onAnswerSelect,
   onNext,
   onPrevious,
+  showFeedback,
 }: QuizQuestionCardProps) => {
   const isMobile = useIsMobile();
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -99,6 +105,8 @@ export const QuizQuestionCard = ({
   }
 
   const progressPercentage = ((currentIndex + 1) / totalQuestions) * 100;
+  const isAnswerCorrect = selectedAnswer === question.correct_answer;
+  const answerSubmitted = showFeedback && selectedAnswer;
 
   return (
     <Card 
@@ -130,22 +138,72 @@ export const QuizQuestionCard = ({
           value={selectedAnswer}
           onValueChange={(value) => onAnswerSelect(value)}
           className="space-y-1 sm:space-y-2"
+          disabled={answerSubmitted}
         >
-          {Object.entries(question.options).map(([key, value]) => (
-            <div
-              key={key}
-              className="flex items-center space-x-2 mb-2 p-2 hover:bg-gray-50 rounded-md transition-colors"
-            >
-              <RadioGroupItem value={key} id={`option-${key}`} className="border-2" />
-              <Label 
-                htmlFor={`option-${key}`} 
-                className="flex-1 cursor-pointer py-2 px-1 rounded-md hover:bg-gray-50 transition-colors"
+          {Object.entries(question.options).map(([key, value]) => {
+            // Determine styling based on answer correctness when feedback should be shown
+            let optionClassName = "flex items-center space-x-2 mb-2 p-2 hover:bg-gray-50 rounded-md transition-colors";
+            
+            if (answerSubmitted) {
+              if (key === question.correct_answer) {
+                optionClassName += " bg-green-50 border-green-200 border";
+              } else if (key === selectedAnswer && key !== question.correct_answer) {
+                optionClassName += " bg-red-50 border-red-200 border";
+              }
+            }
+            
+            return (
+              <div
+                key={key}
+                className={optionClassName}
               >
-                {value}
-              </Label>
-            </div>
-          ))}
+                <RadioGroupItem 
+                  value={key} 
+                  id={`option-${key}`} 
+                  className="border-2"
+                  disabled={answerSubmitted}
+                />
+                <Label 
+                  htmlFor={`option-${key}`} 
+                  className="flex-1 cursor-pointer py-2 px-1 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  {value}
+                </Label>
+                {answerSubmitted && key === question.correct_answer && (
+                  <CheckCircle className="h-5 w-5 text-green-500 ml-2" />
+                )}
+                {answerSubmitted && key === selectedAnswer && key !== question.correct_answer && (
+                  <XCircle className="h-5 w-5 text-red-500 ml-2" />
+                )}
+              </div>
+            );
+          })}
         </RadioGroup>
+
+        {/* Feedback section */}
+        {answerSubmitted && (
+          <Alert className={isAnswerCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}>
+            <AlertCircle className={`h-4 w-4 ${isAnswerCorrect ? "text-green-500" : "text-red-500"}`} />
+            <AlertTitle className={isAnswerCorrect ? "text-green-700" : "text-red-700"}>
+              {isAnswerCorrect ? "Correct!" : "Incorrect"}
+            </AlertTitle>
+            <AlertDescription className="mt-2">
+              {isAnswerCorrect 
+                ? "Great job! You selected the correct answer." 
+                : `The correct answer was: ${question.options[question.correct_answer]}`
+              }
+              {question.explanation && (
+                <div className="mt-2">
+                  <p className="font-semibold flex items-center gap-1">
+                    <Info className="h-4 w-4" /> Explanation:
+                  </p>
+                  <p className="text-sm mt-1">{question.explanation}</p>
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {isMobile && (
           <div className="mt-4 flex justify-center text-sm text-gray-500">
             <p>Swipe left/right to navigate</p>

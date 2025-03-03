@@ -1,5 +1,7 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2, Send } from "lucide-react";
 
 interface QuizSubmitButtonProps {
   isSubmitting: boolean;
@@ -7,30 +9,31 @@ interface QuizSubmitButtonProps {
   isLastQuestion?: boolean;
 }
 
-export const QuizSubmitButton = ({
+export const QuizSubmitButton: React.FC<QuizSubmitButtonProps> = ({
   isSubmitting,
   onSubmit,
   isLastQuestion = false,
-}: QuizSubmitButtonProps) => {
-  if (!isLastQuestion) {
-    return (
-      <Button
-        onClick={onSubmit}
-        disabled={isSubmitting}
-        className="min-w-[100px] bg-green-600 hover:bg-green-700"
-      >
-        {isSubmitting ? "Submitting..." : "Submit"}
-      </Button>
-    );
-  }
-
+}) => {
+  const buttonText = isLastQuestion ? "Submit Quiz" : "Finish Quiz";
+  
   return (
-    <Button
+    <Button 
       onClick={onSubmit}
       disabled={isSubmitting}
-      className="w-full mt-6 py-6 text-lg bg-green-600 hover:bg-green-700"
+      className="bg-primary hover:bg-primary-dark text-white transition-colors" 
+      size={isLastQuestion ? "default" : "lg"}
     >
-      {isSubmitting ? "Submitting..." : "Submit Quiz"}
+      {isSubmitting ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Submitting...
+        </>
+      ) : (
+        <>
+          <Send className="mr-2 h-4 w-4" />
+          {buttonText}
+        </>
+      )}
     </Button>
   );
 };

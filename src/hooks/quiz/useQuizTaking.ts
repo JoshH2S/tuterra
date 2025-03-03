@@ -12,6 +12,7 @@ interface QuizQuestion {
   topic: string;
   points: number;
   difficulty: string;
+  explanation?: string;
 }
 
 export const useQuizTaking = (
@@ -22,6 +23,7 @@ export const useQuizTaking = (
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const navigate = useNavigate();
 
   // Reset state when quiz changes
@@ -30,22 +32,28 @@ export const useQuizTaking = (
       setCurrentQuestion(0);
       setSelectedAnswers({});
       setIsSubmitting(false);
+      setShowFeedback(false);
     }
   }, [quizId, questions]);
 
   const handleAnswerSelect = useCallback((questionIndex: number, answer: string) => {
+    if (showFeedback) return; // Don't allow changing answer when feedback is shown
+    
     setSelectedAnswers(prev => ({ ...prev, [questionIndex]: answer }));
-  }, []);
+    setShowFeedback(true); // Show feedback immediately after selecting an answer
+  }, [showFeedback]);
 
   const handleNextQuestion = useCallback(() => {
     if (questions.length > 0 && currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
+      setShowFeedback(false); // Reset feedback for the next question
     }
   }, [currentQuestion, questions.length]);
 
   const handlePreviousQuestion = useCallback(() => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
+      // Don't reset feedback for previous questions
     }
   }, [currentQuestion]);
 
@@ -165,6 +173,7 @@ export const useQuizTaking = (
     currentQuestion,
     selectedAnswers,
     isSubmitting,
+    showFeedback,
     handleAnswerSelect,
     handleNextQuestion,
     handlePreviousQuestion,

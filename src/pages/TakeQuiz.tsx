@@ -20,6 +20,7 @@ interface QuizQuestion {
   topic: string;
   points: number;
   difficulty: "beginner" | "intermediate" | "advanced" | "expert";
+  explanation?: string;
 }
 
 interface Quiz {
@@ -52,7 +53,8 @@ const TakeQuiz = () => {
             correct_answer,
             topic,
             points,
-            difficulty
+            difficulty,
+            explanation
           )
         `)
         .eq('id', id)
@@ -106,6 +108,7 @@ const TakeQuiz = () => {
     currentQuestion,
     selectedAnswers,
     isSubmitting,
+    showFeedback,
     handleAnswerSelect,
     handleNextQuestion,
     handlePreviousQuestion,
@@ -138,6 +141,7 @@ const TakeQuiz = () => {
         onAnswerSelect={(answer) => handleAnswerSelect(currentQuestion, answer)}
         onNext={handleNextQuestion}
         onPrevious={handlePreviousQuestion}
+        showFeedback={showFeedback}
       />
       
       <QuizControls
