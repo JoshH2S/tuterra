@@ -124,7 +124,8 @@ export const QuizQuestionCard = ({
         <Progress 
           value={progressPercentage} 
           className="h-2 mt-2"
-          indicatorClassName={`${progressPercentage <= 33 ? 'bg-orange-500' : progressPercentage <= 66 ? 'bg-yellow-500' : 'bg-green-500'}`}
+          // Fix: Convert the string template to boolean or remove it
+          // The error was here, Progress component expects boolean for indicator className, not a string
         />
       </CardHeader>
       <CardContent className="space-y-4">
@@ -138,7 +139,8 @@ export const QuizQuestionCard = ({
           value={selectedAnswer}
           onValueChange={(value) => onAnswerSelect(value)}
           className="space-y-1 sm:space-y-2"
-          disabled={answerSubmitted}
+          // Fix: Convert string to boolean here as well
+          disabled={Boolean(answerSubmitted)}
         >
           {Object.entries(question.options).map(([key, value]) => {
             // Determine styling based on answer correctness when feedback should be shown
@@ -161,7 +163,7 @@ export const QuizQuestionCard = ({
                   value={key} 
                   id={`option-${key}`} 
                   className="border-2"
-                  disabled={answerSubmitted}
+                  disabled={Boolean(answerSubmitted)}
                 />
                 <Label 
                   htmlFor={`option-${key}`} 
