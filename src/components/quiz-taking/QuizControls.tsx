@@ -4,6 +4,7 @@ import { CardContent } from "@/components/ui/card";
 import { QuizNavigation } from "@/components/quiz-taking/QuizNavigation";
 import { QuizSubmitButton } from "@/components/quiz-taking/QuizSubmitButton";
 import { QuizTimerDisplay } from "@/components/quiz-taking/QuizTimerDisplay";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QuizControlsProps {
   currentQuestion: number;
@@ -25,6 +26,7 @@ export const QuizControls: React.FC<QuizControlsProps> = ({
   onSubmit,
 }) => {
   const isLastQuestion = currentQuestion === totalQuestions - 1;
+  const isMobile = useIsMobile();
 
   return (
     <div className="max-w-2xl mx-auto mt-4">

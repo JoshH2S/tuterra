@@ -136,6 +136,8 @@ const TakeQuiz = () => {
         totalQuestions={questions.length}
         selectedAnswer={selectedAnswers[currentQuestion]}
         onAnswerSelect={(answer) => handleAnswerSelect(currentQuestion, answer)}
+        onNext={handleNextQuestion}
+        onPrevious={handlePreviousQuestion}
       />
       
       <QuizControls

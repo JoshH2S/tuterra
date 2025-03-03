@@ -8,6 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useState, useRef, useEffect } from "react";
 
 interface QuizQuestion {
   id: string;
@@ -25,6 +28,8 @@ interface QuizQuestionCardProps {
   totalQuestions: number;
   selectedAnswer: string | undefined;
   onAnswerSelect: (answer: string) => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
 }
 
 export const QuizQuestionCard = ({
@@ -33,7 +38,47 @@ export const QuizQuestionCard = ({
   totalQuestions,
   selectedAnswer,
   onAnswerSelect,
+  onNext,
+  onPrevious,
 }: QuizQuestionCardProps) => {
+  const isMobile = useIsMobile();
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  
+  // Minimum swipe distance to register as a swipe (in pixels)
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setTouchEnd(null);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isSwipe = Math.abs(distance) > minSwipeDistance;
+    
+    if (isSwipe) {
+      if (distance > 0) {
+        // Swiped left, go to next question
+        onNext && onNext();
+      } else {
+        // Swiped right, go to previous question
+        onPrevious && onPrevious();
+      }
+    }
+    
+    // Reset touch coordinates
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
   // Safety check in case question is undefined
   if (!question) {
     return (
@@ -53,13 +98,26 @@ export const QuizQuestionCard = ({
     );
   }
 
+  const progressPercentage = ((currentIndex + 1) / totalQuestions) * 100;
+
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card 
+      className="max-w-2xl mx-auto"
+      ref={cardRef}
+      onTouchStart={isMobile ? handleTouchStart : undefined}
+      onTouchMove={isMobile ? handleTouchMove : undefined}
+      onTouchEnd={isMobile ? handleTouchEnd : undefined}
+    >
       <CardHeader>
         <CardTitle>Take Quiz</CardTitle>
         <CardDescription>
           Question {currentIndex + 1} / {totalQuestions}
         </CardDescription>
+        <Progress 
+          value={progressPercentage} 
+          className="h-2 mt-2"
+          indicatorClassName={`${progressPercentage <= 33 ? 'bg-orange-500' : progressPercentage <= 66 ? 'bg-yellow-500' : 'bg-green-500'}`}
+        />
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="mb-4">
@@ -88,6 +146,11 @@ export const QuizQuestionCard = ({
             </div>
           ))}
         </RadioGroup>
+        {isMobile && (
+          <div className="mt-4 flex justify-center text-sm text-gray-500">
+            <p>Swipe left/right to navigate</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
