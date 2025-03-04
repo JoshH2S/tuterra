@@ -35,15 +35,18 @@ export default function QuizResults() {
         if (responseError) throw responseError;
         console.log("Quiz response data:", responseData);
         
-        // Log for debugging
-        if (responseData?.ai_feedback) {
-          console.log("AI Feedback:", responseData.ai_feedback);
+        // Check if AI feedback exists and has content
+        const hasFeedback = responseData?.ai_feedback && 
+          (responseData.ai_feedback.strengths?.length > 0 || 
+           responseData.ai_feedback.areas_for_improvement?.length > 0 || 
+           responseData.ai_feedback.advice);
+           
+        // Auto-generate feedback if it doesn't exist or is empty and quiz is completed
+        if (responseData?.completed_at && !hasFeedback) {
+          console.log("No substantive AI feedback available - generating now");
+          generateFeedback();
         } else {
-          console.log("No AI feedback available yet");
-          // Auto-generate feedback if it doesn't exist and quiz is completed
-          if (responseData?.completed_at && !responseData?.ai_feedback) {
-            generateFeedback();
-          }
+          console.log("AI Feedback:", responseData.ai_feedback);
         }
         
         setResults(responseData);

@@ -35,11 +35,18 @@ export function ResultsContainer({
     return "Keep practicing";
   };
 
-  // Ensure ai_feedback is properly structured
-  const hasFeedback = results.ai_feedback && 
-    (Array.isArray(results.ai_feedback.strengths) || 
-     Array.isArray(results.ai_feedback.areas_for_improvement) || 
-     results.ai_feedback.advice);
+  // Check if we have meaningful feedback (not just empty arrays/strings)
+  const hasStrengths = results.ai_feedback?.strengths?.length > 0 && 
+    results.ai_feedback.strengths[0] !== "";
+  const hasAreasForImprovement = results.ai_feedback?.areas_for_improvement?.length > 0 && 
+    results.ai_feedback.areas_for_improvement[0] !== "";
+  const hasAdvice = results.ai_feedback?.advice && 
+    results.ai_feedback.advice !== "";
+  
+  const hasMeaningfulFeedback = hasStrengths || hasAreasForImprovement || hasAdvice;
+  // Don't show the "generating" message as meaningful feedback
+  const isGeneratingMessage = results.ai_feedback?.strengths?.[0] === "Generating feedback...";
+  const shouldShowGenerateButton = !hasMeaningfulFeedback || isGeneratingMessage;
 
   return (
     <div className={`max-w-4xl mx-auto space-y-6 px-${isMobile ? '2' : '6'}`}>
@@ -65,7 +72,7 @@ export function ResultsContainer({
         isGenerating={generatingFeedback}
       />
       
-      {!hasFeedback && (
+      {shouldShowGenerateButton && !generatingFeedback && (
         <FeedbackGenerateButton 
           onGenerate={generateFeedback}
           isGenerating={generatingFeedback}

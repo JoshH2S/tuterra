@@ -57,6 +57,8 @@ export function DetailedFeedback({ feedback, isGenerating = false }: DetailedFee
   };
   
   useEffect(() => {
+    console.log("Feedback data:", feedback);
+    
     // Handle different feedback formats and ensure we parse correctly
     if (feedback) {
       try {
@@ -77,11 +79,12 @@ export function DetailedFeedback({ feedback, isGenerating = false }: DetailedFee
     }
   }, [feedback]);
 
-  console.log("Feedback data:", feedback);
-  console.log("Parsed feedback:", parsedFeedback);
+  // Check if the feedback is in the "generating" state from placeholder text
+  const isGeneratingFromContent = parsedFeedback?.strengths?.[0] === "Generating feedback...";
+  const effectivelyGenerating = isGenerating || isGeneratingFromContent;
 
   // If feedback is being generated, show loading state
-  if (isGenerating || (parsedFeedback?.strengths && parsedFeedback.strengths[0] === "Generating feedback...")) {
+  if (effectivelyGenerating) {
     return (
       <div className="space-y-4">
         <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[#091747] flex items-center`}>
@@ -101,8 +104,18 @@ export function DetailedFeedback({ feedback, isGenerating = false }: DetailedFee
     );
   }
   
-  // Handle case when feedback is null or undefined
-  if (!parsedFeedback) {
+  // Check if we have meaningful feedback (not just empty arrays/strings)
+  const hasStrengths = parsedFeedback?.strengths && parsedFeedback.strengths.length > 0 && 
+    parsedFeedback.strengths[0] !== "";
+  const hasAreasForImprovement = parsedFeedback?.areas_for_improvement && 
+    parsedFeedback.areas_for_improvement.length > 0 && 
+    parsedFeedback.areas_for_improvement[0] !== "";
+  const hasAdvice = parsedFeedback?.advice && parsedFeedback.advice !== "";
+  
+  const hasMeaningfulFeedback = hasStrengths || hasAreasForImprovement || hasAdvice;
+  
+  // Handle case when feedback is null or undefined or empty
+  if (!parsedFeedback || !hasMeaningfulFeedback) {
     return (
       <div className="space-y-4">
         <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[#091747] flex items-center`}>
