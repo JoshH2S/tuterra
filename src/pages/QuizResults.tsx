@@ -40,6 +40,10 @@ export default function QuizResults() {
           console.log("AI Feedback:", responseData.ai_feedback);
         } else {
           console.log("No AI feedback available yet");
+          // Auto-generate feedback if it doesn't exist and quiz is completed
+          if (responseData?.completed_at && !responseData?.ai_feedback) {
+            generateFeedback();
+          }
         }
         
         setResults(responseData);
@@ -78,6 +82,12 @@ export default function QuizResults() {
           advice: "Please wait while we analyze your quiz performance."
         }
       }));
+      
+      // Toast to inform user
+      toast({
+        title: "Generating Feedback",
+        description: "Analyzing your quiz performance...",
+      });
       
       const { data, error } = await supabase.functions.invoke('generate-quiz-feedback', {
         body: { quizResponseId: id }

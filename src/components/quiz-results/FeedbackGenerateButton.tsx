@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 interface FeedbackGenerateButtonProps {
   onGenerate: () => void;
@@ -17,14 +17,18 @@ export function FeedbackGenerateButton({
         onClick={onGenerate} 
         disabled={isGenerating}
         className="mt-2"
+        size="lg"
       >
         {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Generating Feedback...
+            Generating AI Feedback...
           </>
         ) : (
-          "Generate AI Feedback"
+          <>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate AI Feedback
+          </>
         )}
       </Button>
     </div>

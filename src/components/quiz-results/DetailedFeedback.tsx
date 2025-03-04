@@ -2,6 +2,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Sparkles } from "lucide-react";
 
 interface AIFeedback {
   strengths?: string[];
@@ -11,9 +13,10 @@ interface AIFeedback {
 
 interface DetailedFeedbackProps {
   feedback: AIFeedback | null | undefined;
+  isGenerating?: boolean;
 }
 
-export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
+export function DetailedFeedback({ feedback, isGenerating = false }: DetailedFeedbackProps) {
   const isMobile = useIsMobile();
   const [parsedFeedback, setParsedFeedback] = useState<AIFeedback | null>(null);
   const [activeFeedbackTab, setActiveFeedbackTab] = useState<string>("strengths");
@@ -76,12 +79,36 @@ export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
 
   console.log("Feedback data:", feedback);
   console.log("Parsed feedback:", parsedFeedback);
+
+  // If feedback is being generated, show loading state
+  if (isGenerating || (parsedFeedback?.strengths && parsedFeedback.strengths[0] === "Generating feedback...")) {
+    return (
+      <div className="space-y-4">
+        <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[#091747] flex items-center`}>
+          <Sparkles className="h-5 w-5 mr-2 text-amber-500" />
+          AI Feedback
+          <span className="ml-2 text-sm font-normal text-muted-foreground">(Generating...)</span>
+        </h2>
+        <Card>
+          <CardContent className={`${isMobile ? 'p-3 pt-4' : 'pt-6'} space-y-2`}>
+            <h3 className="text-lg font-semibold mb-3 text-[#091747]">Analyzing your performance</h3>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-5/6" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   // Handle case when feedback is null or undefined
   if (!parsedFeedback) {
     return (
       <div className="space-y-4">
-        <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[#091747]`}>Detailed Feedback</h2>
+        <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-[#091747] flex items-center`}>
+          <Sparkles className="h-5 w-5 mr-2 text-amber-500" />
+          AI Feedback
+        </h2>
         <Card>
           <CardContent className={`${isMobile ? 'p-3 pt-4' : 'pt-6'}`}>
             <p className="text-muted-foreground">Feedback not available for this quiz yet.</p>
@@ -104,7 +131,10 @@ export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <h2 className="text-xl font-bold text-[#091747]">Detailed Feedback</h2>
+        <h2 className="text-xl font-bold text-[#091747] flex items-center">
+          <Sparkles className="h-5 w-5 mr-2 text-amber-500" />
+          AI Feedback
+        </h2>
         
         <div className="flex border-b border-gray-200 mb-2">
           <button 
@@ -128,7 +158,7 @@ export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
         </div>
         
         {activeFeedbackTab === "strengths" && (
-          <Card>
+          <Card className="border-t-4 border-t-green-500">
             <CardContent className="p-3 pt-4">
               <h3 className="text-lg font-semibold mb-3 text-[#091747]">Areas of Strength</h3>
               {strengths.length > 0 ? (
@@ -145,7 +175,7 @@ export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
         )}
         
         {activeFeedbackTab === "areas" && (
-          <Card>
+          <Card className="border-t-4 border-t-amber-500">
             <CardContent className="p-3 pt-4">
               <h3 className="text-lg font-semibold mb-3 text-[#091747]">Areas for Improvement</h3>
               {areasForImprovement.length > 0 ? (
@@ -162,7 +192,7 @@ export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
         )}
         
         {activeFeedbackTab === "advice" && (
-          <Card>
+          <Card className="border-t-4 border-t-blue-500">
             <CardContent className="p-3 pt-4">
               <h3 className="text-lg font-semibold mb-3 text-[#091747]">Advice Going Forward</h3>
               {parsedFeedback.advice ? (
@@ -186,9 +216,12 @@ export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
   // Desktop layout
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-[#091747]">Detailed Feedback</h2>
+      <h2 className="text-2xl font-bold text-[#091747] flex items-center">
+        <Sparkles className="h-6 w-6 mr-2 text-amber-500" />
+        AI Feedback
+      </h2>
       
-      <Card>
+      <Card className="border-t-4 border-t-green-500">
         <CardContent className="pt-6">
           <h3 className="text-xl font-semibold mb-3 text-[#091747]">Areas of Strength</h3>
           {strengths.length > 0 ? (
@@ -203,7 +236,7 @@ export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-t-4 border-t-amber-500">
         <CardContent className="pt-6">
           <h3 className="text-xl font-semibold mb-3 text-[#091747]">Areas for Improvement</h3>
           {areasForImprovement.length > 0 ? (
@@ -218,7 +251,7 @@ export function DetailedFeedback({ feedback }: DetailedFeedbackProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-t-4 border-t-blue-500">
         <CardContent className="pt-6">
           <h3 className="text-xl font-semibold mb-3 text-[#091747]">Advice Going Forward</h3>
           {parsedFeedback.advice ? (

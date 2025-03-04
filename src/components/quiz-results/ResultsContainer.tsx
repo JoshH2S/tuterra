@@ -60,7 +60,10 @@ export function ResultsContainer({
         <TopicPerformance topics={results.topic_performance} />
       )}
       
-      <DetailedFeedback feedback={results.ai_feedback} />
+      <DetailedFeedback 
+        feedback={results.ai_feedback} 
+        isGenerating={generatingFeedback}
+      />
       
       {!hasFeedback && (
         <FeedbackGenerateButton 
