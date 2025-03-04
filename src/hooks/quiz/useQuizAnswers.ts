@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QuizQuestion } from "./quizTypes";
@@ -80,7 +81,7 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
     if (questions[questionIndex]) {
       generateExplanation(questionIndex, questions[questionIndex], answer);
     }
-  }, [showFeedback, questions, generateExplanation]);
+  }, [showFeedback, questions, generateExplanation, selectedAnswers]);
 
   const resetAnswers = useCallback(() => {
     setSelectedAnswers({});
