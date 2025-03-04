@@ -36,7 +36,7 @@ const TakeQuiz = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizId, setQuizId] = useState<string>("");
-  
+
   const { data: quiz, isLoading: isLoadingQuiz, error: quizError } = useQuery({
     queryKey: ['quiz', id],
     queryFn: async () => {
@@ -154,9 +154,7 @@ const TakeQuiz = () => {
         if (existingResponse) {
           await supabase
             .from('quiz_responses')
-            .update({
-              updated_at: new Date().toISOString(),
-            })
+            .update({})
             .eq('id', existingResponse.id);
         } else {
           await supabase

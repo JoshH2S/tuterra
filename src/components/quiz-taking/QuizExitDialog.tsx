@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ExitIcon, Save } from "lucide-react";
+import { LogOut, Save } from "lucide-react";
 
 interface QuizExitDialogProps {
   open: boolean;

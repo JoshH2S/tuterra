@@ -6,7 +6,7 @@ import { QuizSubmitButton } from "@/components/quiz-taking/QuizSubmitButton";
 import { QuizTimerDisplay } from "@/components/quiz-taking/QuizTimerDisplay";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { ExitIcon } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { QuizExitDialog } from "@/components/quiz-taking/QuizExitDialog";
 
@@ -55,7 +55,7 @@ export const QuizControls: React.FC<QuizControlsProps> = ({
               className="text-gray-600 hover:text-red-600"
               size={isMobile ? "sm" : "default"}
             >
-              <ExitIcon className="w-4 h-4 mr-1" />
+              <LogOut className="w-4 h-4 mr-1" />
               {isMobile ? "Exit" : "Exit & Save"}
             </Button>
             
