@@ -1,4 +1,6 @@
 
+export type QuestionDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+
 export interface QuizQuestion {
   id: string;
   question: string;
@@ -6,6 +8,6 @@ export interface QuizQuestion {
   correct_answer: string;
   topic: string;
   points: number;
-  difficulty: string;
+  difficulty: QuestionDifficulty;
   explanation?: string;
 }

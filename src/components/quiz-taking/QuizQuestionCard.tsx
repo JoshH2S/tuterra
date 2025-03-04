@@ -11,17 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useState, useRef } from "react";
 import { QuizAnswerOption } from "./QuizAnswerOption";
 import { QuizAnswerFeedback } from "./QuizAnswerFeedback";
-
-interface QuizQuestion {
-  id: string;
-  question: string;
-  options: Record<string, string>;
-  correct_answer: string;
-  topic: string;
-  points: number;
-  difficulty: "beginner" | "intermediate" | "advanced" | "expert";
-  explanation?: string;
-}
+import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 
 interface QuizQuestionCardProps {
   question: QuizQuestion;
