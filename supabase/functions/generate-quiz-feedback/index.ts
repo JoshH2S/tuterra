@@ -65,13 +65,20 @@ serve(async (req) => {
     }
 
     // Group question responses by topic to analyze performance by topic
-    const topicResponses = {};
-    const difficultyResponses = {};
-    const commonMistakes = [];
+    const topicResponses: Record<string, { total: number, correct: number }> = {};
+    const difficultyResponses: Record<string, { total: number, correct: number }> = {};
+    const commonMistakes: { topic: string, difficulty: string }[] = [];
     
     // Track correct and incorrect answers for pattern analysis
-    const correctAnswers = [];
-    const incorrectAnswers = [];
+    const correctAnswers: { question: string, topic: string, difficulty: string }[] = [];
+    const incorrectAnswers: { 
+      question: string, 
+      studentAnswer: string, 
+      correctAnswer: string, 
+      topic: string, 
+      difficulty: string,
+      explanation?: string 
+    }[] = [];
     
     quizResponse.question_responses.forEach(qr => {
       // Track by topic
@@ -137,7 +144,7 @@ serve(async (req) => {
     });
 
     // Identify strengths based on topics and difficulty levels
-    const strengths = [];
+    const strengths: string[] = [];
     
     // Topic-based strengths
     Object.entries(topicResponses).forEach(([topic, data]) => {
@@ -163,7 +170,7 @@ serve(async (req) => {
       const correctTopics = correctAnswers.map(a => a.topic).filter(Boolean);
       
       // Find topics that appear multiple times in correct answers
-      const topicCounts = {};
+      const topicCounts: Record<string, number> = {};
       correctTopics.forEach(topic => {
         topicCounts[topic] = (topicCounts[topic] || 0) + 1;
       });
@@ -176,7 +183,7 @@ serve(async (req) => {
     }
 
     // Identify areas for improvement
-    const areasForImprovement = [];
+    const areasForImprovement: string[] = [];
     
     // Topic-based improvements
     Object.entries(topicResponses).forEach(([topic, data]) => {
@@ -202,7 +209,7 @@ serve(async (req) => {
       const incorrectTopics = incorrectAnswers.map(a => a.topic).filter(Boolean);
       
       // Find topics that appear multiple times in incorrect answers
-      const topicCounts = {};
+      const topicCounts: Record<string, number> = {};
       incorrectTopics.forEach(topic => {
         topicCounts[topic] = (topicCounts[topic] || 0) + 1;
       });

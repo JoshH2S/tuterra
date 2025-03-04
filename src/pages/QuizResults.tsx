@@ -41,12 +41,30 @@ export default function QuizResults() {
         if (responseError) throw responseError;
         console.log("Quiz response data:", responseData);
         
-        // Check if AI feedback exists and has content
-        const feedback = responseData?.ai_feedback as AIFeedback | null;
+        // Check if AI feedback exists and has content - with proper type checking/casting
+        let feedback: AIFeedback | null = null;
+        
+        if (responseData?.ai_feedback) {
+          try {
+            // If it's a string (from JSON.stringify), parse it
+            if (typeof responseData.ai_feedback === 'string') {
+              feedback = JSON.parse(responseData.ai_feedback) as AIFeedback;
+            } 
+            // If it's already an object
+            else {
+              feedback = responseData.ai_feedback as unknown as AIFeedback;
+            }
+          } catch (e) {
+            console.error("Error parsing AI feedback:", e);
+            feedback = null;
+          }
+        }
+        
+        // Now check if feedback has valid content
         const hasFeedback = feedback && 
-          ((feedback.strengths?.length > 0) || 
-           (feedback.areas_for_improvement?.length > 0) || 
-           feedback.advice);
+          Array.isArray(feedback.strengths) && feedback.strengths.length > 0 &&
+          Array.isArray(feedback.areas_for_improvement) && feedback.areas_for_improvement.length > 0 &&
+          typeof feedback.advice === 'string' && feedback.advice.trim() !== '';
            
         // Auto-generate feedback if it doesn't exist or is empty and quiz is completed
         if (responseData?.completed_at && !hasFeedback) {

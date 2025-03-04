@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
@@ -158,7 +157,7 @@ export function DetailedFeedback({ feedback, isGenerating = false }: DetailedFee
           </button>
           <button 
             className={`flex-1 py-2 text-sm font-medium ${activeFeedbackTab === "areas" ? "border-b-2 border-primary text-primary" : "text-gray-500"}`}
-            onClick={() => setActiveFeedbackTab("areas")}
+            onClick={()={() => setActiveFeedbackTab("areas")}
           >
             Improve
           </button>
