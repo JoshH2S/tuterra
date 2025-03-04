@@ -1,60 +1,14 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.32.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface TopicPerformance {
-  [topic: string]: { 
-    total: number; 
-    correct: number;
-  }
-}
-
-interface QuestionResponse {
-  question_id: string;
-  student_answer: string;
-  is_correct: boolean;
-  topic: string;
-}
-
-interface QuizQuestion {
-  id: string;
-  question: string;
-  correct_answer: string;
-  options: Record<string, string>;
-  topic: string;
-  explanation?: string;
-  difficulty: string;
-}
-
-interface Quiz {
-  title: string;
-  quiz_questions: QuizQuestion[];
-}
-
-interface QuizResponse {
-  id: string;
-  quiz: Quiz;
-  score: number;
-  question_responses: QuestionResponse[];
-  topic_performance: TopicPerformance;
-  ai_feedback?: {
-    strengths: string[];
-    areas_for_improvement: string[];
-    advice: string;
-  };
-}
-
-interface AIFeedback {
-  strengths: string[];
-  areas_for_improvement: string[];
-  advice: string;
-}
+import { corsHeaders } from "../_shared/cors.ts";
+import { 
+  createSupabaseClient, 
+  analyzeQuizResponses, 
+  updateStudentProfile 
+} from "./helpers.ts";
+import { generateFeedback } from "./feedbackGenerator.ts";
+import { QuizResponse, AIFeedback } from "./types.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -72,9 +26,7 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createSupabaseClient();
 
     // Fetch quiz response data with details needed for feedback
     const { data: quizResponse, error: quizResponseError } = await supabase
@@ -112,150 +64,11 @@ serve(async (req) => {
       throw new Error("Quiz response not found");
     }
 
-    // Group question responses by topic to analyze performance by topic
-    const topicResponses: Record<string, { total: number, correct: number }> = {};
-    const difficultyResponses: Record<string, { total: number, correct: number }> = {};
-    const commonMistakes: { topic: string, difficulty: string }[] = [];
+    // Analyze the quiz response data
+    const analysisData = analyzeQuizResponses(quizResponse as QuizResponse);
     
-    // Track correct and incorrect answers for pattern analysis
-    const correctAnswers: { question: string, topic: string, difficulty: string }[] = [];
-    const incorrectAnswers: { 
-      question: string, 
-      studentAnswer: string, 
-      correctAnswer: string, 
-      topic: string, 
-      difficulty: string,
-      explanation?: string 
-    }[] = [];
-    
-    quizResponse.question_responses.forEach(qr => {
-      // Track by topic
-      if (qr.topic) {
-        if (!topicResponses[qr.topic]) {
-          topicResponses[qr.topic] = {
-            total: 0,
-            correct: 0
-          };
-        }
-        
-        topicResponses[qr.topic].total++;
-        if (qr.is_correct) {
-          topicResponses[qr.topic].correct++;
-        }
-      }
-      
-      // Find the corresponding question details
-      const questionDetails = quizResponse.quiz.quiz_questions.find(qq => qq.id === qr.question_id);
-      
-      if (questionDetails) {
-        // Track by difficulty
-        if (questionDetails.difficulty) {
-          const difficulty = questionDetails.difficulty;
-          
-          if (!difficultyResponses[difficulty]) {
-            difficultyResponses[difficulty] = {
-              total: 0,
-              correct: 0
-            };
-          }
-          
-          difficultyResponses[difficulty].total++;
-          if (qr.is_correct) {
-            difficultyResponses[difficulty].correct++;
-          }
-        }
-        
-        // Add to correct/incorrect answer lists
-        if (qr.is_correct) {
-          correctAnswers.push({
-            question: questionDetails.question,
-            topic: qr.topic,
-            difficulty: questionDetails.difficulty
-          });
-        } else {
-          incorrectAnswers.push({
-            question: questionDetails.question,
-            studentAnswer: qr.student_answer,
-            correctAnswer: questionDetails.correct_answer,
-            topic: qr.topic,
-            difficulty: questionDetails.difficulty,
-            explanation: questionDetails.explanation
-          });
-          
-          // Store for patterns in common mistakes
-          commonMistakes.push({
-            topic: qr.topic,
-            difficulty: questionDetails.difficulty
-          });
-        }
-      }
-    });
-
-    // Identify strengths and areas of improvement specifically based on topic performance
-    const strengths: string[] = [];
-    const areasForImprovement: string[] = [];
-    
-    // Topic-based strengths (>=80% correct) and areas for improvement (<=60% correct)
-    Object.entries(topicResponses).forEach(([topic, data]) => {
-      const percentage = (data.correct / data.total) * 100;
-      
-      if (percentage >= 80) {
-        strengths.push(`Strong understanding of ${topic} (${Math.round(percentage)}% correct)`);
-      } else if (percentage <= 60) {
-        areasForImprovement.push(`Need to review ${topic} concepts (only ${Math.round(percentage)}% correct)`);
-      }
-    });
-
-    // Difficulty-level insights
-    Object.entries(difficultyResponses).forEach(([difficulty, data]) => {
-      const percentage = (data.correct / data.total) * 100;
-      
-      if (percentage >= 80 && data.total >= 2) {
-        strengths.push(`Excellent performance on ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
-      } else if (percentage <= 60 && data.total >= 2) {
-        areasForImprovement.push(`Struggling with ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
-      }
-    });
-
-    // If no specific topic strengths were identified but overall score is good
-    if (strengths.length === 0) {
-      if (quizResponse.score >= 70) {
-        strengths.push("Good overall performance across topics");
-      } else if (quizResponse.score >= 50) {
-        strengths.push("Basic understanding of the subject matter");
-      } else {
-        strengths.push("Commitment to learning shown by attempting all questions");
-      }
-    }
-
-    // If no specific topic weaknesses were identified
-    if (areasForImprovement.length === 0) {
-      if (quizResponse.score < 70) {
-        areasForImprovement.push("General review of core concepts recommended");
-      } else if (quizResponse.score < 90) {
-        areasForImprovement.push("Review missed questions to achieve mastery");
-      }
-    }
-
-    // Generate advice based on performance analysis
-    let advice = "";
-    
-    if (quizResponse.score >= 90) {
-      advice = "Excellent work! To further enhance your knowledge, consider exploring advanced topics or helping peers understand these concepts. Review any questions you missed to ensure complete mastery of the subject.";
-    } else if (quizResponse.score >= 70) {
-      advice = "Good job! Focus on strengthening the specific topics where you scored lower. Create flashcards for concepts you find challenging, and consider setting up regular study sessions to reinforce your knowledge.";
-    } else if (quizResponse.score >= 50) {
-      advice = "You're on the right track! Create a study schedule focusing on the topics where you scored lower. Break down difficult concepts into smaller parts and practice with additional questions. Consider seeking help with the specific topics you're struggling with.";
-    } else {
-      advice = "Don't get discouraged! Focus on mastering one topic at a time, starting with fundamentals. Establish a consistent study routine and reach out to your instructor for additional support and resources for the specific topics you're struggling with.";
-    }
-    
-    // Compile the AI feedback
-    const aiFeedback: AIFeedback = {
-      strengths,
-      areas_for_improvement: areasForImprovement,
-      advice
-    };
+    // Generate AI feedback based on the analysis
+    const aiFeedback = generateFeedback(analysisData, quizResponse.score);
 
     console.log("Generated AI feedback:", aiFeedback);
 
@@ -280,33 +93,13 @@ serve(async (req) => {
         .single();
 
       if (quizData?.course_id) {
-        // Get current student performance record
-        const { data: performance } = await supabase
-          .from('student_performance')
-          .select('*')
-          .eq('student_id', quizResponse.student_id)
-          .eq('course_id', quizData.course_id)
-          .single();
-          
-        if (performance) {
-          // Update the student performance with strengths and areas for improvement
-          const existingStrengths = performance.strengths || [];
-          const existingAreas = performance.areas_for_improvement || [];
-          
-          // Add new unique strengths and areas for improvement
-          const updatedStrengths = [...new Set([...existingStrengths, ...strengths])];
-          const updatedAreas = [...new Set([...existingAreas, ...areasForImprovement])];
-          
-          // Update student performance
-          await supabase
-            .from('student_performance')
-            .update({
-              strengths: updatedStrengths,
-              areas_for_improvement: updatedAreas,
-              last_activity: new Date().toISOString()
-            })
-            .eq('id', performance.id);
-        }
+        await updateStudentProfile(
+          supabase, 
+          quizResponse.student_id, 
+          quizData.course_id, 
+          aiFeedback.strengths, 
+          aiFeedback.areas_for_improvement
+        );
       }
     } catch (error) {
       // Don't fail the whole operation if this part fails
