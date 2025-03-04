@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -31,6 +31,7 @@ interface Quiz {
 
 const TakeQuiz = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -40,6 +41,28 @@ const TakeQuiz = () => {
     queryKey: ['quiz', id],
     queryFn: async () => {
       if (!id) throw new Error("Quiz ID is required");
+      
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      
+      if (userId) {
+        const { data: savedProgress } = await supabase
+          .from('quiz_responses')
+          .select('*')
+          .eq('quiz_id', id)
+          .eq('student_id', userId)
+          .is('completed_at', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (savedProgress) {
+          toast({
+            title: "Quiz Progress Restored",
+            description: "Your previous quiz progress has been loaded.",
+          });
+        }
+      }
       
       const { data, error } = await supabase
         .from('quizzes')
@@ -112,6 +135,59 @@ const TakeQuiz = () => {
     handleSubmit
   } = useQuizTaking(quizId, quizQuestions, () => setQuizSubmitted(true));
 
+  const handleExitQuiz = async () => {
+    if (!quizId || !quiz) return;
+    
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      
+      if (userId) {
+        const { data: existingResponse } = await supabase
+          .from('quiz_responses')
+          .select('id')
+          .eq('quiz_id', quizId)
+          .eq('student_id', userId)
+          .is('completed_at', null)
+          .single();
+          
+        if (existingResponse) {
+          await supabase
+            .from('quiz_responses')
+            .update({
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingResponse.id);
+        } else {
+          await supabase
+            .from('quiz_responses')
+            .insert([
+              {
+                quiz_id: quizId,
+                student_id: userId,
+                start_time: new Date().toISOString(),
+                total_questions: quizQuestions.length
+              }
+            ]);
+        }
+        
+        toast({
+          title: "Progress Saved",
+          description: "Your quiz progress has been saved. You can resume later.",
+        });
+        
+        navigate('/quizzes');
+      }
+    } catch (error) {
+      console.error("Error saving quiz progress:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save quiz progress.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (quizError) {
     return <QuizError error={quizError} />;
   }
@@ -150,6 +226,7 @@ const TakeQuiz = () => {
         onNext={handleNextQuestion}
         onPrevious={handlePreviousQuestion}
         onSubmit={handleSubmit}
+        onExit={handleExitQuiz}
       />
     </div>
   );
