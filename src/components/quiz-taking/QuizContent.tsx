@@ -106,6 +106,7 @@ export const QuizContent = ({ quizId, quiz, questions, onQuizSubmitted }: QuizCo
   };
 
   const currentQuestionData = questions[currentQuestion];
+  const currentSelectedAnswer = selectedAnswers[currentQuestion];
 
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6">
@@ -113,7 +114,7 @@ export const QuizContent = ({ quizId, quiz, questions, onQuizSubmitted }: QuizCo
         question={currentQuestionData}
         currentIndex={currentQuestion}
         totalQuestions={questions.length}
-        selectedAnswer={selectedAnswers[currentQuestion]}
+        selectedAnswer={currentSelectedAnswer}
         onAnswerSelect={(answer) => handleAnswerSelect(currentQuestion, answer)}
         onNext={handleNextQuestion}
         onPrevious={handlePreviousQuestion}

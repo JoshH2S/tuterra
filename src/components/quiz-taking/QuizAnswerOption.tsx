@@ -30,16 +30,18 @@ export const QuizAnswerOption = ({
     }
   }
 
+  const optionId = `option-${optionKey}`;
+
   return (
     <div className={optionClassName}>
       <RadioGroupItem 
         value={optionKey} 
-        id={`option-${optionKey}`} 
+        id={optionId}
         className="border-2"
         disabled={disabled}
       />
       <Label 
-        htmlFor={`option-${optionKey}`} 
+        htmlFor={optionId}
         className="flex-1 cursor-pointer py-2 px-1 rounded-md hover:bg-gray-50 transition-colors"
       >
         {optionValue}

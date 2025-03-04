@@ -1,3 +1,4 @@
+
 import { RadioGroup } from "@/components/ui/radio-group";
 import {
   Card,
@@ -8,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { QuizAnswerOption } from "./QuizAnswerOption";
 import { QuizAnswerFeedback } from "./QuizAnswerFeedback";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
@@ -44,6 +45,16 @@ export const QuizQuestionCard = ({
   const cardRef = useRef<HTMLDivElement>(null);
   
   const minSwipeDistance = 50;
+
+  // Reset RadioGroup value when question changes
+  const [currentQuestionId, setCurrentQuestionId] = useState<string>(question?.id || '');
+  
+  useEffect(() => {
+    // Update the tracked question ID whenever the question changes
+    if (question?.id && question.id !== currentQuestionId) {
+      setCurrentQuestionId(question.id);
+    }
+  }, [question, currentQuestionId]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
@@ -119,14 +130,15 @@ export const QuizQuestionCard = ({
         </div>
         
         <RadioGroup
-          value={selectedAnswer}
+          value={selectedAnswer || ""}
           onValueChange={(value) => onAnswerSelect(value)}
           className="space-y-1 sm:space-y-2"
           disabled={Boolean(answerSubmitted)}
+          key={question.id} // Force RadioGroup to remount when question changes
         >
           {Object.entries(question.options).map(([key, value]) => (
             <QuizAnswerOption
-              key={key}
+              key={`${question.id}-${key}`} // Ensure unique keys across questions
               optionKey={key}
               optionValue={value}
               isCorrect={key === question.correct_answer}
