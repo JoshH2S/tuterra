@@ -1000,29 +1000,35 @@ export type Database = {
       }
       student_performance: {
         Row: {
+          areas_for_improvement: string[] | null
           average_score: number
           completed_quizzes: number
           course_id: string
           id: string
           last_activity: string
+          strengths: string[] | null
           student_id: string
           total_quizzes: number
         }
         Insert: {
+          areas_for_improvement?: string[] | null
           average_score?: number
           completed_quizzes?: number
           course_id: string
           id?: string
           last_activity?: string
+          strengths?: string[] | null
           student_id: string
           total_quizzes?: number
         }
         Update: {
+          areas_for_improvement?: string[] | null
           average_score?: number
           completed_quizzes?: number
           course_id?: string
           id?: string
           last_activity?: string
+          strengths?: string[] | null
           student_id?: string
           total_quizzes?: number
         }
