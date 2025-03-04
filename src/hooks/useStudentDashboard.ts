@@ -40,7 +40,7 @@ export const useStudentDashboard = () => {
           status: course.status as StudentCourse['status']
         })) || [];
 
-        // Fetch performance data with course titles
+        // Fetch performance data with course titles and strengths/areas for improvement
         const { data: performanceData, error: performanceError } = await supabase
           .from('student_performance')
           .select(`
@@ -51,6 +51,8 @@ export const useStudentDashboard = () => {
             completed_quizzes,
             average_score,
             last_activity,
+            strengths,
+            areas_for_improvement,
             courses (
               title
             )
@@ -69,7 +71,9 @@ export const useStudentDashboard = () => {
           average_score: Number(p.average_score) || 0, // Ensure we convert to number
           last_activity: p.last_activity,
           course_title: p.courses?.title || 'Unnamed Course',
-          courses: p.courses
+          courses: p.courses,
+          strengths: p.strengths || [],
+          areas_for_improvement: p.areas_for_improvement || []
         }));
 
         console.log('Transformed performance data:', transformedPerformanceData);

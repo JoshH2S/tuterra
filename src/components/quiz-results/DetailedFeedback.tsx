@@ -1,10 +1,10 @@
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { MobileFeedback } from "./feedback/MobileFeedback";
+import { DesktopFeedback } from "./feedback/DesktopFeedback";
 import { LoadingFeedback } from "./feedback/LoadingFeedback";
 import { EmptyFeedback } from "./feedback/EmptyFeedback";
-import { DesktopFeedback } from "./feedback/DesktopFeedback";
-import { MobileFeedback } from "./feedback/MobileFeedback";
 
 export interface AIFeedback {
   strengths?: string[];

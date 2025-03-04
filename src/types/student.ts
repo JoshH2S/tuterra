@@ -24,4 +24,6 @@ export interface StudentPerformance {
   courses?: {
     title: string;
   };
+  strengths?: string[];
+  areas_for_improvement?: string[];
 }

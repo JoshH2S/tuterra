@@ -10,6 +10,7 @@ import { NewsFeed } from "@/components/dashboard/NewsFeed";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -31,6 +32,14 @@ export default function StudentDashboard() {
       </div>
     );
   }
+
+  // Collect all strengths and areas for improvement across all courses
+  const allStrengths = performance.flatMap(p => p.strengths || []);
+  const allAreasForImprovement = performance.flatMap(p => p.areas_for_improvement || []);
+  
+  // Remove duplicates
+  const uniqueStrengths = [...new Set(allStrengths)];
+  const uniqueAreasForImprovement = [...new Set(allAreasForImprovement)];
 
   const handleCreateSession = async (sessionData: Omit<StudySession, 'id' | 'student_id'>) => {
     await createSession(sessionData);
@@ -85,6 +94,13 @@ export default function StudentDashboard() {
         <div className="lg:col-span-2 space-y-6">
           <PerformanceOverview performance={performance} />
 
+          {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
+            <StrengthsAndAreas 
+              strengths={uniqueStrengths} 
+              areasForImprovement={uniqueAreasForImprovement} 
+            />
+          )}
+
           <div>
             <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-semibold mb-4`}>My Courses</h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -118,4 +134,4 @@ export default function StudentDashboard() {
       </div>
     </div>
   );
-};
+}

@@ -8,6 +8,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface TopicPerformance {
+  [topic: string]: { 
+    total: number; 
+    correct: number;
+  }
+}
+
+interface QuestionResponse {
+  question_id: string;
+  student_answer: string;
+  is_correct: boolean;
+  topic: string;
+}
+
+interface QuizQuestion {
+  id: string;
+  question: string;
+  correct_answer: string;
+  options: Record<string, string>;
+  topic: string;
+  explanation?: string;
+  difficulty: string;
+}
+
+interface Quiz {
+  title: string;
+  quiz_questions: QuizQuestion[];
+}
+
+interface QuizResponse {
+  id: string;
+  quiz: Quiz;
+  score: number;
+  question_responses: QuestionResponse[];
+  topic_performance: TopicPerformance;
+  ai_feedback?: {
+    strengths: string[];
+    areas_for_improvement: string[];
+    advice: string;
+  };
+}
+
+interface AIFeedback {
+  strengths: string[];
+  areas_for_improvement: string[];
+  advice: string;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -272,7 +320,7 @@ serve(async (req) => {
     }
 
     // Compile the AI feedback
-    const aiFeedback = {
+    const aiFeedback: AIFeedback = {
       strengths,
       areas_for_improvement: areasForImprovement,
       advice
@@ -289,6 +337,55 @@ serve(async (req) => {
     if (updateError) {
       console.error("Error updating quiz response with AI feedback:", updateError);
       throw new Error(`Error updating quiz response: ${updateError.message}`);
+    }
+
+    // Now update the student's profile with their strengths and areas for improvement
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      // Get course id from the quiz
+      const { data: quizData } = await supabase
+        .from('quizzes')
+        .select('course_id')
+        .eq('id', quizResponse.quiz_id)
+        .single();
+
+      if (quizData?.course_id) {
+        // Get current student performance record
+        const { data: performance } = await supabase
+          .from('student_performance')
+          .select('*')
+          .eq('student_id', user.id)
+          .eq('course_id', quizData.course_id)
+          .single();
+          
+        if (performance) {
+          // Update the student performance with strengths and areas for improvement
+          const existingStrengths = performance.strengths || [];
+          const existingAreas = performance.areas_for_improvement || [];
+          
+          // Add new unique strengths and areas for improvement
+          const updatedStrengths = [...new Set([...existingStrengths, ...strengths])];
+          const updatedAreas = [...new Set([...existingAreas, ...areasForImprovement])];
+          
+          // Update student performance
+          await supabase
+            .from('student_performance')
+            .update({
+              strengths: updatedStrengths,
+              areas_for_improvement: updatedAreas,
+              last_activity: new Date().toISOString()
+            })
+            .eq('id', performance.id);
+        }
+      }
+    } catch (error) {
+      // Don't fail the whole operation if this part fails
+      console.error("Error updating student profile with strengths:", error);
     }
 
     return new Response(
