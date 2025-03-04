@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,7 +73,6 @@ const TakeQuiz = () => {
     },
   });
 
-  // Update the state variables once quiz data is loaded
   useEffect(() => {
     if (quiz && quiz.quiz_questions && quiz.quiz_questions.length > 0) {
       setQuizQuestions(quiz.quiz_questions);
@@ -91,31 +89,29 @@ const TakeQuiz = () => {
       variant: "destructive",
     });
     
-    // Only try to submit if we have the quiz loaded
     if (quiz && quizId) {
       handleSubmit();
     }
   };
 
-  // Initialize timer once quiz data is loaded
   const { timeRemaining } = useQuizTimer(
     quiz?.duration_minutes || 0, 
     handleTimeEnd
   );
 
-  // Use the custom hook for quiz taking
   const {
     currentQuestion,
     selectedAnswers,
     isSubmitting,
     showFeedback,
+    explanations,
+    isGeneratingExplanation,
     handleAnswerSelect,
     handleNextQuestion,
     handlePreviousQuestion,
     handleSubmit
   } = useQuizTaking(quizId, quizQuestions, () => setQuizSubmitted(true));
 
-  // Handle various states
   if (quizError) {
     return <QuizError error={quizError} />;
   }
@@ -142,6 +138,8 @@ const TakeQuiz = () => {
         onNext={handleNextQuestion}
         onPrevious={handlePreviousQuestion}
         showFeedback={showFeedback}
+        explanations={explanations}
+        isGeneratingExplanation={isGeneratingExplanation}
       />
       
       <QuizControls

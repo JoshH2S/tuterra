@@ -1,3 +1,4 @@
+
 import { RadioGroup } from "@/components/ui/radio-group";
 import {
   Card,
@@ -32,6 +33,8 @@ interface QuizQuestionCardProps {
   onNext?: () => void;
   onPrevious?: () => void;
   showFeedback: boolean;
+  explanations?: Record<number, string>;
+  isGeneratingExplanation?: boolean;
 }
 
 export const QuizQuestionCard = ({
@@ -43,6 +46,8 @@ export const QuizQuestionCard = ({
   onNext,
   onPrevious,
   showFeedback,
+  explanations = {},
+  isGeneratingExplanation = false,
 }: QuizQuestionCardProps) => {
   const isMobile = useIsMobile();
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -99,6 +104,7 @@ export const QuizQuestionCard = ({
   const progressPercentage = ((currentIndex + 1) / totalQuestions) * 100;
   const isAnswerCorrect = selectedAnswer === question.correct_answer;
   const answerSubmitted = showFeedback && selectedAnswer;
+  const currentExplanation = explanations[currentIndex];
 
   return (
     <Card 
@@ -146,7 +152,8 @@ export const QuizQuestionCard = ({
           <QuizAnswerFeedback
             isCorrect={isAnswerCorrect}
             correctAnswerText={question.options[question.correct_answer]}
-            explanation={question.explanation}
+            explanation={currentExplanation}
+            isLoadingExplanation={isGeneratingExplanation}
           />
         )}
 
