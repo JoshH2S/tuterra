@@ -191,134 +191,65 @@ serve(async (req) => {
       }
     });
 
-    // Identify strengths based on topics and difficulty levels
+    // Identify strengths and areas of improvement specifically based on topic performance
     const strengths: string[] = [];
-    
-    // Topic-based strengths
-    Object.entries(topicResponses).forEach(([topic, data]) => {
-      const percentage = (data.correct / data.total) * 100;
-      
-      if (percentage >= 70) {
-        const performanceLevel = percentage >= 90 ? "excellent" : (percentage >= 80 ? "strong" : "good");
-        strengths.push(`You demonstrated ${performanceLevel} understanding of ${topic} concepts (${Math.round(percentage)}% correct).`);
-      }
-    });
-    
-    // Difficulty-based strengths
-    Object.entries(difficultyResponses).forEach(([difficulty, data]) => {
-      const percentage = (data.correct / data.total) * 100;
-      
-      if (percentage >= 70 && data.total >= 2) { // Only include if there are enough questions
-        strengths.push(`You performed well on ${difficulty}-level questions (${Math.round(percentage)}% correct).`);
-      }
-    });
-    
-    // Pattern-based strengths (consistent correct answering)
-    if (correctAnswers.length >= 3) {
-      const correctTopics = correctAnswers.map(a => a.topic).filter(Boolean);
-      
-      // Find topics that appear multiple times in correct answers
-      const topicCounts: Record<string, number> = {};
-      correctTopics.forEach(topic => {
-        topicCounts[topic] = (topicCounts[topic] || 0) + 1;
-      });
-      
-      Object.entries(topicCounts).forEach(([topic, count]) => {
-        if (count >= 2 && !strengths.some(s => s.includes(topic))) {
-          strengths.push(`You consistently answered ${topic} questions correctly.`);
-        }
-      });
-    }
-
-    // Identify areas for improvement
     const areasForImprovement: string[] = [];
     
-    // Topic-based improvements
+    // Topic-based strengths (>=80% correct) and areas for improvement (<=60% correct)
     Object.entries(topicResponses).forEach(([topic, data]) => {
       const percentage = (data.correct / data.total) * 100;
       
-      if (percentage < 70) {
-        const needLevel = percentage < 50 ? "significant improvement" : "more practice";
-        areasForImprovement.push(`You need ${needLevel} with ${topic} concepts (${Math.round(percentage)}% correct).`);
+      if (percentage >= 80) {
+        strengths.push(`Strong understanding of ${topic} (${Math.round(percentage)}% correct)`);
+      } else if (percentage <= 60) {
+        areasForImprovement.push(`Need to review ${topic} concepts (only ${Math.round(percentage)}% correct)`);
       }
     });
-    
-    // Difficulty-based improvements
+
+    // Difficulty-level insights
     Object.entries(difficultyResponses).forEach(([difficulty, data]) => {
       const percentage = (data.correct / data.total) * 100;
       
-      if (percentage < 70 && data.total >= 2) { // Only include if there are enough questions
-        areasForImprovement.push(`You struggled with ${difficulty}-level questions (${Math.round(percentage)}% correct).`);
+      if (percentage >= 80 && data.total >= 2) {
+        strengths.push(`Excellent performance on ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
+      } else if (percentage <= 60 && data.total >= 2) {
+        areasForImprovement.push(`Struggling with ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
       }
     });
-    
-    // Find common topics in incorrect answers
-    if (incorrectAnswers.length > 0) {
-      const incorrectTopics = incorrectAnswers.map(a => a.topic).filter(Boolean);
-      
-      // Find topics that appear multiple times in incorrect answers
-      const topicCounts: Record<string, number> = {};
-      incorrectTopics.forEach(topic => {
-        topicCounts[topic] = (topicCounts[topic] || 0) + 1;
-      });
-      
-      Object.entries(topicCounts).forEach(([topic, count]) => {
-        if (count >= 2 && !areasForImprovement.some(a => a.includes(topic))) {
-          areasForImprovement.push(`Multiple errors were made on questions related to ${topic}.`);
-        }
-      });
-    }
 
-    // If no specific topics or difficulties are identified for strengths
+    // If no specific topic strengths were identified but overall score is good
     if (strengths.length === 0) {
       if (quizResponse.score >= 70) {
-        strengths.push("You demonstrated good overall knowledge of the subject matter.");
+        strengths.push("Good overall performance across topics");
       } else if (quizResponse.score >= 50) {
-        strengths.push("You have a basic understanding of the key concepts covered in this quiz.");
+        strengths.push("Basic understanding of the subject matter");
       } else {
-        strengths.push("You attempted all questions, which shows commitment to learning the material.");
+        strengths.push("Commitment to learning shown by attempting all questions");
       }
     }
 
-    // If no specific topics or difficulties are identified for improvement
+    // If no specific topic weaknesses were identified
     if (areasForImprovement.length === 0) {
       if (quizResponse.score < 70) {
-        areasForImprovement.push("You may benefit from a general review of the core concepts covered in this quiz.");
+        areasForImprovement.push("General review of core concepts recommended");
       } else if (quizResponse.score < 90) {
-        areasForImprovement.push("Although you did well overall, reviewing specific questions you missed could improve your understanding.");
+        areasForImprovement.push("Review missed questions to achieve mastery");
       }
     }
 
-    // Generate advice based on performance and patterns
+    // Generate advice based on performance analysis
     let advice = "";
     
     if (quizResponse.score >= 90) {
       advice = "Excellent work! To further enhance your knowledge, consider exploring advanced topics or helping peers understand these concepts. Review any questions you missed to ensure complete mastery of the subject.";
     } else if (quizResponse.score >= 70) {
-      advice = "Good job! Review the questions you missed and focus on understanding why the correct answers are correct. Create flashcards for concepts you find challenging, and consider setting up regular study sessions to reinforce your knowledge.";
+      advice = "Good job! Focus on strengthening the specific topics where you scored lower. Create flashcards for concepts you find challenging, and consider setting up regular study sessions to reinforce your knowledge.";
     } else if (quizResponse.score >= 50) {
-      advice = "You're on the right track! Try creating a study schedule focusing on the topics where you scored lower. Break down difficult concepts into smaller parts, use visual aids like diagrams or charts, and practice with additional questions. Consider seeking additional resources or asking for help with specific concepts.";
+      advice = "You're on the right track! Create a study schedule focusing on the topics where you scored lower. Break down difficult concepts into smaller parts and practice with additional questions. Consider seeking help with the specific topics you're struggling with.";
     } else {
-      advice = "Don't get discouraged! Learning takes time. Revisit the foundational concepts, breaking them down into smaller pieces, and practice regularly. Establish a consistent study routine, use different learning modalities (visual, auditory, kinesthetic), and reach out to your instructor for additional support and resources.";
+      advice = "Don't get discouraged! Focus on mastering one topic at a time, starting with fundamentals. Establish a consistent study routine and reach out to your instructor for additional support and resources for the specific topics you're struggling with.";
     }
     
-    // Add specific advice based on difficulty patterns
-    const difficultyLevels = ["beginner", "intermediate", "advanced", "expert"];
-    let highestSuccessLevel = "";
-    
-    for (const level of difficultyLevels) {
-      if (difficultyResponses[level] && (difficultyResponses[level].correct / difficultyResponses[level].total) >= 0.7) {
-        highestSuccessLevel = level;
-      }
-    }
-    
-    if (highestSuccessLevel) {
-      const nextLevel = difficultyLevels[difficultyLevels.indexOf(highestSuccessLevel) + 1];
-      if (nextLevel) {
-        advice += ` You're performing well at the ${highestSuccessLevel} level, so consider challenging yourself with more ${nextLevel}-level questions to continue growing.`;
-      }
-    }
-
     // Compile the AI feedback
     const aiFeedback: AIFeedback = {
       strengths,
@@ -341,12 +272,6 @@ serve(async (req) => {
 
     // Now update the student's profile with their strengths and areas for improvement
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
       // Get course id from the quiz
       const { data: quizData } = await supabase
         .from('quizzes')
@@ -359,7 +284,7 @@ serve(async (req) => {
         const { data: performance } = await supabase
           .from('student_performance')
           .select('*')
-          .eq('student_id', user.id)
+          .eq('student_id', quizResponse.student_id)
           .eq('course_id', quizData.course_id)
           .single();
           
