@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +21,7 @@ export const useQuizTaking = (
   onSubmitSuccess?: () => void
 ) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  // Initialize with empty object to ensure no pre-selected answers
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -27,7 +29,7 @@ export const useQuizTaking = (
   const [isGeneratingExplanation, setIsGeneratingExplanation] = useState(false);
   const navigate = useNavigate();
 
-  // Reset state when quiz changes
+  // Reset state when quiz changes - ensure no pre-selected answers
   useEffect(() => {
     if (quizId && questions.length > 0) {
       setCurrentQuestion(0);
@@ -101,7 +103,7 @@ export const useQuizTaking = (
   }, []);
 
   const handleAnswerSelect = useCallback((questionIndex: number, answer: string) => {
-    if (showFeedback) return; // Don't allow changing answer when feedback is shown
+    if (showFeedback && selectedAnswers[questionIndex]) return; // Don't allow changing answer after feedback is shown
     
     setSelectedAnswers(prev => ({ ...prev, [questionIndex]: answer }));
     setShowFeedback(true); // Show feedback immediately after selecting an answer
