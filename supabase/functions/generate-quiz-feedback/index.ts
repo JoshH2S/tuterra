@@ -37,8 +37,7 @@ serve(async (req) => {
           question_id,
           student_answer,
           is_correct,
-          topic,
-          explanation
+          topic
         ),
         quiz:quizzes(
           title,

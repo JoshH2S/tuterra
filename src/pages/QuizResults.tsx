@@ -7,6 +7,12 @@ import { ResultsLoader } from "@/components/quiz-results/ResultsLoader";
 import { ResultsError } from "@/components/quiz-results/ResultsError";
 import { ResultsContainer } from "@/components/quiz-results/ResultsContainer";
 
+interface AIFeedback {
+  strengths: string[];
+  areas_for_improvement: string[];
+  advice: string;
+}
+
 export default function QuizResults() {
   const { id } = useParams();
   const [results, setResults] = useState<any>(null);
@@ -36,10 +42,11 @@ export default function QuizResults() {
         console.log("Quiz response data:", responseData);
         
         // Check if AI feedback exists and has content
-        const hasFeedback = responseData?.ai_feedback && 
-          (responseData.ai_feedback.strengths?.length > 0 || 
-           responseData.ai_feedback.areas_for_improvement?.length > 0 || 
-           responseData.ai_feedback.advice);
+        const feedback = responseData?.ai_feedback as AIFeedback | null;
+        const hasFeedback = feedback && 
+          ((feedback.strengths?.length > 0) || 
+           (feedback.areas_for_improvement?.length > 0) || 
+           feedback.advice);
            
         // Auto-generate feedback if it doesn't exist or is empty and quiz is completed
         if (responseData?.completed_at && !hasFeedback) {
