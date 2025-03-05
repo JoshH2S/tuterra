@@ -23,7 +23,13 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     currentQuestion, 
     submitResponse,
     remainingQuestions,
+    transcript,
   } = useJobInterview();
+
+  // Get the most recent AI message from the transcript
+  const latestAiMessage = transcript
+    .filter(message => message.role === 'ai')
+    .slice(-1)[0];
 
   useEffect(() => {
     if (currentQuestion && !isCompleted) {
@@ -132,7 +138,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
                 duration={1.5}
                 className="font-medium [--base-color:theme(colors.primary.400)] [--base-gradient-color:theme(colors.primary.300)] dark:[--base-color:theme(colors.primary.500)] dark:[--base-gradient-color:theme(colors.primary.300)]"
               >
-                {currentQuestion?.text || ""}
+                {latestAiMessage?.text || currentQuestion?.text || ""}
               </TextShimmer>
             </motion.div>
           )}
