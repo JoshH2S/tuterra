@@ -42,7 +42,63 @@ export function DesktopFeedback({ feedback }: DesktopFeedbackProps) {
     return topicNames;
   };
   
+  // Extract topic names from areas for improvement with less than 80% performance
+  const extractWeakTopicNames = (areasList: string[]) => {
+    const weakTopics: string[] = [];
+    
+    areasList.forEach(area => {
+      // Check if the area has a percentage
+      if (area.includes('(') && area.includes('%')) {
+        let topicName = '';
+        let percentage = 0;
+        
+        // Pattern 1: Need to review X (Y% correct)
+        if (area.includes('Need to review')) {
+          const topicMatch = area.match(/Need to review (.*?) \(/);
+          if (topicMatch && topicMatch[1]) {
+            topicName = topicMatch[1];
+          }
+        } 
+        // Pattern 2: "Practice with more examples on X"
+        else if (area.includes('Practice with more examples on')) {
+          const topicMatch = area.match(/Practice with more examples on (.*?) to/);
+          if (topicMatch && topicMatch[1]) {
+            topicName = topicMatch[1];
+          }
+        }
+        // Pattern 3: "Revisit the fundamentals of X"
+        else if (area.includes('Revisit the fundamentals of')) {
+          const topicMatch = area.match(/Revisit the fundamentals of (.*?) -/);
+          if (topicMatch && topicMatch[1]) {
+            topicName = topicMatch[1];
+          }
+        }
+        // Pattern 4: "Focus on mastering the basic concepts of X"
+        else if (area.includes('Focus on mastering the basic concepts of')) {
+          const topicMatch = area.match(/Focus on mastering the basic concepts of (.*?) -/);
+          if (topicMatch && topicMatch[1]) {
+            topicName = topicMatch[1];
+          }
+        }
+        
+        // Extract percentage
+        const percentMatch = area.match(/\((\d+)% correct\)/);
+        if (percentMatch && percentMatch[1]) {
+          percentage = parseInt(percentMatch[1]);
+        }
+        
+        // Only include topics with less than 80%
+        if (topicName && percentage < 80) {
+          weakTopics.push(topicName);
+        }
+      }
+    });
+    
+    return weakTopics;
+  };
+  
   const topicStrengths = extractTopicNames(strengths);
+  const weakTopics = extractWeakTopicNames(areasForImprovement);
   
   return (
     <div className="space-y-4">
@@ -72,14 +128,14 @@ export function DesktopFeedback({ feedback }: DesktopFeedbackProps) {
             <BookOpen className="h-5 w-5 text-amber-600" />
             <span>Areas for Improvement</span>
           </h3>
-          {areasForImprovement.length > 0 ? (
+          {weakTopics.length > 0 ? (
             <ul className="list-disc pl-5 space-y-2">
-              {areasForImprovement.map((area, index) => (
-                <li key={index} className="text-slate-700">{area}</li>
+              {weakTopics.map((topic, index) => (
+                <li key={index} className="text-slate-700">{topic}</li>
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground">No specific areas for improvement identified.</p>
+            <p className="text-muted-foreground">No topics below 80% identified.</p>
           )}
         </CardContent>
       </Card>
