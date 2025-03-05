@@ -1,8 +1,8 @@
 
 import { StudentPerformance } from "@/types/student";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertTriangle } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AlertTriangle, BarChart as BarChartIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PerformanceOverviewProps {
@@ -57,21 +57,45 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
           
           {chartData.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Score Distribution</h3>
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <BarChartIcon className="mr-2 h-5 w-5 text-blue-500" />
+                Course Performance
+              </h3>
               <div className="h-[250px] bg-card rounded-lg p-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <XAxis dataKey="course" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="score" 
-                      stroke="#2563eb" 
-                      strokeWidth={2}
-                      dot={{ fill: '#2563eb' }}
+                  <BarChart 
+                    data={chartData}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                    barSize={36}
+                  >
+                    <XAxis 
+                      dataKey="course" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={70}
+                      tick={{ fontSize: 12 }}
                     />
-                  </LineChart>
+                    <YAxis 
+                      domain={[0, 100]}
+                      label={{ 
+                        value: 'Score (%)', 
+                        angle: -90, 
+                        position: 'insideLeft',
+                        style: { textAnchor: 'middle' }
+                      }} 
+                    />
+                    <Tooltip 
+                      formatter={(value) => [`${value}%`, 'Average Score']}
+                      labelStyle={{ fontWeight: 'bold' }}
+                    />
+                    <Bar 
+                      dataKey="score" 
+                      fill="#3b82f6" 
+                      radius={[4, 4, 0, 0]}
+                      animationDuration={1000}
+                      name="Average Score"
+                    />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
