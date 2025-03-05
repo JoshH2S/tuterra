@@ -1,7 +1,5 @@
 
-import { CourseTemplates } from "@/components/courses/CourseTemplates";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Save, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -24,14 +22,12 @@ export const QuizGenerationHeader = ({ onSaveTemplate }: QuizGenerationHeaderPro
               Case Study Quiz
             </Button>
           </Link>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">Load Template</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <CourseTemplates />
-            </DialogContent>
-          </Dialog>
+          <Link to="/quizzes">
+            <Button variant="outline">
+              <FileText className="w-4 h-4 mr-2" />
+              View Quizzes
+            </Button>
+          </Link>
           {onSaveTemplate && (
             <Button onClick={onSaveTemplate} variant="outline">
               <Save className="w-4 h-4 mr-2" />
