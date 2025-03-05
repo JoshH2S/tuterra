@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AnimatePresence } from "framer-motion";
 import { useJobInterview } from "@/hooks/useJobInterview";
@@ -8,6 +8,7 @@ import { InterviewCompleted } from "./InterviewCompleted";
 import { InterviewQuestion } from "./InterviewQuestion";
 import { InterviewResponseInput } from "./InterviewResponseInput";
 import { InterviewTimer } from "./InterviewTimer";
+import { TranscriptDownload } from "./TranscriptDownload";
 
 interface InterviewChatProps {
   isCompleted: boolean;
@@ -28,85 +29,107 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     currentQuestionIndex,
   } = useJobInterview();
 
-  // Set typing effect when the component first loads
-  useEffect(() => {
-    if (currentQuestion && !isCompleted) {
-      setIsTyping(true);
-      const timer = setTimeout(() => {
-        setIsTyping(false);
-      }, 1000); 
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  // Memoize derived values
+  const displayMessage = useMemo(() => 
+    currentQuestion?.text || "", 
+    [currentQuestion]
+  );
 
-  // Set typing effect when the question changes
+  const questionProgress = useMemo(() => 
+    !isCompleted && questions.length > 0
+      ? `Q: ${currentQuestionIndex + 1}/${questions.length}`
+      : null,
+    [isCompleted, questions.length, currentQuestionIndex]
+  );
+
+  // Combine typing effects into a single useEffect
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     if (currentQuestion && !isCompleted) {
       setIsTyping(true);
-      const timer = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         setIsTyping(false);
       }, 1000);
-      return () => clearTimeout(timer);
     }
-  }, [currentQuestionIndex, isCompleted]);
 
-  // Timer countdown logic
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [currentQuestion, currentQuestionIndex, isCompleted]);
+
+  // Optimized timer logic using setInterval
   useEffect(() => {
-    if (timeLeft === null) return;
-    
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-    
-    // Auto-submit when time runs out
+    if (timeLeft === null || timeLeft <= 0) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev === null || prev <= 0) {
+          clearInterval(intervalId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [timeLeft]);
+
+  // Handle time expiration
+  useEffect(() => {
     if (timeLeft === 0 && submitResponse) {
       handleSubmit("(Time expired)");
     }
-  }, [timeLeft]);
+  }, [timeLeft, submitResponse]);
 
-  const handleSubmit = (response: string) => {
-    console.log(`Submitting response for question ${currentQuestionIndex + 1}/${questions.length}`);
+  // Memoized submit handler
+  const handleSubmit = useCallback((response: string) => {
     submitResponse(response);
     setTimeLeft(null);
     
-    // Only set typing if not on the last question
     if (currentQuestionIndex < questions.length - 1) {
       setIsTyping(true);
-      setTimeout(() => setIsTyping(false), 1000);
+      // Use RAF for smoother animation timing
+      requestAnimationFrame(() => {
+        setTimeout(() => setIsTyping(false), 1000);
+      });
     }
-  };
-
-  // Get the message to display
-  const displayMessage = currentQuestion?.text || "";
+  }, [currentQuestionIndex, questions.length, submitResponse]);
 
   return (
     <Card className="shadow-lg flex flex-col h-[600px] md:h-[550px]">
       <CardHeader className="border-b">
         <div className="flex justify-between items-center">
           <CardTitle className="text-xl md:text-2xl">AI Interview</CardTitle>
-          <InterviewTimer timeLeft={timeLeft} />
+          <div className="flex items-center gap-4">
+            {isCompleted && <TranscriptDownload transcript={transcript} />}
+            <InterviewTimer timeLeft={timeLeft} />
+          </div>
         </div>
       </CardHeader>
       
       <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">
-        <div className="absolute top-2 right-2 text-xs text-muted-foreground">
-          {!isCompleted && questions.length > 0 && (
-            <span>Q: {currentQuestionIndex + 1}/{questions.length}</span>
-          )}
-        </div>
+        {questionProgress && (
+          <div className="absolute top-2 right-2 text-xs text-muted-foreground">
+            {questionProgress}
+          </div>
+        )}
         
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {isTyping ? (
-            <InterviewTypingIndicator />
+            <InterviewTypingIndicator key="typing" />
           ) : isCompleted ? (
             <InterviewCompleted 
+              key="completed"
               transcript={transcript} 
               isGeneratingFeedback={isGeneratingFeedback}
               feedback={feedback}
             />
           ) : (
             <InterviewQuestion 
+              key={`question-${currentQuestionIndex}`}
               message={displayMessage} 
               transcriptLength={transcript.length} 
             />
