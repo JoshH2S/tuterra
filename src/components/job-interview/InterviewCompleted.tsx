@@ -1,7 +1,6 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { TranscriptDownload } from "./TranscriptDownload";
 import { useJobInterview } from "@/hooks/useJobInterview";
 
 export const InterviewCompleted = () => {
@@ -18,10 +17,6 @@ export const InterviewCompleted = () => {
       <p className="text-muted-foreground mb-4">
         Thank you for participating. You can now download your interview transcript.
       </p>
-      
-      <div className="flex justify-center">
-        <TranscriptDownload transcript={transcript} />
-      </div>
     </motion.div>
   );
 };
