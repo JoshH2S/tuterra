@@ -11,32 +11,61 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
   let hasTopicSpecificStrengths = false;
   let hasTopicSpecificWeaknesses = false;
   
+  console.log("Generating feedback with topic responses:", JSON.stringify(topicResponses));
+  console.log("Overall score:", overallScore);
+  
   // Topic-based strengths (>=80% correct) and areas for improvement (<70% correct)
-  Object.entries(topicResponses).forEach(([topic, data]) => {
-    const percentage = (data.correct / data.total) * 100;
-    
-    if (percentage >= 80) {
-      // Always include the topic name and exact percentage
-      strengths.push(`Strong understanding of ${topic} (${Math.round(percentage)}% correct)`);
-      hasTopicSpecificStrengths = true;
-    } else if (percentage < 70) {
-      // Changed from 60% to 70% as per requirement
-      // Always include the topic name and exact percentage
-      areasForImprovement.push(`Need to review ${topic} concepts (only ${Math.round(percentage)}% correct)`);
-      hasTopicSpecificWeaknesses = true;
-    }
-  });
+  if (topicResponses && Object.keys(topicResponses).length > 0) {
+    Object.entries(topicResponses).forEach(([topic, data]) => {
+      // Skip entries with zero questions to avoid division by zero
+      if (data.total === 0) return;
+      
+      const percentage = (data.correct / data.total) * 100;
+      console.log(`Topic ${topic}: ${data.correct}/${data.total} = ${percentage}%`);
+      
+      if (percentage >= 80) {
+        // Always include the topic name and exact percentage
+        strengths.push(`Strong understanding of ${topic} (${Math.round(percentage)}% correct)`);
+        hasTopicSpecificStrengths = true;
+      } 
+      
+      if (percentage < 70) {
+        // Changed from 60% to 70% as per requirement
+        areasForImprovement.push(`Need to review ${topic} concepts (only ${Math.round(percentage)}% correct)`);
+        hasTopicSpecificWeaknesses = true;
+      }
+    });
+  } else {
+    console.log("No topic responses found");
+  }
+
+  console.log("Topic-specific strengths identified:", hasTopicSpecificStrengths);
+  console.log("Topic-specific weaknesses identified:", hasTopicSpecificWeaknesses);
 
   // Only add difficulty-level insights if we have no topic-specific feedback
-  if (!hasTopicSpecificStrengths && !hasTopicSpecificWeaknesses) {
+  if (!hasTopicSpecificStrengths && difficultyResponses && Object.keys(difficultyResponses).length > 0) {
     // Difficulty-level insights
     Object.entries(difficultyResponses).forEach(([difficulty, data]) => {
+      // Skip entries with zero questions
+      if (data.total === 0) return;
+      
       const percentage = (data.correct / data.total) * 100;
       
       if (percentage >= 80 && data.total >= 2) {
         strengths.push(`Excellent performance on ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
-      } else if (percentage < 70 && data.total >= 2) {
-        // Changed from 60% to 70% as per requirement
+      } 
+    });
+  }
+  
+  if (!hasTopicSpecificWeaknesses && difficultyResponses && Object.keys(difficultyResponses).length > 0) {
+    // Add difficulty weakness feedback
+    Object.entries(difficultyResponses).forEach(([difficulty, data]) => {
+      // Skip entries with zero questions
+      if (data.total === 0) return;
+      
+      const percentage = (data.correct / data.total) * 100;
+      
+      if (percentage < 70 && data.total >= 2) {
         areasForImprovement.push(`Struggling with ${difficulty}-level questions (only ${Math.round(percentage)}% correct)`);
       }
     });
@@ -56,7 +85,6 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
   // If no specific topic weaknesses were identified
   if (areasForImprovement.length === 0) {
     if (overallScore < 70) {
-      // Changed from "overallScore < 70" to be consistent with our 70% threshold
       areasForImprovement.push(`General review of core concepts recommended (${Math.round(overallScore)}% overall)`);
     } else if (overallScore < 90) {
       areasForImprovement.push(`Review missed questions to achieve mastery (${Math.round(overallScore)}% overall)`);
@@ -91,13 +119,7 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
       ? weakTopics.slice(0, -1).join(", ") + " and " + weakTopics[weakTopics.length - 1]
       : weakTopics[0];
     
-    advice += `Focus on strengthening your knowledge of ${topicsList} (${Math.round(
-      // Find the percentage for the first weak topic
-      Object.entries(topicResponses).find(([topic]) => topic === weakTopics[0])?.[1] 
-        ? (Object.entries(topicResponses).find(([topic]) => topic === weakTopics[0])?.[1].correct / 
-           Object.entries(topicResponses).find(([topic]) => topic === weakTopics[0])?.[1].total) * 100
-        : 0
-    )}% correct). `;
+    advice += `Focus on strengthening your knowledge of ${topicsList}. `;
   }
   
   // Add general advice based on overall score if we don't have specific topic advice
@@ -123,6 +145,13 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
       advice += `With your current score of ${Math.round(overallScore)}%, reach out to your instructor for additional support with these specific topics.`;
     }
   }
+  
+  // Log the final feedback for debugging
+  console.log("Generated feedback:", { 
+    strengths: strengths.length, 
+    areas_for_improvement: areasForImprovement.length,
+    hasAdvice: advice !== "" 
+  });
   
   return {
     strengths,

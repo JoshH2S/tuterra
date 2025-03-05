@@ -60,15 +60,17 @@ export default function QuizResults() {
           }
         }
         
-        // Now check if feedback has valid content
-        const hasFeedback = feedback && 
-          Array.isArray(feedback.strengths) && feedback.strengths.length > 0 &&
-          Array.isArray(feedback.areas_for_improvement) && feedback.areas_for_improvement.length > 0 &&
-          typeof feedback.advice === 'string' && feedback.advice.trim() !== '';
+        // Check for topic-specific feedback (more specific criteria)
+        const hasTopicSpecificFeedback = feedback && 
+          Array.isArray(feedback.strengths) && 
+          feedback.strengths.some(s => s.includes("Strong understanding of")) &&
+          Array.isArray(feedback.areas_for_improvement) && 
+          (feedback.areas_for_improvement.some(a => a.includes("Need to review")) || 
+           feedback.areas_for_improvement.length > 0);
            
-        // Auto-generate feedback if it doesn't exist or is empty and quiz is completed
-        if (responseData?.completed_at && !hasFeedback) {
-          console.log("No substantive AI feedback available - generating now");
+        // Auto-generate feedback if it doesn't exist or lacks topic-specific content
+        if (responseData?.completed_at && !hasTopicSpecificFeedback) {
+          console.log("No topic-specific AI feedback available - generating now");
           generateFeedback();
         } else {
           console.log("AI Feedback:", responseData.ai_feedback);
@@ -134,10 +136,11 @@ export default function QuizResults() {
       
       console.log("Updated feedback from database:", responseData.ai_feedback);
       
-      // Update only the ai_feedback field in the results state
+      // Update the results state with fresh data
       setResults(prev => ({
         ...prev,
-        ai_feedback: responseData.ai_feedback
+        ai_feedback: responseData.ai_feedback,
+        topic_performance: responseData.topic_performance
       }));
       
       toast({

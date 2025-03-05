@@ -31,62 +31,86 @@ export function analyzeQuizResponses(quizResponse: QuizResponse): AnalysisData {
     explanation?: string 
   }[] = [];
   
-  quizResponse.question_responses.forEach(qr => {
-    // Track by topic
-    if (qr.topic) {
-      if (!topicResponses[qr.topic]) {
-        topicResponses[qr.topic] = { total: 0, correct: 0 };
-      }
-      
-      topicResponses[qr.topic].total++;
-      if (qr.is_correct) {
-        topicResponses[qr.topic].correct++;
-      }
-    }
+  console.log("Analyzing quiz responses: ", 
+    quizResponse.question_responses ? quizResponse.question_responses.length : 0, 
+    " question responses found");
+  
+  // First, check if we already have topic_performance data, which is more reliable
+  if (quizResponse.topic_performance && Object.keys(quizResponse.topic_performance).length > 0) {
+    console.log("Using existing topic performance data");
     
-    // Find the corresponding question details
-    const questionDetails = quizResponse.quiz.quiz_questions.find(qq => qq.id === qr.question_id);
+    // Use the existing topic performance data
+    Object.entries(quizResponse.topic_performance).forEach(([topic, data]) => {
+      topicResponses[topic] = { 
+        total: data.total, 
+        correct: data.correct 
+      };
+    });
+  }
+  // If no topic_performance data exists, analyze from question responses
+  else if (quizResponse.question_responses && quizResponse.question_responses.length > 0) {
+    console.log("Generating topic performance from question responses");
     
-    if (questionDetails) {
-      // Track by difficulty
-      if (questionDetails.difficulty) {
-        const difficulty = questionDetails.difficulty;
-        
-        if (!difficultyResponses[difficulty]) {
-          difficultyResponses[difficulty] = { total: 0, correct: 0 };
+    quizResponse.question_responses.forEach(qr => {
+      // Track by topic
+      if (qr.topic) {
+        if (!topicResponses[qr.topic]) {
+          topicResponses[qr.topic] = { total: 0, correct: 0 };
         }
         
-        difficultyResponses[difficulty].total++;
+        topicResponses[qr.topic].total++;
         if (qr.is_correct) {
-          difficultyResponses[difficulty].correct++;
+          topicResponses[qr.topic].correct++;
         }
       }
       
-      // Add to correct/incorrect answer lists
-      if (qr.is_correct) {
-        correctAnswers.push({
-          question: questionDetails.question,
-          topic: qr.topic,
-          difficulty: questionDetails.difficulty
-        });
-      } else {
-        incorrectAnswers.push({
-          question: questionDetails.question,
-          studentAnswer: qr.student_answer,
-          correctAnswer: questionDetails.correct_answer,
-          topic: qr.topic,
-          difficulty: questionDetails.difficulty,
-          explanation: questionDetails.explanation
-        });
+      // Find the corresponding question details
+      const questionDetails = quizResponse.quiz.quiz_questions.find(qq => qq.id === qr.question_id);
+      
+      if (questionDetails) {
+        // Track by difficulty
+        if (questionDetails.difficulty) {
+          const difficulty = questionDetails.difficulty;
+          
+          if (!difficultyResponses[difficulty]) {
+            difficultyResponses[difficulty] = { total: 0, correct: 0 };
+          }
+          
+          difficultyResponses[difficulty].total++;
+          if (qr.is_correct) {
+            difficultyResponses[difficulty].correct++;
+          }
+        }
         
-        // Store for patterns in common mistakes
-        commonMistakes.push({
-          topic: qr.topic,
-          difficulty: questionDetails.difficulty
-        });
+        // Add to correct/incorrect answer lists
+        if (qr.is_correct) {
+          correctAnswers.push({
+            question: questionDetails.question,
+            topic: qr.topic,
+            difficulty: questionDetails.difficulty
+          });
+        } else {
+          incorrectAnswers.push({
+            question: questionDetails.question,
+            studentAnswer: qr.student_answer,
+            correctAnswer: questionDetails.correct_answer,
+            topic: qr.topic,
+            difficulty: questionDetails.difficulty,
+            explanation: questionDetails.explanation
+          });
+          
+          // Store for patterns in common mistakes
+          commonMistakes.push({
+            topic: qr.topic,
+            difficulty: questionDetails.difficulty
+          });
+        }
       }
-    }
-  });
+    });
+  }
+  
+  console.log("Topics identified:", Object.keys(topicResponses).length);
+  console.log("Difficulty levels identified:", Object.keys(difficultyResponses).length);
 
   return {
     topicResponses,
