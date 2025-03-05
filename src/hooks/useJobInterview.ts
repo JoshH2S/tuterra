@@ -59,13 +59,15 @@ export const useJobInterview = () => {
         
         setTranscript([welcomeMessage]);
         
-        // Add first question to transcript
+        // Add first question to transcript after a short delay to simulate conversation
         if (formattedQuestions.length > 0) {
-          setTranscript(prev => [...prev, {
-            id: formattedQuestions[0].id,
-            role: 'ai',
-            text: formattedQuestions[0].text
-          }]);
+          setTimeout(() => {
+            setTranscript(prev => [...prev, {
+              id: formattedQuestions[0].id,
+              role: 'ai',
+              text: formattedQuestions[0].text
+            }]);
+          }, 1000);
         }
       }
     } catch (error) {
@@ -104,23 +106,28 @@ export const useJobInterview = () => {
     
     // Move to next question if available
     if (currentQuestionIndex < questions.length - 1) {
-      const nextIndex = currentQuestionIndex + 1;
-      setCurrentQuestionIndex(nextIndex);
-      
-      // Add next question to transcript
-      setTranscript(prev => [...prev, {
-        id: questions[nextIndex].id,
-        role: 'ai',
-        text: questions[nextIndex].text
-      }]);
+      // Delay moving to the next question for a more natural conversation flow
+      setTimeout(() => {
+        const nextIndex = currentQuestionIndex + 1;
+        setCurrentQuestionIndex(nextIndex);
+        
+        // Add next question to transcript
+        setTranscript(prev => [...prev, {
+          id: questions[nextIndex].id,
+          role: 'ai',
+          text: questions[nextIndex].text
+        }]);
+      }, 800);
     } else {
-      // Interview completed
-      setTranscript(prev => [...prev, {
-        id: uuidv4(),
-        role: 'ai',
-        text: "Thank you for completing the interview. You can now review your transcript or download it for future reference."
-      }]);
-      setIsInterviewCompleted(true);
+      // Interview completed - add closing message
+      setTimeout(() => {
+        setTranscript(prev => [...prev, {
+          id: uuidv4(),
+          role: 'ai',
+          text: "Thank you for completing the interview. You can now review your transcript or download it for future reference."
+        }]);
+        setIsInterviewCompleted(true);
+      }, 800);
     }
   };
 

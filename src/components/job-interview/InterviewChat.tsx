@@ -7,6 +7,7 @@ import { Send, Clock, Download } from "lucide-react";
 import { useJobInterview } from "@/hooks/useJobInterview";
 import { motion, AnimatePresence } from "framer-motion";
 import { TextShimmer } from "@/components/ui/text-shimmer";
+import { useToast } from "@/hooks/use-toast";
 
 interface InterviewChatProps {
   isCompleted: boolean;
@@ -18,6 +19,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
   const [isTyping, setIsTyping] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
   
   const { 
     currentQuestion, 
@@ -31,15 +33,16 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     .filter(message => message.role === 'ai')
     .slice(-1)[0];
 
+  // Set typing effect when a new AI message is received or question changes
   useEffect(() => {
-    if (currentQuestion && !isCompleted) {
+    if ((currentQuestion || latestAiMessage) && !isCompleted) {
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 1000);
+      }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [currentQuestion, isCompleted]);
+  }, [currentQuestion, latestAiMessage, isCompleted]);
 
   // Set typing effect when a new message is added to transcript
   useEffect(() => {
@@ -47,7 +50,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 1000);
+      }, 1200);
       return () => clearTimeout(timer);
     }
   }, [transcript.length, isCompleted]);
@@ -79,6 +82,15 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
           textareaRef.current.focus();
         }
       }, 100);
+      
+      // Show typing indicator
+      setIsTyping(true);
+    } else if (!userResponse.trim()) {
+      toast({
+        title: "Empty response",
+        description: "Please type your response before submitting.",
+        variant: "destructive",
+      });
     }
   };
 
