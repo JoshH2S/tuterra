@@ -21,17 +21,36 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
     return null;
   }
   
-  // Filter out common generic strengths and focus on topic-specific ones first
-  const specificStrengths = strengths.filter(s => s.includes('Strong understanding of'));
-  const otherSpecificStrengths = strengths.filter(s => 
-    s.includes('(') && s.includes('%') && !s.includes('Strong understanding of')
-  );
-  const genericStrengths = strengths.filter(s => 
-    !s.includes('Strong understanding of') && (!s.includes('(') || !s.includes('%'))
-  );
+  // Extract only topic names from strength statements with 90%+ performance
+  const extractTopicNames = (strengthsList: string[]) => {
+    const topicNames: string[] = [];
+    
+    strengthsList.forEach(strength => {
+      // Check if the strength is about a specific topic and has a percentage
+      if (strength.includes('Strong understanding of') && strength.includes('(')) {
+        // Extract the topic name
+        const topicMatch = strength.match(/Strong understanding of (.*?) \(/);
+        if (topicMatch && topicMatch[1]) {
+          const topic = topicMatch[1];
+          
+          // Extract the percentage
+          const percentMatch = strength.match(/\((\d+)% correct\)/);
+          if (percentMatch && percentMatch[1]) {
+            const percentage = parseInt(percentMatch[1]);
+            
+            // Only include topics with 90% or above
+            if (percentage >= 90) {
+              topicNames.push(topic);
+            }
+          }
+        }
+      }
+    });
+    
+    return topicNames;
+  };
   
-  // Combine specific strengths first, then generic ones
-  const orderedStrengths = [...specificStrengths, ...otherSpecificStrengths, ...genericStrengths];
+  const topicStrengths = extractTopicNames(strengths);
   
   // Do the same for areas of improvement - prioritize topic-specific feedback
   const specificAreas = areasForImprovement.filter(a => a.includes('Need to review'));
@@ -77,17 +96,21 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
       <CardContent>
         {activeTab === 'strengths' && (
           <>
-            {hasStrengths ? (
+            {hasStrengths && topicStrengths.length > 0 ? (
               <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
-                {orderedStrengths.slice(0, 5).map((strength, index) => (
-                  <li key={index}>{strength}</li>
+                {topicStrengths.map((topic, index) => (
+                  <li key={index}>{topic}</li>
                 ))}
-                {orderedStrengths.length > 5 && (
+                {topicStrengths.length < strengths.length && (
                   <li className="text-muted-foreground">
-                    +{orderedStrengths.length - 5} more strengths
+                    +{strengths.length - topicStrengths.length} more topics
                   </li>
                 )}
               </ul>
+            ) : hasStrengths ? (
+              <p className="text-muted-foreground">
+                No topics with strong performance (90%+) yet.
+              </p>
             ) : (
               <p className="text-muted-foreground">
                 Complete more quizzes to identify your strengths.

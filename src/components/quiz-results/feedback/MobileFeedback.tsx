@@ -51,6 +51,37 @@ export function MobileFeedback({ feedback }: MobileFeedbackProps) {
   const strengths = Array.isArray(feedback.strengths) ? feedback.strengths : [];
   const areasForImprovement = Array.isArray(feedback.areas_for_improvement) ? feedback.areas_for_improvement : [];
   
+  // Extract only topic names from strength statements with 90%+ performance
+  const extractTopicNames = (strengthsList: string[]) => {
+    const topicNames: string[] = [];
+    
+    strengthsList.forEach(strength => {
+      // Check if the strength is about a specific topic and has a percentage
+      if (strength.includes('Strong understanding of') && strength.includes('(')) {
+        // Extract the topic name
+        const topicMatch = strength.match(/Strong understanding of (.*?) \(/);
+        if (topicMatch && topicMatch[1]) {
+          const topic = topicMatch[1];
+          
+          // Extract the percentage
+          const percentMatch = strength.match(/\((\d+)% correct\)/);
+          if (percentMatch && percentMatch[1]) {
+            const percentage = parseInt(percentMatch[1]);
+            
+            // Only include topics with 90% or above
+            if (percentage >= 90) {
+              topicNames.push(topic);
+            }
+          }
+        }
+      }
+    });
+    
+    return topicNames;
+  };
+  
+  const topicStrengths = extractTopicNames(strengths);
+  
   return (
     <div 
       className="space-y-4" 
@@ -97,14 +128,14 @@ export function MobileFeedback({ feedback }: MobileFeedbackProps) {
               <ThumbsUp className="h-5 w-5 text-green-600" />
               <span>Areas of Strength</span>
             </h3>
-            {strengths.length > 0 ? (
+            {topicStrengths.length > 0 ? (
               <ul className="list-disc pl-5 space-y-2">
-                {strengths.map((strength, index) => (
-                  <li key={index} className="text-sm text-slate-700">{strength}</li>
+                {topicStrengths.map((topic, index) => (
+                  <li key={index} className="text-sm text-slate-700">{topic}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">No specific strengths identified.</p>
+              <p className="text-muted-foreground">No topics with strong performance (90%+) identified.</p>
             )}
           </CardContent>
         </Card>
