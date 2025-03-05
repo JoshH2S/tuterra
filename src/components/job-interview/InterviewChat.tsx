@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, Clock, Download } from "lucide-react";
 import { useJobInterview } from "@/hooks/useJobInterview";
 import { motion, AnimatePresence } from "framer-motion";
+import { TextShimmer } from "@/components/ui/text-shimmer";
 
 interface InterviewChatProps {
   isCompleted: boolean;
@@ -127,7 +128,12 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
               transition={{ duration: 0.4 }}
               className="text-lg md:text-xl max-w-xl mx-auto"
             >
-              {currentQuestion?.text}
+              <TextShimmer
+                duration={1.5}
+                className="font-medium [--base-color:theme(colors.primary.400)] [--base-gradient-color:theme(colors.primary.300)] dark:[--base-color:theme(colors.primary.500)] dark:[--base-gradient-color:theme(colors.primary.300)]"
+              >
+                {currentQuestion?.text || ""}
+              </TextShimmer>
             </motion.div>
           )}
         </AnimatePresence>

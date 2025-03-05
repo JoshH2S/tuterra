@@ -1,6 +1,7 @@
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
+import { TextShimmer } from "@/components/ui/text-shimmer";
 
 interface TutorMessageProps {
   content: string;
@@ -25,7 +26,16 @@ export const TutorMessage = ({ content, role }: TutorMessageProps) => {
             : 'bg-primary text-primary-foreground'
         } ${isMobile ? 'text-sm p-2.5' : ''}`}
       >
-        <p className="whitespace-pre-wrap">{content}</p>
+        {isAssistant ? (
+          <TextShimmer
+            duration={1.5}
+            className="whitespace-pre-wrap font-normal [--base-color:#1a1a1a] [--base-gradient-color:#757575] dark:[--base-color:#e0e0e0] dark:[--base-gradient-color:#ffffff]"
+          >
+            {content}
+          </TextShimmer>
+        ) : (
+          <p className="whitespace-pre-wrap">{content}</p>
+        )}
       </div>
     </motion.div>
   );
