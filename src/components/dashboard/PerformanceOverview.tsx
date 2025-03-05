@@ -1,7 +1,7 @@
 import { StudentPerformance } from "@/types/student";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { AlertTriangle, TrendingUp, Trophy } from "lucide-react";
+import { AlertTriangle, TrendingUp } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PerformanceOverviewProps {
@@ -109,16 +109,7 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
         const completionRate = (p.completed_quizzes / p.total_quizzes) * 100;
         let alert;
 
-        if (p.average_score >= 85) {
-          alert = (
-            <Alert key={index} className="bg-green-50 border-green-200">
-              <Trophy className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-600">
-                Excellent performance! Keep up the great work in this course.
-              </AlertDescription>
-            </Alert>
-          );
-        } else if (completionRate < 50) {
+        if (completionRate < 50) {
           alert = (
             <Alert key={index} className="bg-yellow-50 border-yellow-200">
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
