@@ -6,6 +6,7 @@ import { InterviewSetup } from "@/components/job-interview/InterviewSetup";
 import { InterviewChat } from "@/components/job-interview/InterviewChat";
 import { InterviewTranscript } from "@/components/job-interview/InterviewTranscript";
 import { useJobInterview } from "@/hooks/useJobInterview";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const JobInterviewSimulator = () => {
   const {
@@ -21,12 +22,14 @@ const JobInterviewSimulator = () => {
     completeInterview,
     transcript,
   } = useJobInterview();
+  
+  const isMobile = useIsMobile();
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">AI Job Interview Simulator</h1>
+    <div className="container mx-auto px-4 py-6 md:py-8">
+      <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">AI Job Interview Simulator</h1>
       
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {!isInterviewStarted ? (
             <InterviewSetup 
@@ -46,7 +49,7 @@ const JobInterviewSimulator = () => {
           )}
         </div>
         
-        <div>
+        <div className={isMobile && !isInterviewStarted ? "hidden" : ""}>
           {isInterviewStarted && (
             <InterviewTranscript transcript={transcript} />
           )}

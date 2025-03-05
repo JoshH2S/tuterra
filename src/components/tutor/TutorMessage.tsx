@@ -1,5 +1,6 @@
 
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 interface TutorMessageProps {
   content: string;
@@ -11,7 +12,12 @@ export const TutorMessage = ({ content, role }: TutorMessageProps) => {
   const isMobile = useIsMobile();
   
   return (
-    <div className={`flex ${isAssistant ? 'justify-start' : 'justify-end'} ${isMobile ? 'mb-2' : 'mb-3'}`}>
+    <motion.div 
+      className={`flex ${isAssistant ? 'justify-start' : 'justify-end'} ${isMobile ? 'mb-2' : 'mb-3'}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <div
         className={`max-w-[85%] p-3 rounded-lg ${
           isAssistant
@@ -21,6 +27,6 @@ export const TutorMessage = ({ content, role }: TutorMessageProps) => {
       >
         <p className="whitespace-pre-wrap">{content}</p>
       </div>
-    </div>
+    </motion.div>
   );
 };

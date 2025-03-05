@@ -66,11 +66,19 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     }
   };
 
+  // Handle keyboard submission
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
-    <Card className="shadow-lg flex flex-col h-[600px]">
-      <CardHeader>
+    <Card className="shadow-lg flex flex-col h-[600px] md:h-[550px]">
+      <CardHeader className="border-b">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-2xl">AI Interview</CardTitle>
+          <CardTitle className="text-xl md:text-2xl">AI Interview</CardTitle>
           {timeLeft !== null && (
             <div className="flex items-center gap-1 text-muted-foreground">
               <Clock className="h-4 w-4" />
@@ -80,7 +88,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
         </div>
       </CardHeader>
       
-      <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-8">
+      <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8">
         <AnimatePresence mode="wait">
           {isTyping ? (
             <motion.div
@@ -116,7 +124,8 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="text-lg max-w-xl mx-auto"
+              transition={{ duration: 0.4 }}
+              className="text-lg md:text-xl max-w-xl mx-auto"
             >
               {currentQuestion?.text}
             </motion.div>
@@ -126,13 +135,14 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       
       {!isCompleted && (
         <CardFooter className="border-t p-4">
-          <div className="flex flex-col w-full gap-4">
+          <div className="flex flex-col w-full gap-3">
             <Textarea
               ref={textareaRef}
               value={userResponse}
               onChange={(e) => setUserResponse(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Type your response here..."
-              className="resize-none min-h-[100px]"
+              className="resize-none min-h-[90px] md:min-h-[100px]"
               disabled={isTyping}
             />
             <div className="flex justify-between items-center">
