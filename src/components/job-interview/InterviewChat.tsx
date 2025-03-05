@@ -36,12 +36,21 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-        // Optional: Set a time limit for response
-        // setTimeLeft(120); // 2 minutes
       }, 1000);
       return () => clearTimeout(timer);
     }
   }, [currentQuestion, isCompleted]);
+
+  // Set typing effect when a new message is added to transcript
+  useEffect(() => {
+    if (transcript.length > 0 && !isCompleted) {
+      setIsTyping(true);
+      const timer = setTimeout(() => {
+        setIsTyping(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [transcript.length, isCompleted]);
 
   useEffect(() => {
     // Optional: Implement countdown timer
@@ -80,6 +89,9 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       handleSubmit();
     }
   };
+
+  // Get the message to display in the central area
+  const displayMessage = latestAiMessage?.text || currentQuestion?.text || "";
 
   return (
     <Card className="shadow-lg flex flex-col h-[600px] md:h-[550px]">
@@ -127,7 +139,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
             </motion.div>
           ) : (
             <motion.div
-              key={currentQuestion?.id || "question"}
+              key={displayMessage || "question"}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -138,7 +150,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
                 duration={1.5}
                 className="font-medium [--base-color:theme(colors.primary.400)] [--base-gradient-color:theme(colors.primary.300)] dark:[--base-color:theme(colors.primary.500)] dark:[--base-gradient-color:theme(colors.primary.300)]"
               >
-                {latestAiMessage?.text || currentQuestion?.text || ""}
+                {displayMessage}
               </TextShimmer>
             </motion.div>
           )}
