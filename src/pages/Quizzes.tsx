@@ -66,12 +66,14 @@ export default function Quizzes() {
 
         const quizzesByCourseTmp: QuizzesByCourse = {};
         data.forEach((quiz: any) => {
-          const latestResponse = quiz.quiz_responses.length > 0
-            ? quiz.quiz_responses.reduce((latest: any, current: any) =>
-                !latest || current.attempt_number > latest.attempt_number ? current : latest
-              )
-            : undefined;
-
+          // Sort responses by attempt number in descending order to get the latest one
+          const sortedResponses = quiz.quiz_responses.sort((a: any, b: any) => 
+            b.attempt_number - a.attempt_number
+          );
+          
+          // Get only the latest response (first one after sorting)
+          const latestResponse = sortedResponses.length > 0 ? sortedResponses[0] : undefined;
+          
           const processedQuiz: Quiz = {
             ...quiz,
             latest_response: latestResponse,
