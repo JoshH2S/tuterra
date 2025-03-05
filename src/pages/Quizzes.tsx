@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,7 +160,7 @@ export default function Quizzes() {
                     {quiz.latest_response && (
                       <div className="space-y-2">
                         <div className="text-sm font-medium">
-                          Previous Score: {quiz.latest_response.score}/{quiz.latest_response.total_questions}
+                          Previous Score: {Math.round((quiz.latest_response.score / quiz.latest_response.total_questions) * 100)}%
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Attempt #{quiz.latest_response.attempt_number}
