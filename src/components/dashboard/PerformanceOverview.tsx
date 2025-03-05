@@ -1,7 +1,8 @@
+
 import { StudentPerformance } from "@/types/student";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { AlertTriangle, TrendingUp } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PerformanceOverviewProps {
@@ -24,13 +25,6 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
     course: p.course_title || 'Unnamed Course',
     score: p.average_score,
     quizzes: p.completed_quizzes,
-  }));
-
-  const quizCompletionData = performance.map(p => ({
-    course: p.course_title || 'Unnamed Course',
-    completed: p.completed_quizzes,
-    total: p.total_quizzes,
-    completion: (p.completed_quizzes / p.total_quizzes) * 100,
   }));
 
   return (
@@ -62,43 +56,23 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
           </div>
           
           {chartData.length > 0 && (
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Score Distribution</h3>
-                <div className="h-[250px] bg-card rounded-lg p-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <XAxis dataKey="course" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="score" 
-                        stroke="#2563eb" 
-                        strokeWidth={2}
-                        dot={{ fill: '#2563eb' }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Quiz Completion Progress</h3>
-                <div className="h-[250px] bg-card rounded-lg p-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={quizCompletionData}>
-                      <XAxis dataKey="course" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Bar 
-                        dataKey="completion" 
-                        fill="#2563eb" 
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Score Distribution</h3>
+              <div className="h-[250px] bg-card rounded-lg p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="course" />
+                    <YAxis domain={[0, 100]} />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="score" 
+                      stroke="#2563eb" 
+                      strokeWidth={2}
+                      dot={{ fill: '#2563eb' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </div>
           )}
