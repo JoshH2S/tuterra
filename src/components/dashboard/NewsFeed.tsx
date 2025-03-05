@@ -2,11 +2,13 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Newspaper, ExternalLink, Loader2, AlertCircle } from "lucide-react";
+import { Newspaper, ExternalLink, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { StudentCourse } from "@/types/student";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { NewsTopicsDialog } from "@/components/profile/NewsTopicsDialog";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NewsItem {
   title: string;
@@ -20,6 +22,7 @@ interface NewsFeedProps {
 }
 
 const SUPABASE_URL = "https://nhlsrtubyvggtkyrhkuu.supabase.co";
+const MAX_ARTICLES = 5;
 
 export const NewsFeed = ({ courses }: NewsFeedProps) => {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
@@ -27,6 +30,8 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
   const [error, setError] = useState<string | null>(null);
   const [showTopicsDialog, setShowTopicsDialog] = useState(false);
   const [hasTopics, setHasTopics] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const isMobile = useIsMobile();
 
   const checkUserTopics = async () => {
     try {
@@ -86,7 +91,8 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
         console.log('No news articles found');
       }
 
-      setNewsItems(data.articles || []);
+      // Limit to MAX_ARTICLES
+      setNewsItems((data.articles || []).slice(0, MAX_ARTICLES));
     } catch (error) {
       console.error('Error fetching news:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch news');
@@ -97,6 +103,38 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       });
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: preferences } = await supabase
+        .from('user_news_preferences')
+        .select('topics')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (preferences?.topics) {
+        await fetchNews(preferences.topics);
+        toast({
+          title: "News refreshed",
+          description: "Latest articles have been loaded",
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing news:', error);
+      toast({
+        title: "Refresh failed",
+        description: "Unable to refresh news. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -159,11 +197,25 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
 
   return (
     <Card className="mb-6">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="flex items-center gap-2">
           <Newspaper className="h-5 w-5" />
           Latest News
         </CardTitle>
+        <Button 
+          variant="outline" 
+          size={isMobile ? "sm" : "default"} 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="h-9"
+        >
+          {isRefreshing ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
+          <span className={isMobile ? "sr-only" : ""}>Refresh</span>
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
