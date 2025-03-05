@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Lightbulb, AlertTriangle } from "lucide-react";
+import { Lightbulb, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,7 @@ interface StrengthsAndAreasProps {
 export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsAndAreasProps) {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<'strengths' | 'areas'>('strengths');
+  const [showAllTopics, setShowAllTopics] = useState(false);
   
   const hasStrengths = strengths && strengths.length > 0;
   const hasAreas = areasForImprovement && areasForImprovement.length > 0;
@@ -64,6 +65,11 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
   // Combine specific areas first, then generic ones
   const orderedAreas = [...specificAreas, ...otherSpecificAreas, ...genericAreas];
   
+  // Determine how many topics to show initially (before "Show More")
+  const initialTopicsToShow = 3;
+  const displayedTopicStrengths = showAllTopics ? topicStrengths : topicStrengths.slice(0, initialTopicsToShow);
+  const hasMoreTopics = topicStrengths.length > initialTopicsToShow;
+  
   return (
     <Card>
       <CardHeader>
@@ -97,16 +103,28 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
         {activeTab === 'strengths' && (
           <>
             {hasStrengths && topicStrengths.length > 0 ? (
-              <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
-                {topicStrengths.map((topic, index) => (
-                  <li key={index}>{topic}</li>
-                ))}
-                {topicStrengths.length < strengths.length && (
-                  <li className="text-muted-foreground">
-                    +{strengths.length - topicStrengths.length} more topics
-                  </li>
+              <div>
+                <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
+                  {displayedTopicStrengths.map((topic, index) => (
+                    <li key={index}>{topic}</li>
+                  ))}
+                </ul>
+                
+                {hasMoreTopics && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAllTopics(!showAllTopics)} 
+                    className="mt-2 text-muted-foreground hover:text-primary flex items-center"
+                  >
+                    {showAllTopics ? (
+                      <>Show Less <ChevronUp className="ml-1 h-4 w-4" /></>
+                    ) : (
+                      <>View All {topicStrengths.length} Topics <ChevronDown className="ml-1 h-4 w-4" /></>
+                    )}
+                  </Button>
                 )}
-              </ul>
+              </div>
             ) : hasStrengths ? (
               <p className="text-muted-foreground">
                 No topics with strong performance (90%+) yet.
