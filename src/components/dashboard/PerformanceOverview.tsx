@@ -1,4 +1,3 @@
-
 import { StudentPerformance } from "@/types/student";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
@@ -125,15 +124,6 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <AlertDescription className="text-yellow-600">
                 Try to complete more quizzes to improve your understanding.
-              </AlertDescription>
-            </Alert>
-          );
-        } else if (p.average_score < 70) {
-          alert = (
-            <Alert key={index} className="bg-blue-50 border-blue-200">
-              <TrendingUp className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-600">
-                You're making progress! Keep practicing to improve your score.
               </AlertDescription>
             </Alert>
           );
