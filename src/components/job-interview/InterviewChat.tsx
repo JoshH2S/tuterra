@@ -32,9 +32,18 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
   const latestAiMessage = transcript
     .filter(message => message.role === 'ai')
     .slice(-1)[0];
+    
+  // For debugging
+  useEffect(() => {
+    console.log("Latest AI message:", latestAiMessage);
+    console.log("Current question:", currentQuestion);
+    console.log("Remaining questions:", remainingQuestions);
+    console.log("Total transcript messages:", transcript.length);
+  }, [latestAiMessage, currentQuestion, remainingQuestions, transcript]);
 
   // Set typing effect when a new AI message is received or question changes
   useEffect(() => {
+    console.log("AI message or question changed, triggering typing effect");
     if ((currentQuestion || latestAiMessage) && !isCompleted) {
       setIsTyping(true);
       const timer = setTimeout(() => {
@@ -47,6 +56,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
   // Set typing effect when a new message is added to transcript
   useEffect(() => {
     if (transcript.length > 0 && !isCompleted) {
+      console.log("Transcript updated, triggering typing effect");
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
@@ -72,6 +82,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
 
   const handleSubmit = () => {
     if (userResponse.trim() && !isTyping) {
+      console.log("Submitting user response");
       submitResponse(userResponse);
       setUserResponse("");
       setTimeLeft(null);
@@ -151,7 +162,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
             </motion.div>
           ) : (
             <motion.div
-              key={displayMessage || "question"}
+              key={`message-${transcript.length}-${displayMessage}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
