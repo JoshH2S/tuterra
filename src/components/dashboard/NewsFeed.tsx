@@ -2,144 +2,40 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Newspaper, ExternalLink, Loader2, AlertCircle, RefreshCw } from "lucide-react";
-import { StudentCourse } from "@/types/student";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { NewsTopicsDialog } from "@/components/profile/NewsTopicsDialog";
+import { Newspaper, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-interface NewsItem {
-  title: string;
-  url: string;
-  source: string;
-  publishedAt: string;
-}
+import { StudentCourse } from "@/types/student";
+import { useNewsFeed, NewsItem } from "@/hooks/useNewsFeed";
+import { NewsCard } from "./NewsCard";
+import { NewsEmptyState } from "./NewsEmptyState";
+import { NewsNoResults } from "./NewsNoResults";
 
 interface NewsFeedProps {
   courses: StudentCourse[];
 }
 
-const SUPABASE_URL = "https://nhlsrtubyvggtkyrhkuu.supabase.co";
-const MAX_ARTICLES = 5;
-
 export const NewsFeed = ({ courses }: NewsFeedProps) => {
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    newsItems, 
+    isLoading, 
+    error, 
+    isRefreshing, 
+    hasTopics,
+    checkUserTopics,
+    handleRefresh 
+  } = useNewsFeed();
   const [showTopicsDialog, setShowTopicsDialog] = useState(false);
-  const [hasTopics, setHasTopics] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const isMobile = useIsMobile();
 
-  const checkUserTopics = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data: preferences } = await supabase
-        .from('user_news_preferences')
-        .select('topics')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (!preferences?.topics || preferences.topics.length === 0) {
-        setShowTopicsDialog(true);
-        setHasTopics(false);
-      } else {
-        setHasTopics(true);
-        await fetchNews(preferences.topics);
-      }
-    } catch (error) {
-      console.error('Error checking topics:', error);
-      setError('Failed to load news preferences');
-    }
-  };
-
-  const fetchNews = async (topics: string[]) => {
-    setError(null);
-    setIsLoading(true);
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      // Convert topic names to search terms by replacing underscores with spaces
-      const searchTerms = topics
-        .map(topic => topic.replace(/_/g, ' '))
-        .join(' OR ');
-      console.log('Searching news with terms:', searchTerms);
-
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/fetch-course-news`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ searchTerms }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch news');
-      }
-
-      const data = await response.json();
-      console.log('News API response:', data);
-
-      if (!data.articles || data.articles.length === 0) {
-        console.log('No news articles found');
-      }
-
-      // Limit to MAX_ARTICLES
-      setNewsItems((data.articles || []).slice(0, MAX_ARTICLES));
-    } catch (error) {
-      console.error('Error fetching news:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch news');
-      toast({
-        title: "Error fetching news",
-        description: "Unable to load news. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data: preferences } = await supabase
-        .from('user_news_preferences')
-        .select('topics')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (preferences?.topics) {
-        await fetchNews(preferences.topics);
-        toast({
-          title: "News refreshed",
-          description: "Latest articles have been loaded",
-        });
-      }
-    } catch (error) {
-      console.error('Error refreshing news:', error);
-      toast({
-        title: "Refresh failed",
-        description: "Unable to refresh news. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   useEffect(() => {
-    checkUserTopics();
+    const checkTopics = async () => {
+      const hasUserTopics = await checkUserTopics();
+      if (!hasUserTopics) {
+        setShowTopicsDialog(true);
+      }
+    };
+    checkTopics();
   }, []);
 
   const handleTopicsDialogClose = async () => {
@@ -148,21 +44,10 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
   };
 
   if (!hasTopics) {
-    return (
-      <>
-        <Alert className="mb-6">
-          <Newspaper className="h-4 w-4" />
-          <AlertDescription>
-            Select your topics of interest to personalize your news feed
-          </AlertDescription>
-        </Alert>
-        <NewsTopicsDialog
-          open={showTopicsDialog}
-          onClose={handleTopicsDialogClose}
-          isFirstTimeSetup={true}
-        />
-      </>
-    );
+    return <NewsEmptyState 
+      showTopicsDialog={showTopicsDialog} 
+      onDialogClose={handleTopicsDialogClose} 
+    />;
   }
 
   if (isLoading) {
@@ -185,14 +70,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
   }
 
   if (newsItems.length === 0) {
-    return (
-      <Alert className="mb-6">
-        <Newspaper className="h-4 w-4" />
-        <AlertDescription>
-          No recent news found for your selected topics. Try selecting different topics in your profile settings.
-        </AlertDescription>
-      </Alert>
-    );
+    return <NewsNoResults />;
   }
 
   return (
@@ -220,25 +98,7 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
       <CardContent>
         <div className="space-y-4">
           {newsItems.map((item, index) => (
-            <a
-              key={index}
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block group"
-            >
-              <div className="flex items-start justify-between p-3 rounded-lg hover:bg-muted transition-colors">
-                <div className="space-y-1">
-                  <h3 className="font-medium group-hover:text-primary transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {item.source} • {new Date(item.publishedAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <ExternalLink className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-            </a>
+            <NewsCard key={index} item={item} />
           ))}
         </div>
       </CardContent>
