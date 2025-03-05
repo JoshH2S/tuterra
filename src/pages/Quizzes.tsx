@@ -162,7 +162,7 @@ export default function Quizzes() {
                     {quiz.latest_response && (
                       <div className="space-y-2">
                         <div className="text-sm font-medium">
-                          Previous Score: {Math.round((quiz.latest_response.score / quiz.latest_response.total_questions) * 100)}%
+                          Previous Score: {quiz.latest_response.score}%
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Attempt #{quiz.latest_response.attempt_number}
@@ -203,7 +203,7 @@ export default function Quizzes() {
           onConfirm={handleRetakeConfirm}
           quizTitle={confirmRetakeQuiz.title}
           previousScore={confirmRetakeQuiz.latest_response ? 
-            Math.round((confirmRetakeQuiz.latest_response.score / confirmRetakeQuiz.latest_response.total_questions) * 100) : 
+            confirmRetakeQuiz.latest_response.score : 
             undefined}
         />
       )}
