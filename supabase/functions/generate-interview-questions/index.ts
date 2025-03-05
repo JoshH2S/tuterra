@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { industry, role, jobDescription } = await req.json();
+    const { industry, role, jobDescription, previousQuestions, userResponses } = await req.json();
 
     if (!industry || !role) {
       return new Response(
@@ -20,19 +20,30 @@ serve(async (req) => {
       );
     }
 
+    // Create a context-aware prompt based on previous interactions
+    const contextPrompt = previousQuestions && userResponses 
+      ? `Previous questions asked: ${previousQuestions.join(', ')}\nUser responses: ${userResponses.join(', ')}\n\n`
+      : '';
+
     const prompt = `
       Generate 5-7 realistic job interview questions for a ${role} position in the ${industry} industry.
       
       ${jobDescription ? `Here is the job description: ${jobDescription}` : ''}
       
-      Create questions that are relevant to the skills, experience, and qualifications that would be required for this position.
-      Include a mix of:
-      - Technical/skill-based questions
-      - Behavioral questions
-      - Situational questions
-      - Role-specific questions
+      ${contextPrompt}
+      
+      Create questions that are:
+      1. Relevant to the skills, experience, and qualifications required for this position
+      2. Progressive in difficulty (start with basic questions, move to more complex ones)
+      3. Contextually aware of previous questions and responses
+      4. A mix of:
+         - Technical/skill-based questions
+         - Behavioral questions
+         - Situational questions
+         - Role-specific questions
       
       Format your response as a JSON array of strings, each containing one interview question.
+      Each question should be unique and build upon previous interactions.
     `;
 
     // Call OpenAI API
@@ -43,54 +54,34 @@ serve(async (req) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
-          { role: 'system', content: 'You are an AI that generates realistic job interview questions. Your output should be a valid JSON array of strings, each containing one interview question.' },
+          { 
+            role: 'system', 
+            content: 'You are an expert AI interviewer that generates realistic, contextual job interview questions. Your output should be a valid JSON array of strings, each containing one interview question. Questions should be progressive and build upon previous interactions.' 
+          },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 1000
       })
     });
 
     const data = await openaiResponse.json();
 
-    if (!openaiResponse.ok) {
-      console.error('OpenAI API error:', data);
-      throw new Error(data.error?.message || 'Unknown error from OpenAI API');
+    if (!data.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response from OpenAI');
     }
 
-    const responseContent = data.choices?.[0]?.message?.content?.trim() || '';
-    
-    // Parse the JSON from the response
-    try {
-      const questions = JSON.parse(responseContent);
-      
-      // Ensure it's an array of strings
-      if (!Array.isArray(questions)) {
-        throw new Error('Response is not an array');
+    const questions = JSON.parse(data.choices[0].message.content);
+
+    return new Response(
+      JSON.stringify({ questions }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
       }
-      
-      return new Response(
-        JSON.stringify({ questions }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (parseError) {
-      console.error('Error parsing JSON from OpenAI response:', parseError);
-      console.log('Raw response:', responseContent);
-      
-      // Fallback: try to extract questions manually using a regex
-      const questionMatches = responseContent.match(/"([^"]+)"/g);
-      if (questionMatches && questionMatches.length > 0) {
-        const questions = questionMatches.map(q => q.replace(/"/g, ''));
-        return new Response(
-          JSON.stringify({ questions }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // Last resort: return an error
-      throw new Error('Could not parse questions from response');
-    }
+    );
   } catch (error) {
     console.error('Error processing request:', error);
     
