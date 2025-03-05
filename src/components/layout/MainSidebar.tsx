@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -8,7 +9,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, LogOut, Award } from "lucide-react";
+import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, LogOut, Award, Briefcase } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -146,6 +147,14 @@ export const MainSidebar = () => {
               <Link to="/skill-assessments" className="flex items-center">
                 <Award className="mr-2 h-4 w-4" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">Skill Assessments</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/job-interview-simulator" className="flex items-center">
+                <Briefcase className="mr-2 h-4 w-4" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">Interview Simulator</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
