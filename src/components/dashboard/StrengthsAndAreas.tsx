@@ -21,6 +21,20 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
     return null;
   }
   
+  // Filter out common generic strengths and focus on topic-specific ones first
+  const specificStrengths = strengths.filter(s => s.includes('(') && s.includes('%'));
+  const genericStrengths = strengths.filter(s => !s.includes('(') || !s.includes('%'));
+  
+  // Combine specific strengths first, then generic ones
+  const orderedStrengths = [...specificStrengths, ...genericStrengths];
+  
+  // Do the same for areas of improvement
+  const specificAreas = areasForImprovement.filter(a => a.includes('(') && a.includes('%'));
+  const genericAreas = areasForImprovement.filter(a => !a.includes('(') || !a.includes('%'));
+  
+  // Combine specific areas first, then generic ones
+  const orderedAreas = [...specificAreas, ...genericAreas];
+  
   return (
     <Card>
       <CardHeader>
@@ -55,12 +69,12 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
           <>
             {hasStrengths ? (
               <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
-                {strengths.slice(0, 5).map((strength, index) => (
+                {orderedStrengths.slice(0, 5).map((strength, index) => (
                   <li key={index}>{strength}</li>
                 ))}
-                {strengths.length > 5 && (
+                {orderedStrengths.length > 5 && (
                   <li className="text-muted-foreground">
-                    +{strengths.length - 5} more strengths
+                    +{orderedStrengths.length - 5} more strengths
                   </li>
                 )}
               </ul>
@@ -76,12 +90,12 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
           <>
             {hasAreas ? (
               <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
-                {areasForImprovement.slice(0, 5).map((area, index) => (
+                {orderedAreas.slice(0, 5).map((area, index) => (
                   <li key={index}>{area}</li>
                 ))}
-                {areasForImprovement.length > 5 && (
+                {orderedAreas.length > 5 && (
                   <li className="text-muted-foreground">
-                    +{areasForImprovement.length - 5} more areas
+                    +{orderedAreas.length - 5} more areas
                   </li>
                 )}
               </ul>

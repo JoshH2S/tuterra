@@ -12,10 +12,10 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
     const percentage = (data.correct / data.total) * 100;
     
     if (percentage >= 80) {
-      // Be specific by mentioning the exact topic name and percentage
+      // Always include the topic name and exact percentage
       strengths.push(`Strong understanding of ${topic} (${Math.round(percentage)}% correct)`);
     } else if (percentage <= 60) {
-      // Be specific about which topics need improvement
+      // Always include the topic name and exact percentage
       areasForImprovement.push(`Need to review ${topic} concepts (only ${Math.round(percentage)}% correct)`);
     }
   });
@@ -29,7 +29,7 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
       if (percentage >= 80 && data.total >= 2) {
         strengths.push(`Excellent performance on ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
       } else if (percentage <= 60 && data.total >= 2) {
-        areasForImprovement.push(`Struggling with ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
+        areasForImprovement.push(`Struggling with ${difficulty}-level questions (only ${Math.round(percentage)}% correct)`);
       }
     });
   }
@@ -37,22 +37,22 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
   // If no specific topic strengths were identified but overall score is good
   if (strengths.length === 0) {
     if (overallScore >= 70) {
-      strengths.push("Good overall performance across topics");
+      strengths.push(`Good overall performance across topics (${Math.round(overallScore)}% overall)`);
     } else if (overallScore >= 50) {
-      strengths.push("Basic understanding of the subject matter");
+      strengths.push(`Basic understanding of the subject matter (${Math.round(overallScore)}% overall)`);
     } else {
-      strengths.push("Commitment to learning shown by attempting all questions");
+      strengths.push(`Commitment to learning shown by attempting all questions (${Math.round(overallScore)}% overall)`);
     }
   }
 
   // If no specific topic weaknesses were identified
   if (areasForImprovement.length === 0) {
     if (overallScore < 70) {
-      areasForImprovement.push("General review of core concepts recommended");
+      areasForImprovement.push(`General review of core concepts recommended (${Math.round(overallScore)}% overall)`);
     } else if (overallScore < 90) {
-      areasForImprovement.push("Review missed questions to achieve mastery");
+      areasForImprovement.push(`Review missed questions to achieve mastery (${Math.round(overallScore)}% overall)`);
     } else {
-      areasForImprovement.push("Continue to reinforce your excellent knowledge");
+      areasForImprovement.push(`Continue to reinforce your excellent knowledge (${Math.round(overallScore)}% overall)`);
     }
   }
 
@@ -82,30 +82,36 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
       ? weakTopics.slice(0, -1).join(", ") + " and " + weakTopics[weakTopics.length - 1]
       : weakTopics[0];
     
-    advice += `Focus on strengthening your knowledge of ${topicsList}. `;
+    advice += `Focus on strengthening your knowledge of ${topicsList} (${Math.round(
+      // Find the percentage for the first weak topic
+      Object.entries(topicResponses).find(([topic]) => topic === weakTopics[0])?.[1] 
+        ? (Object.entries(topicResponses).find(([topic]) => topic === weakTopics[0])?.[1].correct / 
+           Object.entries(topicResponses).find(([topic]) => topic === weakTopics[0])?.[1].total) * 100
+        : 0
+    )}% correct). `;
   }
   
   // Add general advice based on overall score if we don't have specific topic advice
   if (advice === "") {
     if (overallScore >= 90) {
-      advice = "Excellent work! To further enhance your knowledge, consider exploring advanced topics or helping peers understand these concepts.";
+      advice = `Excellent work! Your overall score of ${Math.round(overallScore)}% is outstanding. To further enhance your knowledge, consider exploring advanced topics or helping peers understand these concepts.`;
     } else if (overallScore >= 70) {
-      advice = "Good job! Create flashcards for concepts you find challenging, and consider setting up regular study sessions to reinforce your knowledge.";
+      advice = `Good job! Your overall score of ${Math.round(overallScore)}% shows solid understanding. Create flashcards for concepts you find challenging, and consider setting up regular study sessions to reinforce your knowledge.`;
     } else if (overallScore >= 50) {
-      advice = "You're on the right track! Create a study schedule focusing on the topics where you scored lower. Practice with additional questions.";
+      advice = `You're on the right track with a score of ${Math.round(overallScore)}%! Create a study schedule focusing on the topics where you scored lower. Practice with additional questions.`;
     } else {
-      advice = "Don't get discouraged! Focus on mastering one topic at a time, starting with fundamentals. Establish a consistent study routine.";
+      advice = `Don't get discouraged by your score of ${Math.round(overallScore)}%! Focus on mastering one topic at a time, starting with fundamentals. Establish a consistent study routine.`;
     }
   } else {
     // Add study strategy suggestions based on overall score
     if (overallScore >= 90) {
-      advice += "Consider exploring advanced materials or helping peers to further solidify your understanding.";
+      advice += `With your overall score of ${Math.round(overallScore)}%, consider exploring advanced materials or helping peers to further solidify your understanding.`;
     } else if (overallScore >= 70) {
-      advice += "Create flashcards for challenging concepts and set up regular review sessions.";
+      advice += `With an overall score of ${Math.round(overallScore)}%, create flashcards for challenging concepts and set up regular review sessions.`;
     } else if (overallScore >= 50) {
-      advice += "Break down difficult concepts into smaller parts and practice with additional questions.";
+      advice += `Your overall score is ${Math.round(overallScore)}%. Break down difficult concepts into smaller parts and practice with additional questions.`;
     } else {
-      advice += "Reach out to your instructor for additional support with these specific topics.";
+      advice += `With your current score of ${Math.round(overallScore)}%, reach out to your instructor for additional support with these specific topics.`;
     }
   }
   
