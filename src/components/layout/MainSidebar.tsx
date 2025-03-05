@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -9,7 +8,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, LogOut, BookOpenCheck, Award } from "lucide-react";
+import { BookOpen, ClipboardList, Brain, FileText, LayoutDashboard, LogOut, Award } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -155,14 +154,6 @@ export const MainSidebar = () => {
               <Link to="/tutor" className="flex items-center">
                 <Brain className="mr-2 h-4 w-4" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">AI Tutor</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link to="/textbook-processing" className="flex items-center">
-                <BookOpenCheck className="mr-2 h-4 w-4" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">Textbook Processing</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

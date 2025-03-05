@@ -18,7 +18,6 @@ import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
 import { MediaLibrary } from "@/components/media/MediaLibrary";
 import CourseTemplates from "@/pages/CourseTemplates";
-import TextbookProcessing from "@/pages/TextbookProcessing";
 import CaseStudyQuizGeneration from "@/pages/CaseStudyQuizGeneration";
 import SkillAssessments from "@/pages/SkillAssessments";
 import TakeSkillAssessment from "@/pages/TakeSkillAssessment";
@@ -156,14 +155,6 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MediaLibrary />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/textbook-processing"
-        element={
-          <ProtectedRoute>
-            <TextbookProcessing />
           </ProtectedRoute>
         }
       />
