@@ -10,13 +10,15 @@ interface InterviewResponseInputProps {
   isTyping: boolean;
   remainingQuestions: number;
   onComplete?: () => void;
+  allQuestionsAnswered: boolean;
 }
 
 export const InterviewResponseInput = ({ 
   onSubmit, 
   isTyping, 
   remainingQuestions,
-  onComplete 
+  onComplete,
+  allQuestionsAnswered
 }: InterviewResponseInputProps) => {
   const [userResponse, setUserResponse] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -67,7 +69,7 @@ export const InterviewResponseInput = ({
           {remainingQuestions > 0 ? `${remainingQuestions} questions remaining` : "Last question"}
         </div>
         <div className="flex gap-2">
-          {remainingQuestions === 0 && onComplete && (
+          {allQuestionsAnswered && onComplete && (
             <Button 
               variant="outline" 
               onClick={onComplete}
