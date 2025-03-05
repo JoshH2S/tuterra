@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { PlusCircle, FileText, Book } from "lucide-react";
+import { PlusCircle, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -24,14 +24,6 @@ export const CoursesHeader = ({ onCreateClick }: CoursesHeaderProps) => {
       </div>
       
       <div className={`flex ${isMobile ? 'flex-col' : ''} gap-3`}>
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/course-templates')}
-          className={isMobile ? 'w-full justify-center py-6' : ''}
-        >
-          <Book className="mr-2 h-4 w-4" />
-          Course Templates
-        </Button>
         <Button 
           variant="outline" 
           onClick={() => navigate('/quizzes')}
