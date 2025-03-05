@@ -45,7 +45,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 1200);
+      }, 1500); // Increased typing time for better visual feedback
       return () => clearTimeout(timer);
     }
   }, [currentQuestion, latestAiMessage, isCompleted]);
@@ -57,7 +57,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 1200);
+      }, 1500); // Increased timing here too
       return () => clearTimeout(timer);
     }
   }, [transcript.length, isCompleted]);
@@ -73,14 +73,20 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     
     // Auto-submit when time runs out
     if (timeLeft === 0 && submitResponse) {
-      handleSubmit("");
+      handleSubmit("(Time expired)");
     }
   }, [timeLeft]);
 
   const handleSubmit = (response: string) => {
+    console.log("Handle submit called with response:", response);
     submitResponse(response);
     setTimeLeft(null);
     setIsTyping(true);
+    
+    // Add a timeout to ensure typing indicator is shown
+    setTimeout(() => {
+      console.log("Checking transcript after response:", transcript.length);
+    }, 2000);
   };
 
   // Get the message to display in the central area
@@ -95,7 +101,13 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
         </div>
       </CardHeader>
       
-      <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8">
+      <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">
+        <div className="absolute top-2 right-2 text-xs text-muted-foreground">
+          {!isCompleted && (
+            <span>Q: {transcript.filter(m => m.role === 'ai').length}/{remainingQuestions + 1}</span>
+          )}
+        </div>
+        
         <AnimatePresence mode="wait">
           {isTyping ? (
             <InterviewTypingIndicator />

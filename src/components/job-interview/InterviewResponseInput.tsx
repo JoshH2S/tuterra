@@ -24,7 +24,7 @@ export const InterviewResponseInput = ({
 
   const handleSubmit = () => {
     if (userResponse.trim() && !isTyping) {
-      console.log("Submitting user response");
+      console.log("Submitting user response:", userResponse.trim());
       onSubmit(userResponse);
       setUserResponse("");
       
@@ -68,7 +68,11 @@ export const InterviewResponseInput = ({
         </div>
         <div className="flex gap-2">
           {remainingQuestions === 0 && onComplete && (
-            <Button variant="outline" onClick={onComplete}>
+            <Button 
+              variant="outline" 
+              onClick={onComplete}
+              className="gap-1"
+            >
               Finish Interview
             </Button>
           )}
