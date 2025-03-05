@@ -23,6 +23,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     submitResponse,
     remainingQuestions,
     transcript,
+    questions,
   } = useJobInterview();
 
   // Get the most recent AI message from the transcript
@@ -36,7 +37,8 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     console.log("Current question:", currentQuestion);
     console.log("Remaining questions:", remainingQuestions);
     console.log("Total transcript messages:", transcript.length);
-  }, [latestAiMessage, currentQuestion, remainingQuestions, transcript]);
+    console.log("Total questions loaded:", questions.length);
+  }, [latestAiMessage, currentQuestion, remainingQuestions, transcript, questions]);
 
   // Set typing effect when a new AI message is received or question changes
   useEffect(() => {
@@ -45,7 +47,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 1500); // Increased typing time for better visual feedback
+      }, 1500); 
       return () => clearTimeout(timer);
     }
   }, [currentQuestion, latestAiMessage, isCompleted]);
@@ -57,7 +59,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 1500); // Increased timing here too
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [transcript.length, isCompleted]);
@@ -103,8 +105,8 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       
       <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">
         <div className="absolute top-2 right-2 text-xs text-muted-foreground">
-          {!isCompleted && (
-            <span>Q: {transcript.filter(m => m.role === 'ai').length}/{remainingQuestions + 1}</span>
+          {!isCompleted && questions.length > 0 && (
+            <span>Q: {transcript.filter(m => m.role === 'ai').length}/{questions.length}</span>
           )}
         </div>
         

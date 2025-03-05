@@ -35,6 +35,7 @@ export const useJobInterview = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [questionsGenerated, setQuestionsGenerated] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const remainingQuestions = questions.length - currentQuestionIndex - 1;
@@ -81,6 +82,7 @@ export const useJobInterview = () => {
       }
       
       setQuestions(formattedQuestions);
+      setQuestionsGenerated(true);
       console.log("Loaded questions:", formattedQuestions);
       
       // Add initial interviewer message to transcript
@@ -114,6 +116,7 @@ export const useJobInterview = () => {
       }));
       
       setQuestions(formattedQuestions);
+      setQuestionsGenerated(true);
       console.log("Using fallback questions due to API error");
       
       // Add welcome message and first question
@@ -144,6 +147,14 @@ export const useJobInterview = () => {
       setIsGenerating(false);
     }
   };
+
+  // Make sure the questions are properly synchronized 
+  useEffect(() => {
+    if (questionsGenerated && questions.length > 0) {
+      console.log("Questions are now available:", questions.length);
+      logInterviewState();
+    }
+  }, [questionsGenerated, questions]);
 
   const startInterview = async () => {
     if (!industry || !role || !jobDescription) {
@@ -221,6 +232,13 @@ export const useJobInterview = () => {
         }, 1500);
       } else {
         console.log("Warning: Interview completed with 0 questions");
+        // Force at least one more interaction if we have no questions
+        setTranscript(prev => [...prev, {
+          id: uuidv4(),
+          role: 'ai',
+          text: "Thank you for your response. Unfortunately, I'm having trouble retrieving more questions. We'll conclude the interview here."
+        }]);
+        setIsInterviewCompleted(true);
       }
     }
   };
@@ -260,6 +278,7 @@ export const useJobInterview = () => {
     transcript,
     currentQuestion,
     remainingQuestions,
+    questions,
     setIndustry,
     setRole,
     setJobDescription,
