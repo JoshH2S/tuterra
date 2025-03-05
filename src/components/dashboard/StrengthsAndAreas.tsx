@@ -22,18 +22,28 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
   }
   
   // Filter out common generic strengths and focus on topic-specific ones first
-  const specificStrengths = strengths.filter(s => s.includes('(') && s.includes('%'));
-  const genericStrengths = strengths.filter(s => !s.includes('(') || !s.includes('%'));
+  const specificStrengths = strengths.filter(s => s.includes('Strong understanding of'));
+  const otherSpecificStrengths = strengths.filter(s => 
+    s.includes('(') && s.includes('%') && !s.includes('Strong understanding of')
+  );
+  const genericStrengths = strengths.filter(s => 
+    !s.includes('Strong understanding of') && (!s.includes('(') || !s.includes('%'))
+  );
   
   // Combine specific strengths first, then generic ones
-  const orderedStrengths = [...specificStrengths, ...genericStrengths];
+  const orderedStrengths = [...specificStrengths, ...otherSpecificStrengths, ...genericStrengths];
   
-  // Do the same for areas of improvement
-  const specificAreas = areasForImprovement.filter(a => a.includes('(') && a.includes('%'));
-  const genericAreas = areasForImprovement.filter(a => !a.includes('(') || !a.includes('%'));
+  // Do the same for areas of improvement - prioritize topic-specific feedback
+  const specificAreas = areasForImprovement.filter(a => a.includes('Need to review'));
+  const otherSpecificAreas = areasForImprovement.filter(a => 
+    a.includes('(') && a.includes('%') && !a.includes('Need to review')
+  );
+  const genericAreas = areasForImprovement.filter(a => 
+    !a.includes('Need to review') && (!a.includes('(') || !a.includes('%'))
+  );
   
   // Combine specific areas first, then generic ones
-  const orderedAreas = [...specificAreas, ...genericAreas];
+  const orderedAreas = [...specificAreas, ...otherSpecificAreas, ...genericAreas];
   
   return (
     <Card>

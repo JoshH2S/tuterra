@@ -48,6 +48,35 @@ export function ResultsContainer({
   const isGeneratingMessage = results.ai_feedback?.strengths?.[0] === "Generating feedback...";
   const shouldShowGenerateButton = !hasMeaningfulFeedback || isGeneratingMessage;
 
+  // Filter out generic strengths - focus on topic-specific feedback first
+  const specificStrengths = results.ai_feedback?.strengths?.filter(
+    (s: string) => s.includes("Strong understanding of")
+  ) || [];
+  
+  // Filter out generic areas for improvement - focus on topic-specific feedback first
+  const specificAreasForImprovement = results.ai_feedback?.areas_for_improvement?.filter(
+    (a: string) => a.includes("Need to review")
+  ) || [];
+
+  // If we don't have any specific feedback, use the generic ones
+  const displayStrengths = specificStrengths.length > 0 
+    ? specificStrengths 
+    : results.ai_feedback?.strengths || [];
+    
+  const displayAreasForImprovement = specificAreasForImprovement.length > 0
+    ? specificAreasForImprovement
+    : results.ai_feedback?.areas_for_improvement || [];
+
+  // Update results object to prioritize topic-specific feedback
+  const enhancedResults = {
+    ...results,
+    ai_feedback: results.ai_feedback ? {
+      ...results.ai_feedback,
+      strengths: displayStrengths,
+      areas_for_improvement: displayAreasForImprovement
+    } : null
+  };
+
   return (
     <div className={`max-w-4xl mx-auto space-y-6 px-${isMobile ? '2' : '6'}`}>
       <ResultsHeader title={quiz.title} />
@@ -68,7 +97,7 @@ export function ResultsContainer({
       )}
       
       <DetailedFeedback 
-        feedback={results.ai_feedback} 
+        feedback={enhancedResults.ai_feedback} 
         isGenerating={generatingFeedback}
       />
       

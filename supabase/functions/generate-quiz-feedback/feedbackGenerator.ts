@@ -7,28 +7,36 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
   const strengths: string[] = [];
   const areasForImprovement: string[] = [];
   
-  // Topic-based strengths (>=80% correct) and areas for improvement (<=60% correct)
+  // Track if any topic-specific feedback was added
+  let hasTopicSpecificStrengths = false;
+  let hasTopicSpecificWeaknesses = false;
+  
+  // Topic-based strengths (>=80% correct) and areas for improvement (<70% correct)
   Object.entries(topicResponses).forEach(([topic, data]) => {
     const percentage = (data.correct / data.total) * 100;
     
     if (percentage >= 80) {
       // Always include the topic name and exact percentage
       strengths.push(`Strong understanding of ${topic} (${Math.round(percentage)}% correct)`);
-    } else if (percentage <= 60) {
+      hasTopicSpecificStrengths = true;
+    } else if (percentage < 70) {
+      // Changed from 60% to 70% as per requirement
       // Always include the topic name and exact percentage
       areasForImprovement.push(`Need to review ${topic} concepts (only ${Math.round(percentage)}% correct)`);
+      hasTopicSpecificWeaknesses = true;
     }
   });
 
   // Only add difficulty-level insights if we have no topic-specific feedback
-  if (strengths.length === 0 && areasForImprovement.length === 0) {
+  if (!hasTopicSpecificStrengths && !hasTopicSpecificWeaknesses) {
     // Difficulty-level insights
     Object.entries(difficultyResponses).forEach(([difficulty, data]) => {
       const percentage = (data.correct / data.total) * 100;
       
       if (percentage >= 80 && data.total >= 2) {
         strengths.push(`Excellent performance on ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
-      } else if (percentage <= 60 && data.total >= 2) {
+      } else if (percentage < 70 && data.total >= 2) {
+        // Changed from 60% to 70% as per requirement
         areasForImprovement.push(`Struggling with ${difficulty}-level questions (only ${Math.round(percentage)}% correct)`);
       }
     });
@@ -36,7 +44,7 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
 
   // If no specific topic strengths were identified but overall score is good
   if (strengths.length === 0) {
-    if (overallScore >= 70) {
+    if (overallScore >= 80) {
       strengths.push(`Good overall performance across topics (${Math.round(overallScore)}% overall)`);
     } else if (overallScore >= 50) {
       strengths.push(`Basic understanding of the subject matter (${Math.round(overallScore)}% overall)`);
@@ -48,6 +56,7 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
   // If no specific topic weaknesses were identified
   if (areasForImprovement.length === 0) {
     if (overallScore < 70) {
+      // Changed from "overallScore < 70" to be consistent with our 70% threshold
       areasForImprovement.push(`General review of core concepts recommended (${Math.round(overallScore)}% overall)`);
     } else if (overallScore < 90) {
       areasForImprovement.push(`Review missed questions to achieve mastery (${Math.round(overallScore)}% overall)`);
