@@ -29,9 +29,18 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
         hasTopicSpecificStrengths = true;
       } 
       
+      // Dynamic feedback based on performance range
       if (percentage < 70) {
-        // Changed from 60% to 70% as per requirement
-        areasForImprovement.push(`Need to review ${topic} concepts (only ${Math.round(percentage)}% correct)`);
+        if (percentage >= 50 && percentage < 70) {
+          areasForImprovement.push(`Practice with more examples on ${topic} to solidify your understanding (${Math.round(percentage)}% correct)`);
+        } 
+        else if (percentage >= 30 && percentage < 50) {
+          areasForImprovement.push(`Revisit the fundamentals of ${topic} - this appears to be a challenging area (${Math.round(percentage)}% correct)`);
+        }
+        else {
+          areasForImprovement.push(`Focus on mastering the basic concepts of ${topic} - this is a priority area (${Math.round(percentage)}% correct)`);
+        }
+        
         hasTopicSpecificWeaknesses = true;
       }
     });
@@ -58,7 +67,7 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
   }
   
   if (!hasTopicSpecificWeaknesses && difficultyResponses && Object.keys(difficultyResponses).length > 0) {
-    // Add difficulty weakness feedback
+    // Add difficulty weakness feedback with dynamic ranges
     Object.entries(difficultyResponses).forEach(([difficulty, data]) => {
       // Skip entries with zero questions
       if (data.total === 0) return;
@@ -66,7 +75,11 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
       const percentage = (data.correct / data.total) * 100;
       
       if (percentage < 70 && data.total >= 2) {
-        areasForImprovement.push(`Struggling with ${difficulty}-level questions (only ${Math.round(percentage)}% correct)`);
+        if (percentage >= 50) {
+          areasForImprovement.push(`Review more ${difficulty}-level questions to improve mastery (${Math.round(percentage)}% correct)`);
+        } else {
+          areasForImprovement.push(`Focus on building foundational knowledge for ${difficulty}-level questions (${Math.round(percentage)}% correct)`);
+        }
       }
     });
   }
@@ -85,7 +98,11 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
   // If no specific topic weaknesses were identified
   if (areasForImprovement.length === 0) {
     if (overallScore < 70) {
-      areasForImprovement.push(`General review of core concepts recommended (${Math.round(overallScore)}% overall)`);
+      if (overallScore >= 50) {
+        areasForImprovement.push(`Consider reviewing key concepts to strengthen your overall understanding (${Math.round(overallScore)}% overall)`);
+      } else {
+        areasForImprovement.push(`Revisit the core fundamentals to build a stronger foundation (${Math.round(overallScore)}% overall)`);
+      }
     } else if (overallScore < 90) {
       areasForImprovement.push(`Review missed questions to achieve mastery (${Math.round(overallScore)}% overall)`);
     } else {
@@ -109,17 +126,37 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
     advice = `Your strength in ${topicsList} is impressive! `;
   }
   
-  if (areasForImprovement.length > 0 && areasForImprovement[0].includes("Need to review")) {
-    // Extract topic names from areas for improvement for personalized advice
-    const weakTopics = areasForImprovement
-      .filter(a => a.includes("Need to review"))
-      .map(a => a.split("Need to review ")[1].split(" concepts")[0]);
-    
-    const topicsList = weakTopics.length > 1 
-      ? weakTopics.slice(0, -1).join(", ") + " and " + weakTopics[weakTopics.length - 1]
-      : weakTopics[0];
+  // Extract weak topics for actionable advice
+  const weakTopicsData: { topic: string, percentage: number }[] = [];
+  if (topicResponses && Object.keys(topicResponses).length > 0) {
+    Object.entries(topicResponses).forEach(([topic, data]) => {
+      if (data.total === 0) return;
+      const percentage = (data.correct / data.total) * 100;
+      if (percentage < 70) {
+        weakTopicsData.push({ topic, percentage });
+      }
+    });
+  }
+  
+  // Sort weak topics by performance (lowest first)
+  weakTopicsData.sort((a, b) => a.percentage - b.percentage);
+  
+  // Generate actionable advice for weak topics
+  if (weakTopicsData.length > 0) {
+    const topicsList = weakTopicsData.length > 1 
+      ? weakTopicsData.slice(0, -1).map(t => t.topic).join(", ") + " and " + weakTopicsData[weakTopicsData.length - 1].topic
+      : weakTopicsData[0].topic;
     
     advice += `Focus on strengthening your knowledge of ${topicsList}. `;
+    
+    // Add actionable next steps based on weakest topic
+    const weakestTopic = weakTopicsData[0];
+    
+    if (weakestTopic.percentage < 50) {
+      advice += `For ${weakestTopic.topic}, consider reviewing the fundamental concepts and principles first. Try creating flashcards for key terms and practicing with basic examples. `;
+    } else {
+      advice += `For ${weakestTopic.topic}, try working through practice problems of increasing difficulty and review your mistakes carefully. `;
+    }
   }
   
   // Add general advice based on overall score if we don't have specific topic advice
@@ -129,9 +166,9 @@ export function generateFeedback(analysisData: AnalysisData, overallScore: numbe
     } else if (overallScore >= 70) {
       advice = `Good job! Your overall score of ${Math.round(overallScore)}% shows solid understanding. Create flashcards for concepts you find challenging, and consider setting up regular study sessions to reinforce your knowledge.`;
     } else if (overallScore >= 50) {
-      advice = `You're on the right track with a score of ${Math.round(overallScore)}%! Create a study schedule focusing on the topics where you scored lower. Practice with additional questions.`;
+      advice = `You're on the right track with a score of ${Math.round(overallScore)}%! Create a study schedule focusing on the topics where you scored lower. Practice with additional questions and consider forming a study group.`;
     } else {
-      advice = `Don't get discouraged by your score of ${Math.round(overallScore)}%! Focus on mastering one topic at a time, starting with fundamentals. Establish a consistent study routine.`;
+      advice = `Don't get discouraged by your score of ${Math.round(overallScore)}%! Focus on mastering one topic at a time, starting with fundamentals. Establish a consistent study routine and consider seeking additional help from your instructor.`;
     }
   } else {
     // Add study strategy suggestions based on overall score

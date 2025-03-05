@@ -7,6 +7,8 @@ import { ScoreCard } from "./ScoreCard";
 import { StatisticsCard } from "./StatisticsCard";
 import { TopicPerformance } from "./TopicPerformance";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { ArrowUpRight, BookOpen } from "lucide-react";
 
 interface ResultsContainerProps {
   results: any;
@@ -59,7 +61,10 @@ export function ResultsContainer({
     
     // Filter out generic areas for improvement - focus on topic-specific feedback first
     const specificAreasForImprovement = results.ai_feedback?.areas_for_improvement?.filter(
-      (a: string) => a.includes("Need to review")
+      (a: string) => a.includes("Practice with more examples") || 
+                    a.includes("Revisit the fundamentals") || 
+                    a.includes("Focus on mastering") ||
+                    a.includes("Need to review")
     ) || [];
 
     // If we don't have any specific feedback, use the generic ones
@@ -81,6 +86,20 @@ export function ResultsContainer({
 
   // Get enhanced feedback with prioritized topic-specific content
   const enhancedFeedback = processFeedback();
+  
+  // Extract weak topics for resource recommendations
+  const getWeakTopics = () => {
+    if (!results.topic_performance) return [];
+    
+    return Object.entries(results.topic_performance)
+      .filter(([_, data]: [string, any]) => {
+        const percentage = data.total > 0 ? (data.correct / data.total) * 100 : 0;
+        return percentage < 70;
+      })
+      .map(([topic, _]: [string, any]) => topic);
+  };
+  
+  const weakTopics = getWeakTopics();
 
   return (
     <div className={`max-w-4xl mx-auto space-y-6 px-${isMobile ? '2' : '6'}`}>
@@ -105,6 +124,32 @@ export function ResultsContainer({
         feedback={enhancedFeedback} 
         isGenerating={generatingFeedback}
       />
+      
+      {weakTopics.length > 0 && (
+        <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+          <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-amber-600" />
+            <span>Recommended Resources</span>
+          </h3>
+          <div className="space-y-2">
+            {weakTopics.map((topic, index) => (
+              <div key={index} className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-slate-700">
+                  <strong>{topic}:</strong> Consider reviewing materials on this topic
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-xs h-7 bg-white border-amber-300 text-amber-700 hover:bg-amber-100"
+                >
+                  <span>Practice this topic</span>
+                  <ArrowUpRight className="h-3 w-3 ml-1" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {shouldShowGenerateButton && !generatingFeedback && (
         <FeedbackGenerateButton 

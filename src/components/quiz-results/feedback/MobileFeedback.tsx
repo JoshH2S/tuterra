@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FeedbackHeader } from "./FeedbackHeader";
 import { AIFeedback } from "../DetailedFeedback";
+import { ThumbsUp, BookOpen, Lightbulb } from "lucide-react";
 
 interface MobileFeedbackProps {
   feedback: AIFeedback;
@@ -64,30 +65,42 @@ export function MobileFeedback({ feedback }: MobileFeedbackProps) {
           className={`flex-1 py-2 text-sm font-medium ${activeFeedbackTab === "strengths" ? "border-b-2 border-primary text-primary" : "text-gray-500"}`}
           onClick={() => setActiveFeedbackTab("strengths")}
         >
-          Strengths
+          <div className="flex flex-col items-center gap-1">
+            <ThumbsUp className="h-4 w-4" />
+            <span>Strengths</span>
+          </div>
         </button>
         <button 
           className={`flex-1 py-2 text-sm font-medium ${activeFeedbackTab === "areas" ? "border-b-2 border-primary text-primary" : "text-gray-500"}`}
           onClick={() => setActiveFeedbackTab("areas")}
         >
-          Improve
+          <div className="flex flex-col items-center gap-1">
+            <BookOpen className="h-4 w-4" />
+            <span>Improve</span>
+          </div>
         </button>
         <button 
           className={`flex-1 py-2 text-sm font-medium ${activeFeedbackTab === "advice" ? "border-b-2 border-primary text-primary" : "text-gray-500"}`}
           onClick={() => setActiveFeedbackTab("advice")}
         >
-          Advice
+          <div className="flex flex-col items-center gap-1">
+            <Lightbulb className="h-4 w-4" />
+            <span>Advice</span>
+          </div>
         </button>
       </div>
       
       {activeFeedbackTab === "strengths" && (
         <Card className="border-t-4 border-t-green-500">
           <CardContent className="p-3 pt-4">
-            <h3 className="text-lg font-semibold mb-3 text-[#091747]">Areas of Strength</h3>
+            <h3 className="text-lg font-semibold mb-3 text-[#091747] flex items-center gap-2">
+              <ThumbsUp className="h-5 w-5 text-green-600" />
+              <span>Areas of Strength</span>
+            </h3>
             {strengths.length > 0 ? (
               <ul className="list-disc pl-5 space-y-2">
                 {strengths.map((strength, index) => (
-                  <li key={index} className="text-sm">{strength}</li>
+                  <li key={index} className="text-sm text-slate-700">{strength}</li>
                 ))}
               </ul>
             ) : (
@@ -100,11 +113,14 @@ export function MobileFeedback({ feedback }: MobileFeedbackProps) {
       {activeFeedbackTab === "areas" && (
         <Card className="border-t-4 border-t-amber-500">
           <CardContent className="p-3 pt-4">
-            <h3 className="text-lg font-semibold mb-3 text-[#091747]">Areas for Improvement</h3>
+            <h3 className="text-lg font-semibold mb-3 text-[#091747] flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-amber-600" />
+              <span>Areas for Improvement</span>
+            </h3>
             {areasForImprovement.length > 0 ? (
               <ul className="list-disc pl-5 space-y-2">
                 {areasForImprovement.map((area, index) => (
-                  <li key={index} className="text-sm">{area}</li>
+                  <li key={index} className="text-sm text-slate-700">{area}</li>
                 ))}
               </ul>
             ) : (
@@ -117,9 +133,12 @@ export function MobileFeedback({ feedback }: MobileFeedbackProps) {
       {activeFeedbackTab === "advice" && (
         <Card className="border-t-4 border-t-blue-500">
           <CardContent className="p-3 pt-4">
-            <h3 className="text-lg font-semibold mb-3 text-[#091747]">Advice Going Forward</h3>
+            <h3 className="text-lg font-semibold mb-3 text-[#091747] flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-blue-600" />
+              <span>Advice Going Forward</span>
+            </h3>
             {feedback.advice ? (
-              <p className="text-sm">{feedback.advice}</p>
+              <p className="text-sm text-slate-700">{feedback.advice}</p>
             ) : (
               <p className="text-muted-foreground">No specific advice available.</p>
             )}
