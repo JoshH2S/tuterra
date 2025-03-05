@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Course } from "@/types/course";
 import { useCourses } from "@/hooks/useCourses";
 import { Loader2 } from "lucide-react";
+import { RetakeConfirmDialog } from "@/components/quiz-taking/RetakeConfirmDialog";
 
 interface Quiz {
   id: string;
@@ -34,6 +34,7 @@ interface QuizzesByCourse {
 export default function Quizzes() {
   const [quizzesByCourse, setQuizzesByCourse] = useState<QuizzesByCourse>({});
   const [loading, setLoading] = useState(true);
+  const [confirmRetakeQuiz, setConfirmRetakeQuiz] = useState<Quiz | null>(null);
   const navigate = useNavigate();
   const { courses } = useCourses();
 
@@ -62,10 +63,8 @@ export default function Quizzes() {
 
         if (error) throw error;
 
-        // Process the quizzes and organize by course
         const quizzesByCourseTmp: QuizzesByCourse = {};
         data.forEach((quiz: any) => {
-          // Get the latest response if any exists
           const latestResponse = quiz.quiz_responses.length > 0
             ? quiz.quiz_responses.reduce((latest: any, current: any) =>
                 !latest || current.attempt_number > latest.attempt_number ? current : latest
@@ -103,6 +102,21 @@ export default function Quizzes() {
       navigate(`/quiz-results/${quiz.latest_response.id}`);
     } else {
       navigate(`/take-quiz/${quiz.id}`);
+    }
+  };
+
+  const handleRetakeQuiz = (quiz: Quiz) => {
+    if (quiz.latest_response) {
+      setConfirmRetakeQuiz(quiz);
+    } else {
+      navigate(`/take-quiz/${quiz.id}`);
+    }
+  };
+
+  const handleRetakeConfirm = () => {
+    if (confirmRetakeQuiz) {
+      navigate(`/take-quiz/${confirmRetakeQuiz.id}`);
+      setConfirmRetakeQuiz(null);
     }
   };
 
@@ -163,7 +177,7 @@ export default function Quizzes() {
                         <Button 
                           variant="outline" 
                           className="w-full"
-                          onClick={() => navigate(`/take-quiz/${quiz.id}`)}
+                          onClick={() => handleRetakeQuiz(quiz)}
                         >
                           Retake Quiz
                         </Button>
@@ -176,6 +190,20 @@ export default function Quizzes() {
           </div>
         );
       })}
+
+      {confirmRetakeQuiz && (
+        <RetakeConfirmDialog
+          open={!!confirmRetakeQuiz}
+          onOpenChange={(open) => {
+            if (!open) setConfirmRetakeQuiz(null);
+          }}
+          onConfirm={handleRetakeConfirm}
+          quizTitle={confirmRetakeQuiz.title}
+          previousScore={confirmRetakeQuiz.latest_response ? 
+            Math.round((confirmRetakeQuiz.latest_response.score / confirmRetakeQuiz.latest_response.total_questions) * 100) : 
+            undefined}
+        />
+      )}
     </div>
   );
 }

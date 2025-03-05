@@ -58,6 +58,24 @@ export const useQuizSubmission = (
         throw new Error("Not authenticated");
       }
 
+      // Get previous attempts to determine attempt number
+      const { data: previousAttempts, error: previousAttemptsError } = await supabase
+        .from('quiz_responses')
+        .select('attempt_number')
+        .eq('quiz_id', quizId)
+        .eq('student_id', sessionData.session.user.id)
+        .order('attempt_number', { ascending: false })
+        .limit(1);
+        
+      if (previousAttemptsError) {
+        console.error("Error getting previous attempts:", previousAttemptsError);
+      }
+      
+      // Calculate attempt number
+      const attemptNumber = previousAttempts && previousAttempts.length > 0 
+        ? previousAttempts[0].attempt_number + 1 
+        : 1;
+
       // Prepare topic performance data
       const topicPerformance: Record<string, { correct: number; total: number }> = {};
       questions.forEach((question, index) => {
@@ -89,7 +107,8 @@ export const useQuizSubmission = (
             total_questions: questions.length,
             topic_performance: topicPerformance,
             ai_feedback: initialAiFeedback,
-            completed_at: new Date().toISOString()
+            completed_at: new Date().toISOString(),
+            attempt_number: attemptNumber
           },
         ])
         .select()
@@ -102,7 +121,9 @@ export const useQuizSubmission = (
 
       toast({
         title: "Success",
-        description: "Quiz submitted successfully!",
+        description: attemptNumber > 1 
+          ? `Quiz retaken and submitted successfully! (Attempt #${attemptNumber})` 
+          : "Quiz submitted successfully!",
       });
       
       // Call the success callback if provided

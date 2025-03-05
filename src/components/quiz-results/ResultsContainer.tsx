@@ -79,7 +79,12 @@ export function ResultsContainer({
         />
       )}
 
-      <ResultActions quizId={quiz.id} allowRetakes={quiz.allow_retakes} />
+      <ResultActions 
+        quizId={quiz.id} 
+        quizTitle={quiz.title}
+        allowRetakes={quiz.allow_retakes}
+        previousScore={results.score || percentageScore}
+      />
     </div>
   );
 }
