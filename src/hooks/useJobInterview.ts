@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "@/lib/uuid";
-import { AIFeedback } from "@/components/quiz-results/DetailedFeedback";
 
 type Message = {
   id: string;
@@ -37,8 +36,6 @@ export const useJobInterview = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [questionsGenerated, setQuestionsGenerated] = useState(false);
-  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
-  const [feedback, setFeedback] = useState<AIFeedback | null>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
   const remainingQuestions = questions.length - currentQuestionIndex - 1;
@@ -220,93 +217,35 @@ export const useJobInterview = () => {
         }, 500);
       }, 1500);
     } else {
-      // Don't automatically complete the interview - wait for user to click "Finish Interview"
-      console.log("Final question answered. User can now complete the interview");
-    }
-  };
-
-  const generateFeedback = async () => {
-    if (transcript.length <= 1) {
-      console.log("No responses to analyze");
-      return;
-    }
-    
-    setIsGeneratingFeedback(true);
-    
-    try {
-      // Format the transcript for analysis
-      const responsesForAnalysis = transcript
-        .filter(msg => msg.role === 'user')
-        .map(msg => msg.text);
-      
-      const questionsAsked = transcript
-        .filter(msg => msg.role === 'ai' && msg.text !== transcript[0].text) // Exclude welcome message
-        .map(msg => msg.text);
-      
-      // Call the edge function to analyze the interview
-      const { data, error } = await supabase.functions.invoke('analyze-interview', {
-        body: { 
-          responses: responsesForAnalysis,
-          questions: questionsAsked,
-          role,
-          industry,
-          jobDescription
-        }
-      });
-      
-      if (error) throw error;
-      
-      // Set the feedback
-      if (data && data.feedback) {
-        console.log("Received feedback:", data.feedback);
-        setFeedback(data.feedback);
+      // Double-check that we've actually gone through all questions
+      console.log("Final question answered. Completing interview...");
+      if (questions.length > 0) {
+        // Interview completed - add closing message
+        setTimeout(() => {
+          setTranscript(prev => [...prev, {
+            id: uuidv4(),
+            role: 'ai',
+            text: "Thank you for completing the interview. You can now review your transcript or download it for future reference."
+          }]);
+          setIsInterviewCompleted(true);
+          console.log("Interview marked as completed");
+        }, 1500);
       } else {
-        throw new Error("No feedback received from analysis");
+        console.log("Warning: Interview completed with 0 questions");
+        // Force at least one more interaction if we have no questions
+        setTranscript(prev => [...prev, {
+          id: uuidv4(),
+          role: 'ai',
+          text: "Thank you for your response. Unfortunately, I'm having trouble retrieving more questions. We'll conclude the interview here."
+        }]);
+        setIsInterviewCompleted(true);
       }
-      
-    } catch (error) {
-      console.error("Error generating feedback:", error);
-      
-      // Create fallback feedback
-      setFeedback({
-        strengths: ["Good communication skills", "Provided detailed responses"],
-        areas_for_improvement: ["Consider providing more specific examples"],
-        advice: "Overall, you've done well in this interview. To improve further, try to connect your experiences directly to the job requirements."
-      });
-      
-      toast({
-        title: "Feedback Generation Issue",
-        description: "We couldn't generate detailed feedback, but we've provided some general insights.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingFeedback(false);
     }
   };
 
   const completeInterview = () => {
-    // Make sure the user has answered all questions
-    if (currentQuestionIndex < questions.length - 1) {
-      toast({
-        title: "Interview In Progress",
-        description: "Please answer all questions before completing the interview.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setIsInterviewCompleted(true);
     console.log("Interview manually completed");
-    
-    // Add closing message to transcript
-    setTranscript(prev => [...prev, {
-      id: uuidv4(),
-      role: 'ai',
-      text: "Thank you for completing the interview. We're now analyzing your responses to provide personalized feedback."
-    }]);
-    
-    // Generate feedback
-    generateFeedback();
   };
 
   // Add an effect to monitor changes to the interview state
@@ -340,9 +279,6 @@ export const useJobInterview = () => {
     currentQuestion,
     remainingQuestions,
     questions,
-    currentQuestionIndex,
-    isGeneratingFeedback,
-    feedback,
     setIndustry,
     setRole,
     setJobDescription,

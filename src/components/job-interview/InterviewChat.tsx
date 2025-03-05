@@ -8,7 +8,6 @@ import { InterviewCompleted } from "./InterviewCompleted";
 import { InterviewQuestion } from "./InterviewQuestion";
 import { InterviewResponseInput } from "./InterviewResponseInput";
 import { InterviewTimer } from "./InterviewTimer";
-import { Progress } from "@/components/ui/progress";
 
 interface InterviewChatProps {
   isCompleted: boolean;
@@ -25,10 +24,6 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     remainingQuestions,
     transcript,
     questions,
-    isGeneratingFeedback,
-    feedback,
-    completeInterview,
-    currentQuestionIndex,
   } = useJobInterview();
 
   // Get the most recent AI message from the transcript
@@ -43,8 +38,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     console.log("Remaining questions:", remainingQuestions);
     console.log("Total transcript messages:", transcript.length);
     console.log("Total questions loaded:", questions.length);
-    console.log("Current question index:", currentQuestionIndex);
-  }, [latestAiMessage, currentQuestion, remainingQuestions, transcript, questions, currentQuestionIndex]);
+  }, [latestAiMessage, currentQuestion, remainingQuestions, transcript, questions]);
 
   // Set typing effect when a new AI message is received or question changes
   useEffect(() => {
@@ -99,11 +93,6 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
 
   // Get the message to display in the central area
   const displayMessage = latestAiMessage?.text || currentQuestion?.text || "";
-  
-  // Calculate progress percentage
-  const totalQuestions = questions.length;
-  const answeredQuestions = Math.min(currentQuestionIndex, totalQuestions);
-  const progressPercentage = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
 
   return (
     <Card className="shadow-lg flex flex-col h-[600px] md:h-[550px]">
@@ -112,27 +101,20 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
           <CardTitle className="text-xl md:text-2xl">AI Interview</CardTitle>
           <InterviewTimer timeLeft={timeLeft} />
         </div>
-        
-        {questions.length > 0 && !isCompleted && (
-          <div className="mt-2">
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-              <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-              <span>{Math.round(progressPercentage)}% Complete</span>
-            </div>
-            <Progress value={progressPercentage} className="h-2" />
-          </div>
-        )}
       </CardHeader>
       
-      <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">        
+      <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">
+        <div className="absolute top-2 right-2 text-xs text-muted-foreground">
+          {!isCompleted && questions.length > 0 && (
+            <span>Q: {transcript.filter(m => m.role === 'ai').length}/{questions.length}</span>
+          )}
+        </div>
+        
         <AnimatePresence mode="wait">
           {isTyping ? (
             <InterviewTypingIndicator />
           ) : isCompleted ? (
-            <InterviewCompleted 
-              isLoading={isGeneratingFeedback} 
-              feedback={feedback}
-            />
+            <InterviewCompleted />
           ) : (
             <InterviewQuestion 
               message={displayMessage} 
@@ -148,8 +130,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
             onSubmit={handleSubmit}
             isTyping={isTyping}
             remainingQuestions={remainingQuestions}
-            onComplete={completeInterview}
-            allQuestionsAnswered={remainingQuestions === 0}
+            onComplete={onComplete}
           />
         </CardFooter>
       )}
