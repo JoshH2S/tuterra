@@ -25,12 +25,14 @@ serve(async (req) => {
       
       ${jobDescription ? `Here is the job description: ${jobDescription}` : ''}
       
-      Create questions that are relevant to the skills, experience, and qualifications that would be required for this position.
-      Include a mix of:
-      - Technical/skill-based questions
-      - Behavioral questions
-      - Situational questions
-      - Role-specific questions
+      Create questions that are:
+      1. Relevant to the skills, experience, and qualifications required for this position
+      2. Progressive in difficulty (start with basic questions, move to more complex ones)
+      3. A mix of:
+         - Technical/skill-based questions
+         - Behavioral questions
+         - Situational questions
+         - Role-specific questions
       
       Format your response as a JSON array of strings, each containing one interview question.
     `;
@@ -45,7 +47,10 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are an AI that generates realistic job interview questions. Your output should be a valid JSON array of strings, each containing one interview question.' },
+          { 
+            role: 'system', 
+            content: 'You are an expert AI interviewer that generates realistic job interview questions. Your output should be a valid JSON array of strings, each containing one interview question. Questions should progress from basic to more complex.' 
+          },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7

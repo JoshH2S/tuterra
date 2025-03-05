@@ -21,51 +21,37 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
   const { 
     currentQuestion, 
     submitResponse,
-    remainingQuestions,
-    transcript,
     questions,
+    transcript,
+    isGeneratingFeedback,
+    feedback,
+    currentQuestionIndex,
   } = useJobInterview();
 
-  // Get the most recent AI message from the transcript
-  const latestAiMessage = transcript
-    .filter(message => message.role === 'ai')
-    .slice(-1)[0];
-    
-  // For debugging
+  // Set typing effect when the component first loads
   useEffect(() => {
-    console.log("Latest AI message:", latestAiMessage);
-    console.log("Current question:", currentQuestion);
-    console.log("Remaining questions:", remainingQuestions);
-    console.log("Total transcript messages:", transcript.length);
-    console.log("Total questions loaded:", questions.length);
-  }, [latestAiMessage, currentQuestion, remainingQuestions, transcript, questions]);
-
-  // Set typing effect when a new AI message is received or question changes
-  useEffect(() => {
-    console.log("AI message or question changed, triggering typing effect");
-    if ((currentQuestion || latestAiMessage) && !isCompleted) {
+    if (currentQuestion && !isCompleted) {
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 1500); 
+      }, 1000); 
       return () => clearTimeout(timer);
     }
-  }, [currentQuestion, latestAiMessage, isCompleted]);
+  }, []);
 
-  // Set typing effect when a new message is added to transcript
+  // Set typing effect when the question changes
   useEffect(() => {
-    if (transcript.length > 0 && !isCompleted) {
-      console.log("Transcript updated, triggering typing effect");
+    if (currentQuestion && !isCompleted) {
       setIsTyping(true);
       const timer = setTimeout(() => {
         setIsTyping(false);
-      }, 1500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [transcript.length, isCompleted]);
+  }, [currentQuestionIndex, isCompleted]);
 
+  // Timer countdown logic
   useEffect(() => {
-    // Optional: Implement countdown timer
     if (timeLeft === null) return;
     
     if (timeLeft > 0) {
@@ -80,19 +66,19 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
   }, [timeLeft]);
 
   const handleSubmit = (response: string) => {
-    console.log("Handle submit called with response:", response);
+    console.log(`Submitting response for question ${currentQuestionIndex + 1}/${questions.length}`);
     submitResponse(response);
     setTimeLeft(null);
-    setIsTyping(true);
     
-    // Add a timeout to ensure typing indicator is shown
-    setTimeout(() => {
-      console.log("Checking transcript after response:", transcript.length);
-    }, 2000);
+    // Only set typing if not on the last question
+    if (currentQuestionIndex < questions.length - 1) {
+      setIsTyping(true);
+      setTimeout(() => setIsTyping(false), 1000);
+    }
   };
 
-  // Get the message to display in the central area
-  const displayMessage = latestAiMessage?.text || currentQuestion?.text || "";
+  // Get the message to display
+  const displayMessage = currentQuestion?.text || "";
 
   return (
     <Card className="shadow-lg flex flex-col h-[600px] md:h-[550px]">
@@ -106,7 +92,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">
         <div className="absolute top-2 right-2 text-xs text-muted-foreground">
           {!isCompleted && questions.length > 0 && (
-            <span>Q: {transcript.filter(m => m.role === 'ai').length}/{questions.length}</span>
+            <span>Q: {currentQuestionIndex + 1}/{questions.length}</span>
           )}
         </div>
         
@@ -114,7 +100,11 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
           {isTyping ? (
             <InterviewTypingIndicator />
           ) : isCompleted ? (
-            <InterviewCompleted />
+            <InterviewCompleted 
+              transcript={transcript} 
+              isGeneratingFeedback={isGeneratingFeedback}
+              feedback={feedback}
+            />
           ) : (
             <InterviewQuestion 
               message={displayMessage} 
@@ -129,7 +119,8 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
           <InterviewResponseInput
             onSubmit={handleSubmit}
             isTyping={isTyping}
-            remainingQuestions={remainingQuestions}
+            currentQuestionIndex={currentQuestionIndex}
+            totalQuestions={questions.length}
             onComplete={onComplete}
           />
         </CardFooter>

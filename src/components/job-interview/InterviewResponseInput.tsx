@@ -4,18 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 interface InterviewResponseInputProps {
   onSubmit: (response: string) => void;
   isTyping: boolean;
-  remainingQuestions: number;
+  currentQuestionIndex: number;
+  totalQuestions: number;
   onComplete?: () => void;
 }
 
 export const InterviewResponseInput = ({ 
   onSubmit, 
   isTyping, 
-  remainingQuestions,
+  currentQuestionIndex,
+  totalQuestions,
   onComplete 
 }: InterviewResponseInputProps) => {
   const [userResponse, setUserResponse] = useState("");
@@ -51,6 +54,12 @@ export const InterviewResponseInput = ({
     }
   };
 
+  // Calculate progress percentage
+  const progressPercentage = Math.floor((currentQuestionIndex / totalQuestions) * 100);
+  
+  // Determine if this is the last question
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+
   return (
     <div className="flex flex-col w-full gap-3">
       <Textarea
@@ -62,28 +71,47 @@ export const InterviewResponseInput = ({
         className="resize-none min-h-[90px] md:min-h-[100px]"
         disabled={isTyping}
       />
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-muted-foreground">
-          {remainingQuestions > 0 ? `${remainingQuestions} questions remaining` : "Last question"}
+      <div className="flex flex-col gap-2 w-full">
+        <div className="flex items-center gap-2 w-full">
+          <Progress value={progressPercentage} className="h-2 flex-grow" />
+          <span className="text-xs whitespace-nowrap text-muted-foreground">
+            {currentQuestionIndex + 1}/{totalQuestions}
+          </span>
         </div>
-        <div className="flex gap-2">
-          {remainingQuestions === 0 && onComplete && (
+        
+        <div className="flex justify-between items-center mt-1">
+          <div className="text-sm text-muted-foreground">
+            {!isLastQuestion ? `${totalQuestions - currentQuestionIndex - 1} questions remaining` : "Last question"}
+          </div>
+          <div className="flex gap-2">
+            {isLastQuestion && onComplete && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  if (userResponse.trim()) {
+                    // Submit the final response first
+                    onSubmit(userResponse);
+                    // Then complete the interview
+                    setTimeout(() => onComplete(), 300);
+                  } else {
+                    onComplete();
+                  }
+                }}
+                className="gap-1"
+                disabled={isTyping}
+              >
+                Finish Interview
+              </Button>
+            )}
             <Button 
-              variant="outline" 
-              onClick={onComplete}
-              className="gap-1"
+              onClick={handleSubmit} 
+              disabled={!userResponse.trim() || isTyping}
+              className="gap-2"
             >
-              Finish Interview
+              <Send className="h-4 w-4" />
+              {isLastQuestion ? "Submit & Finish" : "Submit"}
             </Button>
-          )}
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!userResponse.trim() || isTyping}
-            className="gap-2"
-          >
-            <Send className="h-4 w-4" />
-            Submit
-          </Button>
+          </div>
         </div>
       </div>
     </div>

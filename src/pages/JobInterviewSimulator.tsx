@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { InterviewSetup } from "@/components/job-interview/InterviewSetup";
 import { InterviewChat } from "@/components/job-interview/InterviewChat";
@@ -25,6 +25,13 @@ const JobInterviewSimulator = () => {
   
   const isMobile = useIsMobile();
   const [showTranscript, setShowTranscript] = useState(false);
+
+  // Auto-toggle to transcript on mobile when interview is completed
+  useEffect(() => {
+    if (isMobile && isInterviewCompleted) {
+      setShowTranscript(true);
+    }
+  }, [isMobile, isInterviewCompleted]);
 
   // On mobile, allow toggling between chat and transcript
   const toggleTranscript = () => {
@@ -73,7 +80,9 @@ const JobInterviewSimulator = () => {
           : (isMobile && !isInterviewStarted ? "hidden" : "")
         }>
           {isInterviewStarted && (
-            <InterviewTranscript transcript={transcript} />
+            <Card className="h-full">
+              <InterviewTranscript transcript={transcript} />
+            </Card>
           )}
         </div>
       </div>
