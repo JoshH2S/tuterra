@@ -1,3 +1,4 @@
+
 import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
 import { TopicsCard } from "@/components/quiz-generation/TopicsCard";
 import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
@@ -60,6 +61,11 @@ const QuizGeneration = () => {
         
         <div className="grid gap-8 md:grid-cols-2">
           <div className="space-y-8">
+            <CourseMaterialUpload 
+              onFileSelect={handleFileSelect}
+              contentLength={contentLength}
+            />
+            
             <Card>
               <CardHeader>
                 <CardTitle>Quiz Settings</CardTitle>
@@ -116,10 +122,6 @@ const QuizGeneration = () => {
             <QuizDurationInput 
               duration={duration}
               onChange={setDuration}
-            />
-            <CourseMaterialUpload 
-              onFileSelect={handleFileSelect}
-              contentLength={contentLength}
             />
           </div>
           
