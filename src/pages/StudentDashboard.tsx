@@ -1,10 +1,8 @@
-
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
-import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { NewsFeed } from "@/components/dashboard/NewsFeed";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
@@ -89,8 +87,8 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
+        <div className="space-y-6">
           <PerformanceOverview performance={performance} />
 
           {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
@@ -107,10 +105,6 @@ export default function StudentDashboard() {
               onCreateSession={handleCreateSession}
             />
           </div>
-        </div>
-
-        <div className={isMobile ? 'mt-6' : ''}>
-          <ActivityTimeline />
         </div>
       </div>
     </div>
