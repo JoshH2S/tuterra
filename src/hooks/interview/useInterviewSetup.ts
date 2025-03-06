@@ -54,6 +54,15 @@ export const useInterviewSetup = (
     setSessionCreationErrors([]);
     setUsedFallbackQuestions(false);
     
+    // Validate inputs
+    if (!industry?.trim() || !jobRole?.trim()) {
+      console.error("Invalid inputs:", { industry, jobRole });
+      setSessionCreationErrors(["Industry and job role are required"]);
+      handleFallbackMode(jobRole || "Unknown Role", industry || "General");
+      setIsGeneratingQuestions(false);
+      return;
+    }
+    
     // If we're offline, immediately go to fallback mode
     if (!isOnline) {
       console.log("Device is offline. Using fallback interview mode...");
@@ -81,9 +90,10 @@ export const useInterviewSetup = (
       console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
-      // Step 2: Generate interview questions - directly after session creation, no setTimeout
+      // Step 2: Generate interview questions - directly after session creation
       try {
         console.log("Generating questions for session with ID:", sessionId);
+        // Explicitly pass all four parameters to generateQuestions
         await generateQuestions(industry, jobRole, jobDescription, sessionId);
         setInterviewReady(true);
       } catch (questionError) {

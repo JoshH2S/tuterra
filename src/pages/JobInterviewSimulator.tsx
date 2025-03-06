@@ -70,18 +70,18 @@ const JobInterviewSimulator = () => {
   return (
     <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
       <div className="space-y-4 md:space-y-8">
-        {/* Online/Offline indicator */}
-        <div className="flex justify-end">
+        {/* Online/Offline indicator - Mobile friendly positioning */}
+        <div className="flex justify-end items-center sticky top-0 z-10 bg-opacity-90 bg-background backdrop-blur-sm py-1">
           <div className="text-xs flex items-center gap-1 text-gray-500">
             {isOnline ? (
               <>
                 <Wifi className="h-3 w-3 text-green-500" />
-                <span>Online</span>
+                <span className="hidden sm:inline">Online</span>
               </>
             ) : (
               <>
                 <WifiOff className="h-3 w-3 text-amber-500" />
-                <span>Offline Mode</span>
+                <span className="hidden sm:inline">Offline Mode</span>
               </>
             )}
           </div>
