@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Question, 
@@ -18,7 +17,11 @@ const DEFAULT_CONFIG = {
     { id: '2', name: 'Behavioral' as QuestionCategory, weight: 30 },
     { id: '3', name: 'Problem Solving' as QuestionCategory, weight: 20 },
     { id: '4', name: 'Cultural Fit' as QuestionCategory, weight: 10 }
-  ]
+  ],
+  industry: 'General',
+  role: 'Professional',
+  jobDescription: '',
+  sessionId: 'default-session'
 };
 
 export class InterviewQuestionService {
