@@ -92,7 +92,7 @@ export const InterviewProvider: React.FC<{children: React.ReactNode}> = ({ child
           job_title: jobTitle,
           industry: industry,
           job_description: jobDescription,
-          status: 'created' // Use literal 'created' instead of string variable
+          status: 'created' as const // Fix: Use type assertion to specify the exact literal type
         })
         .select()
         .single();
