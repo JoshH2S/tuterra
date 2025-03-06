@@ -27,32 +27,70 @@ serve(async (req) => {
 
   try {
     console.log("Function called: generate-interview-questions");
-    const { industry, jobRole, jobDescription, sessionId } = await req.json();
     
-    // Validate required parameters
-    if (!sessionId) {
-      console.error("Missing sessionId parameter");
+    // Parse request body
+    let reqBody;
+    try {
+      reqBody = await req.json();
+    } catch (parseError) {
+      console.error("Invalid JSON in request body:", parseError);
       return new Response(
-        JSON.stringify({ error: "Missing sessionId parameter" }),
+        JSON.stringify({ error: "Invalid request format: JSON parsing failed" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
     
-    if (!industry || !jobRole) {
-      console.error("Missing required parameters:", { industry, jobRole });
+    const { industry, jobRole, jobDescription, sessionId } = reqBody;
+    
+    // Perform comprehensive parameter validation
+    if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
+      console.error("Missing or invalid sessionId parameter:", sessionId);
       return new Response(
-        JSON.stringify({ error: "Missing required parameters: industry and jobRole are required" }),
+        JSON.stringify({ error: "Missing or invalid sessionId parameter" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
     
-    console.log(`Generating questions for session ${sessionId}`);
-    console.log("Parameters:", { industry, jobRole, jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A" });
+    if (!industry || typeof industry !== 'string' || industry.trim() === '') {
+      console.error("Missing or invalid industry parameter:", industry);
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid industry parameter" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
     
-    // Here you would normally call the OpenAI API
-    // For now, let's generate some mock questions based on the provided information
-    // In a production environment, this would be replaced with a real AI API call
+    if (!jobRole || typeof jobRole !== 'string' || jobRole.trim() === '') {
+      console.error("Missing or invalid jobRole parameter:", jobRole);
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid jobRole parameter" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
     
+    // Verify session exists in database before proceeding
+    console.log(`Verifying session ${sessionId} exists in database`);
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('interview_sessions')
+      .select('id')
+      .eq('session_id', sessionId)
+      .single();
+    
+    if (sessionError || !sessionData) {
+      console.error("Session verification failed:", sessionError || "Session not found");
+      return new Response(
+        JSON.stringify({ error: "Invalid session ID or session not found" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+      );
+    }
+    
+    console.log(`Session verified. Generating questions for session ${sessionId}`);
+    console.log("Parameters:", { 
+      industry, 
+      jobRole, 
+      jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A" 
+    });
+    
+    // Generate the questions
     const questions = generateMockQuestions(industry, jobRole, jobDescription);
     console.log(`Generated ${questions.length} questions`);
     
@@ -71,6 +109,7 @@ serve(async (req) => {
       );
     }
     
+    console.log("Successfully updated session with questions");
     return new Response(
       JSON.stringify({ 
         success: true, 

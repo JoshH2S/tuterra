@@ -11,13 +11,37 @@ export const useInterviewPersistence = () => {
   const [loading, setLoading] = useState(false);
 
   const createSession = async (industry: string, jobRole: string, jobDescription: string) => {
+    // Input validation
+    if (!industry || !jobRole) {
+      console.error("Missing required parameters for session creation", { industry, jobRole });
+      toast({
+        title: "Missing Information",
+        description: "Industry and job role are required to create an interview session.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    // Generate a new session ID with validation
     const sessionId = uuidv4();
+    if (!sessionId) {
+      console.error("Failed to generate a valid session ID");
+      toast({
+        title: "Error",
+        description: "Failed to create an interview session. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
     console.log(`Creating new session with ID: ${sessionId}`);
     setLoading(true);
     
     try {
       // Use the edge function to create a session
       console.log("Calling create-interview-session edge function...");
+      console.log("Request body:", { sessionId, industry, role: jobRole, jobDescription });
+      
       const { data, error } = await supabase.functions.invoke('create-interview-session', {
         body: {
           sessionId,
@@ -37,7 +61,24 @@ export const useInterviewPersistence = () => {
         return null;
       }
       
-      console.log("Session created successfully:", data);
+      // Verify the session was created by immediately retrieving it from the database
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('interview_sessions')
+        .select('id')
+        .eq('session_id', sessionId)
+        .single();
+      
+      if (verifyError || !verifyData) {
+        console.error("Session verification failed:", verifyError || "Session not found");
+        toast({
+          title: "Error",
+          description: "Failed to verify interview session creation. Please try again.",
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      console.log("Session created and verified successfully:", { sessionId, dbId: verifyData.id });
       return sessionId;
     } catch (error) {
       console.error("Error creating session:", error);

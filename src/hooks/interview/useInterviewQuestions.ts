@@ -12,18 +12,23 @@ export const useInterviewQuestions = (
   const [loading, setLoading] = useState(false);
 
   const generateQuestions = async (industry: string, jobRole: string, jobDescription: string) => {
-    if (!sessionId) {
-      console.error("Cannot generate questions: No session ID provided");
+    // Clear validation
+    if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
+      console.error("Cannot generate questions: No valid session ID provided", { sessionId });
       toast({
         title: "Error",
-        description: "Session ID is missing. Please try again.",
+        description: "Session ID is missing or invalid. Please try again.",
         variant: "destructive",
       });
       return;
     }
     
     setLoading(true);
-    console.log(`Generating questions for session ${sessionId} with:`, { industry, jobRole, jobDescription: jobDescription.substring(0, 50) + '...' });
+    console.log(`Generating questions for session [${sessionId}] with:`, { 
+      industry, 
+      jobRole, 
+      jobDescription: jobDescription.substring(0, 50) + '...' 
+    });
     
     try {
       // Call the edge function with detailed logging
@@ -49,15 +54,25 @@ export const useInterviewQuestions = (
         throw new Error("No data returned from the server");
       }
       
-      if (data && data.questions) {
+      if (data && data.questions && Array.isArray(data.questions)) {
         console.log(`Received ${data.questions.length} questions from edge function`);
-        setQuestions(data.questions);
+        
+        // Validate the shape of the received questions
+        const formattedQuestions = data.questions.map((q: any) => ({
+          id: q.id || `q-${crypto.randomUUID()}`,
+          session_id: sessionId,
+          question: q.question || '',
+          question_order: q.question_order || 0,
+          created_at: q.created_at || new Date().toISOString()
+        }));
+        
+        setQuestions(formattedQuestions);
         toast({
           title: "Questions generated",
           description: "Your interview questions are ready. Let's start the interview!",
         });
       } else {
-        console.error("Questions array missing in response:", data);
+        console.error("Questions array missing or invalid in response:", data);
         throw new Error("Invalid response format from server");
       }
     } catch (error) {
@@ -69,7 +84,7 @@ export const useInterviewQuestions = (
       // Convert fallbacks to the expected format and set them
       const formattedFallbacks = fallbackQuestions.map((q, index) => ({
         id: `fallback-${index}`,
-        session_id: sessionId,
+        session_id: sessionId || '',
         question: q.text,
         question_order: index,
         created_at: new Date().toISOString()
@@ -122,7 +137,10 @@ export const useInterviewQuestions = (
   ];
 
   const fetchQuestions = async () => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      console.error("Cannot fetch questions: No session ID provided");
+      return;
+    }
     
     setLoading(true);
     try {
@@ -140,7 +158,7 @@ export const useInterviewQuestions = (
         throw sessionError;
       }
       
-      if (sessionData && sessionData.questions && Array.isArray(sessionData.questions) && sessionData.questions.length > 0) {
+      if (sessionData?.questions && Array.isArray(sessionData.questions) && sessionData.questions.length > 0) {
         console.log(`Retrieved ${sessionData.questions.length} questions from session data`);
         
         // Format the questions from the session data
@@ -148,31 +166,14 @@ export const useInterviewQuestions = (
           id: q.id || `session-q-${index}`,
           session_id: sessionId,
           question: q.question || q.text || '', // Handle different question formats
-          question_order: q.question_order || index,
+          question_order: q.question_order !== undefined ? q.question_order : index,
           created_at: q.created_at || new Date().toISOString()
         }));
         
         setQuestions(formattedQuestions);
       } else {
-        // As a fallback, try the edge function
-        console.log("No questions in session data, trying edge function");
-        const { data, error } = await supabase.functions.invoke('get-interview-questions', {
-          body: { sessionId }
-        });
-
-        if (error) {
-          console.error("Error fetching questions from edge function:", error);
-          throw error;
-        }
-        
-        if (data && Array.isArray(data.questions) && data.questions.length > 0) {
-          console.log(`Retrieved ${data.questions.length} questions via edge function`);
-          
-          setQuestions(data.questions);
-        } else {
-          console.error("No questions found via edge function");
-          throw new Error("No interview questions found");
-        }
+        console.log("No questions found or empty questions array in session data");
+        throw new Error("No questions found in session data");
       }
     } catch (error) {
       console.error("Error fetching questions:", error);

@@ -51,6 +51,7 @@ const JobInterviewSimulator = () => {
   const { generateFeedback, feedback, loading: feedbackLoading } = useInterviewFeedback(currentSessionId);
 
   const [interviewReady, setInterviewReady] = useState(false);
+  const [sessionCreationErrors, setSessionCreationErrors] = useState<string[]>([]);
 
   // When typing effect finishes
   useEffect(() => {
@@ -82,44 +83,60 @@ const JobInterviewSimulator = () => {
     setJobRole(jobRole);
     setJobDescription(jobDescription);
     setIsGeneratingQuestions(true);
+    setSessionCreationErrors([]);
     
     try {
-      // Create a new interview session
+      // Step 1: Create a new interview session
       console.log("Creating new interview session...");
       const sessionId = await createSession(industry, jobRole, jobDescription);
       
       if (!sessionId) {
-        console.error("Failed to create session: No session ID returned");
-        throw new Error("Failed to create interview session");
+        const errMsg = "Failed to create session: No session ID returned";
+        console.error(errMsg);
+        setSessionCreationErrors(prev => [...prev, errMsg]);
+        throw new Error(errMsg);
       }
       
       console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
       // Wait for the session ID to be set before generating questions
+      // Wait a moment for the state to update
       setTimeout(async () => {
+        // Double check the session ID is actually set
+        if (!sessionId) {
+          const errMsg = "Session ID not available after delay";
+          console.error(errMsg);
+          setSessionCreationErrors(prev => [...prev, errMsg]);
+          setIsGeneratingQuestions(false);
+          return;
+        }
+          
         try {
-          // Generate interview questions
-          console.log("Generating questions for new session with ID:", sessionId);
+          // Step 2: Generate interview questions
+          console.log("Generating questions for session with ID:", sessionId);
           await generateQuestions(industry, jobRole, jobDescription);
           setInterviewReady(true);
         } catch (questionError) {
           console.error("Error generating questions:", questionError);
+          setSessionCreationErrors(prev => [...prev, `Error generating questions: ${questionError.message || 'Unknown error'}`]);
           toast({
             title: "Error",
             description: "Failed to generate interview questions. Please try again.",
             variant: "destructive",
           });
+        } finally {
+          setIsGeneratingQuestions(false);
         }
-      }, 500);
+      }, 1000); // Increased delay to ensure state is properly updated
     } catch (error) {
       console.error("Error starting interview:", error);
+      setSessionCreationErrors(prev => [...prev, `Error starting interview: ${error.message || 'Unknown error'}`]);
       toast({
         title: "Error",
         description: "Failed to start the interview. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsGeneratingQuestions(false);
     }
   };
@@ -152,6 +169,26 @@ const JobInterviewSimulator = () => {
   const handleStartNew = () => {
     resetInterview();
     setInterviewReady(false);
+    setSessionCreationErrors([]);
+  };
+
+  // Debug display for development purposes
+  const renderDebugInfo = () => {
+    if (sessionCreationErrors.length === 0) return null;
+    
+    return (
+      <div className="bg-red-50 border border-red-200 p-4 rounded-md mb-4">
+        <h3 className="text-red-700 font-medium">Debug Information</h3>
+        <ul className="text-sm text-red-600 mt-2 space-y-1">
+          {sessionCreationErrors.map((err, i) => (
+            <li key={i}>• {err}</li>
+          ))}
+        </ul>
+        <p className="text-xs text-red-500 mt-2">
+          Please try again or refresh the page. If the problem persists, contact support.
+        </p>
+      </div>
+    );
   };
 
   const currentQuestion = getCurrentQuestion();
@@ -161,6 +198,8 @@ const JobInterviewSimulator = () => {
   return (
     <div className="container py-6 max-w-5xl mx-auto">
       <div className="space-y-8">
+        {renderDebugInfo()}
+        
         {!interviewReady && !isInterviewInProgress && !isInterviewComplete && (
           <InterviewForm 
             onSubmit={handleStartInterview} 
