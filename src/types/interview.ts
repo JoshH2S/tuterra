@@ -1,41 +1,58 @@
 
+// Core interview data types
 export interface InterviewSession {
   id: string;
-  user_id: string;
+  userId?: string;
+  jobTitle: string;
   industry: string;
-  job_role: string;
-  job_description: string;
-  created_at: string;
-  updated_at: string;
+  jobDescription?: string;
+  status: 'created' | 'in_progress' | 'completed';
+  createdAt: string;
+  completedAt?: string;
 }
 
 export interface InterviewQuestion {
   id: string;
-  session_id: string;
+  sessionId: string;
   question: string;
-  question_order: number;
-  created_at: string;
+  questionOrder: number;
+  createdAt: string;
 }
 
 export interface InterviewResponse {
-  id: string;
-  question_id: string;
-  user_response: string;
-  created_at: string;
+  id?: string;
+  questionId: string;
+  response: string;
+  createdAt?: string;
 }
 
 export interface InterviewFeedback {
-  id: string;
-  session_id: string;
-  feedback: string;
+  id?: string;
+  sessionId: string;
   strengths: string[];
-  areas_for_improvement: string[];
-  overall_score: number;
-  created_at: string;
-  updated_at: string;
+  weaknesses: string[];
+  tips: string[];
+  overallFeedback?: string;
+  createdAt?: string;
 }
 
-export interface InterviewTranscript {
-  question: string;
-  answer: string;
+// UI state types
+export interface InterviewState {
+  session: InterviewSession | null;
+  questions: InterviewQuestion[];
+  currentQuestionIndex: number;
+  responses: Record<string, string>;
+  feedback: InterviewFeedback | null;
+  status: 'idle' | 'loading' | 'ready' | 'in-progress' | 'completed' | 'error';
+  error: string | null;
+}
+
+export interface IndustryOption {
+  value: string;
+  label: string;
+}
+
+export interface JobTitleOption {
+  value: string;
+  label: string;
 }
