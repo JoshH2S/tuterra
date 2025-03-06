@@ -1,13 +1,11 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { SelectInput } from "@/components/interview/SelectInput";
-import { INDUSTRY_OPTIONS } from "@/components/interview/constants";
+import { INDUSTRY_OPTIONS, JOB_ROLE_OPTIONS } from "@/components/interview/constants";
 
 interface InterviewFormProps {
   onSubmit: (industry: string, jobRole: string, jobDescription: string) => void;
@@ -71,13 +69,10 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       return;
     }
     
-    // Clear any previous errors
     setFormErrors({});
     
-    // Log that we're submitting the form
     console.log("Form validated, submitting to parent component");
     
-    // Submit to parent
     onSubmit(industry, jobRole, jobDescription);
   };
 
@@ -116,14 +111,15 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
             <Label htmlFor="jobRole" className="flex justify-between">
               Job Role <span className="text-red-500">*</span>
             </Label>
-            <Input
+            <SelectInput
               id="jobRole"
               value={jobRole}
-              onChange={(e) => {
-                setJobRole(e.target.value);
+              onChange={(val) => {
+                setJobRole(val);
                 setFormErrors(prev => ({ ...prev, jobRole: undefined }));
               }}
-              placeholder="E.g., Software Engineer, Marketing Manager"
+              options={JOB_ROLE_OPTIONS}
+              placeholder="Select a job role"
               className={`w-full ${formErrors.jobRole ? 'border-red-500' : ''}`}
             />
             {formErrors.jobRole && (
