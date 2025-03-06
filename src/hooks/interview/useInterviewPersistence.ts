@@ -12,12 +12,16 @@ export const useInterviewPersistence = () => {
   const createSession = async (industry: string, jobRole: string, jobDescription: string): Promise<string | null> => {
     setLoading(true);
     try {
+      // Use a custom query approach to bypass TypeScript constraints
       const { data, error } = await supabase
         .from('interview_sessions')
         .insert({
           industry,
           role: jobRole, // Note: using 'role' instead of 'job_role' to match DB schema
-          job_description: jobDescription
+          job_description: jobDescription,
+          questions: [],
+          user_responses: [],
+          session_id: crypto.randomUUID() // Generate a unique session ID
         })
         .select()
         .single();
@@ -53,10 +57,10 @@ export const useInterviewPersistence = () => {
         // Map the returned data to our InterviewSession interface
         const session: InterviewSession = {
           id: data.id,
-          user_id: data.user_id,
+          user_id: data.user_id || "",
           industry: data.industry,
           job_role: data.role, // Map 'role' from DB to 'job_role' in our interface
-          job_description: data.job_description,
+          job_description: data.job_description || "",
           created_at: data.created_at,
           updated_at: data.created_at // Use created_at as updated_at if missing
         };

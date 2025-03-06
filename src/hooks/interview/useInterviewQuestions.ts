@@ -46,18 +46,35 @@ export const useInterviewQuestions = (
     
     setLoading(true);
     try {
-      // Instead of directly using 'interview_questions' table (which might not be recognized by TypeScript),
-      // we use a more dynamic approach with custom queries
+      // Use a direct query approach with explicit type handling
       const { data, error } = await supabase
-        .from('interview_questions')
-        .select('id, session_id, question, question_order, created_at')
-        .eq('session_id', sessionId)
-        .order('question_order', { ascending: true });
+        .rpc('get_interview_questions', { session_id_param: sessionId })
+        .select('id, session_id, question, question_order, created_at');
 
-      if (error) throw error;
-      
-      if (data) {
-        // Map the data to ensure it matches our InterviewQuestion interface
+      // Fallback to direct query if RPC is not available
+      if (error && error.message.includes('function "get_interview_questions" does not exist')) {
+        const directQuery = await supabase
+          .from('interview_questions')
+          .select('id, session_id, question, question_order, created_at')
+          .eq('session_id', sessionId)
+          .order('question_order', { ascending: true });
+          
+        if (directQuery.error) throw directQuery.error;
+        
+        if (directQuery.data) {
+          // Map the data to ensure it matches our InterviewQuestion interface
+          const questions: InterviewQuestion[] = directQuery.data.map(item => ({
+            id: item.id,
+            session_id: item.session_id,
+            question: item.question,
+            question_order: item.question_order,
+            created_at: item.created_at
+          }));
+          
+          setQuestions(questions);
+        }
+      } else if (data) {
+        // If the RPC call succeeded, map the data
         const questions: InterviewQuestion[] = data.map(item => ({
           id: item.id,
           session_id: item.session_id,
@@ -65,6 +82,7 @@ export const useInterviewQuestions = (
           question_order: item.question_order,
           created_at: item.created_at
         }));
+        
         setQuestions(questions);
       }
     } catch (error) {
