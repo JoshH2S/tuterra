@@ -340,7 +340,7 @@ serve(async (req) => {
     console.log(`Generating questions for session ${request.sessionId}`);
     const questions = await questionGenerator.generateQuestions(request);
 
-    // Add IDs and order index to questions
+    // Add IDs and order index to questions if they don't already have them
     const questionsWithIds = questions.map((question, index) => ({
       ...question,
       id: question.id || crypto.randomUUID(),

@@ -74,7 +74,8 @@ export class InterviewQuestionService {
 
       console.log("Received response:", JSON.stringify({
         hasData: !!data,
-        questionCount: data?.questions?.length || 0
+        questionCount: data?.questions?.length || 0,
+        responseData: data
       }));
 
       if (this.isValidQuestionResponse(data)) {
@@ -88,7 +89,7 @@ export class InterviewQuestionService {
         return this.formatResponse(formattedQuestions);
       }
 
-      console.error("Invalid question format received from API");
+      console.error("Invalid question format received from API:", data);
       throw new Error('Invalid question format received from API');
     } catch (error) {
       console.error(`Error generating questions (Attempt ${this.retryCount + 1}/${this.MAX_RETRIES}):`, error);
@@ -118,12 +119,32 @@ export class InterviewQuestionService {
   }
 
   private isValidQuestionResponse(data: any): data is { questions: Partial<Question>[] } {
-    return (
-      data?.questions &&
-      Array.isArray(data.questions) &&
-      data.questions.length > 0 &&
-      data.questions.every((q: any) => q.text && typeof q.text === 'string')
-    );
+    if (!data) {
+      console.log("Response data is null or undefined");
+      return false;
+    }
+    
+    if (!data.questions) {
+      console.log("Response has no questions property:", data);
+      return false;
+    }
+    
+    if (!Array.isArray(data.questions)) {
+      console.log("Questions is not an array:", typeof data.questions);
+      return false;
+    }
+    
+    if (data.questions.length === 0) {
+      console.log("Questions array is empty");
+      return false;
+    }
+    
+    const allValid = data.questions.every((q: any) => q && q.text && typeof q.text === 'string');
+    if (!allValid) {
+      console.log("Some questions are invalid:", data.questions.filter((q: any) => !q || !q.text).slice(0, 2));
+    }
+    
+    return allValid;
   }
 
   private formatQuestions(questions: Partial<Question>[], config: Required<InterviewConfig>): Question[] {
@@ -218,7 +239,6 @@ export class InterviewQuestionService {
     return this.formatResponse(fallbackQuestions);
   }
 
-  // Utility method to validate questions before use
   validateQuestions(questions: Question[]): boolean {
     return questions.every(q => 
       q.id &&

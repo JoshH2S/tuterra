@@ -20,8 +20,13 @@ class InterviewTranscriptService {
   }
 
   createQuestionMessage(question: Question): Message {
+    if (!question || !question.text) {
+      console.error("Invalid question object provided", question);
+      throw new Error("Cannot create message from invalid question");
+    }
+    
     return {
-      id: question.id,
+      id: question.id || uuidv4(),
       role: 'ai',
       text: question.text
     };

@@ -58,6 +58,25 @@ export const InterviewQuestion = ({
     // This would interact with any interactive elements in the card
   }, []);
 
+  // Check if we have a valid message
+  if (!message || message.trim() === '') {
+    console.error("Empty question message detected");
+    return (
+      <motion.div
+        key="error-message"
+        variants={cardVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className="w-full max-w-xl mx-auto"
+      >
+        <div className="bg-card rounded-lg border shadow-sm p-5 space-y-4">
+          <p className="text-destructive">Error: Question text is missing. Please retry the interview.</p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <AnimatePresence mode="wait">
       <motion.div

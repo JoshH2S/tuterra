@@ -29,7 +29,9 @@ export const useInterviewQuestions = ({
   
   // Memoized derived values
   const currentQuestion = useMemo(() => 
-    questions.length > 0 ? questions[currentQuestionIndex] : undefined,
+    questions.length > 0 && currentQuestionIndex < questions.length 
+      ? questions[currentQuestionIndex] 
+      : undefined,
     [questions, currentQuestionIndex]
   );
 
@@ -54,19 +56,39 @@ export const useInterviewQuestions = ({
     onStartGenerating();
 
     try {
+      console.log("Starting question generation for:", config);
       const result = await interviewQuestionService.generateInterviewQuestions(config);
       
-      if (!activeRequests.current.has(requestId)) return null; // Request was cancelled
+      if (!activeRequests.current.has(requestId)) {
+        console.log("Request was cancelled");
+        return null; // Request was cancelled
+      }
 
       sessionIdRef.current = uuidv4();
       
       // Ensure we have valid questions before updating state
       if (result && result.questions && result.questions.length > 0) {
-        setQuestions(result.questions);
+        console.log(`Successfully generated ${result.questions.length} questions`);
+        
+        // Validate all questions have the required properties
+        const validQuestions = result.questions.filter(q => 
+          q && q.id && q.text && typeof q.text === 'string' && q.text.trim() !== ''
+        );
+        
+        if (validQuestions.length < result.questions.length) {
+          console.warn(`Filtered out ${result.questions.length - validQuestions.length} invalid questions`);
+        }
+        
+        if (validQuestions.length === 0) {
+          throw new Error("No valid questions were returned");
+        }
+        
+        setQuestions(validQuestions);
         setMetadata(result.metadata);
         setCurrentQuestionIndex(0);
         return result;
       } else {
+        console.error("No questions returned or empty array", result);
         throw new Error("No questions were returned");
       }
     } catch (error) {

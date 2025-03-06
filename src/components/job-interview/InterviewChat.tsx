@@ -13,6 +13,7 @@ import { Loader, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InterviewErrorBoundary } from "./InterviewErrorBoundary";
 import { createQuestionMessage, createUserResponseMessage } from "@/services/interviewTranscriptService";
+import { useToast } from "@/hooks/use-toast";
 
 interface InterviewChatProps {
   isCompleted: boolean;
@@ -22,6 +23,7 @@ interface InterviewChatProps {
 export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) => {
   const [isTyping, setIsTyping] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const { toast } = useToast();
   
   const { 
     currentQuestion, 
@@ -43,6 +45,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     [currentQuestion]
   );
 
+  // Handle question update to transcript
   useEffect(() => {
     if (currentQuestion && !isCompleted && !isTyping) {
       const questionExists = transcript.some(msg => 
@@ -50,12 +53,17 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       );
       
       if (!questionExists) {
-        const questionMessage = createQuestionMessage(currentQuestion);
-        setTranscript(prev => [...prev, questionMessage]);
+        try {
+          const questionMessage = createQuestionMessage(currentQuestion);
+          setTranscript(prev => [...prev, questionMessage]);
+        } catch (error) {
+          console.error("Error adding question to transcript:", error);
+        }
       }
     }
   }, [currentQuestion, isCompleted, isTyping, transcript, setTranscript]);
 
+  // Typing effect timing
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
@@ -73,6 +81,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     };
   }, [currentQuestion, currentQuestionIndex, isCompleted]);
 
+  // Timer countdown effect
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0) return;
 
@@ -89,12 +98,14 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     return () => clearInterval(intervalId);
   }, [timeLeft]);
 
+  // Auto-submit on time expiration
   useEffect(() => {
     if (timeLeft === 0 && submitResponse) {
       handleSubmit("(Time expired)");
     }
   }, [timeLeft, submitResponse]);
 
+  // Handle submission of responses
   const handleSubmit = useCallback((response: string) => {
     if (!currentQuestion) return;
     
@@ -112,6 +123,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     }
   }, [currentQuestion, currentQuestionIndex, questions.length, submitResponse, setTranscript]);
 
+  // Timer setup for current question
   useEffect(() => {
     if (currentQuestion?.estimatedTimeSeconds && !isTyping && !isCompleted) {
       if (timeLeft === null) {
@@ -120,10 +132,24 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     }
   }, [currentQuestion, isTyping, isCompleted, timeLeft]);
 
+  // Restart interview on reset
   const handleReset = useCallback(() => {
     console.log("Attempting to restart interview");
-    startInterview();
-  }, [startInterview]);
+    try {
+      startInterview();
+      toast({
+        title: "Interview Restarted",
+        description: "A new set of questions is being generated.",
+      });
+    } catch (error) {
+      console.error("Error restarting interview:", error);
+      toast({
+        title: "Error",
+        description: "Failed to restart the interview. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [startInterview, toast]);
 
   return (
     <InterviewErrorBoundary onReset={handleReset}>
