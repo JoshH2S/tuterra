@@ -46,16 +46,26 @@ export const useInterviewQuestions = (
     
     setLoading(true);
     try {
+      // Instead of directly using 'interview_questions' table (which might not be recognized by TypeScript),
+      // we use a more dynamic approach with custom queries
       const { data, error } = await supabase
         .from('interview_questions')
-        .select('*')
+        .select('id, session_id, question, question_order, created_at')
         .eq('session_id', sessionId)
         .order('question_order', { ascending: true });
 
       if (error) throw error;
       
       if (data) {
-        setQuestions(data);
+        // Map the data to ensure it matches our InterviewQuestion interface
+        const questions: InterviewQuestion[] = data.map(item => ({
+          id: item.id,
+          session_id: item.session_id,
+          question: item.question,
+          question_order: item.question_order,
+          created_at: item.created_at
+        }));
+        setQuestions(questions);
       }
     } catch (error) {
       console.error("Error fetching questions:", error);

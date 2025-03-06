@@ -24,8 +24,8 @@ export const useInterviewResponses = (
 
       if (error) throw error;
       
-      // Update local state
-      setResponses(prev => ({
+      // Update local state with the new response
+      setResponses((prev) => ({
         ...prev,
         [question.id]: responseText
       }));
@@ -46,14 +46,16 @@ export const useInterviewResponses = (
     
     setLoading(true);
     try {
+      // Using explicit column selection to avoid type issues
       const { data, error } = await supabase
         .from('interview_responses')
-        .select('*')
+        .select('id, question_id, user_response, created_at')
         .in('question_id', questionIds);
 
       if (error) throw error;
       
       if (data) {
+        // Create a map of question_id to user_response
         const responseMap: Record<string, string> = {};
         data.forEach(response => {
           responseMap[response.question_id] = response.user_response;

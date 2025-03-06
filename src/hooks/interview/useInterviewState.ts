@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { InterviewQuestion, InterviewResponse, InterviewTranscript } from "@/types/interview";
+import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
 
 export const useInterviewState = () => {
   const [industry, setIndustry] = useState<string>("");

@@ -11,6 +11,7 @@ import { InterviewForm } from "@/components/interview/InterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewFeedbackComponent } from "@/components/interview/InterviewFeedback";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button"; // Add this import
 
 const JobInterviewSimulator = () => {
   const {

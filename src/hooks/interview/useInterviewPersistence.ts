@@ -16,7 +16,7 @@ export const useInterviewPersistence = () => {
         .from('interview_sessions')
         .insert({
           industry,
-          job_role: jobRole,
+          role: jobRole, // Note: using 'role' instead of 'job_role' to match DB schema
           job_description: jobDescription
         })
         .select()
@@ -49,7 +49,20 @@ export const useInterviewPersistence = () => {
 
       if (error) throw error;
       
-      return data || null;
+      if (data) {
+        // Map the returned data to our InterviewSession interface
+        const session: InterviewSession = {
+          id: data.id,
+          user_id: data.user_id,
+          industry: data.industry,
+          job_role: data.role, // Map 'role' from DB to 'job_role' in our interface
+          job_description: data.job_description,
+          created_at: data.created_at,
+          updated_at: data.created_at // Use created_at as updated_at if missing
+        };
+        return session;
+      }
+      return null;
     } catch (error) {
       console.error("Error fetching session:", error);
       toast({

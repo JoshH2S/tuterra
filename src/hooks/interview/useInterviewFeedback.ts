@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { InterviewFeedback, InterviewQuestion, InterviewTranscript } from "@/types/interview";
+import { InterviewFeedback, InterviewTranscript } from "@/types/interview";
 
 export const useInterviewFeedback = (
   sessionId: string | null
@@ -23,7 +23,19 @@ export const useInterviewFeedback = (
       if (error) throw error;
       
       if (data && data.feedback) {
-        setFeedback(data.feedback);
+        // Ensure the feedback data matches our InterviewFeedback interface
+        const feedbackData: InterviewFeedback = {
+          id: data.feedback.id,
+          session_id: data.feedback.session_id,
+          feedback: data.feedback.feedback,
+          strengths: data.feedback.strengths || [],
+          areas_for_improvement: data.feedback.areas_for_improvement || [],
+          overall_score: data.feedback.overall_score || 0,
+          created_at: data.feedback.created_at,
+          updated_at: data.feedback.updated_at
+        };
+        
+        setFeedback(feedbackData);
         toast({
           title: "Feedback generated",
           description: "Your interview feedback is ready!",
@@ -55,7 +67,19 @@ export const useInterviewFeedback = (
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
       
       if (data) {
-        setFeedback(data);
+        // Map the data to our InterviewFeedback interface
+        const feedbackData: InterviewFeedback = {
+          id: data.id,
+          session_id: data.session_id,
+          feedback: data.feedback.feedback || data.feedback,
+          strengths: data.feedback.strengths || [],
+          areas_for_improvement: data.feedback.areas_for_improvement || [],
+          overall_score: data.feedback.overall_score || 0,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        };
+        
+        setFeedback(feedbackData);
       }
     } catch (error) {
       console.error("Error fetching feedback:", error);
