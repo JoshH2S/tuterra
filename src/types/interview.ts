@@ -1,4 +1,3 @@
-
 export type Message = {
   id: string;
   role: 'ai' | 'user';
@@ -32,14 +31,28 @@ export interface InterviewConfig {
   numberOfQuestions?: number;
   timeLimit?: number; // in minutes
   categories?: QuestionCategoryConfig[];
+  sessionId?: string;
 }
 
 export interface GenerateQuestionsResponse {
   questions: Question[];
-  metadata?: {
-    totalTime: number;
-    categoryBreakdown: Record<QuestionCategory, number>;
-  };
+  metadata?: InterviewMetadata;
+}
+
+export interface InterviewMetadata {
+  totalTime: number;
+  categoryBreakdown: Record<QuestionCategory, number>;
+}
+
+export interface InterviewState {
+  industry: string;
+  role: string;
+  jobDescription: string;
+  isStarted: boolean;
+  isCompleted: boolean;
+  isGenerating: boolean;
+  isGeneratingFeedback: boolean;
+  currentQuestionIndex: number;
 }
 
 export interface FeedbackResponse {

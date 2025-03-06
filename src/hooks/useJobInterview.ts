@@ -1,170 +1,253 @@
 
-import { useState, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Message, Question, InterviewConfig, FeedbackResponse } from "@/types/interview";
+import { 
+  Message, 
+  Question, 
+  InterviewConfig, 
+  FeedbackResponse,
+  InterviewState,
+  InterviewMetadata 
+} from "@/types/interview";
 import { interviewQuestionService } from "@/services/interviewQuestionService";
 import { interviewFeedbackService } from "@/services/interviewFeedbackService";
-import { 
-  createWelcomeMessage, 
-  createUserResponseMessage, 
-  createQuestionMessage,
-  createCompletionMessage
-} from "@/services/interviewTranscriptService";
+import { interviewTranscriptService } from "@/services/interviewTranscriptService";
+import { useInterviewPersistence } from "@/hooks/useInterviewPersistence";
 import { v4 as uuidv4 } from "@/lib/uuid";
 
-export const useJobInterview = () => {
-  const { toast } = useToast();
-  const [industry, setIndustry] = useState("");
-  const [role, setRole] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
-  const [isInterviewStarted, setIsInterviewStarted] = useState(false);
-  const [isInterviewCompleted, setIsInterviewCompleted] = useState(false);
-  const [transcript, setTranscript] = useState<Message[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [userResponses, setUserResponses] = useState<string[]>([]);
-  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
-  const [feedback, setFeedback] = useState<string | undefined>(undefined);
-  const [detailedFeedback, setDetailedFeedback] = useState<FeedbackResponse | undefined>(undefined);
-  const [interviewMetadata, setInterviewMetadata] = useState<any>(null);
-  const [sessionId, setSessionId] = useState<string>("");
+export const useJobInterview = (initialConfig?: Partial<InterviewConfig>) => {
+  // State management with proper typing
+  const [interviewState, setInterviewState] = useState<InterviewState>({
+    industry: initialConfig?.industry || "",
+    role: initialConfig?.role || "",
+    jobDescription: initialConfig?.jobDescription || "",
+    isStarted: false,
+    isCompleted: false,
+    isGenerating: false,
+    isGeneratingFeedback: false,
+    currentQuestionIndex: 0
+  });
 
-  const currentQuestion = questions[currentQuestionIndex];
-  
-  const startInterview = async () => {
-    if (!industry || !role) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [transcript, setTranscript] = useState<Message[]>([]);
+  const [userResponses, setUserResponses] = useState<string[]>([]);
+  const [feedback, setFeedback] = useState<FeedbackResponse | null>(null);
+  const [metadata, setMetadata] = useState<InterviewMetadata | null>(null);
+
+  // Refs for tracking async operations
+  const activeRequests = useRef(new Set<string>());
+  const sessionId = useRef(initialConfig?.sessionId || "");
+
+  const { toast } = useToast();
+  const { saveInterview, loadInterview } = useInterviewPersistence();
+
+  // Memoized derived values
+  const currentQuestion = useMemo(() => 
+    questions[interviewState.currentQuestionIndex],
+    [questions, interviewState.currentQuestionIndex]
+  );
+
+  const progress = useMemo(() => ({
+    current: interviewState.currentQuestionIndex + 1,
+    total: questions.length,
+    percentage: questions.length 
+      ? ((interviewState.currentQuestionIndex + 1) / questions.length) * 100 
+      : 0
+  }), [questions.length, interviewState.currentQuestionIndex]);
+
+  // Input validation
+  const validateConfig = useCallback((config: Partial<InterviewConfig>): boolean => {
+    if (!config.industry?.trim() || !config.role?.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please fill out all fields before starting the interview.",
+        description: "Please fill out all required fields.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+    return true;
+  }, [toast]);
+
+  // State updates with error handling
+  const updateInterviewState = useCallback((updates: Partial<InterviewState>) => {
+    setInterviewState(prev => ({
+      ...prev,
+      ...updates
+    }));
+  }, []);
+
+  // Interview start logic
+  const startInterview = useCallback(async () => {
+    const config = {
+      industry: interviewState.industry,
+      role: interviewState.role,
+      jobDescription: interviewState.jobDescription,
+      numberOfQuestions: initialConfig?.numberOfQuestions || 5
+    };
+
+    if (!validateConfig(config)) return;
+
+    const requestId = uuidv4();
+    activeRequests.current.add(requestId);
     
-    setIsInterviewStarted(true);
-    setIsGenerating(true);
-    
+    updateInterviewState({ 
+      isStarted: true, 
+      isGenerating: true 
+    });
+
     try {
-      // Generate interview questions using the new service
-      const interviewConfig: InterviewConfig = {
-        industry,
-        role, 
-        jobDescription,
-        numberOfQuestions: 5 // Optional: let user configure this later
-      };
+      const result = await interviewQuestionService.generateInterviewQuestions(config);
       
-      const result = await interviewQuestionService.generateInterviewQuestions(interviewConfig);
+      if (!activeRequests.current.has(requestId)) return; // Request was cancelled
+
+      sessionId.current = uuidv4();
+      
       setQuestions(result.questions);
-      setInterviewMetadata(result.metadata);
-      
-      // Generate a session ID for this interview
-      const newSessionId = uuidv4();
-      setSessionId(newSessionId);
-      
-      // Add welcome message
-      const welcomeMessage = createWelcomeMessage(role);
-      setTranscript([welcomeMessage]);
-      
-      // Initialize responses array with empty slots for each question
+      setMetadata(result.metadata);
       setUserResponses(new Array(result.questions.length).fill(""));
-      
-      // Reset the current question index
-      setCurrentQuestionIndex(0);
-      
-      console.log("Interview setup complete with", result.questions.length, "questions");
-      console.log("Interview metadata:", result.metadata);
-      console.log("Session ID:", newSessionId);
+      setTranscript([interviewTranscriptService.createWelcomeMessage(config.role)]);
+
+      // Save initial interview state
+      await saveInterview({
+        sessionId: sessionId.current,
+        state: interviewState,
+        questions: result.questions,
+        metadata: result.metadata
+      });
+
     } catch (error) {
-      console.error("Error setting up interview:", error);
+      console.error("Interview setup error:", error);
       toast({
-        title: "Error",
-        description: "Had trouble generating custom questions, but we've loaded some standard interview questions for you.",
+        title: "Setup Error",
+        description: "Failed to generate interview questions. Using fallback questions.",
         variant: "destructive",
       });
     } finally {
-      setIsGenerating(false);
+      if (activeRequests.current.has(requestId)) {
+        activeRequests.current.delete(requestId);
+        updateInterviewState({ isGenerating: false });
+      }
     }
-  };
+  }, [interviewState, initialConfig, validateConfig, updateInterviewState, toast, saveInterview]);
 
-  const submitResponse = (response: string) => {
-    // Add user response to transcript
-    const userMessage = createUserResponseMessage(response);
-    setTranscript(prev => [...prev, userMessage]);
+  // Response submission with debouncing
+  const submitResponse = useCallback((response: string) => {
+    if (!currentQuestion) return;
+
+    const userMessage = interviewTranscriptService.createUserResponseMessage(response);
     
-    // Store the response in our responses array
+    // Don't re-add the current question to transcript to avoid duplication
+    const updatedTranscript = [...transcript, userMessage];
+    
+    setTranscript(updatedTranscript);
     setUserResponses(prev => {
-      const newResponses = [...prev];
-      newResponses[currentQuestionIndex] = response;
-      return newResponses;
+      const updated = [...prev];
+      updated[interviewState.currentQuestionIndex] = response;
+      return updated;
     });
-    
-    // Add the current question to the transcript if it hasn't been added yet
-    if (!transcript.some(msg => msg.id === currentQuestion.id)) {
-      const questionMessage = createQuestionMessage(currentQuestion);
-      setTranscript(prev => [...prev, questionMessage]);
-    }
-    
-    // Move to next question if available
-    if (currentQuestionIndex < questions.length - 1) {
+
+    // Progress to next question
+    if (interviewState.currentQuestionIndex < questions.length - 1) {
       setTimeout(() => {
-        setCurrentQuestionIndex(prev => prev + 1);
+        const nextIndex = interviewState.currentQuestionIndex + 1;
+        updateInterviewState({ currentQuestionIndex: nextIndex });
         
-        // Add the next question to the transcript
-        const nextQuestion = questions[currentQuestionIndex + 1];
-        const nextQuestionMessage = createQuestionMessage(nextQuestion);
+        // Add the next question to transcript
+        const nextQuestion = questions[nextIndex];
+        const nextQuestionMessage = interviewTranscriptService.createQuestionMessage(nextQuestion);
         setTranscript(prev => [...prev, nextQuestionMessage]);
       }, 500);
     }
-  };
 
-  const completeInterview = async () => {
-    setIsInterviewCompleted(true);
-    console.log("Interview completed, generating feedback...");
+    // Save progress
+    saveInterview({
+      sessionId: sessionId.current,
+      state: interviewState,
+      questions,
+      responses: userResponses,
+      transcript: updatedTranscript
+    });
+  }, [currentQuestion, transcript, interviewState, questions, userResponses, saveInterview]);
+
+  // Interview completion with retry logic
+  const completeInterview = useCallback(async () => {
+    updateInterviewState({ 
+      isCompleted: true, 
+      isGeneratingFeedback: true 
+    });
     
-    // Add closing message to transcript
-    const completionMessage = createCompletionMessage();
+    // Add completion message to transcript
+    const completionMessage = interviewTranscriptService.createCompletionMessage();
     setTranscript(prev => [...prev, completionMessage]);
-    
-    // Generate AI feedback
-    setIsGeneratingFeedback(true);
-    try {
-      // Use the enhanced feedback service with detailed metrics
-      const generatedFeedback = await interviewFeedbackService.generateInterviewFeedback(
-        industry,
-        role,
-        jobDescription,
-        questions,
-        userResponses
-      );
-      
-      setFeedback(generatedFeedback);
-      
-      // Try to get detailed feedback from the database
+
+    const retryCount = useRef(0);
+    const MAX_RETRIES = 3;
+
+    const generateFeedback = async (): Promise<void> => {
       try {
-        const feedbackHistory = await interviewFeedbackService.getFeedbackHistory();
-        if (feedbackHistory && feedbackHistory.length > 0) {
-          setDetailedFeedback(feedbackHistory[0]); // Most recent feedback
+        const feedbackText = await interviewFeedbackService.generateInterviewFeedback(
+          interviewState.industry,
+          interviewState.role,
+          interviewState.jobDescription,
+          questions,
+          userResponses
+        );
+
+        // Try to get detailed feedback
+        let detailedFeedback: FeedbackResponse | null = null;
+        try {
+          const feedbackHistory = await interviewFeedbackService.getFeedbackHistory();
+          if (feedbackHistory && feedbackHistory.length > 0) {
+            detailedFeedback = feedbackHistory[0];
+          }
+        } catch (detailError) {
+          console.error("Error fetching detailed feedback:", detailError);
         }
-      } catch (detailError) {
-        console.error("Error fetching detailed feedback:", detailError);
+
+        // Use either the detailed feedback or create a simple one
+        const feedbackResponse: FeedbackResponse = detailedFeedback || {
+          detailedFeedback: feedbackText
+        };
+        
+        setFeedback(feedbackResponse);
+        
+        // Save completed interview
+        await saveInterview({
+          sessionId: sessionId.current,
+          state: interviewState,
+          questions,
+          responses: userResponses,
+          transcript,
+          feedback: feedbackResponse
+        });
+
+      } catch (error) {
+        if (retryCount.current < MAX_RETRIES) {
+          retryCount.current++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount.current));
+          return generateFeedback();
+        }
+        throw error;
       }
+    };
+
+    try {
+      await generateFeedback();
     } catch (error) {
-      console.error("Error generating feedback:", error);
+      console.error("Feedback generation error:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate interview feedback. Please try again later.",
+        title: "Feedback Error",
+        description: "Failed to generate feedback. Please try regenerating.",
         variant: "destructive",
       });
-      setFeedback("We couldn't generate detailed feedback at this time. Please try again later.");
     } finally {
-      setIsGeneratingFeedback(false);
+      updateInterviewState({ isGeneratingFeedback: false });
     }
-  };
+  }, [interviewState, questions, userResponses, transcript, toast, saveInterview]);
 
-  // Add a new method to regenerate feedback
-  const regenerateFeedback = async () => {
-    if (!sessionId) {
+  // Regenerate feedback function
+  const regenerateFeedback = useCallback(async () => {
+    if (!sessionId.current) {
       toast({
         title: "Error",
         description: "No active interview session to regenerate feedback for.",
@@ -173,16 +256,16 @@ export const useJobInterview = () => {
       return;
     }
     
-    setIsGeneratingFeedback(true);
+    updateInterviewState({ isGeneratingFeedback: true });
+    
     try {
-      await interviewFeedbackService.regenerateFeedback(sessionId);
+      await interviewFeedbackService.regenerateFeedback(sessionId.current);
       
       // Fetch the updated feedback
       const feedbackHistory = await interviewFeedbackService.getFeedbackHistory();
       if (feedbackHistory && feedbackHistory.length > 0) {
         const latestFeedback = feedbackHistory[0];
-        setDetailedFeedback(latestFeedback);
-        setFeedback(latestFeedback.detailedFeedback || "Feedback regenerated successfully.");
+        setFeedback(latestFeedback);
         
         toast({
           title: "Success",
@@ -197,12 +280,12 @@ export const useJobInterview = () => {
         variant: "destructive",
       });
     } finally {
-      setIsGeneratingFeedback(false);
+      updateInterviewState({ isGeneratingFeedback: false });
     }
-  };
+  }, [toast, updateInterviewState]);
 
-  // Add a method to get interview history
-  const getInterviewHistory = async () => {
+  // Get interview history
+  const getInterviewHistory = useCallback(async () => {
     try {
       return await interviewFeedbackService.getFeedbackHistory();
     } catch (error) {
@@ -214,26 +297,49 @@ export const useJobInterview = () => {
       });
       return [];
     }
-  };
+  }, [toast]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      activeRequests.current.clear();
+    };
+  }, []);
 
   return {
-    industry,
-    role,
-    jobDescription,
-    isInterviewStarted,
-    isInterviewCompleted,
-    transcript,
+    // State
+    industry: interviewState.industry,
+    role: interviewState.role,
+    jobDescription: interviewState.jobDescription,
+    isInterviewStarted: interviewState.isStarted,
+    isInterviewCompleted: interviewState.isCompleted,
+    isGenerating: interviewState.isGenerating,
+    isGeneratingFeedback: interviewState.isGeneratingFeedback,
+    currentQuestionIndex: interviewState.currentQuestionIndex,
     currentQuestion,
     questions,
-    currentQuestionIndex,
-    isGeneratingFeedback,
-    feedback,
-    detailedFeedback,
-    interviewMetadata,
-    sessionId,
-    setIndustry,
-    setRole,
-    setJobDescription,
+    transcript,
+    feedback: feedback?.detailedFeedback,
+    detailedFeedback: feedback,
+    interviewMetadata: metadata,
+    progress,
+    sessionId: sessionId.current,
+
+    // Input setters
+    setIndustry: useCallback((value: string) => 
+      updateInterviewState({ industry: value }), 
+      [updateInterviewState]
+    ),
+    setRole: useCallback((value: string) => 
+      updateInterviewState({ role: value }), 
+      [updateInterviewState]
+    ),
+    setJobDescription: useCallback((value: string) => 
+      updateInterviewState({ jobDescription: value }), 
+      [updateInterviewState]
+    ),
+
+    // Actions
     startInterview,
     submitResponse,
     completeInterview,
