@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { QuestionValidator } from "./validators.ts";
@@ -113,9 +114,9 @@ class QuestionGenerator {
 
   private normalizeQuestion(q: any): Question {
     return {
-      text: String(q.text).trim(),
-      category: String(q.category).trim(),
-      difficulty: String(q.difficulty).toLowerCase(),
+      text: String(q.text || '').trim(),
+      category: String(q.category || 'general').trim(),
+      difficulty: String(q.difficulty || 'medium').toLowerCase(),
       estimatedTimeSeconds: Math.min(Math.max(60, Number(q.estimatedTimeSeconds) || 120), 300),
       keywords: Array.isArray(q.keywords) 
         ? q.keywords.map((k: any) => String(k).toLowerCase()).slice(0, 5)
@@ -146,6 +147,10 @@ class QuestionGenerator {
       const data = await this.callOpenAI(prompt);
       const content = data.choices?.[0]?.message?.content?.trim();
 
+      // Add detailed logging
+      console.log('Raw OpenAI response type:', typeof content);
+      console.log('Raw OpenAI response (first 100 chars):', content?.substring(0, 100));
+
       if (!content) {
         console.error('Empty response from OpenAI');
         throw new Error('Empty response from OpenAI');
@@ -156,36 +161,82 @@ class QuestionGenerator {
       try {
         let parsedQuestions;
         
-        // Try to parse the returned content as JSON directly
+        // Improved JSON parsing with better error handling
         try {
+          // First try to parse the returned content as JSON directly
           parsedQuestions = JSON.parse(content);
-          console.log("Successfully parsed JSON directly");
+          console.log("Successfully parsed JSON directly, type:", typeof parsedQuestions);
+          
+          // If the response is an object with a questions property, extract it
+          if (parsedQuestions && typeof parsedQuestions === 'object' && !Array.isArray(parsedQuestions)) {
+            console.log("Parsed object properties:", Object.keys(parsedQuestions).join(', '));
+            if (Array.isArray(parsedQuestions.questions)) {
+              parsedQuestions = parsedQuestions.questions;
+              console.log("Extracted questions array from object");
+            }
+          }
         } catch (e) {
           console.error("Direct JSON parsing failed:", e);
-          // If direct parsing fails, try to extract JSON array using regex
+          
+          // Try to extract JSON array using regex
+          console.log("Attempting to extract JSON with regex");
           const jsonMatch = content.match(/\[[\s\S]*\]/);
           if (jsonMatch) {
-            parsedQuestions = JSON.parse(jsonMatch[0]);
-            console.log("Extracted JSON using regex");
+            try {
+              parsedQuestions = JSON.parse(jsonMatch[0]);
+              console.log("Extracted JSON using regex");
+            } catch (regexError) {
+              console.error("Regex extraction failed:", regexError);
+              
+              // Try cleaning the JSON
+              console.log("Attempting to clean malformed JSON...");
+              const cleanedJson = jsonMatch[0]
+                .replace(/[\n\r]/g, ' ')
+                .replace(/,\s*]/g, ']')
+                .replace(/,\s*}/g, '}');
+                
+              try {
+                parsedQuestions = JSON.parse(cleanedJson);
+                console.log("Successfully parsed cleaned JSON");
+              } catch (cleanError) {
+                console.error("Cleaned JSON parsing failed:", cleanError);
+                throw new Error('Could not parse questions from response');
+              }
+            }
           } else {
             console.error("Could not extract valid JSON:", content.substring(0, 100) + "...");
             throw new Error('Could not extract valid JSON from the response');
           }
         }
         
-        if (!Array.isArray(parsedQuestions?.questions)) {
-          console.error("Response is not an array:", typeof parsedQuestions, parsedQuestions ? Object.keys(parsedQuestions) : null);
-          throw new Error('Response does not contain a questions array');
+        // Validate we have valid questions
+        if (!parsedQuestions) {
+          console.error("No parsed questions object");
+          throw new Error('Failed to parse questions data');
+        }
+        
+        if (!Array.isArray(parsedQuestions)) {
+          console.error("Parsed result is not an array:", typeof parsedQuestions);
+          throw new Error('Response is not an array');
         }
 
-        const questions = parsedQuestions.questions
+        const questions = parsedQuestions
           .map(q => this.normalizeQuestion(q))
-          .filter(q => this.validator.isValidQuestion(q));
+          .filter(q => {
+            const isValid = this.validator.isValidQuestion(q);
+            if (!isValid) console.log("Filtered out invalid question:", q.text?.substring(0, 30));
+            return isValid;
+          });
 
         console.log(`Generated ${questions.length} valid questions`);
 
-        if (questions.length < (request.numberOfQuestions || 5) * 0.8) {
-          console.error(`Insufficient valid questions: ${questions.length} < ${(request.numberOfQuestions || 5) * 0.8}`);
+        if (questions.length === 0) {
+          console.error("No valid questions were generated");
+          throw new Error('No valid questions generated');
+        }
+
+        if (questions.length < (request.numberOfQuestions || 5) * 0.6) {
+          console.error(`Insufficient valid questions: ${questions.length} < ${(request.numberOfQuestions || 5) * 0.6}`);
           throw new Error('Insufficient valid questions generated');
         }
 
@@ -199,8 +250,72 @@ class QuestionGenerator {
       }
     } catch (error) {
       console.error('Error in question generation:', error);
-      throw error;
+      
+      // Create custom fallback questions based on role and industry
+      console.log("Using fallback questions due to error");
+      return this.getFallbackQuestions(request);
     }
+  }
+  
+  private getFallbackQuestions(request: QuestionRequest): Question[] {
+    const { role, industry } = request;
+    console.log(`Creating ${request.numberOfQuestions || 5} fallback questions for ${role} in ${industry}`);
+    
+    // Role-specific questions
+    const fallbackQuestions: Question[] = [
+      {
+        text: `Tell me about your experience with ${role} roles.`,
+        category: 'Experience',
+        difficulty: 'medium',
+        estimatedTimeSeconds: 120,
+        keywords: ['experience', 'background', role.toLowerCase()]
+      },
+      {
+        text: `What qualifications do you have that make you a good fit for this ${role} position?`,
+        category: 'Behavioral',
+        difficulty: 'medium',
+        estimatedTimeSeconds: 120,
+        keywords: ['qualifications', 'skills', 'fit']
+      },
+      {
+        text: `Why are you interested in working in the ${industry} industry?`,
+        category: 'Behavioral',
+        difficulty: 'easy',
+        estimatedTimeSeconds: 90,
+        keywords: ['interest', 'motivation', industry.toLowerCase()]
+      },
+      {
+        text: `Describe a challenging situation you faced in a previous role and how you resolved it.`,
+        category: 'Problem Solving',
+        difficulty: 'medium',
+        estimatedTimeSeconds: 150,
+        keywords: ['challenge', 'problem-solving', 'resolution']
+      },
+      {
+        text: `Where do you see yourself professionally in five years?`,
+        category: 'Cultural Fit',
+        difficulty: 'medium',
+        estimatedTimeSeconds: 120,
+        keywords: ['career goals', 'ambition', 'future']
+      },
+      {
+        text: `How do you stay updated with the latest trends and developments in the ${industry} industry?`,
+        category: 'Technical',
+        difficulty: 'medium',
+        estimatedTimeSeconds: 120,
+        keywords: ['trends', 'continuous learning', industry.toLowerCase()]
+      }
+    ];
+    
+    // Slice to requested number or default to 5
+    const requestedQuestions = fallbackQuestions.slice(0, request.numberOfQuestions || 5);
+    
+    // Add IDs and indexes
+    return requestedQuestions.map((q, index) => ({
+      ...q,
+      id: crypto.randomUUID(),
+      orderIndex: index
+    }));
   }
 }
 
@@ -228,7 +343,7 @@ serve(async (req) => {
     // Add IDs and order index to questions
     const questionsWithIds = questions.map((question, index) => ({
       ...question,
-      id: crypto.randomUUID(),
+      id: question.id || crypto.randomUUID(),
       orderIndex: index
     }));
 
@@ -250,7 +365,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Internal server error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        stack: error.stack
       }),
       { 
         status: error.status || 500, 
