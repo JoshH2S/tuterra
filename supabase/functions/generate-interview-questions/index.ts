@@ -21,27 +21,76 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Validate environment at startup
+const validateEnvironment = () => {
+  const required = ['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+  const missing = required.filter(key => !Deno.env.get(key));
+  
+  if (missing.length > 0) {
+    console.error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+};
+
+// Call environment validation
+validateEnvironment();
+
+// Fallback questions if OpenAI fails
+const getFallbackQuestions = (jobRole: string, industry: string) => [
+  {
+    text: `Tell me about your experience as a ${jobRole}.`,
+    category: 'experience',
+    difficulty: 'medium',
+    estimatedTimeSeconds: 120
+  },
+  {
+    text: `What interests you about working in ${industry}?`,
+    category: 'motivation',
+    difficulty: 'easy',
+    estimatedTimeSeconds: 90
+  },
+  {
+    text: `Describe a challenging situation you've faced in a previous role and how you handled it.`,
+    category: 'behavioral',
+    difficulty: 'medium',
+    estimatedTimeSeconds: 180
+  },
+  {
+    text: `What specific skills do you have that make you qualified for this ${jobRole} position?`,
+    category: 'skills',
+    difficulty: 'medium',
+    estimatedTimeSeconds: 120
+  },
+  {
+    text: `Where do you see yourself professionally in five years?`,
+    category: 'career',
+    difficulty: 'medium',
+    estimatedTimeSeconds: 120
+  }
+];
+
 // Question generator class
 class QuestionGenerator {
   async generateQuestions(industry: string, jobRole: string, jobDescription: string) {
     console.log(`Generating questions for ${jobRole} in ${industry}`);
     
-    // Generate questions with OpenAI
+    // Generate questions with OpenAI using a more structured prompt
     const promptText = `
-    You are an interviewer for a ${jobRole} position in the ${industry} industry.
-    Generate 5 relevant interview questions based on the following job description:
-    
-    ${jobDescription}
-    
-    Your questions should be challenging but fair, and should assess the candidate's skills and experience for this role.
-    Return ONLY an array of strings, with each string being a question. No additional text or explanation.
+    Generate exactly 5 interview questions for a ${jobRole} position in ${industry}.
+    Job Description: ${jobDescription}
+
+    Return ONLY a JSON array of question strings.
+    DO NOT include any explanations, numbering, or additional text.
+    The output should be a valid JSON array like this: ["question 1", "question 2", "question 3", "question 4", "question 5"]
     `;
     
     try {
       const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: [
-          { role: "system", content: "You are a helpful assistant that generates job interview questions." },
+          { 
+            role: "system", 
+            content: "You are an AI that generates structured interview questions. Always respond with valid JSON arrays containing question strings."
+          },
           { role: "user", content: promptText }
         ],
         temperature: 0.7,
@@ -50,62 +99,132 @@ class QuestionGenerator {
       const responseText = completion.data.choices[0]?.message?.content || "[]";
       console.log("Raw OpenAI response:", responseText);
       
-      // Parse the response to extract the questions
-      let questions = [];
-      try {
-        // Clean the response - remove code blocks markers and whitespace
-        const cleaned = responseText.replace(/```json|```|\[|\]/g, "").trim();
-        
-        // Split by line, removing empty lines and numbered prefixes
-        questions = cleaned
-          .split("\n")
-          .map(line => line.trim())
-          .filter(line => line && line.length > 0)
-          .map(line => {
-            // Remove quotation marks, numbers, and other formatting
-            return line
-              .replace(/^["'\d\.\)\s]+|["'\s,]+$/g, "")  // Remove starting/ending quotes and numbers
-              .trim();
-          });
-          
-        console.log("Parsed questions:", questions);
-        
-        // Ensure we have at least one question
-        if (questions.length === 0) {
-          // Fallback: just split by newlines and hope for the best
-          questions = responseText
-            .split("\n")
-            .map(line => line.trim())
-            .filter(line => line && line.length > 5);
-        }
-        
-        // Make sure there are no blank questions
-        questions = questions.filter(q => q && q.length > 5);
-        
-        // If still no questions, throw error to trigger fallback
-        if (questions.length === 0) {
-          throw new Error("Could not parse any valid questions");
-        }
-      } catch (error) {
-        console.error("Error parsing questions, using fallback method:", error);
-        
-        // Fallback: Try to extract questions as plain text
-        questions = [
-          `Tell me about your experience in ${industry}.`,
-          `What skills do you have that make you a good fit for the ${jobRole} role?`,
-          `Describe a challenging situation you've faced in a previous role and how you handled it.`,
-          `Why are you interested in this ${jobRole} position?`,
-          `What are your career goals and how does this position align with them?`
-        ];
-      }
-      
-      return questions;
+      return this.parseQuestions(responseText, industry, jobRole);
     } catch (error) {
       console.error("Error generating questions with OpenAI:", error);
-      throw error;
+      // Return fallback questions instead of throwing an error
+      return getFallbackQuestions(jobRole, industry).map(q => q.text);
+    }
+  }
+  
+  parseQuestions(responseText: string, industry: string, jobRole: string) {
+    try {
+      // Try multiple parsing approaches
+      
+      // Approach 1: Direct JSON parsing
+      try {
+        const parsed = JSON.parse(responseText);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          console.log("Successfully parsed as JSON array");
+          return parsed;
+        }
+        
+        // Check if it's an object with a questions property
+        if (parsed.questions && Array.isArray(parsed.questions)) {
+          console.log("Successfully parsed object with questions array");
+          return parsed.questions;
+        }
+      } catch (e) {
+        console.log("Direct JSON parsing failed, trying other methods");
+      }
+      
+      // Approach 2: Find JSON array in text
+      const arrayMatch = responseText.match(/\[\s*".*"\s*(?:,\s*".*"\s*)*\]/s);
+      if (arrayMatch) {
+        try {
+          const parsedArray = JSON.parse(arrayMatch[0]);
+          if (Array.isArray(parsedArray) && parsedArray.length > 0) {
+            console.log("Successfully extracted and parsed JSON array from text");
+            return parsedArray;
+          }
+        } catch (e) {
+          console.log("JSON array extraction failed");
+        }
+      }
+      
+      // Approach 3: Line-by-line parsing
+      const lines = responseText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0 && !line.startsWith('```') && !line.startsWith('[') && !line.startsWith(']'));
+      
+      if (lines.length > 0) {
+        console.log("Parsing line by line");
+        const questions = lines
+          .map(line => {
+            // Remove numbering, quotes and other formatting
+            return line
+              .replace(/^\d+[\.\)\s]+/, '') // Remove numbering
+              .replace(/^["'`]|["'`]$/g, '') // Remove quotes
+              .replace(/,$/, '') // Remove trailing comma
+              .trim();
+          })
+          .filter(line => line.length > 10); // Must be a reasonable length
+        
+        if (questions.length > 0) {
+          console.log("Successfully parsed questions line by line");
+          return questions;
+        }
+      }
+      
+      // If all parsing attempts fail, return fallback questions
+      console.log("All parsing methods failed, using fallback questions");
+      return getFallbackQuestions(jobRole, industry).map(q => q.text);
+    } catch (error) {
+      console.error("Error parsing questions:", error);
+      return getFallbackQuestions(jobRole, industry).map(q => q.text);
     }
   }
 }
+
+// Batch save questions to the database
+const saveQuestions = async (questions: string[], sessionId: string) => {
+  const questionsData = [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('interview_questions')
+      .insert(
+        questions.map((question, i) => ({
+          session_id: sessionId,
+          question: question,
+          question_order: i
+        }))
+      )
+      .select();
+    
+    if (error) {
+      console.error("Error batch saving questions:", error);
+      
+      // Fall back to individual inserts if batch insert fails
+      for (let i = 0; i < questions.length; i++) {
+        const { data: individualData, error: individualError } = await supabase
+          .from('interview_questions')
+          .insert({
+            session_id: sessionId,
+            question: questions[i],
+            question_order: i
+          })
+          .select()
+          .single();
+        
+        if (individualError) {
+          console.error("Error saving individual question:", individualError);
+          continue;
+        }
+        
+        questionsData.push(individualData);
+      }
+      
+      return questionsData;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Database error saving questions:", error);
+    throw error;
+  }
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -121,8 +240,14 @@ serve(async (req) => {
     
     if (!industry || !jobRole || !jobDescription || !sessionId) {
       return new Response(
-        JSON.stringify({ error: "Missing required parameters" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        JSON.stringify({ 
+          error: "Missing required parameters",
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+          status: 400 
+        }
       );
     }
     
@@ -130,40 +255,49 @@ serve(async (req) => {
     const generator = new QuestionGenerator();
     const questions = await generator.generateQuestions(industry, jobRole, jobDescription);
     
+    if (!questions || questions.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to generate questions",
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+          status: 500 
+        }
+      );
+    }
+    
     console.log(`Generated ${questions.length} questions for session ${sessionId}`);
     
     // Save questions to the database
-    const questionsData = [];
-    
-    for (let i = 0; i < questions.length; i++) {
-      const { data, error } = await supabase
-        .from('interview_questions')
-        .insert({
-          session_id: sessionId,
-          question: questions[i],
-          question_order: i
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error saving question:", error);
-        continue;
-      }
-      
-      questionsData.push(data);
-    }
+    const savedQuestions = await saveQuestions(questions, sessionId);
     
     return new Response(
-      JSON.stringify({ questions: questionsData }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      JSON.stringify({ 
+        questions: savedQuestions,
+        metadata: {
+          count: savedQuestions.length,
+          generated: new Date().toISOString()
+        }
+      }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+        status: 200 
+      }
     );
   } catch (error) {
     console.error("Error processing request:", error);
     
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      JSON.stringify({ 
+        error: error.message || "An unexpected error occurred",
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+        status: 500 
+      }
     );
   }
 });
