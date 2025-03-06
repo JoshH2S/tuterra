@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AnimatePresence } from "framer-motion";
@@ -120,6 +121,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
   }, [currentQuestion, isTyping, isCompleted, timeLeft]);
 
   const handleReset = useCallback(() => {
+    console.log("Attempting to restart interview");
     startInterview();
   }, [startInterview]);
 

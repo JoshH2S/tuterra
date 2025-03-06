@@ -25,7 +25,7 @@ export class InterviewQuestionService {
   private static instance: InterviewQuestionService;
   private cachedQuestions: Map<string, Question[]> = new Map();
   private retryCount = 0;
-  private readonly MAX_RETRIES = 3;
+  private readonly MAX_RETRIES = 2;
 
   private constructor() {}
 
@@ -49,6 +49,13 @@ export class InterviewQuestionService {
         return this.formatResponse(cachedResult);
       }
 
+      console.log("Calling supabase function with config:", JSON.stringify({
+        industry: finalConfig.industry,
+        role: finalConfig.role,
+        hasJobDescription: !!finalConfig.jobDescription,
+        numQuestions: finalConfig.numberOfQuestions
+      }));
+
       const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
         body: {
           ...finalConfig,
@@ -56,14 +63,28 @@ export class InterviewQuestionService {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw error;
+      }
+
+      console.log("Received response:", JSON.stringify({
+        hasData: !!data,
+        questionCount: data?.questions?.length || 0
+      }));
 
       if (this.isValidQuestionResponse(data)) {
         const formattedQuestions = this.formatQuestions(data.questions, finalConfig);
-        this.cachedQuestions.set(cacheKey, formattedQuestions);
+        
+        // Only cache if we got a good response
+        if (formattedQuestions.length > 0) {
+          this.cachedQuestions.set(cacheKey, formattedQuestions);
+        }
+        
         return this.formatResponse(formattedQuestions);
       }
 
+      console.error("Invalid question format received from API");
       throw new Error('Invalid question format received from API');
     } catch (error) {
       console.error(`Error generating questions (Attempt ${this.retryCount + 1}/${this.MAX_RETRIES}):`, error);
@@ -73,6 +94,7 @@ export class InterviewQuestionService {
         return await this.generateInterviewQuestions(config);
       }
 
+      console.log("Using fallback questions after failed attempts");
       return this.getFallbackQuestions(finalConfig);
     } finally {
       this.retryCount = 0;
@@ -102,7 +124,7 @@ export class InterviewQuestionService {
 
   private formatQuestions(questions: Partial<Question>[], config: Required<InterviewConfig>): Question[] {
     return questions.map((q, index) => ({
-      id: uuidv4(),
+      id: q.id || uuidv4(),
       text: q.text!,
       category: q.category || this.assignCategory(index, config.categories),
       estimatedTimeSeconds: q.estimatedTimeSeconds || 120,
@@ -136,6 +158,12 @@ export class InterviewQuestionService {
   }
 
   private formatResponse(questions: Question[]): GenerateQuestionsResponse {
+    if (!questions || questions.length === 0) {
+      console.error("No questions available to format into response");
+      // Return fallback questions if no questions are available
+      return this.getFallbackQuestions(DEFAULT_CONFIG);
+    }
+
     const categoryCount = questions.reduce((acc, q) => {
       if (q.category) {
         acc[q.category] = (acc[q.category] || 0) + 1;
@@ -153,7 +181,27 @@ export class InterviewQuestionService {
   }
 
   private getFallbackQuestions(config: Required<InterviewConfig>): GenerateQuestionsResponse {
-    const fallbackQuestions: Question[] = FALLBACK_QUESTIONS.map((text, index) => ({
+    console.log("Creating fallback questions for", config.role);
+    
+    // Create role-specific questions when possible
+    let fallbackTexts = [...FALLBACK_QUESTIONS];
+    
+    // Add some role-specific questions
+    if (config.role) {
+      fallbackTexts = [
+        `Tell me about your experience with ${config.role} roles.`,
+        `What skills do you think are most important for a ${config.role} position?`,
+        `Describe a challenging situation you faced in a previous ${config.role} role.`,
+        ...fallbackTexts
+      ];
+    }
+    
+    // If we have industry info, add that too
+    if (config.industry) {
+      fallbackTexts.unshift(`Why are you interested in the ${config.industry} industry?`);
+    }
+    
+    const fallbackQuestions: Question[] = fallbackTexts.slice(0, config.numberOfQuestions).map((text, index) => ({
       id: uuidv4(),
       text,
       category: this.assignCategory(index, config.categories),

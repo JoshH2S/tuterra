@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { QuestionValidator } from "./validators.ts";
@@ -77,32 +76,39 @@ class QuestionGenerator {
   }
 
   private async callOpenAI(prompt: string): Promise<any> {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert AI interviewer. Respond ONLY with valid JSON arrays containing interview questions.'
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        response_format: { type: "json_object" } // Enforce JSON response
-      })
-    });
+    console.log("Calling OpenAI API...");
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert AI interviewer. Respond ONLY with valid JSON arrays containing interview questions.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          response_format: { type: "json_object" } // Enforce JSON response
+        })
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'OpenAI API error');
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("OpenAI API error:", error);
+        throw new Error(error.error?.message || 'OpenAI API error');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error("Error calling OpenAI:", error);
+      throw error;
     }
-
-    return response.json();
   }
 
   private normalizeQuestion(q: any): Question {
@@ -118,57 +124,82 @@ class QuestionGenerator {
   }
 
   async generateQuestions(request: QuestionRequest): Promise<Question[]> {
+    console.log("Generating questions with params:", JSON.stringify({
+      industry: request.industry,
+      role: request.role,
+      hasJobDescription: !!request.jobDescription,
+      requestedQuestions: request.numberOfQuestions
+    }));
+    
     // Check cache first
     const cacheKey = this.cache.generateKey(request);
     const cachedQuestions = await this.cache.get(cacheKey);
     if (cachedQuestions) {
-      console.log('Using cached questions for session:', request.sessionId);
+      console.log('Using cached questions for session:', request.sessionId, 'found', cachedQuestions.length, 'questions');
       return cachedQuestions;
     }
 
     const prompt = this.generatePrompt(request);
-    const data = await this.callOpenAI(prompt);
-    const content = data.choices?.[0]?.message?.content?.trim();
-
-    if (!content) {
-      throw new Error('Empty response from OpenAI');
-    }
-
+    console.log("Generated prompt length:", prompt.length);
+    
     try {
-      let parsedQuestions;
+      const data = await this.callOpenAI(prompt);
+      const content = data.choices?.[0]?.message?.content?.trim();
+
+      if (!content) {
+        console.error('Empty response from OpenAI');
+        throw new Error('Empty response from OpenAI');
+      }
+
+      console.log("Received response length:", content.length);
       
-      // Try to parse the returned content as JSON directly
       try {
-        parsedQuestions = JSON.parse(content);
-      } catch (e) {
-        // If direct parsing fails, try to extract JSON array using regex
-        const jsonMatch = content.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          parsedQuestions = JSON.parse(jsonMatch[0]);
-        } else {
-          throw new Error('Could not extract valid JSON from the response');
+        let parsedQuestions;
+        
+        // Try to parse the returned content as JSON directly
+        try {
+          parsedQuestions = JSON.parse(content);
+          console.log("Successfully parsed JSON directly");
+        } catch (e) {
+          console.error("Direct JSON parsing failed:", e);
+          // If direct parsing fails, try to extract JSON array using regex
+          const jsonMatch = content.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            parsedQuestions = JSON.parse(jsonMatch[0]);
+            console.log("Extracted JSON using regex");
+          } else {
+            console.error("Could not extract valid JSON:", content.substring(0, 100) + "...");
+            throw new Error('Could not extract valid JSON from the response');
+          }
         }
+        
+        if (!Array.isArray(parsedQuestions?.questions)) {
+          console.error("Response is not an array:", typeof parsedQuestions, parsedQuestions ? Object.keys(parsedQuestions) : null);
+          throw new Error('Response does not contain a questions array');
+        }
+
+        const questions = parsedQuestions.questions
+          .map(q => this.normalizeQuestion(q))
+          .filter(q => this.validator.isValidQuestion(q));
+
+        console.log(`Generated ${questions.length} valid questions`);
+
+        if (questions.length < (request.numberOfQuestions || 5) * 0.8) {
+          console.error(`Insufficient valid questions: ${questions.length} < ${(request.numberOfQuestions || 5) * 0.8}`);
+          throw new Error('Insufficient valid questions generated');
+        }
+
+        // Cache the results
+        await this.cache.set(cacheKey, questions, CACHE_DURATION);
+        return questions;
+
+      } catch (error) {
+        console.error('Error processing questions:', error);
+        throw new Error('Failed to process questions: ' + error.message);
       }
-      
-      if (!Array.isArray(parsedQuestions)) {
-        throw new Error('Response is not an array');
-      }
-
-      const questions = parsedQuestions
-        .map(q => this.normalizeQuestion(q))
-        .filter(q => this.validator.isValidQuestion(q));
-
-      if (questions.length < (request.numberOfQuestions || 5) * 0.8) {
-        throw new Error('Insufficient valid questions generated');
-      }
-
-      // Cache the results
-      await this.cache.set(cacheKey, questions, CACHE_DURATION);
-      return questions;
-
     } catch (error) {
-      console.error('Error processing questions:', error);
-      throw new Error('Failed to process questions');
+      console.error('Error in question generation:', error);
+      throw error;
     }
   }
 }
@@ -184,6 +215,7 @@ serve(async (req) => {
     const request: QuestionRequest = await req.json();
 
     if (!request.industry || !request.role) {
+      console.error('Missing required fields:', { industry: request.industry, role: request.role });
       return new Response(
         JSON.stringify({ error: 'Industry and role are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -193,13 +225,28 @@ serve(async (req) => {
     console.log(`Generating questions for session ${request.sessionId}`);
     const questions = await questionGenerator.generateQuestions(request);
 
+    // Add IDs and order index to questions
+    const questionsWithIds = questions.map((question, index) => ({
+      ...question,
+      id: crypto.randomUUID(),
+      orderIndex: index
+    }));
+
+    console.log(`Generated ${questionsWithIds.length} questions successfully`);
+
     return new Response(
-      JSON.stringify({ questions }),
+      JSON.stringify({ 
+        questions: questionsWithIds,
+        metadata: {
+          totalTime: questionsWithIds.reduce((sum, q) => sum + (q.estimatedTimeSeconds || 0), 0),
+          questionCount: questionsWithIds.length
+        }  
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error handling request:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Internal server error',
