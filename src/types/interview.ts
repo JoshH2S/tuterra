@@ -7,12 +7,17 @@ export interface InterviewSession {
   job_description: string;
   created_at: string;
   updated_at: string;
+  status: "created" | "in_progress" | "completed";
 }
 
 export interface InterviewQuestion {
   id: string;
   session_id: string;
-  question: string;
+  text: string;
+  category: string;
+  difficulty: string;
+  estimatedTimeSeconds: number;
+  keywords?: string[];
   question_order: number;
   created_at: string;
 }

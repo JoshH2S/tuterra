@@ -1,39 +1,25 @@
 
-import { 
-  BookOpen, 
-  ClipboardList, 
-  Brain, 
-  FileText, 
-  LayoutDashboard, 
-  Award,
-  Briefcase
-} from "lucide-react";
-import { SidebarMenu } from "@/components/ui/sidebar";
+import { Home, BookOpen, PenTool, BarChart2, User } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
+import { SidebarMenu } from "@/components/ui/sidebar";
 
 export const SidebarNavigation = () => {
   return (
     <SidebarMenu>
-      <SidebarNavItem to="/dashboard" icon={LayoutDashboard}>
+      <SidebarNavItem to="/dashboard" icon={Home}>
         Dashboard
       </SidebarNavItem>
       <SidebarNavItem to="/courses" icon={BookOpen}>
         Courses
       </SidebarNavItem>
-      <SidebarNavItem to="/lesson-planning" icon={ClipboardList}>
-        Lesson Planning
+      <SidebarNavItem to="/quizzes" icon={PenTool}>
+        Quizzes
       </SidebarNavItem>
-      <SidebarNavItem to="/quiz-generation" icon={FileText}>
-        Quiz Generation
+      <SidebarNavItem to="/job-interview-simulator" icon={User}>
+        Interview Prep
       </SidebarNavItem>
-      <SidebarNavItem to="/skill-assessments" icon={Award}>
-        Skill Assessments
-      </SidebarNavItem>
-      <SidebarNavItem to="/job-interview-simulator" icon={Briefcase}>
-        Interview Simulator
-      </SidebarNavItem>
-      <SidebarNavItem to="/tutor" icon={Brain}>
-        AI Tutor
+      <SidebarNavItem to="/skill-assessments" icon={BarChart2}>
+        Skill Assessment
       </SidebarNavItem>
     </SidebarMenu>
   );
