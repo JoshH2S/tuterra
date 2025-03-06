@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useInterviewPersistence } from "./useInterviewPersistence";
 import { useInterviewQuestions } from "./useInterviewQuestions";
 import { InterviewQuestion } from "@/types/interview";
+import { v4 as uuidv4 } from "@/lib/uuid";
 
 export const useInterviewSetup = (
   setCurrentSessionId: (id: string) => void,
@@ -33,7 +34,22 @@ export const useInterviewSetup = (
     };
   }, []);
   
+  // Helper function for fallback mode
+  const handleFallbackMode = (jobRole: string, industry: string) => {
+    console.log("Using fallback interview mode...");
+    // Generate a fallback session ID
+    const sessionId = uuidv4();
+    setCurrentSessionId(sessionId);
+    
+    // Generate fallback questions
+    const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
+    setQuestions(fallbackQuestions);
+    setUsedFallbackQuestions(true);
+    setInterviewReady(true);
+  };
+  
   const handleStartInterview = async (industry: string, jobRole: string, jobDescription: string) => {
+    console.log("Starting interview setup...");
     setIsGeneratingQuestions(true);
     setSessionCreationErrors([]);
     setUsedFallbackQuestions(false);
@@ -41,13 +57,7 @@ export const useInterviewSetup = (
     // If we're offline, immediately go to fallback mode
     if (!isOnline) {
       console.log("Device is offline. Using fallback interview mode...");
-      const sessionId = uuidv4();
-      setCurrentSessionId(sessionId);
-      
-      const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
-      setQuestions(fallbackQuestions);
-      setUsedFallbackQuestions(true);
-      setInterviewReady(true);
+      handleFallbackMode(jobRole, industry);
       
       setSessionCreationErrors([
         "You appear to be offline. Using local interview mode with standard questions."
@@ -71,42 +81,31 @@ export const useInterviewSetup = (
       console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
-      // Wait for the session ID to be set before generating questions
-      setTimeout(async () => {
-        try {
-          // Step 2: Generate interview questions
-          console.log("Generating questions for session with ID:", sessionId);
-          await generateQuestions(industry, jobRole, jobDescription);
-          setInterviewReady(true);
-        } catch (questionError) {
-          console.error("Error generating questions:", questionError);
-          
-          // Use fallback questions instead
-          console.log("Using fallback questions due to error");
-          const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
-          setQuestions(fallbackQuestions);
-          setUsedFallbackQuestions(true);
-          setInterviewReady(true);
-          
-          setSessionCreationErrors(prev => [
-            ...prev, 
-            `We couldn't connect to our question generation service, but we've prepared some standard questions instead.`
-          ]);
-        } finally {
-          setIsGeneratingQuestions(false);
-        }
-      }, 1000);
+      // Step 2: Generate interview questions - directly after session creation, no setTimeout
+      try {
+        console.log("Generating questions for session with ID:", sessionId);
+        await generateQuestions(industry, jobRole, jobDescription, sessionId);
+        setInterviewReady(true);
+      } catch (questionError) {
+        console.error("Error generating questions:", questionError);
+        
+        // Use fallback questions instead
+        console.log("Using fallback questions due to error");
+        const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
+        setQuestions(fallbackQuestions);
+        setUsedFallbackQuestions(true);
+        setInterviewReady(true);
+        
+        setSessionCreationErrors(prev => [
+          ...prev, 
+          `We couldn't connect to our question generation service, but we've prepared some standard questions instead.`
+        ]);
+      }
     } catch (error) {
       console.error("Error starting interview:", error);
       
       // Set up generic interview with fallback questions
-      const sessionId = uuidv4();
-      setCurrentSessionId(sessionId);
-      
-      const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
-      setQuestions(fallbackQuestions);
-      setUsedFallbackQuestions(true);
-      setInterviewReady(true);
+      handleFallbackMode(jobRole, industry);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const isConnectionError = errorMessage.includes('network') || 
@@ -119,7 +118,7 @@ export const useInterviewSetup = (
           ? `We're having trouble connecting to our services. Using offline mode with standard questions.`
           : `There was an error setting up the interview. Using standard questions instead.`
       ]);
-      
+    } finally {
       setIsGeneratingQuestions(false);
     }
   };
@@ -134,12 +133,3 @@ export const useInterviewSetup = (
     isOnline
   };
 };
-
-// Helper function for fallback mode
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0, 
-          v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}

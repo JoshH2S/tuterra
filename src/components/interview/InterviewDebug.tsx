@@ -1,6 +1,6 @@
 
 import React from "react";
-import { AlertTriangle, WifiOff, KeySquare } from "lucide-react";
+import { AlertTriangle, WifiOff, KeySquare, Server } from "lucide-react";
 
 interface InterviewDebugProps {
   sessionCreationErrors: string[];
@@ -17,25 +17,33 @@ export const InterviewDebug = ({ sessionCreationErrors }: InterviewDebugProps) =
     err.includes('session') || err.includes('UUID') || err.includes('id')
   );
   
+  const hasServerError = sessionCreationErrors.some(err =>
+    err.includes('server') || err.includes('service') || err.includes('timeout')
+  );
+  
   return (
-    <div className="bg-red-50 border border-red-200 p-4 rounded-md mb-4 shadow-sm">
+    <div className="bg-red-50 border border-red-200 p-3 sm:p-4 rounded-md mb-4 shadow-sm">
       <div className="flex items-start">
         {hasConnectionError ? (
           <WifiOff className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
         ) : hasSessionError ? (
           <KeySquare className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
+        ) : hasServerError ? (
+          <Server className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
         ) : (
           <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
         )}
         <div>
-          <h3 className="text-red-700 font-medium">
+          <h3 className="text-red-700 font-medium text-sm sm:text-base">
             {hasConnectionError 
               ? "Connection Issues" 
               : hasSessionError 
                 ? "Session Creation Issues" 
-                : "Interview Setup Issues"}
+                : hasServerError
+                  ? "Server Issues"
+                  : "Interview Setup Issues"}
           </h3>
-          <ul className="text-sm text-red-600 mt-2 space-y-1">
+          <ul className="text-xs sm:text-sm text-red-600 mt-2 space-y-1">
             {sessionCreationErrors.map((err, i) => (
               <li key={i} className="flex items-start">
                 <span className="mr-1">•</span>
@@ -48,7 +56,9 @@ export const InterviewDebug = ({ sessionCreationErrors }: InterviewDebugProps) =
               ? "The system is using local fallback questions. Your interview can continue offline." 
               : hasSessionError
                 ? "The system had trouble creating your interview session. Using local fallback questions instead."
-                : "The system will use local fallback questions if possible. If the issue persists, please try again later or refresh the page."}
+                : hasServerError
+                  ? "There was an issue connecting to our question generation service. Using local fallback questions."
+                  : "The system will use local fallback questions if possible. If the issue persists, please try again later or refresh the page."}
           </p>
         </div>
       </div>

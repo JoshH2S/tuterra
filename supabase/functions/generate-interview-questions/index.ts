@@ -7,6 +7,18 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 
+// Validate environment at startup
+const validateEnvironment = () => {
+  const required = ['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+  const missing = required.filter(key => !Deno.env.get(key));
+  if (missing.length > 0) {
+    console.error(`Missing environment variables: ${missing.join(', ')}`);
+    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
+  }
+};
+
+validateEnvironment();
+
 // Initialize Supabase client with admin rights
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
@@ -14,6 +26,22 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// Validate request body
+const validateRequest = (body: any) => {
+  const required = ['industry', 'jobRole', 'sessionId'];
+  const missing = required.filter(key => !body[key]);
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required fields: ${missing.join(', ')}`);
+  }
+
+  if (typeof body.industry !== 'string' || 
+      typeof body.jobRole !== 'string' || 
+      typeof body.sessionId !== 'string') {
+    throw new Error('Invalid parameter types');
+  }
 };
 
 serve(async (req) => {
@@ -28,44 +56,21 @@ serve(async (req) => {
   try {
     console.log("Function called: generate-interview-questions");
     
-    // Parse request body
+    // Parse and validate request body
     let reqBody;
     try {
       reqBody = await req.json();
+      console.log("Request body:", JSON.stringify(reqBody));
+      validateRequest(reqBody);
     } catch (parseError) {
-      console.error("Invalid JSON in request body:", parseError);
+      console.error("Invalid request format or validation failed:", parseError);
       return new Response(
-        JSON.stringify({ error: "Invalid request format: JSON parsing failed" }),
+        JSON.stringify({ error: "Invalid request format or missing required fields" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
     
     const { industry, jobRole, jobDescription, sessionId } = reqBody;
-    
-    // Perform comprehensive parameter validation
-    if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
-      console.error("Missing or invalid sessionId parameter:", sessionId);
-      return new Response(
-        JSON.stringify({ error: "Missing or invalid sessionId parameter" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
-    }
-    
-    if (!industry || typeof industry !== 'string' || industry.trim() === '') {
-      console.error("Missing or invalid industry parameter:", industry);
-      return new Response(
-        JSON.stringify({ error: "Missing or invalid industry parameter" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
-    }
-    
-    if (!jobRole || typeof jobRole !== 'string' || jobRole.trim() === '') {
-      console.error("Missing or invalid jobRole parameter:", jobRole);
-      return new Response(
-        JSON.stringify({ error: "Missing or invalid jobRole parameter" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
-    }
     
     // Verify session exists in database before proceeding
     console.log(`Verifying session ${sessionId} exists in database`);

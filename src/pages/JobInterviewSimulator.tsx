@@ -87,7 +87,7 @@ const JobInterviewSimulator = () => {
           </div>
         </div>
         
-        {/* Debug info */}
+        {/* Debug info - Important for showing errors */}
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
         {/* Interview setup form */}

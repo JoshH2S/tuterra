@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -10,8 +11,8 @@ export const useInterviewQuestions = (
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const generateQuestions = async (industry: string, jobRole: string, jobDescription: string) => {
-    // Clear validation
+  const generateQuestions = async (industry: string, jobRole: string, jobDescription: string, sessionId: string) => {
+    // Input validation
     if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
       console.error("Cannot generate questions: No valid session ID provided", { sessionId });
       throw new Error("Session ID is missing or invalid");
@@ -21,7 +22,7 @@ export const useInterviewQuestions = (
     console.log(`Generating questions for session [${sessionId}] with:`, { 
       industry, 
       jobRole, 
-      jobDescription: jobDescription.substring(0, 50) + '...' 
+      jobDescription: jobDescription?.substring(0, 50) + '...' 
     });
     
     try {
@@ -33,10 +34,16 @@ export const useInterviewQuestions = (
           jobRole, 
           jobDescription, 
           sessionId 
+        },
+        options: {
+          timeout: 10000,
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
       });
 
-      console.log("Edge function response:", { data, error });
+      console.log("Edge function response:", data, error);
 
       if (error) {
         console.error("Edge function error:", error);
@@ -48,7 +55,7 @@ export const useInterviewQuestions = (
         throw new Error("No data returned from the server");
       }
       
-      if (data && data.questions && Array.isArray(data.questions)) {
+      if (data?.questions && Array.isArray(data.questions)) {
         console.log(`Received ${data.questions.length} questions from edge function`);
         
         // Validate the shape of the received questions
@@ -65,6 +72,8 @@ export const useInterviewQuestions = (
           title: "Questions generated",
           description: "Your interview questions are ready. Let's start the interview!",
         });
+        
+        return formattedQuestions;
       } else {
         console.error("Questions array missing or invalid in response:", data);
         throw new Error("Invalid response format from server");
