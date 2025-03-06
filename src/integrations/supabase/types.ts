@@ -294,101 +294,29 @@ export type Database = {
       interview_feedback: {
         Row: {
           created_at: string
+          feedback: Json
           id: string
-          overall_feedback: string | null
-          session_id: string | null
-          strengths: string[] | null
-          tips: string[] | null
-          weaknesses: string[] | null
+          session_id: string
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
+          feedback: Json
           id?: string
-          overall_feedback?: string | null
-          session_id?: string | null
-          strengths?: string[] | null
-          tips?: string[] | null
-          weaknesses?: string[] | null
+          session_id: string
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
+          feedback?: Json
           id?: string
-          overall_feedback?: string | null
-          session_id?: string | null
-          strengths?: string[] | null
-          tips?: string[] | null
-          weaknesses?: string[] | null
+          session_id?: string
+          updated_at?: string
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "interview_feedback_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "interview_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      interview_questions: {
-        Row: {
-          created_at: string
-          id: string
-          question: string
-          question_order: number
-          session_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          question: string
-          question_order: number
-          session_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          question?: string
-          question_order?: number
-          session_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "interview_questions_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "interview_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      interview_responses: {
-        Row: {
-          created_at: string
-          id: string
-          question_id: string | null
-          response: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          question_id?: string | null
-          response: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          question_id?: string | null
-          response?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "interview_responses_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "interview_questions"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       interview_sessions: {
         Row: {
@@ -397,9 +325,11 @@ export type Database = {
           id: string
           industry: string
           job_description: string | null
-          job_title: string
-          status: string
+          questions: Json
+          role: string
+          session_id: string
           user_id: string | null
+          user_responses: Json
         }
         Insert: {
           completed_at?: string | null
@@ -407,9 +337,11 @@ export type Database = {
           id?: string
           industry: string
           job_description?: string | null
-          job_title: string
-          status?: string
+          questions: Json
+          role: string
+          session_id: string
           user_id?: string | null
+          user_responses: Json
         }
         Update: {
           completed_at?: string | null
@@ -417,9 +349,11 @@ export type Database = {
           id?: string
           industry?: string
           job_description?: string | null
-          job_title?: string
-          status?: string
+          questions?: Json
+          role?: string
+          session_id?: string
           user_id?: string | null
+          user_responses?: Json
         }
         Relationships: []
       }

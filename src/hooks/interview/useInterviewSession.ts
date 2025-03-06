@@ -1,145 +1,104 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { useInterviewState } from './useInterviewState';
-import { useInterviewPersistence } from './useInterviewPersistence';
-import { InterviewTranscript } from '@/types/interview';
+import { useState, useEffect } from "react";
+import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
+import { useToast } from "@/hooks/use-toast";
+import { useInterviewState } from "./useInterviewState";
+import { useInterviewResponses } from "./useInterviewResponses";
+import { useInterviewPersistence } from "./useInterviewPersistence";
 
 export const useInterviewSession = () => {
   const {
-    session,
-    setSession,
+    industry,
+    setIndustry,
+    jobRole,
+    setJobRole,
+    jobDescription,
+    setJobDescription,
+    currentSessionId,
+    setCurrentSessionId,
     questions,
     setQuestions,
-    currentQuestionIndex,
-    setCurrentQuestionIndex,
     responses,
     setResponses,
-    isInterviewReady,
-    setIsInterviewReady,
-    isInterviewInProgress,
-    setIsInterviewInProgress,
-    isInterviewComplete,
-    setIsInterviewComplete,
+    currentQuestionIndex,
     isGeneratingQuestions,
     setIsGeneratingQuestions,
-    resetState,
-    updateResponse,
-    getTranscript
+    isInterviewInProgress,
+    isInterviewComplete,
+    transcript,
+    typingEffect,
+    setTypingEffect,
+    resetInterview,
+    startInterview,
+    completeInterview,
+    nextQuestion,
+    updateTranscript,
+    getCurrentQuestion
   } = useInterviewState();
-  
-  const { saveResponse, completeSession } = useInterviewPersistence();
-  
-  const [industry, setIndustry] = useState('');
-  const [jobRole, setJobRole] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [typingEffect, setTypingEffect] = useState(false);
-  const [transcript, setTranscript] = useState<InterviewTranscript | null>(null);
 
-  // Reset everything when component unmounts
-  useEffect(() => {
-    return () => {
-      resetState();
-    };
-  }, [resetState]);
+  const { toast } = useToast();
+  const { saveResponse } = useInterviewResponses(setResponses);
+  const { downloadTranscript } = useInterviewPersistence();
 
-  // Update current session ID when session changes
+  // When typing effect finishes
   useEffect(() => {
-    if (session) {
-      setCurrentSessionId(session.id);
-    } else {
-      setCurrentSessionId(null);
+    let typingTimer: number;
+    if (typingEffect && isInterviewInProgress) {
+      typingTimer = window.setTimeout(() => {
+        setTypingEffect(false);
+      }, 2000); // Adjust typing speed here
     }
-  }, [session]);
+    return () => clearTimeout(typingTimer);
+  }, [typingEffect, isInterviewInProgress, setTypingEffect]);
 
-  // Get current question
-  const currentQuestion = questions[currentQuestionIndex]?.question || '';
+  // Generate transcript when interview is completed
+  useEffect(() => {
+    if (isInterviewComplete && Object.keys(responses).length > 0) {
+      updateTranscript();
+    }
+  }, [isInterviewComplete, responses, updateTranscript]);
+
+  const handleStartChat = () => {
+    if (questions.length === 0) {
+      console.error("Cannot start chat: No questions generated");
+      toast({
+        title: "No questions generated",
+        description: "Please try again or contact support if the issue persists.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    console.log("Starting interview chat with questions:", questions.length);
+    startInterview();
+  };
+
+  const handleSubmitResponse = async (response: string) => {
+    const currentQuestion = getCurrentQuestion();
+    if (!currentQuestion) {
+      console.error("Cannot submit response: No current question found");
+      return;
+    }
+    
+    console.log(`Submitting response for question ${currentQuestionIndex + 1}/${questions.length}`);
+    await saveResponse(currentQuestion, response);
+    nextQuestion();
+  };
+
+  const handleDownloadTranscript = (format: 'txt' | 'pdf') => {
+    console.log(`Downloading transcript in ${format} format`);
+    downloadTranscript(transcript, jobRole, format);
+  };
+
+  const handleStartNew = () => {
+    console.log("Starting new interview, resetting state");
+    resetInterview();
+  };
+
+  const currentQuestion = getCurrentQuestion();
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
-  // Start the chat after setup
-  const handleStartChat = useCallback(() => {
-    setIsInterviewInProgress(true);
-    setCurrentQuestionIndex(0);
-    setTypingEffect(true);
-  }, [setIsInterviewInProgress, setCurrentQuestionIndex]);
-
-  // Submit a response and move to next question
-  const handleSubmitResponse = useCallback(async (response: string) => {
-    if (!questions[currentQuestionIndex]) return;
-    
-    const questionId = questions[currentQuestionIndex].id;
-    
-    // Update local state
-    updateResponse(questionId, response);
-    
-    try {
-      // Save to database
-      await saveResponse(questionId, response);
-      
-      // Move to next question or complete
-      if (isLastQuestion) {
-        if (session) {
-          await completeSession(session.id);
-        }
-        
-        // Create transcript before completing
-        const fullTranscript = getTranscript();
-        if (fullTranscript) {
-          setTranscript(fullTranscript);
-        }
-        
-        setIsInterviewInProgress(false);
-        setIsInterviewComplete(true);
-      } else {
-        setCurrentQuestionIndex(prev => prev + 1);
-        setTypingEffect(true);
-      }
-    } catch (error) {
-      console.error('Error submitting response:', error);
-    }
-  }, [
-    questions, 
-    currentQuestionIndex, 
-    updateResponse, 
-    saveResponse, 
-    isLastQuestion, 
-    session, 
-    completeSession, 
-    getTranscript, 
-    setIsInterviewInProgress, 
-    setIsInterviewComplete, 
-    setCurrentQuestionIndex
-  ]);
-
-  // Download the interview transcript
-  const handleDownloadTranscript = useCallback(() => {
-    if (!transcript) return;
-    
-    let transcriptText = `Interview for ${transcript.jobTitle} position in ${transcript.industry}\n\n`;
-    
-    transcript.questions.forEach((item, index) => {
-      transcriptText += `Question ${index + 1}: ${item.question}\n`;
-      transcriptText += `Your Answer: ${item.response}\n\n`;
-    });
-    
-    const blob = new Blob([transcriptText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `interview-transcript-${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [transcript]);
-
-  // Start a new interview
-  const handleStartNew = useCallback(() => {
-    resetState();
-  }, [resetState]);
-
   return {
-    // State
     industry,
     setIndustry,
     jobRole,
@@ -158,8 +117,6 @@ export const useInterviewSession = () => {
     transcript,
     currentQuestion,
     isLastQuestion,
-    
-    // Handlers
     handleStartChat,
     handleSubmitResponse,
     handleDownloadTranscript,

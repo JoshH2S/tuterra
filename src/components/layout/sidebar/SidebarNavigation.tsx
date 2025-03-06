@@ -1,51 +1,40 @@
 
-import { useLocation } from "react-router-dom";
+import { 
+  BookOpen, 
+  ClipboardList, 
+  Brain, 
+  FileText, 
+  LayoutDashboard, 
+  Award,
+  Briefcase
+} from "lucide-react";
 import { SidebarMenu } from "@/components/ui/sidebar";
 import { SidebarNavItem } from "./SidebarNavItem";
-import { Home, BookOpen, Trophy, Brain, FileText } from "lucide-react";
 
-const SidebarNavigation = () => {
-  const location = useLocation();
-  const currentPath = location.pathname;
-
+export const SidebarNavigation = () => {
   return (
     <SidebarMenu>
-      <SidebarNavItem
-        icon={<Home className="h-4 w-4" />}
-        title="Dashboard"
-        href="/"
-        isActive={currentPath === "/"}
-      />
-      
-      <SidebarNavItem
-        icon={<BookOpen className="h-4 w-4" />}
-        title="Courses"
-        href="/courses"
-        isActive={currentPath.startsWith("/courses")}
-      />
-      
-      <SidebarNavItem
-        icon={<FileText className="h-4 w-4" />}
-        title="Quizzes"
-        href="/quizzes"
-        isActive={currentPath.startsWith("/quizzes")}
-      />
-      
-      <SidebarNavItem
-        icon={<Brain className="h-4 w-4" />}
-        title="Skills"
-        href="/skill-assessments"
-        isActive={currentPath.startsWith("/skill-assessments")}
-      />
-      
-      <SidebarNavItem
-        icon={<Trophy className="h-4 w-4" />}
-        title="Interview"
-        href="/interview"
-        isActive={currentPath.startsWith("/interview")}
-      />
+      <SidebarNavItem to="/dashboard" icon={LayoutDashboard}>
+        Dashboard
+      </SidebarNavItem>
+      <SidebarNavItem to="/courses" icon={BookOpen}>
+        Courses
+      </SidebarNavItem>
+      <SidebarNavItem to="/lesson-planning" icon={ClipboardList}>
+        Lesson Planning
+      </SidebarNavItem>
+      <SidebarNavItem to="/quiz-generation" icon={FileText}>
+        Quiz Generation
+      </SidebarNavItem>
+      <SidebarNavItem to="/skill-assessments" icon={Award}>
+        Skill Assessments
+      </SidebarNavItem>
+      <SidebarNavItem to="/job-interview-simulator" icon={Briefcase}>
+        Interview Simulator
+      </SidebarNavItem>
+      <SidebarNavItem to="/tutor" icon={Brain}>
+        AI Tutor
+      </SidebarNavItem>
     </SidebarMenu>
   );
 };
-
-export default SidebarNavigation;

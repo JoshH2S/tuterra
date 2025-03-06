@@ -1,104 +1,123 @@
 
-import React from 'react';
-import { useInterview } from '@/contexts/InterviewContext';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Lightbulb } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { InterviewFeedback, InterviewTranscript } from "@/types/interview";
+import { motion } from "framer-motion";
 
-export const InterviewFeedback: React.FC = () => {
-  const { state, resetInterview } = useInterview();
-  const feedback = state.feedback;
+interface InterviewFeedbackProps {
+  feedback: InterviewFeedback | null;
+  transcript: InterviewTranscript[];
+  onDownloadTranscript: (format: 'txt' | 'pdf') => void;
+  onStartNew: () => void;
+  loading: boolean;
+}
 
-  if (!feedback) return null;
+export const InterviewFeedbackComponent = ({
+  feedback,
+  transcript,
+  onDownloadTranscript,
+  onStartNew,
+  loading
+}: InterviewFeedbackProps) => {
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+  };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-xl md:text-2xl text-center">
-          Interview Feedback
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        {/* Overall feedback section */}
-        {feedback.overallFeedback && (
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold">Overall Assessment</h3>
-            <p className="text-muted-foreground">{feedback.overallFeedback}</p>
-          </div>
-        )}
-        
-        <Separator />
-        
-        {/* Strengths section */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <span>Strengths</span>
-          </h3>
-          <ul className="space-y-2">
-            {feedback.strengths.map((strength, index) => (
-              <li key={index} className="flex gap-2">
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  Strength
-                </Badge>
-                <span>{strength}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        
-        <Separator />
-        
-        {/* Weaknesses section */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <XCircle className="h-5 w-5 text-red-500" />
-            <span>Areas for Improvement</span>
-          </h3>
-          <ul className="space-y-2">
-            {feedback.weaknesses.map((weakness, index) => (
-              <li key={index} className="flex gap-2">
-                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                  Improve
-                </Badge>
-                <span>{weakness}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        
-        <Separator />
-        
-        {/* Tips section */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-amber-500" />
-            <span>Tips for Next Time</span>
-          </h3>
-          <ul className="space-y-2">
-            {feedback.tips.map((tip, index) => (
-              <li key={index} className="flex gap-2">
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                  Tip
-                </Badge>
-                <span>{tip}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </CardContent>
-      
-      <CardFooter className="flex justify-center">
-        <Button onClick={resetInterview} className="w-full max-w-xs">
-          Start a New Interview
-        </Button>
-      </CardFooter>
-    </Card>
+    <div className="w-full max-w-2xl mx-auto">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeInUp}
+      >
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Interview Feedback</CardTitle>
+            <CardDescription>
+              Here's an AI-powered analysis of your interview performance
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {loading ? (
+              <div className="space-y-4">
+                <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-20 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ) : feedback ? (
+              <>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Overall Assessment</h3>
+                  <p className="text-gray-700">{feedback.feedback}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Strengths</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {feedback.strengths.map((strength, i) => (
+                      <li key={i} className="text-gray-700">{strength}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Areas for Improvement</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {feedback.areas_for_improvement.map((area, i) => (
+                      <li key={i} className="text-gray-700">{area}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Your Interview Transcript</h3>
+                  <div className="border rounded-md p-4 max-h-80 overflow-y-auto space-y-4 text-sm">
+                    {transcript.map((item, i) => (
+                      <div key={i} className="space-y-1">
+                        <p className="font-medium">Q: {item.question}</p>
+                        <p className="text-gray-700">A: {item.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500">No feedback available yet.</p>
+              </div>
+            )}
+          </CardContent>
+          
+          <CardFooter className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              onClick={() => onDownloadTranscript('pdf')} 
+              className="w-full sm:w-auto"
+              variant="outline"
+              disabled={transcript.length === 0 || loading}
+            >
+              Download PDF
+            </Button>
+            <Button 
+              onClick={() => onDownloadTranscript('txt')} 
+              className="w-full sm:w-auto"
+              variant="outline"
+              disabled={transcript.length === 0 || loading}
+            >
+              Download as Text
+            </Button>
+            <Button 
+              onClick={onStartNew} 
+              className="w-full sm:w-auto ml-auto"
+              disabled={loading}
+            >
+              Start New Interview
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </div>
   );
 };
-
-// Add named export for proper import
-export { InterviewFeedback as InterviewFeedbackComponent };

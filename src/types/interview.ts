@@ -1,70 +1,41 @@
 
-// Core interview data types
 export interface InterviewSession {
   id: string;
-  userId?: string;
-  jobTitle: string;
+  user_id: string;
   industry: string;
-  jobDescription?: string;
-  status: 'created' | 'in_progress' | 'completed';
-  createdAt: string;
-  completedAt?: string;
+  job_role: string;
+  job_description: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface InterviewQuestion {
   id: string;
-  sessionId: string;
+  session_id: string;
   question: string;
-  questionOrder: number;
-  createdAt: string;
+  question_order: number;
+  created_at: string;
 }
 
 export interface InterviewResponse {
-  id?: string;
-  questionId: string;
-  response: string;
-  createdAt?: string;
+  id: string;
+  question_id: string;
+  user_response: string;
+  created_at: string;
 }
 
 export interface InterviewFeedback {
-  id?: string;
-  sessionId: string;
+  id: string;
+  session_id: string;
+  feedback: string;
   strengths: string[];
-  weaknesses: string[];
-  tips: string[];
-  overallFeedback?: string;
-  createdAt?: string;
+  areas_for_improvement: string[];
+  overall_score: number;
+  created_at: string;
+  updated_at: string;
 }
 
-// Add InterviewTranscript type that was missing
 export interface InterviewTranscript {
-  sessionId: string;
-  jobTitle: string;
-  industry: string;
-  questions: Array<{
-    id: string;
-    question: string;
-    response: string;
-  }>;
-}
-
-// UI state types
-export interface InterviewState {
-  session: InterviewSession | null;
-  questions: InterviewQuestion[];
-  currentQuestionIndex: number;
-  responses: Record<string, string>;
-  feedback: InterviewFeedback | null;
-  status: 'idle' | 'loading' | 'ready' | 'in-progress' | 'completed' | 'error';
-  error: string | null;
-}
-
-export interface IndustryOption {
-  value: string;
-  label: string;
-}
-
-export interface JobTitleOption {
-  value: string;
-  label: string;
+  question: string;
+  answer: string;
 }

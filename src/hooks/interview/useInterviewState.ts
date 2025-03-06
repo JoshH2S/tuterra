@@ -1,89 +1,98 @@
 
-import { useState, useCallback } from 'react';
-import { InterviewQuestion, InterviewSession, InterviewFeedback, InterviewTranscript } from '@/types/interview';
+import { useState } from "react";
+import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
 
 export const useInterviewState = () => {
-  const [session, setSession] = useState<InterviewSession | null>(null);
+  const [industry, setIndustry] = useState<string>("");
+  const [jobRole, setJobRole] = useState<string>("");
+  const [jobDescription, setJobDescription] = useState<string>("");
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, string>>({});
-  const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
-  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
-  const [usedFallbackQuestions, setUsedFallbackQuestions] = useState(false);
-  const [isInterviewReady, setIsInterviewReady] = useState(false);
-  const [isInterviewInProgress, setIsInterviewInProgress] = useState(false);
-  const [isInterviewComplete, setIsInterviewComplete] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState<boolean>(false);
+  const [isInterviewInProgress, setIsInterviewInProgress] = useState<boolean>(false);
+  const [isInterviewComplete, setIsInterviewComplete] = useState<boolean>(false);
+  const [transcript, setTranscript] = useState<InterviewTranscript[]>([]);
+  const [typingEffect, setTypingEffect] = useState<boolean>(false);
 
-  // Track interview state
-  const resetState = useCallback(() => {
-    setSession(null);
+  const resetInterview = () => {
+    setCurrentSessionId(null);
     setQuestions([]);
-    setCurrentQuestionIndex(0);
     setResponses({});
-    setFeedback(null);
-    setIsGeneratingQuestions(false);
-    setUsedFallbackQuestions(false);
-    setIsInterviewReady(false);
+    setCurrentQuestionIndex(0);
     setIsInterviewInProgress(false);
     setIsInterviewComplete(false);
-    setError(null);
-  }, []);
+    setTranscript([]);
+    setTypingEffect(false);
+  };
 
-  // Update response for current question
-  const updateResponse = useCallback((questionId: string, response: string) => {
-    setResponses(prev => ({
-      ...prev,
-      [questionId]: response
+  const startInterview = () => {
+    setIsInterviewInProgress(true);
+    setCurrentQuestionIndex(0);
+    setIsInterviewComplete(false);
+    setTypingEffect(true);
+  };
+
+  const completeInterview = () => {
+    setIsInterviewInProgress(false);
+    setIsInterviewComplete(true);
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+      setTypingEffect(true);
+    } else {
+      completeInterview();
+    }
+  };
+
+  const updateTranscript = () => {
+    const newTranscript = questions.map((question, index) => ({
+      question: question.question,
+      answer: responses[question.id] || ""
     }));
-  }, []);
+    setTranscript(newTranscript);
+  };
 
-  // Get transcript of all questions and responses
-  const getTranscript = useCallback((): InterviewTranscript | null => {
-    if (!session || questions.length === 0) return null;
-    
-    return {
-      sessionId: session.id,
-      jobTitle: session.jobTitle,
-      industry: session.industry,
-      questions: questions.map(q => ({
-        id: q.id,
-        question: q.question,
-        response: responses[q.id] || "No answer provided"
-      }))
-    };
-  }, [session, questions, responses]);
+  const getCurrentQuestion = (): InterviewQuestion | null => {
+    if (questions.length === 0 || currentQuestionIndex >= questions.length) {
+      return null;
+    }
+    return questions[currentQuestionIndex];
+  };
 
   return {
-    // State
-    session,
+    industry,
+    setIndustry,
+    jobRole,
+    setJobRole,
+    jobDescription,
+    setJobDescription,
+    currentSessionId,
+    setCurrentSessionId,
     questions,
-    currentQuestionIndex,
-    responses,
-    feedback,
-    isGeneratingQuestions,
-    usedFallbackQuestions,
-    isInterviewReady,
-    isInterviewInProgress,
-    isInterviewComplete,
-    error,
-    
-    // Setters
-    setSession,
     setQuestions,
-    setCurrentQuestionIndex,
+    responses,
     setResponses,
-    setFeedback,
+    currentQuestionIndex,
+    setCurrentQuestionIndex,
+    isGeneratingQuestions,
     setIsGeneratingQuestions,
-    setUsedFallbackQuestions,
-    setIsInterviewReady,
+    isInterviewInProgress,
     setIsInterviewInProgress,
+    isInterviewComplete,
     setIsInterviewComplete,
-    setError,
-    
-    // Helpers
-    resetState,
-    updateResponse,
-    getTranscript
+    transcript,
+    setTranscript,
+    typingEffect,
+    setTypingEffect,
+    resetInterview,
+    startInterview,
+    completeInterview,
+    nextQuestion,
+    updateTranscript,
+    getCurrentQuestion
   };
 };

@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { MainSidebar } from "./MainSidebar";
-import AppRoutes from "@/routes/AppRoutes";
+import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 
 export const MainLayout = () => {
@@ -25,5 +25,3 @@ export const MainLayout = () => {
     </TooltipProvider>
   );
 };
-
-export default MainLayout;
