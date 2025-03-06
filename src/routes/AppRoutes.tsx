@@ -22,7 +22,6 @@ import CaseStudyQuizGeneration from "@/pages/CaseStudyQuizGeneration";
 import SkillAssessments from "@/pages/SkillAssessments";
 import TakeSkillAssessment from "@/pages/TakeSkillAssessment";
 import SkillAssessmentResults from "@/pages/SkillAssessmentResults";
-import JobInterviewSimulator from "@/pages/JobInterviewSimulator";
 
 export const AppRoutes = () => {
   return (
@@ -180,14 +179,6 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <SkillAssessmentResults />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/job-interview-simulator"
-        element={
-          <ProtectedRoute>
-            <JobInterviewSimulator />
           </ProtectedRoute>
         }
       />
