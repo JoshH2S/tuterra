@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback } from "react";
 import { useInterviewState } from "./interview/useInterviewState";
 import { useInterviewQuestions } from "./interview/useInterviewQuestions";
@@ -52,7 +51,8 @@ export const useJobInterview = (initialConfig?: Partial<InterviewConfig>) => {
     initializeResponses,
     submitResponse,
     addQuestionToTranscript,
-    addCompletionMessage
+    addCompletionMessage,
+    setTranscript
   } = useInterviewResponses();
 
   // Feedback management
@@ -228,6 +228,7 @@ export const useJobInterview = (initialConfig?: Partial<InterviewConfig>) => {
     interviewMetadata: metadata,
     progress,
     sessionId: sessionId.current,
+    setTranscript,
 
     // Input setters
     setIndustry: useCallback((value: string) => 

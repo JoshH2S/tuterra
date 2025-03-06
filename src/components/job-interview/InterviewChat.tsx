@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { AnimatePresence } from "framer-motion";
@@ -38,21 +37,17 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     startInterview
   } = useJobInterview();
 
-  // Memoize derived values - ensure we have a valid display message
   const displayMessage = useMemo(() => 
     currentQuestion?.text || "", 
     [currentQuestion]
   );
 
-  // Ensure question is added to transcript when it changes
   useEffect(() => {
     if (currentQuestion && !isCompleted && !isTyping) {
-      // Check if this question already exists in the transcript
       const questionExists = transcript.some(msg => 
         msg.role === 'ai' && msg.id === currentQuestion.id
       );
       
-      // If question doesn't exist in transcript, add it
       if (!questionExists) {
         const questionMessage = createQuestionMessage(currentQuestion);
         setTranscript(prev => [...prev, questionMessage]);
@@ -60,7 +55,6 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     }
   }, [currentQuestion, isCompleted, isTyping, transcript, setTranscript]);
 
-  // Combine typing effects into a single useEffect
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
@@ -78,7 +72,6 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     };
   }, [currentQuestion, currentQuestionIndex, isCompleted]);
 
-  // Optimized timer logic using setInterval
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0) return;
 
@@ -95,47 +88,38 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     return () => clearInterval(intervalId);
   }, [timeLeft]);
 
-  // Handle time expiration
   useEffect(() => {
     if (timeLeft === 0 && submitResponse) {
       handleSubmit("(Time expired)");
     }
   }, [timeLeft, submitResponse]);
 
-  // Memoized submit handler with additional transcript syncing
   const handleSubmit = useCallback((response: string) => {
     if (!currentQuestion) return;
     
-    // Add user response to transcript
     const userMessage = createUserResponseMessage(response);
     setTranscript(prev => [...prev, userMessage]);
     
-    // Submit the response to the main interview logic
     submitResponse(response);
     setTimeLeft(null);
     
     if (currentQuestionIndex < questions.length - 1) {
       setIsTyping(true);
-      // Use RAF for smoother animation timing
       requestAnimationFrame(() => {
         setTimeout(() => setIsTyping(false), 1000);
       });
     }
   }, [currentQuestion, currentQuestionIndex, questions.length, submitResponse, setTranscript]);
 
-  // When the current question updates, set a timer based on the estimated time
   useEffect(() => {
     if (currentQuestion?.estimatedTimeSeconds && !isTyping && !isCompleted) {
-      // Only set the timer if it's not already set
       if (timeLeft === null) {
         setTimeLeft(currentQuestion.estimatedTimeSeconds);
       }
     }
   }, [currentQuestion, isTyping, isCompleted, timeLeft]);
 
-  // Handle interview reset
   const handleReset = useCallback(() => {
-    // Reset the interview state and restart
     startInterview();
   }, [startInterview]);
 
