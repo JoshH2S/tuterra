@@ -31,19 +31,19 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     } = {};
     let isValid = true;
 
-    if (!industry) {
-      errors.industry = "Please select an industry";
+    // Validate industry
+    if (!industry || !INDUSTRY_OPTIONS.some(opt => opt.value === industry)) {
+      errors.industry = "Please select a valid industry";
       isValid = false;
     }
     
-    if (!jobRole.trim()) {
-      errors.jobRole = "Please select a job role";
-      isValid = false;
-    } else if (jobRole.trim().length < 3) {
-      errors.jobRole = "Job role must be at least 3 characters";
+    // Validate job role
+    if (!jobRole || !JOB_ROLE_OPTIONS.some(opt => opt.value === jobRole)) {
+      errors.jobRole = "Please select a valid job role";
       isValid = false;
     }
     
+    // Validate description
     if (!jobDescription.trim()) {
       errors.jobDescription = "Please enter a job description";
       isValid = false;
@@ -52,13 +52,18 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
 
+    console.log("Form validation result:", { isValid, errors });
     setFormErrors(errors);
     return isValid;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted with:", { industry, jobRole, jobDescription });
+    console.log("Form submission values:", {
+      industry,
+      jobRole,
+      jobDescription: jobDescription.substring(0, 50) + "..."
+    });
     
     if (!validateForm()) {
       console.log("Form validation failed:", formErrors);
@@ -74,6 +79,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     
     console.log("Form validated, submitting to parent component");
     
+    // Get the actual values for submission (use values, not labels)
     onSubmit(industry, jobRole, jobDescription);
   };
 
@@ -96,6 +102,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
               id="industry"
               value={industry}
               onChange={(val) => {
+                console.log("Industry changed to:", val);
                 setIndustry(val);
                 setFormErrors(prev => ({ ...prev, industry: undefined }));
               }}
@@ -116,6 +123,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
               id="jobRole"
               value={jobRole}
               onChange={(val) => {
+                console.log("Job role changed to:", val);
                 setJobRole(val);
                 setFormErrors(prev => ({ ...prev, jobRole: undefined }));
               }}

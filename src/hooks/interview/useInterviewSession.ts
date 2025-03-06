@@ -60,6 +60,7 @@ export const useInterviewSession = () => {
 
   const handleStartChat = () => {
     if (questions.length === 0) {
+      console.error("Cannot start chat: No questions generated");
       toast({
         title: "No questions generated",
         description: "Please try again or contact support if the issue persists.",
@@ -68,22 +69,29 @@ export const useInterviewSession = () => {
       return;
     }
     
+    console.log("Starting interview chat with questions:", questions.length);
     startInterview();
   };
 
   const handleSubmitResponse = async (response: string) => {
     const currentQuestion = getCurrentQuestion();
-    if (!currentQuestion) return;
+    if (!currentQuestion) {
+      console.error("Cannot submit response: No current question found");
+      return;
+    }
     
+    console.log(`Submitting response for question ${currentQuestionIndex + 1}/${questions.length}`);
     await saveResponse(currentQuestion, response);
     nextQuestion();
   };
 
   const handleDownloadTranscript = (format: 'txt' | 'pdf') => {
+    console.log(`Downloading transcript in ${format} format`);
     downloadTranscript(transcript, jobRole, format);
   };
 
   const handleStartNew = () => {
+    console.log("Starting new interview, resetting state");
     resetInterview();
   };
 

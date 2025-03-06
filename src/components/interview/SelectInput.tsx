@@ -30,8 +30,14 @@ export const SelectInput: React.FC<SelectInputProps> = ({
   placeholder = "Select an option",
   className = ""
 }) => {
+  // Add validation and logging
+  const handleChange = (newValue: string) => {
+    console.log(`SelectInput ${id} changed to:`, newValue);
+    onChange(newValue);
+  };
+
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={handleChange}>
       <SelectTrigger id={id} className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
