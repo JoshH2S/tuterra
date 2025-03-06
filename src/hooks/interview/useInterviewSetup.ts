@@ -17,11 +17,45 @@ export const useInterviewSetup = (
   const [interviewReady, setInterviewReady] = useState(false);
   const [sessionCreationErrors, setSessionCreationErrors] = useState<string[]>([]);
   const [usedFallbackQuestions, setUsedFallbackQuestions] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
   const handleStartInterview = async (industry: string, jobRole: string, jobDescription: string) => {
     setIsGeneratingQuestions(true);
     setSessionCreationErrors([]);
     setUsedFallbackQuestions(false);
+    
+    // If we're offline, immediately go to fallback mode
+    if (!isOnline) {
+      console.log("Device is offline. Using fallback interview mode...");
+      const sessionId = uuidv4();
+      setCurrentSessionId(sessionId);
+      
+      const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
+      setQuestions(fallbackQuestions);
+      setUsedFallbackQuestions(true);
+      setInterviewReady(true);
+      
+      setSessionCreationErrors([
+        "You appear to be offline. Using local interview mode with standard questions."
+      ]);
+      
+      setIsGeneratingQuestions(false);
+      return;
+    }
     
     try {
       // Step 1: Create a new interview session
@@ -74,9 +108,16 @@ export const useInterviewSetup = (
       setUsedFallbackQuestions(true);
       setInterviewReady(true);
       
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isConnectionError = errorMessage.includes('network') || 
+                               errorMessage.includes('connect') || 
+                               errorMessage.includes('timeout');
+      
       setSessionCreationErrors(prev => [
         ...prev, 
-        `We're having trouble connecting to our services. Using offline mode with standard questions.`
+        isConnectionError 
+          ? `We're having trouble connecting to our services. Using offline mode with standard questions.`
+          : `There was an error setting up the interview. Using standard questions instead.`
       ]);
       
       setIsGeneratingQuestions(false);
@@ -89,7 +130,8 @@ export const useInterviewSetup = (
     setInterviewReady,
     sessionCreationErrors,
     usedFallbackQuestions,
-    isLoading: persistenceLoading || questionsLoading
+    isLoading: persistenceLoading || questionsLoading,
+    isOnline
   };
 };
 

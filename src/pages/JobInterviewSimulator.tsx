@@ -8,6 +8,7 @@ import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewFeedbackComponent } from "@/components/interview/InterviewFeedback";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
 import { InterviewDebug } from "@/components/interview/InterviewDebug";
+import { Wifi, WifiOff } from "lucide-react";
 
 const JobInterviewSimulator = () => {
   const {
@@ -41,7 +42,8 @@ const JobInterviewSimulator = () => {
     setInterviewReady,
     sessionCreationErrors,
     usedFallbackQuestions,
-    isLoading
+    isLoading,
+    isOnline
   } = useInterviewSetup(setCurrentSessionId, setQuestions, setIsGeneratingQuestions);
 
   const { generateFeedback, feedback, loading: feedbackLoading } = useInterviewFeedback(currentSessionId);
@@ -66,10 +68,29 @@ const JobInterviewSimulator = () => {
   };
 
   return (
-    <div className="container py-6 max-w-5xl mx-auto">
+    <div className="container py-6 max-w-5xl mx-auto px-4 sm:px-6">
       <div className="space-y-8">
+        {/* Online/Offline indicator */}
+        <div className="flex justify-end">
+          <div className="text-xs flex items-center gap-1 text-gray-500">
+            {isOnline ? (
+              <>
+                <Wifi className="h-3 w-3 text-green-500" />
+                <span>Online</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-3 w-3 text-amber-500" />
+                <span>Offline Mode</span>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Debug info */}
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
+        {/* Interview setup form */}
         {!interviewReady && !isInterviewInProgress && !isInterviewComplete && (
           <InterviewForm 
             onSubmit={handleStartInterviewWithParams} 
@@ -77,6 +98,7 @@ const JobInterviewSimulator = () => {
           />
         )}
         
+        {/* Ready to start interview */}
         {interviewReady && !isInterviewInProgress && !isInterviewComplete && (
           <InterviewReadyPrompt
             jobRole={jobRole}
@@ -85,6 +107,7 @@ const JobInterviewSimulator = () => {
           />
         )}
         
+        {/* Interview in progress */}
         {isInterviewInProgress && (
           <InterviewChat
             currentQuestion={currentQuestion}
@@ -95,6 +118,7 @@ const JobInterviewSimulator = () => {
           />
         )}
         
+        {/* Interview completed */}
         {isInterviewComplete && (
           <InterviewFeedbackComponent
             feedback={feedback}
