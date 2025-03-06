@@ -30,6 +30,12 @@ const corsHeaders = {
 
 // Validate request body
 const validateRequest = (body: any) => {
+  console.log("Validating request body:", JSON.stringify(body));
+  
+  if (!body) {
+    throw new Error('Request body is missing or empty');
+  }
+  
   const required = ['industry', 'jobRole', 'sessionId'];
   const missing = required.filter(key => !body[key]);
   
@@ -42,11 +48,20 @@ const validateRequest = (body: any) => {
       typeof body.sessionId !== 'string') {
     throw new Error('Invalid parameter types');
   }
+  
+  console.log("Request validation passed");
+  return true;
 };
 
 serve(async (req) => {
+  // Log request method and headers for debugging
+  console.log("Function called: generate-interview-questions");
+  console.log("Request method:", req.method);
+  console.log("Request headers:", Object.fromEntries(req.headers.entries()));
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request (CORS preflight)");
     return new Response(null, {
       headers: corsHeaders,
       status: 204,
@@ -54,21 +69,33 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Function called: generate-interview-questions");
-    
-    // Parse and validate request body
+    // Parse request body
     let reqBody;
     try {
+      console.log("Attempting to parse request body...");
       reqBody = await req.json();
-      console.log("Request body:", JSON.stringify(reqBody));
-      validateRequest(reqBody);
+      console.log("Request body parsed successfully:", JSON.stringify(reqBody));
     } catch (parseError) {
-      console.error("Invalid request format or validation failed:", parseError);
+      console.error("Failed to parse request body:", parseError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid request format: could not parse JSON body",
+          details: parseError.message
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+    
+    // Validate request
+    try {
+      validateRequest(reqBody);
+    } catch (validationError) {
+      console.error("Request validation failed:", validationError);
       return new Response(
         JSON.stringify({ 
           error: "Invalid request format or missing required fields",
-          details: parseError.message,
-          received: reqBody || "No body"
+          details: validationError.message,
+          received: JSON.stringify(reqBody)
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );

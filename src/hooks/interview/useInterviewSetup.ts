@@ -49,7 +49,7 @@ export const useInterviewSetup = (
   };
   
   const handleStartInterview = async (industry: string, jobRole: string, jobDescription: string) => {
-    console.log("Starting interview setup...");
+    console.log("Starting interview setup with:", { industry, jobRole, jobDescription: jobDescription?.substring(0, 50) + '...' });
     setIsGeneratingQuestions(true);
     setSessionCreationErrors([]);
     setUsedFallbackQuestions(false);

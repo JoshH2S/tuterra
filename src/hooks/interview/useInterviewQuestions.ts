@@ -36,15 +36,19 @@ export const useInterviewQuestions = (
     });
     
     try {
+      // Create the request payload
+      const payload = { 
+        industry, 
+        jobRole, 
+        jobDescription, 
+        sessionId 
+      };
+      
+      console.log("Calling generate-interview-questions edge function with payload:", payload);
+      
       // Call the edge function with detailed logging
-      console.log("Calling generate-interview-questions edge function...");
       const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
-        body: { 
-          industry, 
-          jobRole, 
-          jobDescription, 
-          sessionId 
-        },
+        body: payload,
         headers: {
           'Content-Type': 'application/json'
         }
