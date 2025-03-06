@@ -12,11 +12,13 @@ export const useInterviewPersistence = () => {
 
   const createSession = async (industry: string, jobRole: string, jobDescription: string) => {
     const sessionId = uuidv4();
+    console.log(`Creating new session with ID: ${sessionId}`);
     setLoading(true);
     
     try {
       // Use the edge function to create a session
-      const { error } = await supabase.functions.invoke('create-interview-session', {
+      console.log("Calling create-interview-session edge function...");
+      const { data, error } = await supabase.functions.invoke('create-interview-session', {
         body: {
           sessionId,
           industry,
@@ -35,6 +37,7 @@ export const useInterviewPersistence = () => {
         return null;
       }
       
+      console.log("Session created successfully:", data);
       return sessionId;
     } catch (error) {
       console.error("Error creating session:", error);

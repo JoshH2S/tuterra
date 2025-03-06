@@ -82,7 +82,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="w-full">
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Job Interview Simulator</CardTitle>

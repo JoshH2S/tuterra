@@ -85,15 +85,19 @@ const JobInterviewSimulator = () => {
     
     try {
       // Create a new interview session
+      console.log("Creating new interview session...");
       const sessionId = await createSession(industry, jobRole, jobDescription);
       
       if (!sessionId) {
+        console.error("Failed to create session: No session ID returned");
         throw new Error("Failed to create interview session");
       }
       
+      console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
       // Generate interview questions
+      console.log("Generating questions for new session...");
       await generateQuestions(industry, jobRole, jobDescription);
       
       setInterviewReady(true);
