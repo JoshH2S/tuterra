@@ -35,12 +35,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     [currentQuestion]
   );
 
-  const questionProgress = useMemo(() => 
-    !isCompleted && questions.length > 0
-      ? `Q: ${currentQuestionIndex + 1}/${questions.length}`
-      : null,
-    [isCompleted, questions.length, currentQuestionIndex]
-  );
+  // Removed the questionProgress since it's now handled in the InterviewQuestion component
 
   // Combine typing effects into a single useEffect
   useEffect(() => {
@@ -111,12 +106,6 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
       </CardHeader>
       
       <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">
-        {questionProgress && (
-          <div className="absolute top-2 right-2 text-xs text-muted-foreground">
-            {questionProgress}
-          </div>
-        )}
-        
         <AnimatePresence mode="wait" initial={false}>
           {isTyping ? (
             <InterviewTypingIndicator key="typing" />
@@ -131,7 +120,10 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
             <InterviewQuestion 
               key={`question-${currentQuestionIndex}`}
               message={displayMessage} 
-              transcriptLength={transcript.length} 
+              transcriptLength={transcript.length}
+              question={currentQuestion}
+              currentQuestionIndex={currentQuestionIndex}
+              totalQuestions={questions.length}
             />
           )}
         </AnimatePresence>
