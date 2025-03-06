@@ -21,6 +21,92 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Question generator class
+class QuestionGenerator {
+  async generateQuestions(industry: string, jobRole: string, jobDescription: string) {
+    console.log(`Generating questions for ${jobRole} in ${industry}`);
+    
+    // Generate questions with OpenAI
+    const promptText = `
+    You are an interviewer for a ${jobRole} position in the ${industry} industry.
+    Generate 5 relevant interview questions based on the following job description:
+    
+    ${jobDescription}
+    
+    Your questions should be challenging but fair, and should assess the candidate's skills and experience for this role.
+    Return ONLY an array of strings, with each string being a question. No additional text or explanation.
+    `;
+    
+    try {
+      const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "You are a helpful assistant that generates job interview questions." },
+          { role: "user", content: promptText }
+        ],
+        temperature: 0.7,
+      });
+      
+      const responseText = completion.data.choices[0]?.message?.content || "[]";
+      console.log("Raw OpenAI response:", responseText);
+      
+      // Parse the response to extract the questions
+      let questions = [];
+      try {
+        // Clean the response - remove code blocks markers and whitespace
+        const cleaned = responseText.replace(/```json|```|\[|\]/g, "").trim();
+        
+        // Split by line, removing empty lines and numbered prefixes
+        questions = cleaned
+          .split("\n")
+          .map(line => line.trim())
+          .filter(line => line && line.length > 0)
+          .map(line => {
+            // Remove quotation marks, numbers, and other formatting
+            return line
+              .replace(/^["'\d\.\)\s]+|["'\s,]+$/g, "")  // Remove starting/ending quotes and numbers
+              .trim();
+          });
+          
+        console.log("Parsed questions:", questions);
+        
+        // Ensure we have at least one question
+        if (questions.length === 0) {
+          // Fallback: just split by newlines and hope for the best
+          questions = responseText
+            .split("\n")
+            .map(line => line.trim())
+            .filter(line => line && line.length > 5);
+        }
+        
+        // Make sure there are no blank questions
+        questions = questions.filter(q => q && q.length > 5);
+        
+        // If still no questions, throw error to trigger fallback
+        if (questions.length === 0) {
+          throw new Error("Could not parse any valid questions");
+        }
+      } catch (error) {
+        console.error("Error parsing questions, using fallback method:", error);
+        
+        // Fallback: Try to extract questions as plain text
+        questions = [
+          `Tell me about your experience in ${industry}.`,
+          `What skills do you have that make you a good fit for the ${jobRole} role?`,
+          `Describe a challenging situation you've faced in a previous role and how you handled it.`,
+          `Why are you interested in this ${jobRole} position?`,
+          `What are your career goals and how does this position align with them?`
+        ];
+      }
+      
+      return questions;
+    } catch (error) {
+      console.error("Error generating questions with OpenAI:", error);
+      throw error;
+    }
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -40,70 +126,11 @@ serve(async (req) => {
       );
     }
     
-    console.log(`Generating questions for ${jobRole} in ${industry}`);
+    // Generate questions
+    const generator = new QuestionGenerator();
+    const questions = await generator.generateQuestions(industry, jobRole, jobDescription);
     
-    // Generate questions with OpenAI
-    const promptText = `
-    You are an interviewer for a ${jobRole} position in the ${industry} industry.
-    Generate 5 relevant interview questions based on the following job description:
-    
-    ${jobDescription}
-    
-    Your questions should be challenging but fair, and should assess the candidate's skills and experience for this role.
-    Format the output as a JSON array of question strings only, without any additional text.
-    `;
-    
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "You are a helpful assistant that generates job interview questions." },
-        { role: "user", content: promptText }
-      ],
-      temperature: 0.7,
-    });
-    
-    const responseText = completion.data.choices[0]?.message?.content || "[]";
-    
-    // Parse the response to extract the questions
-    let questions;
-    try {
-      // The response might be formatted in different ways, so we handle various formats
-      const cleaned = responseText.replace(/```json|```/g, "").trim();
-      
-      // Check if it's already an array or needs to be extracted from a JSON object
-      if (cleaned.startsWith("[")) {
-        questions = JSON.parse(cleaned);
-      } else if (cleaned.startsWith("{")) {
-        const parsed = JSON.parse(cleaned);
-        questions = parsed.questions || parsed;
-      } else {
-        // If not valid JSON, try to extract questions line by line
-        questions = responseText
-          .split("\n")
-          .filter(line => line.trim().startsWith('"') || line.trim().startsWith("'"))
-          .map(line => line.trim().replace(/^["']|["']$/g, "").replace(/["'],?$/g, ""));
-      }
-      
-      // Ensure questions is an array of strings
-      if (!Array.isArray(questions)) {
-        throw new Error("Response is not a valid array");
-      }
-    } catch (error) {
-      console.error("Error parsing questions:", error);
-      
-      // Fallback: Try to extract questions from the text
-      questions = responseText
-        .split("\n")
-        .filter(line => /^\d+[\.\)]\s+/.test(line))
-        .map(line => line.replace(/^\d+[\.\)]\s+/, ""));
-      
-      if (questions.length === 0) {
-        return new Response(
-          JSON.stringify({ error: "Failed to parse questions from AI response" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-        );
-      }
-    }
+    console.log(`Generated ${questions.length} questions for session ${sessionId}`);
     
     // Save questions to the database
     const questionsData = [];
