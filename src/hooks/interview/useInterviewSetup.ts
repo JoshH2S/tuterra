@@ -12,14 +12,16 @@ export const useInterviewSetup = (
 ) => {
   const { toast } = useToast();
   const { createSession, loading: persistenceLoading } = useInterviewPersistence();
-  const { generateQuestions, loading: questionsLoading } = useInterviewQuestions(null, setQuestions);
+  const { generateQuestions, generateFallbackQuestions, loading: questionsLoading } = useInterviewQuestions(null, setQuestions);
   
   const [interviewReady, setInterviewReady] = useState(false);
   const [sessionCreationErrors, setSessionCreationErrors] = useState<string[]>([]);
+  const [usedFallbackQuestions, setUsedFallbackQuestions] = useState(false);
   
   const handleStartInterview = async (industry: string, jobRole: string, jobDescription: string) => {
     setIsGeneratingQuestions(true);
     setSessionCreationErrors([]);
+    setUsedFallbackQuestions(false);
     
     try {
       // Step 1: Create a new interview session
@@ -28,7 +30,6 @@ export const useInterviewSetup = (
       
       if (!sessionId) {
         const errMsg = "Failed to create session: No session ID returned";
-        console.error(errMsg);
         setSessionCreationErrors(prev => [...prev, errMsg]);
         throw new Error(errMsg);
       }
@@ -37,17 +38,7 @@ export const useInterviewSetup = (
       setCurrentSessionId(sessionId);
       
       // Wait for the session ID to be set before generating questions
-      // Wait a moment for the state to update
       setTimeout(async () => {
-        // Double check the session ID is actually set
-        if (!sessionId) {
-          const errMsg = "Session ID not available after delay";
-          console.error(errMsg);
-          setSessionCreationErrors(prev => [...prev, errMsg]);
-          setIsGeneratingQuestions(false);
-          return;
-        }
-          
         try {
           // Step 2: Generate interview questions
           console.log("Generating questions for session with ID:", sessionId);
@@ -55,24 +46,39 @@ export const useInterviewSetup = (
           setInterviewReady(true);
         } catch (questionError) {
           console.error("Error generating questions:", questionError);
-          setSessionCreationErrors(prev => [...prev, `Error generating questions: ${questionError.message || 'Unknown error'}`]);
-          toast({
-            title: "Error",
-            description: "Failed to generate interview questions. Please try again.",
-            variant: "destructive",
-          });
+          
+          // Use fallback questions instead
+          console.log("Using fallback questions due to error");
+          const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
+          setQuestions(fallbackQuestions);
+          setUsedFallbackQuestions(true);
+          setInterviewReady(true);
+          
+          setSessionCreationErrors(prev => [
+            ...prev, 
+            `We couldn't connect to our question generation service, but we've prepared some standard questions instead.`
+          ]);
         } finally {
           setIsGeneratingQuestions(false);
         }
-      }, 1000); // Increased delay to ensure state is properly updated
+      }, 1000);
     } catch (error) {
       console.error("Error starting interview:", error);
-      setSessionCreationErrors(prev => [...prev, `Error starting interview: ${error.message || 'Unknown error'}`]);
-      toast({
-        title: "Error",
-        description: "Failed to start the interview. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Set up generic interview with fallback questions
+      const sessionId = uuidv4();
+      setCurrentSessionId(sessionId);
+      
+      const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
+      setQuestions(fallbackQuestions);
+      setUsedFallbackQuestions(true);
+      setInterviewReady(true);
+      
+      setSessionCreationErrors(prev => [
+        ...prev, 
+        `We're having trouble connecting to our services. Using offline mode with standard questions.`
+      ]);
+      
       setIsGeneratingQuestions(false);
     }
   };
@@ -82,6 +88,16 @@ export const useInterviewSetup = (
     interviewReady,
     setInterviewReady,
     sessionCreationErrors,
+    usedFallbackQuestions,
     isLoading: persistenceLoading || questionsLoading
   };
 };
+
+// Helper function for fallback mode
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, 
+          v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,12 +14,7 @@ export const useInterviewQuestions = (
     // Clear validation
     if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
       console.error("Cannot generate questions: No valid session ID provided", { sessionId });
-      toast({
-        title: "Error",
-        description: "Session ID is missing or invalid. Please try again.",
-        variant: "destructive",
-      });
-      return;
+      throw new Error("Session ID is missing or invalid");
     }
     
     setLoading(true);
@@ -77,64 +71,112 @@ export const useInterviewQuestions = (
       }
     } catch (error) {
       console.error("Error generating questions:", error);
-      // Use fallback questions when generation fails
-      const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
-      console.log("Using fallback questions instead:", fallbackQuestions);
-      
-      // Convert fallbacks to the expected format and set them
-      const formattedFallbacks = fallbackQuestions.map((q, index) => ({
-        id: `fallback-${index}`,
-        session_id: sessionId || '',
-        question: q.text,
-        question_order: index,
-        created_at: new Date().toISOString()
-      }));
-      
-      setQuestions(formattedFallbacks);
-      
-      toast({
-        title: "Using backup questions",
-        description: "We had trouble connecting to our AI service, but we've provided some standard questions for you.",
-        variant: "default",
-      });
+      throw error; // Let the calling code handle this and use fallback questions
     } finally {
       setLoading(false);
     }
   };
 
-  // Generate client-side fallback questions as a last resort
-  const generateFallbackQuestions = (jobRole: string, industry: string) => [
-    {
-      text: `Tell me about your experience as a ${jobRole}.`,
-      category: 'experience',
-      difficulty: 'medium',
-      estimatedTimeSeconds: 120
-    },
-    {
-      text: `What interests you about working in ${industry}?`,
-      category: 'motivation',
-      difficulty: 'easy',
-      estimatedTimeSeconds: 90
-    },
-    {
-      text: `Describe a challenging situation you've faced in a previous role and how you handled it.`,
-      category: 'behavioral',
-      difficulty: 'medium',
-      estimatedTimeSeconds: 180
-    },
-    {
-      text: `What specific skills do you have that make you qualified for this ${jobRole} position?`,
-      category: 'skills',
-      difficulty: 'medium',
-      estimatedTimeSeconds: 120
-    },
-    {
-      text: `Where do you see yourself professionally in five years?`,
-      category: 'career',
-      difficulty: 'medium',
-      estimatedTimeSeconds: 120
+  // Generate client-side fallback questions that can be called directly
+  const generateFallbackQuestions = (jobRole: string, industry: string): InterviewQuestion[] => {
+    const currentDate = new Date().toISOString();
+    const baseQuestions = [
+      {
+        id: `fallback-1`,
+        session_id: sessionId || '',
+        question: `Tell me about your experience as a ${jobRole}.`,
+        question_order: 0,
+        created_at: currentDate
+      },
+      {
+        id: `fallback-2`,
+        session_id: sessionId || '',
+        question: `What interests you about working in ${industry}?`,
+        question_order: 1,
+        created_at: currentDate
+      },
+      {
+        id: `fallback-3`,
+        session_id: sessionId || '',
+        question: `Describe a challenging situation you've faced in a previous role and how you handled it.`,
+        question_order: 2,
+        created_at: currentDate
+      },
+      {
+        id: `fallback-4`,
+        session_id: sessionId || '',
+        question: `What specific skills do you have that make you qualified for this ${jobRole} position?`,
+        question_order: 3,
+        created_at: currentDate
+      },
+      {
+        id: `fallback-5`,
+        session_id: sessionId || '',
+        question: `Where do you see yourself professionally in five years?`,
+        question_order: 4,
+        created_at: currentDate
+      }
+    ];
+  
+    // Add industry-specific questions
+    if (industry.toLowerCase().includes('tech') || 
+        industry.toLowerCase().includes('technology')) {
+      baseQuestions.push({
+        id: `fallback-6`,
+        session_id: sessionId || '',
+        question: "Describe a technical project you worked on that you're particularly proud of.",
+        question_order: 5,
+        created_at: currentDate
+      });
+    } else if (industry.toLowerCase().includes('finance')) {
+      baseQuestions.push({
+        id: `fallback-6`,
+        session_id: sessionId || '',
+        question: "How do you ensure accuracy and attention to detail in your financial work?",
+        question_order: 5,
+        created_at: currentDate
+      });
+    } else if (industry.toLowerCase().includes('health')) {
+      baseQuestions.push({
+        id: `fallback-6`,
+        session_id: sessionId || '',
+        question: "How do you balance patient care with administrative responsibilities?",
+        question_order: 5,
+        created_at: currentDate
+      });
     }
-  ];
+    
+    // Add role-specific questions
+    if (jobRole.toLowerCase().includes('manager') || 
+        jobRole.toLowerCase().includes('leader')) {
+      baseQuestions.push({
+        id: `fallback-7`,
+        session_id: sessionId || '',
+        question: "Describe your management style and how you motivate your team.",
+        question_order: 6,
+        created_at: currentDate
+      });
+    } else if (jobRole.toLowerCase().includes('engineer') || 
+               jobRole.toLowerCase().includes('developer')) {
+      baseQuestions.push({
+        id: `fallback-7`,
+        session_id: sessionId || '',
+        question: "How do you approach debugging and troubleshooting complex technical issues?",
+        question_order: 6,
+        created_at: currentDate
+      });
+    } else if (jobRole.toLowerCase().includes('analyst')) {
+      baseQuestions.push({
+        id: `fallback-7`,
+        session_id: sessionId || '',
+        question: "Describe how you would approach analyzing a complex dataset to extract meaningful insights.",
+        question_order: 6,
+        created_at: currentDate
+      });
+    }
+    
+    return baseQuestions;
+  };
 
   const fetchQuestions = async () => {
     if (!sessionId) {
@@ -189,6 +231,7 @@ export const useInterviewQuestions = (
 
   return {
     generateQuestions,
+    generateFallbackQuestions,
     fetchQuestions,
     loading
   };

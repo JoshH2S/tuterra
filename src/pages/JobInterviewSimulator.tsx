@@ -40,6 +40,7 @@ const JobInterviewSimulator = () => {
     interviewReady,
     setInterviewReady,
     sessionCreationErrors,
+    usedFallbackQuestions,
     isLoading
   } = useInterviewSetup(setCurrentSessionId, setQuestions, setIsGeneratingQuestions);
 
@@ -80,6 +81,7 @@ const JobInterviewSimulator = () => {
           <InterviewReadyPrompt
             jobRole={jobRole}
             onStartChat={handleStartChat}
+            usedFallbackQuestions={usedFallbackQuestions}
           />
         )}
         
