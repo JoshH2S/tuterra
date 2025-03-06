@@ -29,13 +29,13 @@ export const useInterviewQuestions = ({
   
   // Memoized derived values
   const currentQuestion = useMemo(() => 
-    questions[currentQuestionIndex],
+    questions.length > 0 ? questions[currentQuestionIndex] : undefined,
     [questions, currentQuestionIndex]
   );
 
   const progress = useMemo(() => ({
-    current: currentQuestionIndex + 1,
-    total: questions.length,
+    current: questions.length > 0 ? currentQuestionIndex + 1 : 0,
+    total: questions.length || 0,
     percentage: questions.length 
       ? ((currentQuestionIndex + 1) / questions.length) * 100 
       : 0
@@ -60,11 +60,15 @@ export const useInterviewQuestions = ({
 
       sessionIdRef.current = uuidv4();
       
-      setQuestions(result.questions);
-      setMetadata(result.metadata);
-      setCurrentQuestionIndex(0);
-      
-      return result;
+      // Ensure we have valid questions before updating state
+      if (result && result.questions && result.questions.length > 0) {
+        setQuestions(result.questions);
+        setMetadata(result.metadata);
+        setCurrentQuestionIndex(0);
+        return result;
+      } else {
+        throw new Error("No questions were returned");
+      }
     } catch (error) {
       console.error("Interview questions generation error:", error);
       toast({
@@ -82,6 +86,7 @@ export const useInterviewQuestions = ({
   }, [industry, role, jobDescription, numberOfQuestions, onStartGenerating, onFinishGenerating, toast]);
 
   const advanceToNextQuestion = useCallback(() => {
+    if (questions.length === 0) return false;
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       return true;

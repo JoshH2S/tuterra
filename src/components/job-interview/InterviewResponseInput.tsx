@@ -55,10 +55,13 @@ export const InterviewResponseInput = ({
   };
 
   // Calculate progress percentage
-  const progressPercentage = Math.floor((currentQuestionIndex / totalQuestions) * 100);
+  const progressPercentage = totalQuestions > 0 ? Math.floor((currentQuestionIndex / totalQuestions) * 100) : 0;
   
   // Determine if this is the last question
-  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+  const isLastQuestion = totalQuestions > 0 && currentQuestionIndex === totalQuestions - 1;
+
+  // Calculate remaining questions safely
+  const remainingQuestions = totalQuestions > 0 ? totalQuestions - currentQuestionIndex - 1 : 0;
 
   return (
     <div className="flex flex-col w-full gap-3">
@@ -75,13 +78,15 @@ export const InterviewResponseInput = ({
         <div className="flex items-center gap-2 w-full">
           <Progress value={progressPercentage} className="h-2 flex-grow" />
           <span className="text-xs whitespace-nowrap text-muted-foreground">
-            {currentQuestionIndex + 1}/{totalQuestions}
+            {totalQuestions > 0 ? `${currentQuestionIndex + 1}/${totalQuestions}` : "0/0"}
           </span>
         </div>
         
         <div className="flex justify-between items-center mt-1">
           <div className="text-sm text-muted-foreground">
-            {!isLastQuestion ? `${totalQuestions - currentQuestionIndex - 1} questions remaining` : "Last question"}
+            {totalQuestions > 0 ? 
+              (!isLastQuestion ? `${remainingQuestions} questions remaining` : "Last question") 
+              : "No questions available"}
           </div>
           <div className="flex gap-2">
             {isLastQuestion && onComplete && (

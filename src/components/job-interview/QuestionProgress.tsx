@@ -17,7 +17,7 @@ export const QuestionProgress = ({
   isFinalQuestion
 }: QuestionProgressProps) => {
   const progressPercentage = useMemo(() => 
-    Math.floor(((currentIndex + 1) / totalQuestions) * 100),
+    totalQuestions > 0 ? Math.floor(((currentIndex + 1) / totalQuestions) * 100) : 0,
     [currentIndex, totalQuestions]
   );
   
@@ -37,9 +37,9 @@ export const QuestionProgress = ({
       <div className="flex justify-between items-center text-xs text-muted-foreground">
         <div className="flex gap-1 items-center">
           <span className={isFinalQuestion ? "font-semibold text-primary" : ""}>
-            Question {currentIndex + 1}/{totalQuestions}
+            Question {totalQuestions > 0 ? `${currentIndex + 1}/${totalQuestions}` : "0/0"}
           </span>
-          {isFinalQuestion && <span className="text-primary font-medium">(Final)</span>}
+          {isFinalQuestion && totalQuestions > 0 && <span className="text-primary font-medium">(Final)</span>}
         </div>
         
         {formattedTime && (
