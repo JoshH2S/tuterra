@@ -5,8 +5,7 @@ import {
   Brain, 
   FileText, 
   LayoutDashboard, 
-  Award,
-  Briefcase
+  Award
 } from "lucide-react";
 import { SidebarMenu } from "@/components/ui/sidebar";
 import { SidebarNavItem } from "./SidebarNavItem";
@@ -28,9 +27,6 @@ export const SidebarNavigation = () => {
       </SidebarNavItem>
       <SidebarNavItem to="/skill-assessments" icon={Award}>
         Skill Assessments
-      </SidebarNavItem>
-      <SidebarNavItem to="/job-interview-simulator" icon={Briefcase}>
-        Interview Simulator
       </SidebarNavItem>
       <SidebarNavItem to="/tutor" icon={Brain}>
         AI Tutor
