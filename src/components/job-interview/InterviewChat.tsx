@@ -26,7 +26,9 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     transcript,
     isGeneratingFeedback,
     feedback,
+    detailedFeedback,
     currentQuestionIndex,
+    regenerateFeedback
   } = useJobInterview();
 
   // Memoize derived values
@@ -34,8 +36,6 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     currentQuestion?.text || "", 
     [currentQuestion]
   );
-
-  // Removed the questionProgress since it's now handled in the InterviewQuestion component
 
   // Combine typing effects into a single useEffect
   useEffect(() => {
@@ -93,6 +93,16 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     }
   }, [currentQuestionIndex, questions.length, submitResponse]);
 
+  // When the current question updates, set a timer based on the estimated time
+  useEffect(() => {
+    if (currentQuestion?.estimatedTimeSeconds && !isTyping && !isCompleted) {
+      // Only set the timer if it's not already set
+      if (timeLeft === null) {
+        setTimeLeft(currentQuestion.estimatedTimeSeconds);
+      }
+    }
+  }, [currentQuestion, isTyping, isCompleted, timeLeft]);
+
   return (
     <Card className="shadow-lg flex flex-col h-[600px] md:h-[550px]">
       <CardHeader className="border-b">
@@ -115,6 +125,8 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
               transcript={transcript} 
               isGeneratingFeedback={isGeneratingFeedback}
               feedback={feedback}
+              detailedFeedback={detailedFeedback}
+              onRegenerateFeedback={regenerateFeedback}
             />
           ) : (
             <InterviewQuestion 

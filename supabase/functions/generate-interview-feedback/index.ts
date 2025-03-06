@@ -11,7 +11,15 @@ serve(async (req) => {
   }
 
   try {
-    const { industry, role, jobDescription, questions, userResponses } = await req.json();
+    const { 
+      industry, 
+      role, 
+      jobDescription, 
+      questions, 
+      userResponses,
+      metrics,
+      timestamp 
+    } = await req.json();
 
     if (!questions || !userResponses || questions.length !== userResponses.length) {
       return new Response(
@@ -27,22 +35,48 @@ serve(async (req) => {
       transcriptText += `Candidate's Response: ${userResponses[i]}\n\n`;
     }
 
+    // Add metrics to the prompt if available
+    const metricsText = metrics ? `
+      Pre-analysis metrics:
+      - Response completeness: ${(metrics.responseCompleteness * 100).toFixed(2)}%
+      - Relevance to job description: ${(metrics.relevanceScore * 100).toFixed(2)}%
+    ` : '';
+
     const prompt = `
       You are an expert job interview coach. Below is a transcript of a job interview for a ${role} position in the ${industry} industry.
       
       ${jobDescription ? `The job description is: ${jobDescription}\n\n` : ''}
       
+      ${metricsText}
+      
       Interview Transcript:
       ${transcriptText}
       
-      Please provide comprehensive feedback on this interview, addressing:
-      1. Overall impression
-      2. Strengths demonstrated by the candidate
-      3. Areas for improvement
-      4. Specific examples from their responses
-      5. Suggestions for better answers where applicable
+      Please provide a comprehensive analysis of this interview in the following format:
       
-      Format your feedback in a helpful, constructive manner that would be valuable for the candidate.
+      1. Overall assessment (concise summary of performance)
+      2. Quantitative analysis:
+         - Overall score (0-100)
+         - Category scores for communication, relevance, technical knowledge, confidence (0-100)
+      3. Strengths (list 3-5 specific strengths demonstrated by the candidate)
+      4. Areas for improvement (list 3-5 specific areas where the candidate could improve)
+      5. Detailed feedback (300-500 words with specific examples from their responses)
+      6. Keywords analysis (which important keywords the candidate used effectively and which they missed)
+      
+      Format your feedback in JSON format with the following structure:
+      {
+        "overallScore": number,
+        "categoryScores": { "communication": number, "relevance": number, ... },
+        "strengths": ["strength1", "strength2", ...],
+        "improvements": ["improvement1", "improvement2", ...],
+        "detailedFeedback": "comprehensive analysis...",
+        "keywords": {
+          "used": ["keyword1", "keyword2", ...],
+          "missed": ["keyword3", "keyword4", ...]
+        }
+      }
+      
+      If you cannot produce JSON for any reason, provide your response as plain text.
     `;
 
     // Call OpenAI API
@@ -57,7 +91,7 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an experienced job interview coach providing constructive feedback on interview performance. Be specific, helpful, and encouraging.' 
+            content: 'You are an experienced job interview coach providing constructive feedback on interview performance. Be specific, helpful, and encouraging. Your response should be in JSON format if possible.' 
           },
           { role: 'user', content: prompt }
         ],
@@ -72,14 +106,34 @@ serve(async (req) => {
       throw new Error(data.error?.message || 'Unknown error from OpenAI API');
     }
 
-    const feedback = data.choices?.[0]?.message?.content?.trim();
+    const responseContent = data.choices?.[0]?.message?.content?.trim();
     
-    if (!feedback) {
+    if (!responseContent) {
       throw new Error('No feedback generated');
     }
     
+    // Try to parse as JSON first
+    try {
+      // Look for JSON in the response
+      const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const jsonResponse = JSON.parse(jsonMatch[0]);
+        return new Response(
+          JSON.stringify(jsonResponse),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (jsonError) {
+      console.error('Error parsing JSON:', jsonError);
+      // Fall back to text format
+    }
+    
+    // If not JSON, return as text feedback
     return new Response(
-      JSON.stringify({ feedback }),
+      JSON.stringify({ 
+        feedback: responseContent,
+        detailedFeedback: responseContent
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

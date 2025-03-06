@@ -42,6 +42,36 @@ export interface GenerateQuestionsResponse {
   };
 }
 
+export interface FeedbackResponse {
+  overallScore?: number;
+  categoryScores?: Record<string, number>;
+  strengths?: string[];
+  improvements?: string[];
+  detailedFeedback?: string;
+  technicalAccuracy?: number;
+  communicationScore?: number;
+  keywords?: {
+    used: string[];
+    missed: string[];
+  };
+  feedback?: string; // For backward compatibility with the current implementation
+}
+
+export interface FeedbackRequest {
+  industry: string;
+  role: string;
+  jobDescription: string;
+  questions: Question[];
+  userResponses: string[];
+  sessionId: string;
+}
+
+export interface FeedbackMetrics {
+  responseCompleteness: number;
+  relevanceScore: number;
+  technicalAccuracy?: number;
+}
+
 // Fallback questions in case API fails or returns too few questions
 export const FALLBACK_QUESTIONS = [
   "Tell me about your experience with similar roles in the past.",

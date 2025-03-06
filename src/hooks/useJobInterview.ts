@@ -1,15 +1,16 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Message, Question, InterviewConfig } from "@/types/interview";
+import { Message, Question, InterviewConfig, FeedbackResponse } from "@/types/interview";
 import { interviewQuestionService } from "@/services/interviewQuestionService";
-import { generateInterviewFeedback } from "@/services/interviewFeedbackService";
+import { interviewFeedbackService } from "@/services/interviewFeedbackService";
 import { 
   createWelcomeMessage, 
   createUserResponseMessage, 
   createQuestionMessage,
   createCompletionMessage
 } from "@/services/interviewTranscriptService";
+import { v4 as uuidv4 } from "@/lib/uuid";
 
 export const useJobInterview = () => {
   const { toast } = useToast();
@@ -25,7 +26,9 @@ export const useJobInterview = () => {
   const [userResponses, setUserResponses] = useState<string[]>([]);
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
   const [feedback, setFeedback] = useState<string | undefined>(undefined);
+  const [detailedFeedback, setDetailedFeedback] = useState<FeedbackResponse | undefined>(undefined);
   const [interviewMetadata, setInterviewMetadata] = useState<any>(null);
+  const [sessionId, setSessionId] = useState<string>("");
 
   const currentQuestion = questions[currentQuestionIndex];
   
@@ -55,6 +58,10 @@ export const useJobInterview = () => {
       setQuestions(result.questions);
       setInterviewMetadata(result.metadata);
       
+      // Generate a session ID for this interview
+      const newSessionId = uuidv4();
+      setSessionId(newSessionId);
+      
       // Add welcome message
       const welcomeMessage = createWelcomeMessage(role);
       setTranscript([welcomeMessage]);
@@ -67,6 +74,7 @@ export const useJobInterview = () => {
       
       console.log("Interview setup complete with", result.questions.length, "questions");
       console.log("Interview metadata:", result.metadata);
+      console.log("Session ID:", newSessionId);
     } catch (error) {
       console.error("Error setting up interview:", error);
       toast({
@@ -121,14 +129,26 @@ export const useJobInterview = () => {
     // Generate AI feedback
     setIsGeneratingFeedback(true);
     try {
-      const generatedFeedback = await generateInterviewFeedback(
+      // Use the enhanced feedback service with detailed metrics
+      const generatedFeedback = await interviewFeedbackService.generateInterviewFeedback(
         industry,
         role,
         jobDescription,
         questions,
         userResponses
       );
+      
       setFeedback(generatedFeedback);
+      
+      // Try to get detailed feedback from the database
+      try {
+        const feedbackHistory = await interviewFeedbackService.getFeedbackHistory();
+        if (feedbackHistory && feedbackHistory.length > 0) {
+          setDetailedFeedback(feedbackHistory[0]); // Most recent feedback
+        }
+      } catch (detailError) {
+        console.error("Error fetching detailed feedback:", detailError);
+      }
     } catch (error) {
       console.error("Error generating feedback:", error);
       toast({
@@ -139,6 +159,60 @@ export const useJobInterview = () => {
       setFeedback("We couldn't generate detailed feedback at this time. Please try again later.");
     } finally {
       setIsGeneratingFeedback(false);
+    }
+  };
+
+  // Add a new method to regenerate feedback
+  const regenerateFeedback = async () => {
+    if (!sessionId) {
+      toast({
+        title: "Error",
+        description: "No active interview session to regenerate feedback for.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsGeneratingFeedback(true);
+    try {
+      await interviewFeedbackService.regenerateFeedback(sessionId);
+      
+      // Fetch the updated feedback
+      const feedbackHistory = await interviewFeedbackService.getFeedbackHistory();
+      if (feedbackHistory && feedbackHistory.length > 0) {
+        const latestFeedback = feedbackHistory[0];
+        setDetailedFeedback(latestFeedback);
+        setFeedback(latestFeedback.detailedFeedback || "Feedback regenerated successfully.");
+        
+        toast({
+          title: "Success",
+          description: "Interview feedback has been regenerated.",
+        });
+      }
+    } catch (error) {
+      console.error("Error regenerating feedback:", error);
+      toast({
+        title: "Error",
+        description: "Failed to regenerate feedback. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingFeedback(false);
+    }
+  };
+
+  // Add a method to get interview history
+  const getInterviewHistory = async () => {
+    try {
+      return await interviewFeedbackService.getFeedbackHistory();
+    } catch (error) {
+      console.error("Error fetching interview history:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch interview history.",
+        variant: "destructive",
+      });
+      return [];
     }
   };
 
@@ -154,12 +228,16 @@ export const useJobInterview = () => {
     currentQuestionIndex,
     isGeneratingFeedback,
     feedback,
+    detailedFeedback,
     interviewMetadata,
+    sessionId,
     setIndustry,
     setRole,
     setJobDescription,
     startInterview,
     submitResponse,
     completeInterview,
+    regenerateFeedback,
+    getInterviewHistory
   };
 };

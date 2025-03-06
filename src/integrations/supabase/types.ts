@@ -291,6 +291,72 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_feedback: {
+        Row: {
+          created_at: string
+          feedback: Json
+          id: string
+          session_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          feedback: Json
+          id?: string
+          session_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          feedback?: Json
+          id?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      interview_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          industry: string
+          job_description: string | null
+          questions: Json
+          role: string
+          session_id: string
+          user_id: string | null
+          user_responses: Json
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          industry: string
+          job_description?: string | null
+          questions: Json
+          role: string
+          session_id: string
+          user_id?: string | null
+          user_responses: Json
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          industry?: string
+          job_description?: string | null
+          questions?: Json
+          role?: string
+          session_id?: string
+          user_id?: string | null
+          user_responses?: Json
+        }
+        Relationships: []
+      }
       learning_goals: {
         Row: {
           course_id: string | null
