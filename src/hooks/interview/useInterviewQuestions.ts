@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,11 +34,8 @@ export const useInterviewQuestions = (
           jobDescription, 
           sessionId 
         },
-        options: {
-          timeout: 10000,
-          headers: {
-            'Content-Type': 'application/json'
-          }
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
 
@@ -86,7 +82,6 @@ export const useInterviewQuestions = (
     }
   };
 
-  // Generate client-side fallback questions that can be called directly
   const generateFallbackQuestions = (jobRole: string, industry: string): InterviewQuestion[] => {
     const currentDate = new Date().toISOString();
     const baseQuestions = [
