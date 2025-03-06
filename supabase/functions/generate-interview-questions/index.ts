@@ -65,7 +65,11 @@ serve(async (req) => {
     } catch (parseError) {
       console.error("Invalid request format or validation failed:", parseError);
       return new Response(
-        JSON.stringify({ error: "Invalid request format or missing required fields" }),
+        JSON.stringify({ 
+          error: "Invalid request format or missing required fields",
+          details: parseError.message,
+          received: reqBody || "No body"
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
@@ -83,7 +87,11 @@ serve(async (req) => {
     if (sessionError || !sessionData) {
       console.error("Session verification failed:", sessionError || "Session not found");
       return new Response(
-        JSON.stringify({ error: "Invalid session ID or session not found" }),
+        JSON.stringify({ 
+          error: "Invalid session ID or session not found",
+          sessionId,
+          dbError: sessionError?.message || "Session not found in database"
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
       );
     }
@@ -109,7 +117,11 @@ serve(async (req) => {
     if (updateError) {
       console.error("Error updating session with questions:", updateError);
       return new Response(
-        JSON.stringify({ error: updateError.message }),
+        JSON.stringify({ 
+          error: updateError.message,
+          operation: "update session with questions",
+          sessionId
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
@@ -127,7 +139,11 @@ serve(async (req) => {
     console.error("Error processing request:", error);
     
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      JSON.stringify({ 
+        error: error.message || "An unexpected error occurred",
+        timestamp: new Date().toISOString(),
+        stack: error.stack?.split("\n").slice(0, 3).join("\n") || "No stack trace"
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }

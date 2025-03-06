@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +16,16 @@ export const useInterviewQuestions = (
     if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
       console.error("Cannot generate questions: No valid session ID provided", { sessionId });
       throw new Error("Session ID is missing or invalid");
+    }
+    
+    if (!industry || typeof industry !== 'string') {
+      console.error("Cannot generate questions: Invalid industry parameter", { industry });
+      throw new Error("Industry parameter is missing or invalid");
+    }
+    
+    if (!jobRole || typeof jobRole !== 'string') {
+      console.error("Cannot generate questions: Invalid jobRole parameter", { jobRole });
+      throw new Error("Job role parameter is missing or invalid");
     }
     
     setLoading(true);

@@ -108,7 +108,7 @@ export const useInterviewSetup = (
         
         setSessionCreationErrors(prev => [
           ...prev, 
-          `We couldn't connect to our question generation service, but we've prepared some standard questions instead.`
+          `Question generation failed: ${questionError instanceof Error ? questionError.message : 'Unknown error'}`
         ]);
       }
     } catch (error) {
@@ -126,7 +126,7 @@ export const useInterviewSetup = (
         ...prev, 
         isConnectionError 
           ? `We're having trouble connecting to our services. Using offline mode with standard questions.`
-          : `There was an error setting up the interview. Using standard questions instead.`
+          : `Error setting up interview: ${errorMessage}`
       ]);
     } finally {
       setIsGeneratingQuestions(false);
