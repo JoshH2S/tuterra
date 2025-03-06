@@ -9,6 +9,7 @@ export const useInterviewResponses = () => {
 
   const initializeResponses = useCallback((questionsCount: number, role: string) => {
     setUserResponses(new Array(questionsCount).fill(""));
+    // Start with just the welcome message
     setTranscript([interviewTranscriptService.createWelcomeMessage(role)]);
   }, []);
 
@@ -20,12 +21,15 @@ export const useInterviewResponses = () => {
   ) => {
     if (!currentQuestion) return;
 
+    // Create user response message
     const userMessage = interviewTranscriptService.createUserResponseMessage(response);
     
     // Add the user's response to the transcript
     const updatedTranscript = [...transcript, userMessage];
     
     setTranscript(updatedTranscript);
+    
+    // Update the user responses array at the correct index
     setUserResponses(prev => {
       const updated = [...prev];
       updated[currentQuestionIndex] = response;
@@ -39,9 +43,16 @@ export const useInterviewResponses = () => {
   }, [transcript]);
 
   const addQuestionToTranscript = useCallback((question: Question) => {
-    const questionMessage = interviewTranscriptService.createQuestionMessage(question);
-    setTranscript(prev => [...prev, questionMessage]);
-  }, []);
+    // Check if this question already exists in the transcript to prevent duplicates
+    const questionExists = transcript.some(msg => 
+      msg.role === 'ai' && msg.id === question.id
+    );
+    
+    if (!questionExists) {
+      const questionMessage = interviewTranscriptService.createQuestionMessage(question);
+      setTranscript(prev => [...prev, questionMessage]);
+    }
+  }, [transcript]);
 
   const addCompletionMessage = useCallback(() => {
     const completionMessage = interviewTranscriptService.createCompletionMessage();

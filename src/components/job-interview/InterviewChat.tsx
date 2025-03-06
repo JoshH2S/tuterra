@@ -12,6 +12,7 @@ import { TranscriptDownload } from "./TranscriptDownload";
 import { Loader, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InterviewErrorBoundary } from "./InterviewErrorBoundary";
+import { createQuestionMessage, createUserResponseMessage } from "@/services/interviewTranscriptService";
 
 interface InterviewChatProps {
   isCompleted: boolean;
@@ -27,6 +28,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     submitResponse,
     questions,
     transcript,
+    setTranscript,
     isGeneratingFeedback,
     feedback,
     detailedFeedback,
@@ -36,11 +38,27 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     startInterview
   } = useJobInterview();
 
-  // Memoize derived values
+  // Memoize derived values - ensure we have a valid display message
   const displayMessage = useMemo(() => 
     currentQuestion?.text || "", 
     [currentQuestion]
   );
+
+  // Ensure question is added to transcript when it changes
+  useEffect(() => {
+    if (currentQuestion && !isCompleted && !isTyping) {
+      // Check if this question already exists in the transcript
+      const questionExists = transcript.some(msg => 
+        msg.role === 'ai' && msg.id === currentQuestion.id
+      );
+      
+      // If question doesn't exist in transcript, add it
+      if (!questionExists) {
+        const questionMessage = createQuestionMessage(currentQuestion);
+        setTranscript(prev => [...prev, questionMessage]);
+      }
+    }
+  }, [currentQuestion, isCompleted, isTyping, transcript, setTranscript]);
 
   // Combine typing effects into a single useEffect
   useEffect(() => {
@@ -84,8 +102,15 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     }
   }, [timeLeft, submitResponse]);
 
-  // Memoized submit handler
+  // Memoized submit handler with additional transcript syncing
   const handleSubmit = useCallback((response: string) => {
+    if (!currentQuestion) return;
+    
+    // Add user response to transcript
+    const userMessage = createUserResponseMessage(response);
+    setTranscript(prev => [...prev, userMessage]);
+    
+    // Submit the response to the main interview logic
     submitResponse(response);
     setTimeLeft(null);
     
@@ -96,7 +121,7 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
         setTimeout(() => setIsTyping(false), 1000);
       });
     }
-  }, [currentQuestionIndex, questions.length, submitResponse]);
+  }, [currentQuestion, currentQuestionIndex, questions.length, submitResponse, setTranscript]);
 
   // When the current question updates, set a timer based on the estimated time
   useEffect(() => {

@@ -54,14 +54,16 @@ export const InterviewResponseInput = ({
     }
   };
 
-  // Calculate progress percentage
-  const progressPercentage = totalQuestions > 0 ? Math.floor((currentQuestionIndex / totalQuestions) * 100) : 0;
+  // Calculate progress percentage, ensuring we don't have negative values
+  const progressPercentage = totalQuestions > 0 ? 
+    Math.floor(((currentQuestionIndex + 1) / totalQuestions) * 100) : 0;
   
-  // Determine if this is the last question
+  // Determine if this is the last question (safely)
   const isLastQuestion = totalQuestions > 0 && currentQuestionIndex === totalQuestions - 1;
 
-  // Calculate remaining questions safely
-  const remainingQuestions = totalQuestions > 0 ? totalQuestions - currentQuestionIndex - 1 : 0;
+  // Calculate remaining questions safely, preventing negative values
+  const remainingQuestions = totalQuestions > 0 ? 
+    Math.max(0, totalQuestions - currentQuestionIndex - 1) : 0;
 
   return (
     <div className="flex flex-col w-full gap-3">
