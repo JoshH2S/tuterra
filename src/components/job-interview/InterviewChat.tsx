@@ -9,6 +9,9 @@ import { InterviewQuestion } from "./InterviewQuestion";
 import { InterviewResponseInput } from "./InterviewResponseInput";
 import { InterviewTimer } from "./InterviewTimer";
 import { TranscriptDownload } from "./TranscriptDownload";
+import { Loader, RefreshCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { InterviewErrorBoundary } from "./InterviewErrorBoundary";
 
 interface InterviewChatProps {
   isCompleted: boolean;
@@ -28,7 +31,9 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     feedback,
     detailedFeedback,
     currentQuestionIndex,
-    regenerateFeedback
+    regenerateFeedback,
+    isGenerating,
+    startInterview
   } = useJobInterview();
 
   // Memoize derived values
@@ -103,55 +108,84 @@ export const InterviewChat = ({ isCompleted, onComplete }: InterviewChatProps) =
     }
   }, [currentQuestion, isTyping, isCompleted, timeLeft]);
 
+  // Handle interview reset
+  const handleReset = useCallback(() => {
+    // Reset the interview state and restart
+    startInterview();
+  }, [startInterview]);
+
   return (
-    <Card className="shadow-lg flex flex-col h-[600px] md:h-[550px]">
-      <CardHeader className="border-b">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-xl md:text-2xl">AI Interview</CardTitle>
-          <div className="flex items-center gap-4">
-            {isCompleted && <TranscriptDownload transcript={transcript} />}
-            <InterviewTimer timeLeft={timeLeft} />
+    <InterviewErrorBoundary onReset={handleReset}>
+      <Card className="shadow-lg flex flex-col h-[600px] md:h-[550px]">
+        <CardHeader className="border-b">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl md:text-2xl">AI Interview</CardTitle>
+            <div className="flex items-center gap-4">
+              {isCompleted && <TranscriptDownload transcript={transcript} />}
+              <InterviewTimer timeLeft={timeLeft} />
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">
-        <AnimatePresence mode="wait" initial={false}>
-          {isTyping ? (
-            <InterviewTypingIndicator key="typing" />
-          ) : isCompleted ? (
-            <InterviewCompleted 
-              key="completed"
-              transcript={transcript} 
-              isGeneratingFeedback={isGeneratingFeedback}
-              feedback={feedback}
-              detailedFeedback={detailedFeedback}
-              onRegenerateFeedback={regenerateFeedback}
-            />
+        </CardHeader>
+        
+        <CardContent className="flex-1 overflow-hidden flex items-center justify-center p-6 md:p-8 relative">
+          {isGenerating ? (
+            <div className="flex flex-col items-center justify-center text-center p-6">
+              <Loader className="h-8 w-8 text-primary animate-spin mb-4" />
+              <p className="text-muted-foreground">Generating interview questions...</p>
+              <p className="text-xs text-muted-foreground mt-2">This may take a moment</p>
+            </div>
+          ) : questions.length === 0 ? (
+            <div className="text-center p-6 space-y-4">
+              <p className="text-muted-foreground">No questions available.</p>
+              <Button
+                onClick={handleReset}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Retry
+              </Button>
+            </div>
           ) : (
-            <InterviewQuestion 
-              key={`question-${currentQuestionIndex}`}
-              message={displayMessage} 
-              transcriptLength={transcript.length}
-              question={currentQuestion}
+            <AnimatePresence mode="wait" initial={false}>
+              {isTyping ? (
+                <InterviewTypingIndicator key="typing" />
+              ) : isCompleted ? (
+                <InterviewCompleted 
+                  key="completed"
+                  transcript={transcript} 
+                  isGeneratingFeedback={isGeneratingFeedback}
+                  feedback={feedback}
+                  detailedFeedback={detailedFeedback}
+                  onRegenerateFeedback={regenerateFeedback}
+                />
+              ) : (
+                <InterviewQuestion 
+                  key={`question-${currentQuestionIndex}`}
+                  message={displayMessage} 
+                  transcriptLength={transcript.length}
+                  question={currentQuestion}
+                  currentQuestionIndex={currentQuestionIndex}
+                  totalQuestions={questions.length}
+                />
+              )}
+            </AnimatePresence>
+          )}
+        </CardContent>
+        
+        {!isCompleted && !isGenerating && questions.length > 0 && (
+          <CardFooter className="border-t p-4">
+            <InterviewResponseInput
+              onSubmit={handleSubmit}
+              isTyping={isTyping}
               currentQuestionIndex={currentQuestionIndex}
               totalQuestions={questions.length}
+              onComplete={onComplete}
             />
-          )}
-        </AnimatePresence>
-      </CardContent>
-      
-      {!isCompleted && (
-        <CardFooter className="border-t p-4">
-          <InterviewResponseInput
-            onSubmit={handleSubmit}
-            isTyping={isTyping}
-            currentQuestionIndex={currentQuestionIndex}
-            totalQuestions={questions.length}
-            onComplete={onComplete}
-          />
-        </CardFooter>
-      )}
-    </Card>
+          </CardFooter>
+        )}
+      </Card>
+    </InterviewErrorBoundary>
   );
 };

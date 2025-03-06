@@ -7,6 +7,7 @@ import { InterviewChat } from "@/components/job-interview/InterviewChat";
 import { InterviewTranscript } from "@/components/job-interview/InterviewTranscript";
 import { useJobInterview } from "@/hooks/useJobInterview";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 
 const JobInterviewSimulator = () => {
   const {
@@ -25,6 +26,7 @@ const JobInterviewSimulator = () => {
   
   const isMobile = useIsMobile();
   const [showTranscript, setShowTranscript] = useState(false);
+  const { toast } = useToast();
 
   // Auto-toggle to transcript on mobile when interview is completed
   useEffect(() => {
@@ -36,6 +38,20 @@ const JobInterviewSimulator = () => {
   // On mobile, allow toggling between chat and transcript
   const toggleTranscript = () => {
     setShowTranscript(!showTranscript);
+  };
+
+  // Handle interview start with proper error handling
+  const handleStartInterview = () => {
+    try {
+      startInterview();
+    } catch (error) {
+      console.error("Failed to start interview:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem starting the interview. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -65,7 +81,7 @@ const JobInterviewSimulator = () => {
               setIndustry={setIndustry}
               setRole={setRole}
               setJobDescription={setJobDescription}
-              onStart={startInterview}
+              onStart={handleStartInterview}
             />
           ) : (
             <InterviewChat 
