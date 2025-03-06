@@ -36,15 +36,19 @@ const validateRequest = (body: any) => {
     throw new Error('Request body is missing or empty');
   }
   
-  const required = ['industry', 'jobRole', 'sessionId'];
+  // Check for both 'role' and 'jobRole' parameters to handle both naming conventions
+  const role = body.role || body.jobRole;
+  
+  const required = ['industry', 'sessionId'];
   const missing = required.filter(key => !body[key]);
   
-  if (missing.length > 0) {
-    throw new Error(`Missing required fields: ${missing.join(', ')}`);
+  if (missing.length > 0 || !role) {
+    const missingParams = !role ? [...missing, 'role/jobRole'] : missing;
+    throw new Error(`Missing required fields: ${missingParams.join(', ')}`);
   }
 
   if (typeof body.industry !== 'string' || 
-      typeof body.jobRole !== 'string' || 
+      typeof role !== 'string' || 
       typeof body.sessionId !== 'string') {
     throw new Error('Invalid parameter types');
   }
@@ -101,7 +105,16 @@ serve(async (req) => {
       );
     }
     
-    const { industry, jobRole, jobDescription, sessionId } = reqBody;
+    // Support both role and jobRole parameters
+    const { industry, role, jobRole, jobDescription, sessionId } = reqBody;
+    const effectiveRole = role || jobRole; // Use either parameter name
+    
+    console.log("Processed parameters:", { 
+      industry, 
+      role: effectiveRole,
+      jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A",
+      sessionId
+    });
     
     // Verify session exists in database before proceeding
     console.log(`Verifying session ${sessionId} exists in database`);
@@ -126,12 +139,12 @@ serve(async (req) => {
     console.log(`Session verified. Generating questions for session ${sessionId}`);
     console.log("Parameters:", { 
       industry, 
-      jobRole, 
+      role: effectiveRole, 
       jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A" 
     });
     
     // Generate the questions
-    const questions = generateMockQuestions(industry, jobRole, jobDescription);
+    const questions = generateMockQuestions(industry, effectiveRole, jobDescription);
     console.log(`Generated ${questions.length} questions`);
     
     // Save the questions to the database
@@ -177,18 +190,18 @@ serve(async (req) => {
 });
 
 // Generate mock questions based on industry, job role, and description
-function generateMockQuestions(industry: string, jobRole: string, jobDescription?: string) {
+function generateMockQuestions(industry: string, role: string, jobDescription?: string) {
   const currentDate = new Date().toISOString();
   const baseQuestions = [
     {
       id: `q-${crypto.randomUUID()}`,
-      question: `Tell me about your experience as a ${jobRole} in the ${industry} industry.`,
+      question: `Tell me about your experience as a ${role} in the ${industry} industry.`,
       question_order: 0,
       created_at: currentDate
     },
     {
       id: `q-${crypto.randomUUID()}`,
-      question: `What skills do you have that make you a good fit for this ${jobRole} position?`,
+      question: `What skills do you have that make you a good fit for this ${role} position?`,
       question_order: 1,
       created_at: currentDate
     },
@@ -237,21 +250,21 @@ function generateMockQuestions(industry: string, jobRole: string, jobDescription
   }
   
   // Add role-specific questions
-  if (jobRole.toLowerCase().includes('manager') || jobRole.toLowerCase().includes('leader')) {
+  if (role.toLowerCase().includes('manager') || role.toLowerCase().includes('leader')) {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
       question: "Describe your management style and how you motivate your team.",
       question_order: 6,
       created_at: currentDate
     });
-  } else if (jobRole.toLowerCase().includes('engineer') || jobRole.toLowerCase().includes('developer')) {
+  } else if (role.toLowerCase().includes('engineer') || role.toLowerCase().includes('developer')) {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
       question: "How do you approach debugging and troubleshooting complex technical issues?",
       question_order: 6,
       created_at: currentDate
     });
-  } else if (jobRole.toLowerCase().includes('analyst')) {
+  } else if (role.toLowerCase().includes('analyst')) {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
       question: "Describe how you would approach analyzing a complex dataset to extract meaningful insights.",

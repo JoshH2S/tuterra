@@ -36,10 +36,10 @@ export const useInterviewQuestions = (
     });
     
     try {
-      // Create the request payload
+      // Create the request payload - using 'role' instead of 'jobRole' to match server expectations
       const payload = { 
         industry, 
-        jobRole, 
+        role: jobRole, // Key change: parameter name standardization
         jobDescription, 
         sessionId 
       };

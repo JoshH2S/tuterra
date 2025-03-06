@@ -90,10 +90,13 @@ export const useInterviewSetup = (
       console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
+      // Add a small delay to ensure session is created in database before generating questions
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Step 2: Generate interview questions - directly after session creation
       try {
         console.log("Generating questions for session with ID:", sessionId);
-        // Explicitly pass all four parameters to generateQuestions
+        // Pass parameters in the correct order
         await generateQuestions(industry, jobRole, jobDescription, sessionId);
         setInterviewReady(true);
       } catch (questionError) {
