@@ -96,11 +96,22 @@ const JobInterviewSimulator = () => {
       console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
-      // Generate interview questions
-      console.log("Generating questions for new session...");
-      await generateQuestions(industry, jobRole, jobDescription);
-      
-      setInterviewReady(true);
+      // Wait for the session ID to be set before generating questions
+      setTimeout(async () => {
+        try {
+          // Generate interview questions
+          console.log("Generating questions for new session with ID:", sessionId);
+          await generateQuestions(industry, jobRole, jobDescription);
+          setInterviewReady(true);
+        } catch (questionError) {
+          console.error("Error generating questions:", questionError);
+          toast({
+            title: "Error",
+            description: "Failed to generate interview questions. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }, 500);
     } catch (error) {
       console.error("Error starting interview:", error);
       toast({

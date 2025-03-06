@@ -128,58 +128,49 @@ export const useInterviewQuestions = (
     try {
       console.log(`Fetching questions for session ${sessionId}`);
       
-      // Try to retrieve questions through the edge function
-      const { data, error } = await supabase.functions.invoke('get-interview-questions', {
-        body: { sessionId }
-      });
-
-      if (error) {
-        console.error("Error fetching questions from edge function:", error);
-        throw error;
+      // First try to get questions from interview_sessions table directly
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('interview_sessions')
+        .select('questions')
+        .eq('session_id', sessionId)
+        .single();
+      
+      if (sessionError) {
+        console.error("Error fetching questions from session data:", sessionError);
+        throw sessionError;
       }
       
-      if (data && Array.isArray(data.questions) && data.questions.length > 0) {
-        console.log(`Retrieved ${data.questions.length} questions via edge function`);
+      if (sessionData && sessionData.questions && Array.isArray(sessionData.questions) && sessionData.questions.length > 0) {
+        console.log(`Retrieved ${sessionData.questions.length} questions from session data`);
         
-        const questions: InterviewQuestion[] = data.questions.map((item: any) => ({
-          id: item.id || '',
-          session_id: item.session_id || '',
-          question: item.question || '',
-          question_order: typeof item.question_order === 'number' ? item.question_order : 0,
-          created_at: item.created_at || ''
+        // Format the questions from the session data
+        const formattedQuestions: InterviewQuestion[] = sessionData.questions.map((q: any, index: number) => ({
+          id: q.id || `session-q-${index}`,
+          session_id: sessionId,
+          question: q.question || q.text || '', // Handle different question formats
+          question_order: q.question_order || index,
+          created_at: q.created_at || new Date().toISOString()
         }));
         
-        setQuestions(questions);
+        setQuestions(formattedQuestions);
       } else {
-        // If no results from edge function, try getting questions from the session data
-        console.log("No questions from edge function, trying to get questions from interview session");
-        
-        const { data: sessionData, error: sessionError } = await supabase
-          .from('interview_sessions')
-          .select('questions')
-          .eq('session_id', sessionId)
-          .single();
-          
-        if (sessionError) {
-          console.error("Error fetching questions from session data:", sessionError);
-          throw sessionError;
+        // As a fallback, try the edge function
+        console.log("No questions in session data, trying edge function");
+        const { data, error } = await supabase.functions.invoke('get-interview-questions', {
+          body: { sessionId }
+        });
+
+        if (error) {
+          console.error("Error fetching questions from edge function:", error);
+          throw error;
         }
         
-        if (sessionData && sessionData.questions && Array.isArray(sessionData.questions)) {
-          console.log(`Retrieved ${sessionData.questions.length} questions from session data`);
+        if (data && Array.isArray(data.questions) && data.questions.length > 0) {
+          console.log(`Retrieved ${data.questions.length} questions via edge function`);
           
-          // Format the questions from the session data
-          const formattedQuestions: InterviewQuestion[] = sessionData.questions.map((q: any, index: number) => ({
-            id: q.id || `session-q-${index}`,
-            session_id: sessionId,
-            question: q.question || q.text || '', // Handle different question formats
-            question_order: q.question_order || index,
-            created_at: q.created_at || new Date().toISOString()
-          }));
-          
-          setQuestions(formattedQuestions);
+          setQuestions(data.questions);
         } else {
-          console.error("No questions found in session data");
+          console.error("No questions found via edge function");
           throw new Error("No interview questions found");
         }
       }
