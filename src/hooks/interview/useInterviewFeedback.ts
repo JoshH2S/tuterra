@@ -23,21 +23,19 @@ export const useInterviewFeedback = (
       if (error) throw error;
       
       if (data && data.feedback) {
-        // Parse the feedback data if needed
-        const feedbackData = typeof data.feedback.feedback === 'string' && data.feedback.feedback.startsWith('{') 
-          ? JSON.parse(data.feedback.feedback) 
-          : data.feedback.feedback;
-          
-        // Ensure the feedback data matches our InterviewFeedback interface
+        // Process the feedback data carefully
+        const feedbackData = data.feedback;
+        
+        // Create a properly typed feedback object with safe fallbacks
         const processedFeedback: InterviewFeedback = {
-          id: data.feedback.id,
-          session_id: data.feedback.session_id,
-          feedback: typeof feedbackData === 'object' ? feedbackData.feedback : data.feedback.feedback,
-          strengths: Array.isArray(data.feedback.strengths) ? data.feedback.strengths : [],
-          areas_for_improvement: Array.isArray(data.feedback.areas_for_improvement) ? data.feedback.areas_for_improvement : [],
-          overall_score: typeof data.feedback.overall_score === 'number' ? data.feedback.overall_score : 0,
-          created_at: data.feedback.created_at,
-          updated_at: data.feedback.updated_at || data.feedback.created_at
+          id: feedbackData.id || '',
+          session_id: feedbackData.session_id || '',
+          feedback: typeof feedbackData.feedback === 'string' ? feedbackData.feedback : '',
+          strengths: Array.isArray(feedbackData.strengths) ? feedbackData.strengths : [],
+          areas_for_improvement: Array.isArray(feedbackData.areas_for_improvement) ? feedbackData.areas_for_improvement : [],
+          overall_score: typeof feedbackData.overall_score === 'number' ? feedbackData.overall_score : 0,
+          created_at: feedbackData.created_at || '',
+          updated_at: feedbackData.updated_at || feedbackData.created_at || ''
         };
         
         setFeedback(processedFeedback);
@@ -63,32 +61,29 @@ export const useInterviewFeedback = (
     
     setLoading(true);
     try {
-      // Use custom query to avoid TypeScript errors with the table that's not in the types
-      const { data, error } = await supabase
-        .from('interview_feedback')
-        .select('*')
-        .eq('session_id', sessionId)
-        .single();
+      // Use functions.invoke instead of direct query since the table might not be in the types
+      const { data, error } = await supabase.functions.invoke('get-interview-feedback', {
+        body: { sessionId }
+      });
 
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
+      if (error) throw error;
       
-      if (data) {
-        // Extract feedback data safely
-        const feedbackObj = data.feedback || {};
+      if (data && data.feedback) {
+        const feedbackData = data.feedback;
         
-        // Construct a properly typed feedback object
-        const feedbackData: InterviewFeedback = {
-          id: data.id,
-          session_id: data.session_id,
-          feedback: typeof feedbackObj === 'object' && feedbackObj.feedback ? feedbackObj.feedback : String(feedbackObj),
-          strengths: Array.isArray(feedbackObj.strengths) ? feedbackObj.strengths : [],
-          areas_for_improvement: Array.isArray(feedbackObj.areas_for_improvement) ? feedbackObj.areas_for_improvement : [],
-          overall_score: typeof feedbackObj.overall_score === 'number' ? feedbackObj.overall_score : 0,
-          created_at: data.created_at,
-          updated_at: data.updated_at
+        // Construct a properly typed feedback object with safe defaults
+        const processedFeedback: InterviewFeedback = {
+          id: feedbackData.id || '',
+          session_id: feedbackData.session_id || '',
+          feedback: typeof feedbackData.feedback === 'string' ? feedbackData.feedback : '',
+          strengths: Array.isArray(feedbackData.strengths) ? feedbackData.strengths : [],
+          areas_for_improvement: Array.isArray(feedbackData.areas_for_improvement) ? feedbackData.areas_for_improvement : [],
+          overall_score: typeof feedbackData.overall_score === 'number' ? feedbackData.overall_score : 0,
+          created_at: feedbackData.created_at || '',
+          updated_at: feedbackData.updated_at || feedbackData.created_at || ''
         };
         
-        setFeedback(feedbackData);
+        setFeedback(processedFeedback);
       }
     } catch (error) {
       console.error("Error fetching feedback:", error);

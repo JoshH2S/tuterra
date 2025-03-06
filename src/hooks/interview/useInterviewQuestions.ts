@@ -46,41 +46,21 @@ export const useInterviewQuestions = (
     
     setLoading(true);
     try {
-      // Use a direct query approach with explicit type handling
-      const { data, error } = await supabase
-        .rpc('get_interview_questions', { session_id_param: sessionId })
-        .select('id, session_id, question, question_order, created_at');
+      // Use the edge function to fetch questions instead of direct query
+      const { data, error } = await supabase.functions.invoke('get-interview-questions', {
+        body: { sessionId }
+      });
 
-      // Fallback to direct query if RPC is not available
-      if (error && error.message.includes('function "get_interview_questions" does not exist')) {
-        const directQuery = await supabase
-          .from('interview_questions')
-          .select('id, session_id, question, question_order, created_at')
-          .eq('session_id', sessionId)
-          .order('question_order', { ascending: true });
-          
-        if (directQuery.error) throw directQuery.error;
-        
-        if (directQuery.data) {
-          // Map the data to ensure it matches our InterviewQuestion interface
-          const questions: InterviewQuestion[] = directQuery.data.map(item => ({
-            id: item.id,
-            session_id: item.session_id,
-            question: item.question,
-            question_order: item.question_order,
-            created_at: item.created_at
-          }));
-          
-          setQuestions(questions);
-        }
-      } else if (data) {
-        // If the RPC call succeeded, map the data
-        const questions: InterviewQuestion[] = data.map(item => ({
-          id: item.id,
-          session_id: item.session_id,
-          question: item.question,
-          question_order: item.question_order,
-          created_at: item.created_at
+      if (error) throw error;
+      
+      // Process the returned data
+      if (data && Array.isArray(data.questions)) {
+        const questions: InterviewQuestion[] = data.questions.map((item: any) => ({
+          id: item.id || '',
+          session_id: item.session_id || '',
+          question: item.question || '',
+          question_order: typeof item.question_order === 'number' ? item.question_order : 0,
+          created_at: item.created_at || ''
         }));
         
         setQuestions(questions);

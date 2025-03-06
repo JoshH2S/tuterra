@@ -15,7 +15,7 @@ export const useInterviewResponses = (
     
     setLoading(true);
     try {
-      // Directly append the response to the session rather than using a separate table
+      // Use the edge function to save the response
       const { error } = await supabase.functions.invoke('save-interview-response', {
         body: {
           questionId: question.id,
@@ -24,16 +24,17 @@ export const useInterviewResponses = (
       });
 
       if (error) {
-        // If the function isn't available yet, fall back to client-side processing
-        // This means we'll just update the local state without persistence for now
-        console.warn("Edge function not available, storing response in memory only");
+        console.warn("Edge function error:", error);
+        // We'll still update local state even if there's an error with the edge function
       }
       
       // Update local state with the new response
       setResponses((prev) => {
-        const newResponses = {...prev};
-        newResponses[question.id] = responseText;
-        return newResponses;
+        // Create a new responses object to avoid mutation
+        return {
+          ...prev,
+          [question.id]: responseText
+        };
       });
     } catch (error) {
       console.error("Error saving response:", error);
@@ -52,22 +53,23 @@ export const useInterviewResponses = (
     
     setLoading(true);
     try {
-      // Make a direct query for the responses
+      // Use the edge function to fetch responses
       const { data, error } = await supabase.functions.invoke('get-interview-responses', {
         body: { questionIds }
       });
 
       if (error) {
-        // If the function isn't available, handle this gracefully
-        console.warn("Edge function not available for fetching responses");
+        console.warn("Edge function error:", error);
         return;
       }
       
-      if (data && data.responses) {
+      if (data && Array.isArray(data.responses)) {
         // Create a map of question_id to user_response
         const responseMap: Record<string, string> = {};
         data.responses.forEach((response: any) => {
-          responseMap[response.question_id] = response.user_response;
+          if (response.question_id && response.user_response) {
+            responseMap[response.question_id] = response.user_response;
+          }
         });
         setResponses(responseMap);
       }
