@@ -225,13 +225,16 @@ export class InterviewFeedbackService {
         throw new Error("Interview session not found");
       }
 
-      // Convert the data to the right format
+      // Convert the data to the right format and apply proper type casting
       const request: FeedbackRequest = {
-        industry: sessionData.industry,
-        role: sessionData.role,
-        jobDescription: sessionData.job_description,
-        questions: sessionData.questions,
-        userResponses: sessionData.user_responses,
+        industry: sessionData.industry as string,
+        role: sessionData.role as string,
+        jobDescription: sessionData.job_description as string,
+        questions: (sessionData.questions as any[]).map(q => ({
+          ...q,
+          id: q.id || uuidv4()
+        })) as Question[],
+        userResponses: (sessionData.user_responses as string[]),
         sessionId
       };
 
@@ -258,7 +261,28 @@ export class InterviewFeedbackService {
 
       if (error) throw error;
 
-      return (data || []).map(item => item.feedback);
+      // Properly cast the feedback field from each row to FeedbackResponse
+      return (data || []).map(item => {
+        if (typeof item.feedback === 'string') {
+          try {
+            // If feedback is stored as a JSON string, parse it
+            return JSON.parse(item.feedback);
+          } catch (e) {
+            // If parsing fails, return a minimal valid object
+            return {
+              detailedFeedback: item.feedback,
+              overallScore: 0,
+              categoryScores: {},
+              strengths: [],
+              improvements: [],
+              keywords: { used: [], missed: [] }
+            };
+          }
+        } else {
+          // If feedback is already an object, return it
+          return item.feedback as FeedbackResponse;
+        }
+      });
     } catch (error) {
       console.error("Error fetching feedback history:", error);
       return [];
