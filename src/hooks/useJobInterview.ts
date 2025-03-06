@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Message, Question } from "@/types/interview";
-import { generateInterviewQuestions } from "@/services/interviewQuestionService";
+import { Message, Question, InterviewConfig } from "@/types/interview";
+import { interviewQuestionService } from "@/services/interviewQuestionService";
 import { generateInterviewFeedback } from "@/services/interviewFeedbackService";
 import { 
   createWelcomeMessage, 
@@ -25,6 +25,7 @@ export const useJobInterview = () => {
   const [userResponses, setUserResponses] = useState<string[]>([]);
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
   const [feedback, setFeedback] = useState<string | undefined>(undefined);
+  const [interviewMetadata, setInterviewMetadata] = useState<any>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
   
@@ -42,21 +43,30 @@ export const useJobInterview = () => {
     setIsGenerating(true);
     
     try {
-      // Generate interview questions
-      const generatedQuestions = await generateInterviewQuestions(industry, role, jobDescription);
-      setQuestions(generatedQuestions);
+      // Generate interview questions using the new service
+      const interviewConfig: InterviewConfig = {
+        industry,
+        role, 
+        jobDescription,
+        numberOfQuestions: 5 // Optional: let user configure this later
+      };
+      
+      const result = await interviewQuestionService.generateInterviewQuestions(interviewConfig);
+      setQuestions(result.questions);
+      setInterviewMetadata(result.metadata);
       
       // Add welcome message
       const welcomeMessage = createWelcomeMessage(role);
       setTranscript([welcomeMessage]);
       
       // Initialize responses array with empty slots for each question
-      setUserResponses(new Array(generatedQuestions.length).fill(""));
+      setUserResponses(new Array(result.questions.length).fill(""));
       
       // Reset the current question index
       setCurrentQuestionIndex(0);
       
-      console.log("Interview setup complete with", generatedQuestions.length, "questions");
+      console.log("Interview setup complete with", result.questions.length, "questions");
+      console.log("Interview metadata:", result.metadata);
     } catch (error) {
       console.error("Error setting up interview:", error);
       toast({
@@ -144,6 +154,7 @@ export const useJobInterview = () => {
     currentQuestionIndex,
     isGeneratingFeedback,
     feedback,
+    interviewMetadata,
     setIndustry,
     setRole,
     setJobDescription,

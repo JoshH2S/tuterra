@@ -5,9 +5,9 @@ export type Message = {
   text: string;
 };
 
-export type QuestionCategory = 'Technical' | 'Behavioral' | 'Situational' | 'Experience' | 'Core';
+export type QuestionCategory = 'Technical' | 'Behavioral' | 'Situational' | 'Experience' | 'Core' | 'Problem Solving' | 'Cultural Fit';
 
-export type QuestionDifficulty = 'Easy' | 'Medium' | 'Hard';
+export type QuestionDifficulty = 'Easy' | 'Medium' | 'Hard' | 'easy' | 'medium' | 'hard';
 
 export type Question = {
   id: string;
@@ -16,7 +16,31 @@ export type Question = {
   difficulty?: QuestionDifficulty;
   estimatedTimeSeconds?: number;
   keywords?: string[];
+  orderIndex?: number;
 };
+
+export interface QuestionCategoryConfig {
+  id: string;
+  name: QuestionCategory;
+  weight: number; // Percentage of questions to generate from this category
+}
+
+export interface InterviewConfig {
+  industry: string;
+  role: string;
+  jobDescription: string;
+  numberOfQuestions?: number;
+  timeLimit?: number; // in minutes
+  categories?: QuestionCategoryConfig[];
+}
+
+export interface GenerateQuestionsResponse {
+  questions: Question[];
+  metadata?: {
+    totalTime: number;
+    categoryBreakdown: Record<QuestionCategory, number>;
+  };
+}
 
 // Fallback questions in case API fails or returns too few questions
 export const FALLBACK_QUESTIONS = [
@@ -26,4 +50,3 @@ export const FALLBACK_QUESTIONS = [
   "Describe a time when you had to learn a new skill quickly.",
   "Where do you see yourself professionally in five years?"
 ];
-
