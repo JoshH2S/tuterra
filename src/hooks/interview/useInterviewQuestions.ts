@@ -69,21 +69,7 @@ export const useInterviewQuestions = ({
       // Ensure we have valid questions before updating state
       if (result && result.questions && result.questions.length > 0) {
         console.log(`Successfully generated ${result.questions.length} questions`);
-        
-        // Validate all questions have the required properties
-        const validQuestions = result.questions.filter(q => 
-          q && q.id && q.text && typeof q.text === 'string' && q.text.trim() !== ''
-        );
-        
-        if (validQuestions.length < result.questions.length) {
-          console.warn(`Filtered out ${result.questions.length - validQuestions.length} invalid questions`);
-        }
-        
-        if (validQuestions.length === 0) {
-          throw new Error("No valid questions were returned");
-        }
-        
-        setQuestions(validQuestions);
+        setQuestions(result.questions);
         setMetadata(result.metadata);
         setCurrentQuestionIndex(0);
         return result;
