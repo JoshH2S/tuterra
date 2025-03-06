@@ -29,12 +29,11 @@ export const useInterviewResponses = (
       }
       
       // Update local state with the new response
-      setResponses((prev) => {
-        // Create a new responses object to avoid mutation
-        return {
-          ...prev,
-          [question.id]: responseText
-        };
+      // Create a new responses object to avoid mutation and fix type error
+      setResponses((prevResponses) => {
+        const updatedResponses = { ...prevResponses };
+        updatedResponses[question.id] = responseText;
+        return updatedResponses;
       });
     } catch (error) {
       console.error("Error saving response:", error);
