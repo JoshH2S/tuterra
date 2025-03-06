@@ -29,12 +29,13 @@ export const useInterviewResponses = (
       }
       
       // Update local state with the new response
-      // Create a new responses object to avoid mutation and fix type error
-      setResponses((prevResponses) => {
-        const updatedResponses = { ...prevResponses };
-        updatedResponses[question.id] = responseText;
-        return updatedResponses;
-      });
+      // Create a copy of responses and update it directly
+      // Since setResponses expects a Record<string, string>, we need to update it this way
+      const updatedResponses: Record<string, string> = {};
+      updatedResponses[question.id] = responseText;
+      
+      // The parent component is responsible for merging with previous responses
+      setResponses(updatedResponses);
     } catch (error) {
       console.error("Error saving response:", error);
       toast({
