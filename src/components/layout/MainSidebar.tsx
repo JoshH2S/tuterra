@@ -23,3 +23,5 @@ export const MainSidebar = () => {
     </Sidebar>
   );
 };
+
+export default MainSidebar;

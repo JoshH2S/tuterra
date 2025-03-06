@@ -92,16 +92,30 @@ export const useInterviewQuestions = () => {
     industry: string
   ) => {
     try {
-      // Insert default questions into the database
-      const { data, error } = await supabase.rpc('create_default_questions', {
-        p_session_id: sessionId,
-        p_questions: DEFAULT_QUESTIONS
-      });
+      // Insert default questions into the database manually instead of using RPC
+      const insertPromises = DEFAULT_QUESTIONS.map((question, index) => 
+        supabase
+          .from('interview_questions')
+          .insert({
+            session_id: sessionId,
+            question: question,
+            question_order: index
+          })
+      );
+      
+      await Promise.all(insertPromises);
+      
+      // Fetch the inserted questions
+      const { data, error } = await supabase
+        .from('interview_questions')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('question_order', { ascending: true });
       
       if (error) throw error;
       
       // Format the questions to match our type
-      const formattedQuestions: InterviewQuestion[] = data.map((q: any, index: number) => ({
+      const formattedQuestions: InterviewQuestion[] = (data || []).map(q => ({
         id: q.id,
         sessionId: q.session_id,
         question: q.question,

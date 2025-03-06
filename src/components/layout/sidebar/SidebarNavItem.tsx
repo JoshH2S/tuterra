@@ -34,3 +34,5 @@ export const SidebarNavItem = ({
     </SidebarMenuItem>
   );
 };
+
+export default SidebarNavItem;

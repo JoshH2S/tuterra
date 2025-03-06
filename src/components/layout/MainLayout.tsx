@@ -25,3 +25,5 @@ export const MainLayout = () => {
     </TooltipProvider>
   );
 };
+
+export default MainLayout;
