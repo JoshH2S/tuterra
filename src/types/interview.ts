@@ -36,6 +36,18 @@ export interface InterviewFeedback {
   createdAt?: string;
 }
 
+// Add InterviewTranscript type that was missing
+export interface InterviewTranscript {
+  sessionId: string;
+  jobTitle: string;
+  industry: string;
+  questions: Array<{
+    id: string;
+    question: string;
+    response: string;
+  }>;
+}
+
 // UI state types
 export interface InterviewState {
   session: InterviewSession | null;

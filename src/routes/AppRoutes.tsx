@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import ProtectedRoute from './ProtectedRoute';
-import MainLayout from '@/components/layout/MainLayout';
+import { ProtectedRoute } from './ProtectedRoute';
+import { MainLayout } from '@/components/layout/MainLayout';
 
 // Pages
 import Index from '@/pages/Index';

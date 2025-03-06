@@ -5,7 +5,7 @@ import {
   SidebarHeader,
   SidebarContent,
 } from "@/components/ui/sidebar";
-import { SidebarNavigation } from "./sidebar/SidebarNavigation";
+import SidebarNavigation from "./sidebar/SidebarNavigation";
 import { SidebarUserProfile } from "./sidebar/SidebarUserProfile";
 
 export const MainSidebar = () => {

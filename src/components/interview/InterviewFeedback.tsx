@@ -128,3 +128,6 @@ export const InterviewFeedback: React.FC = () => {
     </Card>
   );
 };
+
+// Add this export to fix the import in JobInterviewSimulator.tsx
+export const InterviewFeedbackComponent = InterviewFeedback;

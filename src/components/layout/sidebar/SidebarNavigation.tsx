@@ -2,7 +2,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 
-import SidebarNavItem from './SidebarNavItem';
+import { SidebarNavItem } from './SidebarNavItem';
 import {
   GraduationCap,
   BarChart3,

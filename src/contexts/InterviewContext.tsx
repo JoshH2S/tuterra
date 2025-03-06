@@ -92,7 +92,7 @@ export const InterviewProvider: React.FC<{children: React.ReactNode}> = ({ child
           job_title: jobTitle,
           industry: industry,
           job_description: jobDescription,
-          status: 'created'
+          status: 'created' as const
         })
         .select()
         .single();
