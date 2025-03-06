@@ -68,8 +68,8 @@ const JobInterviewSimulator = () => {
   };
 
   return (
-    <div className="container py-6 max-w-5xl mx-auto px-4 sm:px-6">
-      <div className="space-y-8">
+    <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
+      <div className="space-y-4 md:space-y-8">
         {/* Online/Offline indicator */}
         <div className="flex justify-end">
           <div className="text-xs flex items-center gap-1 text-gray-500">

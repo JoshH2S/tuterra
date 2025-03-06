@@ -21,19 +21,30 @@ export const useInterviewPersistence = () => {
       return null;
     }
     
-    // Generate a new session ID with validation
-    const sessionId = uuidv4();
-    if (!sessionId) {
-      console.error("Failed to generate a valid session ID");
+    // Generate a new session ID
+    let sessionId;
+    try {
+      sessionId = uuidv4();
+      if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '' || !sessionId.includes('-')) {
+        throw new Error("Failed to generate a valid session ID");
+      }
+      
+      console.log(`Created valid session ID: ${sessionId}`);
+    } catch (uuidError) {
+      console.error("UUID generation error:", uuidError);
+      // Create a timestamp-based fallback ID if UUID generation fails
+      sessionId = `fallback-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      console.log(`Using fallback session ID: ${sessionId}`);
+      
       toast({
-        title: "Error",
-        description: "Failed to create an interview session. Please try again.",
+        title: "Session ID Issue",
+        description: "Created a fallback session ID. The interview will continue in offline mode.",
         variant: "destructive",
       });
-      return null;
+      
+      return sessionId;
     }
     
-    console.log(`Creating new session with ID: ${sessionId}`);
     setLoading(true);
     
     try {
@@ -60,15 +71,18 @@ export const useInterviewPersistence = () => {
       }
       
       console.log("Session created successfully:", { sessionId, dbId: data.id });
-      
-      // We'll skip the verification step for now since it's causing issues
-      // and directly return the session ID
       return sessionId;
+      
     } catch (error) {
       console.error("Error creating session:", error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
       toast({
         title: "Connection Issue",
-        description: "Failed to connect to interview service. Using offline mode.",
+        description: errorMessage.includes('network') || errorMessage.includes('connect') 
+          ? "Failed to connect to interview service. Using offline mode."
+          : "Failed to create interview session. Using offline mode.",
         variant: "destructive",
       });
       

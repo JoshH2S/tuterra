@@ -1,6 +1,6 @@
 
 import React from "react";
-import { AlertTriangle, WifiOff } from "lucide-react";
+import { AlertTriangle, WifiOff, KeySquare } from "lucide-react";
 
 interface InterviewDebugProps {
   sessionCreationErrors: string[];
@@ -13,16 +13,27 @@ export const InterviewDebug = ({ sessionCreationErrors }: InterviewDebugProps) =
     err.includes('connect') || err.includes('network') || err.includes('offline')
   );
   
+  const hasSessionError = sessionCreationErrors.some(err => 
+    err.includes('session') || err.includes('UUID') || err.includes('id')
+  );
+  
   return (
     <div className="bg-red-50 border border-red-200 p-4 rounded-md mb-4 shadow-sm">
       <div className="flex items-start">
-        {hasConnectionError ? 
-          <WifiOff className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" /> :
+        {hasConnectionError ? (
+          <WifiOff className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
+        ) : hasSessionError ? (
+          <KeySquare className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
+        ) : (
           <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
-        }
+        )}
         <div>
           <h3 className="text-red-700 font-medium">
-            {hasConnectionError ? "Connection Issues" : "Interview Setup Issues"}
+            {hasConnectionError 
+              ? "Connection Issues" 
+              : hasSessionError 
+                ? "Session Creation Issues" 
+                : "Interview Setup Issues"}
           </h3>
           <ul className="text-sm text-red-600 mt-2 space-y-1">
             {sessionCreationErrors.map((err, i) => (
@@ -35,7 +46,9 @@ export const InterviewDebug = ({ sessionCreationErrors }: InterviewDebugProps) =
           <p className="text-xs text-red-500 mt-3">
             {hasConnectionError 
               ? "The system is using local fallback questions. Your interview can continue offline." 
-              : "The system will use local fallback questions if possible. If the issue persists, please try again later or refresh the page."}
+              : hasSessionError
+                ? "The system had trouble creating your interview session. Using local fallback questions instead."
+                : "The system will use local fallback questions if possible. If the issue persists, please try again later or refresh the page."}
           </p>
         </div>
       </div>
