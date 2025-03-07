@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Configuration, OpenAIApi } from "https://esm.sh/openai@3.3.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 
 // Get environment variables
@@ -32,20 +31,6 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY is not set");
     }
 
-    // Initialize OpenAI client properly
-    const configuration = new Configuration({
-      apiKey: openAiKey,
-      // Remove any default headers that might conflict
-      baseOptions: {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    });
-
-    // Create OpenAI client without any custom Axios config
-    const openai = new OpenAIApi(configuration);
-
     const { sessionId, transcript } = await req.json();
     
     if (!sessionId) {
@@ -75,11 +60,9 @@ serve(async (req) => {
       .map((item, index) => `Question ${index + 1}: ${item.question}\nAnswer: ${item.answer}`)
       .join("\n\n");
     
-    // Generate feedback with OpenAI
-    const promptText = `
+    // Create the system prompt for the AI
+    const systemPrompt = `
     You are an expert interview coach. Review the following job interview transcript and provide constructive feedback:
-    
-    ${formattedTranscript}
     
     Provide an analysis in JSON format with the following structure:
     {
@@ -91,17 +74,38 @@ serve(async (req) => {
     `;
     
     try {
-      // Make the OpenAI API call
-      const completion = await openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: "You are a helpful interview coach that provides constructive feedback." },
-          { role: "user", content: promptText }
-        ],
-        temperature: 0.7,
+      // Make direct API call to OpenAI using fetch
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openAiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { 
+              role: "system", 
+              content: systemPrompt 
+            },
+            { 
+              role: "user", 
+              content: formattedTranscript 
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
       });
       
-      const responseText = completion.data.choices[0]?.message?.content || "{}";
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenAI API error:", errorText);
+        throw new Error(`OpenAI API request failed: ${response.status} - ${errorText}`);
+      }
+      
+      const completion = await response.json();
+      const responseText = completion.choices[0]?.message?.content || "{}";
       
       // Parse the response to extract the feedback
       let feedbackData;
