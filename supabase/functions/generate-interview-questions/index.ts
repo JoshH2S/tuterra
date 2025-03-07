@@ -9,7 +9,7 @@ const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 // Define interface for interview questions
 interface InterviewQuestion {
   id: string;
-  text: string; // Changed from 'question' to 'text'
+  text: string;
   category: string;
   difficulty: string;
   estimatedTimeSeconds: number;
