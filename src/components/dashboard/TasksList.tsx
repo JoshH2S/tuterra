@@ -4,11 +4,12 @@ import { motion } from "framer-motion";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, CheckCircle2, Clock, GraduationCap } from "lucide-react";
+import { Plus, CheckCircle2, Clock, GraduationCap, ChevronRight } from "lucide-react";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { cn } from "@/lib/utils";
 import { format, isAfter, isBefore, addDays } from "date-fns";
+import { useSwipeable } from "react-swipeable";
 
 interface TasksListProps {
   sessions?: StudySession[];
@@ -28,6 +29,7 @@ type Task = {
 
 export function TasksList({ sessions = [], courses = [], onCreateSession }: TasksListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
   // Convert upcoming study sessions to tasks
   const sessionTasks: Task[] = sessions
@@ -61,12 +63,17 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
     return 0;
   });
 
-  const handleToggleComplete = (taskId: string) => {
+  const handleToggleComplete = (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     setTasks(prevTasks => 
       prevTasks.map(task => 
         task.id === taskId ? { ...task, completed: !task.completed } : task
       )
     );
+  };
+
+  const toggleExpandTask = (taskId: string) => {
+    setExpandedTaskId(prev => prev === taskId ? null : taskId);
   };
 
   return (
@@ -77,7 +84,11 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
             <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />
             <h3 className="text-lg font-semibold">Upcoming Tasks</h3>
           </div>
-          <Button size="sm" onClick={onCreateSession}>
+          <Button 
+            size="sm" 
+            onClick={onCreateSession}
+            className="touch-manipulation" // Improve touch target
+          >
             <Plus className="h-4 w-4 mr-2" />
             Schedule Study
           </Button>
@@ -88,7 +99,12 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
         {allTasks.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-2">No upcoming tasks</p>
-            <Button variant="outline" size="sm" onClick={onCreateSession}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onCreateSession}
+              className="touch-manipulation min-h-[44px]"
+            >
               Schedule a study session
             </Button>
           </div>
@@ -99,7 +115,9 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
                 key={task.id} 
                 task={task} 
                 courses={courses}
-                onToggle={handleToggleComplete} 
+                isExpanded={expandedTaskId === task.id}
+                onToggle={() => toggleExpandTask(task.id)}
+                onComplete={(e) => handleToggleComplete(task.id, e)} 
               />
             ))}
           </div>
@@ -112,40 +130,72 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
 interface TaskItemProps {
   task: Task;
   courses: StudentCourse[];
-  onToggle: (id: string) => void;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onComplete: (e: React.MouseEvent) => void;
 }
 
-function TaskItem({ task, courses, onToggle }: TaskItemProps) {
+function TaskItem({ task, courses, isExpanded, onToggle, onComplete }: TaskItemProps) {
   const course = task.courseId 
     ? courses.find(c => c.course_id === task.courseId)
     : undefined;
 
+  // Setup swipe handlers for mobile
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => onToggle(),
+    onSwipedRight: () => onToggle(),
+    trackMouse: false
+  });
+
   return (
     <motion.div
+      {...swipeHandlers}
       whileHover={{ x: 4 }}
+      whileTap={{ scale: 0.98 }}
       className={cn(
-        "flex items-center gap-4 p-4 rounded-lg border",
+        "flex items-start gap-4 p-4 rounded-lg border touch-manipulation",
         task.completed ? "bg-gray-50 dark:bg-gray-800/20" : "bg-white dark:bg-gray-800"
       )}
+      onClick={onToggle}
     >
-      <Checkbox 
-        checked={task.completed} 
-        onCheckedChange={() => onToggle(task.id)}
-        className="h-5 w-5"
-      />
+      <div className="pt-0.5 min-w-[28px]">
+        <Checkbox 
+          checked={task.completed} 
+          onCheckedChange={onComplete}
+          className="h-5 w-5"
+        />
+      </div>
       
       <div className="flex-1 min-w-0">
-        <p className={cn(
-          "text-sm font-medium",
-          task.completed ? "text-muted-foreground line-through" : ""
-        )}>
-          {task.title}
-        </p>
-        {task.description && (
-          <p className="text-sm text-muted-foreground truncate">
-            {task.description}
+        <div className="flex items-start justify-between">
+          <p className={cn(
+            "text-sm font-medium",
+            task.completed ? "text-muted-foreground line-through" : ""
+          )}>
+            {task.title}
           </p>
-        )}
+          <ChevronRight 
+            className={cn(
+              "h-5 w-5 text-muted-foreground transition-transform",
+              isExpanded ? "rotate-90" : ""
+            )} 
+          />
+        </div>
+        
+        <motion.div
+          initial={false}
+          animate={{ height: isExpanded ? 'auto' : '1.5rem' }}
+          className="overflow-hidden"
+        >
+          {task.description && (
+            <p className={cn(
+              "text-sm text-muted-foreground",
+              !isExpanded && "truncate"
+            )}>
+              {task.description}
+            </p>
+          )}
+        </motion.div>
         
         <div className="flex flex-wrap items-center gap-3 mt-1">
           {task.dueDate && (
