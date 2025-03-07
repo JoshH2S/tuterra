@@ -1,3 +1,4 @@
+
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
@@ -8,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
+import { DesktopDashboard } from "@/components/dashboard/DesktopDashboard";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -30,83 +32,79 @@ export default function StudentDashboard() {
     );
   }
 
-  // Collect all strengths and areas for improvement across all courses
-  const allStrengths = performance.flatMap(p => p.strengths || []);
-  const allAreasForImprovement = performance.flatMap(p => p.areas_for_improvement || []);
-  
-  // Remove duplicates
-  const uniqueStrengths = [...new Set(allStrengths)];
-  const uniqueAreasForImprovement = [...new Set(allAreasForImprovement)];
-
   const handleCreateSession = async (sessionData: Omit<StudySession, 'id' | 'student_id'>) => {
     await createSession(sessionData);
   };
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'py-6 px-4' : 'py-12'} space-y-6 md:space-y-8`}>
-      <div>
+    <div className={`container mx-auto ${isMobile ? 'py-6 px-4' : 'py-12'}`}>
+      <div className="mb-6">
         <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-bold mb-2`}>My Dashboard</h1>
         <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
           Track your progress and performance across all your courses
         </p>
       </div>
 
-      <NewsFeed courses={courses} />
+      {isMobile ? (
+        <div className="space-y-6 md:space-y-8">
+          <NewsFeed courses={courses} />
 
-      {insights.length > 0 && (
-        <div className="grid gap-3">
-          {insights.map((insight, index) => {
-            const Icon = insight.type === 'warning' 
-              ? AlertTriangle 
-              : insight.type === 'achievement' 
-                ? Trophy 
-                : TrendingUp;
+          {insights.length > 0 && (
+            <div className="grid gap-3">
+              {insights.map((insight, index) => {
+                const Icon = insight.type === 'warning' 
+                  ? AlertTriangle 
+                  : insight.type === 'achievement' 
+                    ? Trophy 
+                    : TrendingUp;
 
-            const bgColor = insight.type === 'warning'
-              ? 'bg-yellow-50 border-yellow-200'
-              : insight.type === 'achievement'
-                ? 'bg-green-50 border-green-200'
-                : 'bg-blue-50 border-blue-200';
+                const bgColor = insight.type === 'warning'
+                  ? 'bg-yellow-50 border-yellow-200'
+                  : insight.type === 'achievement'
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-blue-50 border-blue-200';
 
-            const textColor = insight.type === 'warning'
-              ? 'text-yellow-600'
-              : insight.type === 'achievement'
-                ? 'text-green-600'
-                : 'text-blue-600';
+                const textColor = insight.type === 'warning'
+                  ? 'text-yellow-600'
+                  : insight.type === 'achievement'
+                    ? 'text-green-600'
+                    : 'text-blue-600';
 
-            return (
-              <Alert key={index} className={`${bgColor} ${isMobile ? 'p-3' : ''}`}>
-                <Icon className={`h-4 w-4 ${textColor}`} />
-                <AlertDescription className={`${textColor} ${isMobile ? 'text-sm' : ''}`}>
-                  {insight.message}
-                  {insight.metric && ` (${insight.metric.toFixed(1)}${insight.type === 'improvement' ? '%' : ''})`}
-                </AlertDescription>
-              </Alert>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
-        <div className="space-y-6">
-          <PerformanceOverview performance={performance} />
-
-          {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
-            <StrengthsAndAreas 
-              strengths={uniqueStrengths} 
-              areasForImprovement={uniqueAreasForImprovement} 
-            />
+                return (
+                  <Alert key={index} className={`${bgColor} ${isMobile ? 'p-3' : ''}`}>
+                    <Icon className={`h-4 w-4 ${textColor}`} />
+                    <AlertDescription className={`${textColor} ${isMobile ? 'text-sm' : ''}`}>
+                      {insight.message}
+                      {insight.metric && ` (${insight.metric.toFixed(1)}${insight.type === 'improvement' ? '%' : ''})`}
+                    </AlertDescription>
+                  </Alert>
+                );
+              })}
+            </div>
           )}
 
-          <div>
-            <StudyCalendar 
-              sessions={sessions}
-              courses={courses}
-              onCreateSession={handleCreateSession}
-            />
+          <div className="grid gap-6">
+            <div className="space-y-6">
+              <PerformanceOverview performance={performance} />
+
+              <StudyCalendar 
+                sessions={sessions}
+                courses={courses}
+                onCreateSession={handleCreateSession}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <DesktopDashboard
+          performance={performance}
+          insights={insights}
+          sessions={sessions}
+          createSession={handleCreateSession}
+        >
+          <NewsFeed courses={courses} />
+        </DesktopDashboard>
+      )}
     </div>
   );
 }

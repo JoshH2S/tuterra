@@ -24,11 +24,11 @@ export const MainLayout = () => {
           <MainSidebar />
           <div className="flex-1 flex flex-col">
             {isMobile ? <MobileHeader /> : <DesktopHeader />}
-            <main className="flex-1 px-4 md:px-8 py-4 md:py-8 pb-24 lg:pb-8">
+            <main className={`flex-1 ${isMobile ? 'px-4 py-4 pb-24' : 'px-8 py-8'} overflow-x-hidden`}>
               <AppRoutes />
             </main>
           </div>
-          <MobileNavigation />
+          {isMobile && <MobileNavigation />}
         </div>
       </SidebarProvider>
     </TooltipProvider>
