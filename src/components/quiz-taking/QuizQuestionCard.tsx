@@ -1,4 +1,5 @@
-
+import { useState, useRef, useEffect } from "react";
+import { QuizQuestion } from "@/components/quiz/QuizQuestion";
 import { RadioGroup } from "@/components/ui/radio-group";
 import {
   Card,
@@ -9,13 +10,12 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState, useRef, useEffect } from "react";
 import { QuizAnswerOption } from "./QuizAnswerOption";
 import { QuizAnswerFeedback } from "./QuizAnswerFeedback";
-import { QuizQuestion } from "@/hooks/quiz/quizTypes";
+import { QuizQuestion as QuizQuestionType } from "@/hooks/quiz/quizTypes";
 
 interface QuizQuestionCardProps {
-  question: QuizQuestion;
+  question: QuizQuestionType;
   currentIndex: number;
   totalQuestions: number;
   selectedAnswer: string | undefined;
@@ -25,6 +25,8 @@ interface QuizQuestionCardProps {
   showFeedback: boolean;
   explanations?: Record<number, string>;
   isGeneratingExplanation?: boolean;
+  timeRemaining?: number | null;
+  answeredQuestions?: number[];
 }
 
 export const QuizQuestionCard = ({
@@ -38,6 +40,8 @@ export const QuizQuestionCard = ({
   showFeedback,
   explanations = {},
   isGeneratingExplanation = false,
+  timeRemaining = null,
+  answeredQuestions = [],
 }: QuizQuestionCardProps) => {
   const isMobile = useIsMobile();
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -83,87 +87,104 @@ export const QuizQuestionCard = ({
     setTouchEnd(null);
   };
 
-  if (!question) {
+  // Use the modern design for non-mobile devices, classic design for mobile
+  if (isMobile) {
+    // ... keep existing code for mobile view
+    const progressPercentage = ((currentIndex + 1) / totalQuestions) * 100;
+    const isAnswerCorrect = selectedAnswer === question.correct_answer;
+    const answerSubmitted = showFeedback && selectedAnswer;
+    const currentExplanation = explanations[currentIndex];
+
+    if (!question) {
+      return (
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle>Take Quiz</CardTitle>
+            <CardDescription>
+              Question {currentIndex + 1} / {totalQuestions}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="py-8 text-center text-amber-600">
+              Error loading question. Please try refreshing the page.
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
-      <Card className="max-w-2xl mx-auto">
+      <Card 
+        className="max-w-2xl mx-auto"
+        ref={cardRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <CardHeader>
           <CardTitle>Take Quiz</CardTitle>
           <CardDescription>
             Question {currentIndex + 1} / {totalQuestions}
           </CardDescription>
+          <Progress value={progressPercentage} className="h-2 mt-2" />
         </CardHeader>
-        <CardContent>
-          <div className="py-8 text-center text-amber-600">
-            Error loading question. Please try refreshing the page.
+        <CardContent className="space-y-4">
+          <div className="mb-4">
+            <p className="text-lg font-semibold">
+              Question {currentIndex + 1} / {totalQuestions}
+            </p>
+            <p className="text-gray-600">{question.question}</p>
+          </div>
+          
+          <RadioGroup
+            value={selectedAnswer || ""}
+            onValueChange={(value) => onAnswerSelect(value)}
+            className="space-y-1 sm:space-y-2"
+            disabled={Boolean(answerSubmitted)}
+            key={question.id} // Force RadioGroup to remount when question changes
+          >
+            {Object.entries(question.options).map(([key, value]) => (
+              <QuizAnswerOption
+                key={`${question.id}-${key}`} // Ensure unique keys across questions
+                optionKey={key}
+                optionValue={value}
+                isCorrect={key === question.correct_answer}
+                isSelected={key === selectedAnswer}
+                showFeedback={Boolean(answerSubmitted)}
+                disabled={Boolean(answerSubmitted)}
+              />
+            ))}
+          </RadioGroup>
+
+          {answerSubmitted && (
+            <QuizAnswerFeedback
+              isCorrect={isAnswerCorrect}
+              correctAnswerText={question.options[question.correct_answer]}
+              explanation={currentExplanation}
+              isLoadingExplanation={isGeneratingExplanation}
+            />
+          )}
+
+          <div className="mt-4 flex justify-center text-sm text-gray-500">
+            <p>Swipe left/right to navigate</p>
           </div>
         </CardContent>
       </Card>
     );
+  } else {
+    // Modern design for desktop
+    return (
+      <QuizQuestion
+        question={question}
+        currentQuestion={currentIndex}
+        totalQuestions={totalQuestions}
+        timeRemaining={timeRemaining}
+        selectedAnswer={selectedAnswer}
+        answeredQuestions={answeredQuestions}
+        onAnswerSelect={onAnswerSelect}
+        onNext={onNext}
+        onPrevious={onPrevious}
+      />
+    );
   }
-
-  const progressPercentage = ((currentIndex + 1) / totalQuestions) * 100;
-  const isAnswerCorrect = selectedAnswer === question.correct_answer;
-  const answerSubmitted = showFeedback && selectedAnswer;
-  const currentExplanation = explanations[currentIndex];
-
-  return (
-    <Card 
-      className="max-w-2xl mx-auto"
-      ref={cardRef}
-      onTouchStart={isMobile ? handleTouchStart : undefined}
-      onTouchMove={isMobile ? handleTouchMove : undefined}
-      onTouchEnd={isMobile ? handleTouchEnd : undefined}
-    >
-      <CardHeader>
-        <CardTitle>Take Quiz</CardTitle>
-        <CardDescription>
-          Question {currentIndex + 1} / {totalQuestions}
-        </CardDescription>
-        <Progress value={progressPercentage} className="h-2 mt-2" />
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="mb-4">
-          <p className="text-lg font-semibold">
-            Question {currentIndex + 1} / {totalQuestions}
-          </p>
-          <p className="text-gray-600">{question.question}</p>
-        </div>
-        
-        <RadioGroup
-          value={selectedAnswer || ""}
-          onValueChange={(value) => onAnswerSelect(value)}
-          className="space-y-1 sm:space-y-2"
-          disabled={Boolean(answerSubmitted)}
-          key={question.id} // Force RadioGroup to remount when question changes
-        >
-          {Object.entries(question.options).map(([key, value]) => (
-            <QuizAnswerOption
-              key={`${question.id}-${key}`} // Ensure unique keys across questions
-              optionKey={key}
-              optionValue={value}
-              isCorrect={key === question.correct_answer}
-              isSelected={key === selectedAnswer}
-              showFeedback={Boolean(answerSubmitted)}
-              disabled={Boolean(answerSubmitted)}
-            />
-          ))}
-        </RadioGroup>
-
-        {answerSubmitted && (
-          <QuizAnswerFeedback
-            isCorrect={isAnswerCorrect}
-            correctAnswerText={question.options[question.correct_answer]}
-            explanation={currentExplanation}
-            isLoadingExplanation={isGeneratingExplanation}
-          />
-        )}
-
-        {isMobile && (
-          <div className="mt-4 flex justify-center text-sm text-gray-500">
-            <p>Swipe left/right to navigate</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
 };
