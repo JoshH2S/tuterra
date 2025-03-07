@@ -32,18 +32,20 @@ export const generateQuestionsFromApi = async (
     // Log the exact payload being sent to help with debugging
     console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // Get the URL from the supabase client configuration
-    const url = new URL(supabase.auth.url);
-    const baseUrl = `${url.protocol}//${url.host}`;
-    const functionUrl = `${baseUrl}/functions/v1/generate-interview-questions`;
+    // Use the direct URL from environment or constants instead of trying to access protected properties
+    const functionUrl = `${import.meta.env.VITE_SUPABASE_URL || 'https://nhlsrtubyvggtkyrhkuu.supabase.co'}/functions/v1/generate-interview-questions`;
     
     console.log("Endpoint URL:", functionUrl);
+    
+    // Get the current session access token
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
     
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`
+        'Authorization': `Bearer ${accessToken}`
       },
       body: JSON.stringify(payload)
     });
