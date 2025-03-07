@@ -52,12 +52,14 @@ export const SidebarNavItem = ({
         )} />
       </motion.div>
       
-      {!isCollapsed && (
+      {/* Always show text for active items, even when sidebar is collapsed */}
+      {(!isCollapsed || (isCollapsed && isActive)) && (
         <span className={cn(
-          "text-transparent bg-clip-text transition-colors",
+          "text-transparent bg-clip-text transition-colors z-10",
           isActive
             ? "bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500"
-            : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 group-hover:from-gray-800 group-hover:to-gray-700 dark:group-hover:from-gray-300 dark:group-hover:to-gray-400"
+            : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 group-hover:from-gray-800 group-hover:to-gray-700 dark:group-hover:from-gray-300 dark:group-hover:to-gray-400",
+          isCollapsed && isActive && "absolute left-16 bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-md whitespace-nowrap"
         )}>
           {children}
         </span>
@@ -77,7 +79,7 @@ export const SidebarNavItem = ({
     <SidebarMenuItem>
       <motion.div variants={itemVariants}>
         <SidebarMenuButton asChild>
-          {isCollapsed ? (
+          {isCollapsed && !isActive ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 {itemContent}
