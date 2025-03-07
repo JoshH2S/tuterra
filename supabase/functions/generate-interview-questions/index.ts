@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 
@@ -199,23 +198,41 @@ serve(async (req) => {
       );
     }
     
-    // Verify session exists in database before proceeding
+    // Verify session exists in database before proceeding - using a more robust check
     console.log(`Verifying session ${sessionId} exists in database`);
     const { data: sessionData, error: sessionError } = await supabase
       .from('interview_sessions')
-      .select('id')
+      .select('id, session_id')
       .eq('session_id', sessionId)
-      .single();
-    
-    if (sessionError || !sessionData) {
-      console.error("Session verification failed:", sessionError || "Session not found");
+      .limit(1);
+
+    console.log("Session verification result:", { 
+      sessionData, 
+      sessionError,
+      requestedSessionId: sessionId 
+    });
+
+    if (sessionError) {
+      console.error("Session verification failed:", sessionError);
       return new Response(
         JSON.stringify({ 
-          error: "Invalid session ID or session not found",
-          sessionId,
-          dbError: sessionError?.message || "Session not found in database"
+          error: "Failed to verify session",
+          details: sessionError.message,
+          sessionId 
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+        { headers: corsHeaders, status: 500 }
+      );
+    }
+
+    if (!sessionData || sessionData.length === 0) {
+      console.error("Session not found:", sessionId);
+      return new Response(
+        JSON.stringify({ 
+          error: "Session not found",
+          sessionId,
+          suggestion: "Please ensure the session is created before generating questions"
+        }),
+        { headers: corsHeaders, status: 404 }
       );
     }
     

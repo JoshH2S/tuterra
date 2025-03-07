@@ -5,6 +5,7 @@ import { useInterviewPersistence } from "./useInterviewPersistence";
 import { useInterviewQuestions } from "./useInterviewQuestions";
 import { InterviewQuestion } from "@/types/interview";
 import { v4 as uuidv4 } from "@/lib/uuid";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useInterviewSetup = (
   setCurrentSessionId: (id: string) => void,
@@ -90,29 +91,55 @@ export const useInterviewSetup = (
       console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
-      // Add a small delay to ensure session is created in database before generating questions
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Add a delay to ensure session is created in database before generating questions
+      console.log("Waiting for session to be available...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Step 2: Generate interview questions - directly after session creation
+      // Verify session exists before generating questions
       try {
-        console.log("Generating questions for session with ID:", sessionId);
-        // Pass parameters in the correct order
-        await generateQuestions(industry, jobRole, jobDescription, sessionId);
-        setInterviewReady(true);
-      } catch (questionError) {
-        console.error("Error generating questions:", questionError);
+        const { data: sessionCheck, error: checkError } = await supabase
+          .from('interview_sessions')
+          .select('id')
+          .eq('session_id', sessionId)
+          .single();
+          
+        if (checkError) {
+          console.error("Error verifying session:", checkError);
+          throw new Error(`Session verification error: ${checkError.message}`);
+        }
         
-        // Use fallback questions instead
-        console.log("Using fallback questions due to error");
-        const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
-        setQuestions(fallbackQuestions);
-        setUsedFallbackQuestions(true);
-        setInterviewReady(true);
+        if (!sessionCheck) {
+          console.error("Session not found after creation:", sessionId);
+          throw new Error("Session not found after creation");
+        }
         
-        setSessionCreationErrors(prev => [
-          ...prev, 
-          `Question generation failed: ${questionError instanceof Error ? questionError.message : 'Unknown error'}`
-        ]);
+        console.log("Session verified, proceeding with question generation:", sessionCheck);
+        
+        // Step 2: Generate interview questions - directly after session creation
+        try {
+          console.log("Generating questions for session with ID:", sessionId);
+          // Pass parameters in the correct order
+          await generateQuestions(industry, jobRole, jobDescription, sessionId);
+          setInterviewReady(true);
+        } catch (questionError) {
+          console.error("Error generating questions:", questionError);
+          
+          // Use fallback questions instead
+          console.log("Using fallback questions due to error");
+          const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
+          setQuestions(fallbackQuestions);
+          setUsedFallbackQuestions(true);
+          setInterviewReady(true);
+          
+          setSessionCreationErrors(prev => [
+            ...prev, 
+            `Question generation failed: ${questionError instanceof Error ? questionError.message : 'Unknown error'}`
+          ]);
+        }
+      } catch (verificationError) {
+        console.error("Session verification failed:", verificationError);
+        setSessionCreationErrors(prev => [...prev, "Failed to verify session creation"]);
+        handleFallbackMode(jobRole, industry);
       }
     } catch (error) {
       console.error("Error starting interview:", error);

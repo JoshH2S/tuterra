@@ -32,8 +32,9 @@ export const generateQuestionsFromApi = async (
     // Log the exact payload being sent to help with debugging
     console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // Use the direct URL from environment or constants instead of trying to access protected properties
-    const functionUrl = `${import.meta.env.VITE_SUPABASE_URL || 'https://nhlsrtubyvggtkyrhkuu.supabase.co'}/functions/v1/generate-interview-questions`;
+    // Use the environment variable for Supabase URL
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://nhlsrtubyvggtkyrhkuu.supabase.co';
+    const functionUrl = `${supabaseUrl}/functions/v1/generate-interview-questions`;
     
     console.log("Endpoint URL:", functionUrl);
     

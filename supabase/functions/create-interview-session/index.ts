@@ -27,7 +27,10 @@ serve(async (req) => {
   try {
     const { sessionId, industry, role, jobDescription } = await req.json();
     
+    console.log("Create session request received:", { sessionId, industry, role });
+    
     if (!sessionId || !industry || !role) {
+      console.error("Missing required parameters:", { sessionId, industry, role });
       return new Response(
         JSON.stringify({ error: "Missing required parameters" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -47,12 +50,32 @@ serve(async (req) => {
       })
       .select('id');
     
+    // Add more logging after the insert query
+    console.log("Session creation result:", { data, error });
+
     if (error) {
+      console.error("Failed to create session:", error);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ 
+          error: error.message,
+          details: error.details
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
+
+    if (!data || data.length === 0) {
+      console.error("No session data returned after creation");
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to create session - no data returned",
+          received: { sessionId, industry, role }
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
+    
+    console.log("Session created successfully:", { sessionId, dbId: data[0].id });
     
     return new Response(
       JSON.stringify({ success: true, id: data[0].id }),
