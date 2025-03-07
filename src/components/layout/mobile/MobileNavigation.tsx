@@ -34,7 +34,11 @@ export function MobileNavigation() {
                 <span className="sr-only">Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[80%] sm:w-[350px] border-r">
+            <SheetContent 
+              side="left" 
+              className="p-0 w-[80%] sm:w-[350px] border-r"
+              hideCloseButton
+            >
               <MobileMenu onClose={() => setIsOpen(false)} />
             </SheetContent>
           </Sheet>
