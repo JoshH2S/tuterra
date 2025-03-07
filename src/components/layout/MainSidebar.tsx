@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Menu } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -57,7 +57,20 @@ export const MainSidebar = () => {
   }, [isMobile, isCollapsed, toggleSidebar]);
 
   return (
-    <div ref={sidebarRef}>
+    <div ref={sidebarRef} className="relative flex">
+      {/* Add a fixed toggle button for collapsed state */}
+      {isCollapsed && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute left-[calc(60px+4px)] top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-all touch-manipulation"
+          onClick={toggleSidebar}
+          aria-label="Expand sidebar"
+        >
+          <ChevronRight size={18} />
+        </motion.button>
+      )}
+      
       <Sidebar className={cn(
         "transition-all duration-300 ease-in-out border-r border-border",
         isCollapsed ? "w-[60px]" : "w-[190px]"
@@ -91,24 +104,14 @@ export const MainSidebar = () => {
             )}
           </AnimatePresence>
           
-          <motion.button
-            className="absolute right-2 top-4 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 touch-manipulation"
-            whileTap={{ scale: 0.9 }}
-            onClick={toggleSidebar}
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <AnimatePresence mode="wait">
-              {isCollapsed ? (
-                <motion.div
-                  key="menu"
-                  initial={{ opacity: 0, rotate: -90 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: 90 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Menu size={18} />
-                </motion.div>
-              ) : (
+          {!isCollapsed && (
+            <motion.button
+              className="absolute right-2 top-4 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 touch-manipulation"
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleSidebar}
+              aria-label="Collapse sidebar"
+            >
+              <AnimatePresence mode="wait">
                 <motion.div
                   key="chevron"
                   initial={{ opacity: 0, rotate: 90 }}
@@ -118,9 +121,9 @@ export const MainSidebar = () => {
                 >
                   <ChevronLeft size={18} />
                 </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
+              </AnimatePresence>
+            </motion.button>
+          )}
         </SidebarHeader>
         
         <SidebarContent className="flex flex-col justify-between h-[calc(100vh-64px)]">
