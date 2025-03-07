@@ -49,14 +49,70 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
   
-  /* Increase touch targets */
+  /* Increase touch targets for better mobile usability */
   .touch-manipulation {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    min-height: 44px; /* Minimum recommended touch target size */
+    min-width: 44px;
+  }
+  
+  /* Add active state feedback for touch interactions */
+  .touch-feedback:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+  
+  /* Improve scrolling performance */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  
+  /* Disable long-press context menu on interactive elements */
+  .no-context-menu {
+    -webkit-touch-callout: none;
+    user-select: none;
   }
 }
 
 /* Add safe area bottom padding to bottom navigation */
 .safe-area-bottom {
   padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+
+/* Add pull-to-refresh indicator styles */
+.pull-indicator {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+/* Swipe gesture styles */
+.swipe-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.swipe-content {
+  transition: transform 0.3s ease;
+}
+
+.swipe-action {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+}
+
+/* Toast notifications designed for mobile */
+.mobile-toast {
+  border-radius: 1rem;
+  margin-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
