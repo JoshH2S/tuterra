@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
@@ -23,6 +22,7 @@ import SkillAssessments from "@/pages/SkillAssessments";
 import TakeSkillAssessment from "@/pages/TakeSkillAssessment";
 import SkillAssessmentResults from "@/pages/SkillAssessmentResults";
 import JobInterviewSimulator from "@/pages/JobInterviewSimulator";
+import DesktopOptimizationDemo from "@/pages/DesktopOptimizationDemo";
 
 export const AppRoutes = () => {
   return (
@@ -188,6 +188,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <JobInterviewSimulator />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/desktop-optimization"
+        element={
+          <ProtectedRoute>
+            <DesktopOptimizationDemo />
           </ProtectedRoute>
         }
       />
