@@ -22,19 +22,19 @@ export const INDUSTRY_OPTIONS = [
 ];
 
 export const JOB_ROLE_OPTIONS = [
-  { value: "software_engineer", label: "Software Engineer" },
-  { value: "product_manager", label: "Product Manager" },
-  { value: "data_scientist", label: "Data Scientist" },
-  { value: "marketing_manager", label: "Marketing Manager" },
-  { value: "sales_representative", label: "Sales Representative" },
-  { value: "financial_analyst", label: "Financial Analyst" },
-  { value: "human_resources", label: "HR Manager" },
-  { value: "project_manager", label: "Project Manager" },
-  { value: "business_analyst", label: "Business Analyst" },
-  { value: "ux_designer", label: "UX Designer" },
-  { value: "devops_engineer", label: "DevOps Engineer" },
-  { value: "content_writer", label: "Content Writer" },
-  { value: "account_manager", label: "Account Manager" },
-  { value: "operations_manager", label: "Operations Manager" },
+  { value: "software-engineer", label: "Software Engineer" },
+  { value: "product-manager", label: "Product Manager" },
+  { value: "data-scientist", label: "Data Scientist" },
+  { value: "marketing-manager", label: "Marketing Manager" },
+  { value: "sales-representative", label: "Sales Representative" },
+  { value: "financial-analyst", label: "Financial Analyst" },
+  { value: "hr-manager", label: "HR Manager" },
+  { value: "project-manager", label: "Project Manager" },
+  { value: "business-analyst", label: "Business Analyst" },
+  { value: "ux-designer", label: "UX Designer" },
+  { value: "devops-engineer", label: "DevOps Engineer" },
+  { value: "content-writer", label: "Content Writer" },
+  { value: "account-manager", label: "Account Manager" },
+  { value: "operations-manager", label: "Operations Manager" },
   { value: "other", label: "Other" }
 ];

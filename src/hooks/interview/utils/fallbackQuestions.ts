@@ -6,11 +6,22 @@ import { InterviewQuestion } from "@/types/interview";
  */
 export const generateFallbackQuestions = (jobRole: string, industry: string, sessionId: string | null): InterviewQuestion[] => {
   const currentDate = new Date().toISOString();
+  
+  // Format job role for display by replacing hyphens and capitalizing words
+  const formatJobRole = (role: string): string => {
+    return role
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+  
+  const displayJobRole = formatJobRole(jobRole);
+  
   const baseQuestions = [
     {
       id: `fallback-1`,
       session_id: sessionId || '',
-      question: `Tell me about your experience as a ${jobRole}.`,
+      question: `Tell me about your experience as a ${displayJobRole}.`,
       question_order: 0,
       created_at: currentDate
     },
@@ -31,7 +42,7 @@ export const generateFallbackQuestions = (jobRole: string, industry: string, ses
     {
       id: `fallback-4`,
       session_id: sessionId || '',
-      question: `What specific skills do you have that make you qualified for this ${jobRole} position?`,
+      question: `What specific skills do you have that make you qualified for this ${displayJobRole} position?`,
       question_order: 3,
       created_at: currentDate
     },
@@ -72,7 +83,7 @@ export const generateFallbackQuestions = (jobRole: string, industry: string, ses
     });
   }
   
-  // Add role-specific questions
+  // Add role-specific questions based on keywords, not format
   if (jobRole.toLowerCase().includes('manager') || 
       jobRole.toLowerCase().includes('leader')) {
     baseQuestions.push({
