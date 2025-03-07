@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -9,6 +9,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { navigationItems } from "../sidebar/SidebarNavigation";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export function MobileNavigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -156,20 +159,96 @@ function QuickActionButtons() {
 
 // Mobile User Profile
 function MobileUserProfile() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setFirstName(data.first_name || "");
+          setLastName(data.last_name || "");
+          setAvatarUrl(data.avatar_url || "");
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        fetchUserProfile();
+      } else if (event === 'SIGNED_OUT') {
+        setFirstName("");
+        setLastName("");
+        setAvatarUrl("");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Success",
+        description: "You have been logged out successfully.",
+      });
+      navigate("/auth");
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Get user initials for avatar fallback
+  const getInitials = () => {
+    if (firstName && lastName) {
+      return `${firstName[0]}${lastName[0]}`;
+    }
+    return "U";
+  };
+
   return (
     <div className="flex items-center gap-4">
       <Avatar className="h-10 w-10">
-        <AvatarImage src="" alt="User" />
-        <AvatarFallback>U</AvatarFallback>
+        <AvatarImage src={avatarUrl} alt="Profile" />
+        <AvatarFallback className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+          {getInitials()}
+        </AvatarFallback>
       </Avatar>
       <div className="flex-1">
-        <p className="font-medium">User</p>
+        <p className="font-medium">{firstName && lastName ? `${firstName} ${lastName}` : "User"}</p>
         <p className="text-sm text-muted-foreground">user@example.com</p>
       </div>
       <Button 
         variant="ghost" 
         size="icon"
         className="touch-manipulation h-10 w-10"
+        onClick={handleLogout}
       >
         <LogOut className="h-5 w-5" />
         <span className="sr-only">Sign out</span>
