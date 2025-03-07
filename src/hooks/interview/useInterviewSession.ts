@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useEffect } from "react";
 import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
 import { useToast } from "@/hooks/use-toast";
 import { useInterviewState } from "./useInterviewState";
