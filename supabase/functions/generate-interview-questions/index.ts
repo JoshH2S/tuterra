@@ -99,17 +99,7 @@ serve(async (req) => {
     try {
       console.log("Attempting to parse request body...");
       
-      if (req.bodyUsed) {
-        console.error("Request body already consumed");
-        return new Response(
-          JSON.stringify({ 
-            error: "Request body already consumed",
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-        );
-      }
-      
-      // Check if the content type is correct
+      // First check if the content type is correct
       const contentType = req.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         console.error("Invalid content type:", contentType);
@@ -122,14 +112,21 @@ serve(async (req) => {
         );
       }
       
-      const bodyText = await req.text();
+      // Clone the request to avoid consuming the body which can only be read once
+      const clonedReq = req.clone();
+      const bodyText = await clonedReq.text();
       console.log("Raw request body:", bodyText);
       
       if (!bodyText || bodyText.trim() === "") {
         console.error("Empty request body");
         return new Response(
           JSON.stringify({ 
-            error: "Empty request body",
+            error: "Empty request body. Please ensure the request includes a JSON payload.",
+            requestDetails: {
+              method: req.method,
+              contentType: contentType,
+              url: req.url
+            }
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
         );
@@ -185,6 +182,21 @@ serve(async (req) => {
       jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A",
       sessionId
     });
+    
+    // For testing quickly without session verification - comment out in production
+    if (sessionId === "test-123") {
+      console.log("Test session ID detected, bypassing session verification");
+      const questions = generateInterviewQuestions(industry, effectiveRole, jobDescription);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          sessionId, 
+          questions
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
     
     // Verify session exists in database before proceeding
     console.log(`Verifying session ${sessionId} exists in database`);

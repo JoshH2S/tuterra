@@ -32,33 +32,43 @@ export const generateQuestionsFromApi = async (
     // Log the exact payload being sent to help with debugging
     console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // Use the invoke method with the clean payload
-    const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
-      body: payload,
+    // IMPORTANT: Edge function is reporting empty request body
+    // Try a different approach to ensure the body is properly sent
+    // Switch to using fetch directly with explicit JSON stringification
+    const functionUrl = `${supabase.supabaseUrl}/functions/v1/generate-interview-questions`;
+    
+    console.log("Endpoint URL:", functionUrl);
+    
+    const response = await fetch(functionUrl, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabase.supabaseKey}`
+      },
+      body: JSON.stringify(payload)
     });
-
-    console.log("Edge function response:", data, error);
-
-    if (error) {
-      console.error("Edge function error:", error);
-      throw new Error(`Edge function error: ${error.message || JSON.stringify(error)}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response from edge function:", response.status, errorText);
+      throw new Error(`Edge function error: ${response.status} - ${errorText}`);
     }
+    
+    const data = await response.json();
+    console.log("Edge function response:", data);
     
     if (!data) {
       console.error("No data returned from edge function");
       throw new Error("No data returned from the server");
     }
     
-    const response = data as EdgeFunctionResponse;
+    const response_data = data as EdgeFunctionResponse;
     
-    if (response?.questions && Array.isArray(response.questions)) {
-      console.log(`Received ${response.questions.length} questions from edge function`);
+    if (response_data?.questions && Array.isArray(response_data.questions)) {
+      console.log(`Received ${response_data.questions.length} questions from edge function`);
       
       // Process the questions from edge function's format to our application format
-      const formattedQuestions: InterviewQuestion[] = response.questions.map((q: EdgeFunctionQuestion, index: number) => ({
+      const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EdgeFunctionQuestion, index: number) => ({
         id: q.id || `q-${crypto.randomUUID()}`,
         session_id: params.sessionId,
         question: q.text || '', // Map text field to question field
