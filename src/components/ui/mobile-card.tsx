@@ -1,9 +1,9 @@
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface MobileCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface MobileCardProps extends Omit<HTMLMotionProps<"div">, "onPress"> {
   onPress?: () => void;
   isActive?: boolean;
   children: React.ReactNode;
