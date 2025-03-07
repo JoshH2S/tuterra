@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +52,9 @@ export const useInterviewSession = () => {
 
   // Generate transcript when interview is completed
   useEffect(() => {
-    if (isInterviewComplete && Object.keys(responses).length > 0) {
+    if (isInterviewComplete) {
+      console.log("Interview complete, generating transcript");
+      console.log("Responses available:", Object.keys(responses).length);
       updateTranscript();
     }
   }, [isInterviewComplete, responses, updateTranscript]);
@@ -81,7 +82,16 @@ export const useInterviewSession = () => {
     }
     
     console.log(`Submitting response for question ${currentQuestionIndex + 1}/${questions.length}`);
+    console.log(`Response text: "${response}" for question ID: ${currentQuestion.id}`);
+    
     await saveResponse(currentQuestion, response);
+    
+    // Update responses manually to ensure we have the latest
+    setResponses(prev => ({
+      ...prev,
+      [currentQuestion.id]: response
+    }));
+    
     nextQuestion();
   };
 

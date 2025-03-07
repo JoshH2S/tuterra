@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { InterviewQuestion } from "@/types/interview";
 
 export const useInterviewResponses = (
-  setResponses: (responses: Record<string, string>) => void
+  setResponses: (responses: Record<string, string> | ((prev: Record<string, string>) => Record<string, string>)) => void
 ) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -15,6 +14,8 @@ export const useInterviewResponses = (
     
     setLoading(true);
     try {
+      console.log(`Saving response for question ID ${question.id}: "${responseText}"`);
+      
       // Use the edge function to save the response
       const { error } = await supabase.functions.invoke('save-interview-response', {
         body: {
@@ -28,21 +29,26 @@ export const useInterviewResponses = (
         // We'll still update local state even if there's an error with the edge function
       }
       
-      // Update local state with the new response
-      // Create a copy of responses and update it directly
-      // Since setResponses expects a Record<string, string>, we need to update it this way
-      const updatedResponses: Record<string, string> = {};
-      updatedResponses[question.id] = responseText;
+      // Update local state with the new response using a function to ensure we have the latest state
+      setResponses(prevResponses => ({
+        ...prevResponses,
+        [question.id]: responseText
+      }));
       
-      // The parent component is responsible for merging with previous responses
-      setResponses(updatedResponses);
+      console.log("Response saved successfully");
     } catch (error) {
       console.error("Error saving response:", error);
       toast({
         title: "Error",
-        description: "Failed to save your response. Please try again.",
+        description: "Failed to save your response. Your answers will still be included in the transcript.",
         variant: "destructive",
       });
+      
+      // Even on error, we still update the local state
+      setResponses(prevResponses => ({
+        ...prevResponses,
+        [question.id]: responseText
+      }));
     } finally {
       setLoading(false);
     }

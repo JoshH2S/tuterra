@@ -49,10 +49,20 @@ export const useInterviewState = () => {
   };
 
   const updateTranscript = () => {
-    const newTranscript = questions.map((question, index) => ({
-      question: question.question,
-      answer: responses[question.id] || ""
-    }));
+    console.log("Updating transcript with responses:", responses);
+    console.log("Questions available:", questions);
+    
+    const newTranscript = questions.map((question) => {
+      const answer = responses[question.id] || "";
+      console.log(`Question ID: ${question.id}, Answer: ${answer}`);
+      
+      return {
+        question: question.question,
+        answer: answer
+      };
+    });
+    
+    console.log("Generated transcript:", newTranscript);
     setTranscript(newTranscript);
   };
 
