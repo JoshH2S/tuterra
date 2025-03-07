@@ -32,9 +32,7 @@ export const generateQuestionsFromApi = async (
     // Log the exact payload being sent to help with debugging
     console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // IMPORTANT: Edge function is reporting empty request body
-    // Try a different approach to ensure the body is properly sent
-    // Switch to using fetch directly with explicit JSON stringification
+    // Use supabase.supabaseUrl and supabase.supabaseKey which are public properties
     const functionUrl = `${supabase.supabaseUrl}/functions/v1/generate-interview-questions`;
     
     console.log("Endpoint URL:", functionUrl);
