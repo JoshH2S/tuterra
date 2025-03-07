@@ -20,6 +20,13 @@ export const MainSidebar = () => {
   const isMobile = useIsMobile();
   const sidebarRef = useRef<HTMLDivElement>(null);
 
+  // Hide sidebar on mobile by default
+  useEffect(() => {
+    if (isMobile && state !== "collapsed") {
+      toggleSidebar();
+    }
+  }, [isMobile, toggleSidebar, state]);
+
   // Handle touch gestures for mobile
   useEffect(() => {
     if (!isMobile || !sidebarRef.current) return;
@@ -55,6 +62,11 @@ export const MainSidebar = () => {
       element.removeEventListener('touchmove', handleTouchMove);
     };
   }, [isMobile, isCollapsed, toggleSidebar]);
+
+  // Return null on mobile devices to hide the sidebar completely
+  if (isMobile) {
+    return null;
+  }
 
   return (
     <div ref={sidebarRef} className="relative flex">

@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -39,4 +40,23 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  body {
+    /* Add safe area padding for iOS devices */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Increase touch targets */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Add safe area bottom padding to bottom navigation */
+.safe-area-bottom {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 }

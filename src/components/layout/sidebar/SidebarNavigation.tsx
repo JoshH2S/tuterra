@@ -13,7 +13,7 @@ import { SidebarNavItem } from "./SidebarNavItem";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const navigationItems = [
+export const navigationItems = [
   { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/courses", icon: BookOpen, label: "Courses" },
   { path: "/lesson-planning", icon: ClipboardList, label: "Lesson Planning" },
