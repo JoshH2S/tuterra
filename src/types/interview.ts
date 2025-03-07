@@ -2,11 +2,14 @@
 export interface InterviewSession {
   id: string;
   user_id: string;
+  job_title: string;
   industry: string;
-  job_role: string;
   job_description: string;
+  status: string;
   created_at: string;
-  updated_at: string;
+  completed_at?: string;
+  session_id: string;
+  questions: EdgeFunctionQuestion[];
 }
 
 export interface InterviewQuestion {

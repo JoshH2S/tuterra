@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -56,7 +55,7 @@ export const useInterviewPersistence = () => {
         body: {
           sessionId,
           industry,
-          role: jobRole, // We keep 'role' in the API contract, but map to 'job_role' in the edge function
+          role: jobRole, // We keep 'role' in the API contract but it maps to job_title in the DB
           jobDescription
         }
       });
