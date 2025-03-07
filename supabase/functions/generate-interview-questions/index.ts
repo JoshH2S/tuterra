@@ -204,7 +204,7 @@ serve(async (req) => {
       .from('interview_sessions')
       .select('id, session_id')
       .eq('session_id', sessionId)
-      .limit(1);
+      .maybeSingle(); // Use maybeSingle() instead of single() to handle not found case without error
 
     console.log("Session verification result:", { 
       sessionData, 
@@ -224,13 +224,13 @@ serve(async (req) => {
       );
     }
 
-    if (!sessionData || sessionData.length === 0) {
+    if (!sessionData) {
       console.error("Session not found:", sessionId);
       return new Response(
         JSON.stringify({ 
           error: "Session not found",
           sessionId,
-          suggestion: "Please ensure the session is created before generating questions"
+          suggestion: "Session may still be propagating, please try again"
         }),
         { headers: corsHeaders, status: 404 }
       );

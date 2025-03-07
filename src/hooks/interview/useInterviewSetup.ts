@@ -35,6 +35,41 @@ export const useInterviewSetup = (
     };
   }, []);
   
+  // Helper function to verify session with retries
+  const verifySession = async (sessionId: string, maxRetries = 3, delayMs = 1000): Promise<boolean> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`Verifying session attempt ${attempt}/${maxRetries}...`);
+      
+      try {
+        const { data, error } = await supabase
+          .from('interview_sessions')
+          .select('id, session_id')
+          .eq('session_id', sessionId)
+          .maybeSingle(); // Use maybeSingle() instead of single()
+        
+        if (error) {
+          console.error(`Verification attempt ${attempt} failed:`, error);
+        } else if (data) {
+          console.log('Session verified successfully:', data);
+          return true;
+        } else {
+          console.log(`Session not found on attempt ${attempt}`);
+        }
+        
+        // If we haven't succeeded but have more retries, wait before trying again
+        if (attempt < maxRetries) {
+          const backoffDelay = delayMs * Math.pow(1.5, attempt - 1); // Exponential backoff
+          console.log(`Waiting ${backoffDelay}ms before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        }
+      } catch (error) {
+        console.error(`Verification attempt ${attempt} threw error:`, error);
+      }
+    }
+    
+    return false;
+  };
+  
   // Helper function for fallback mode
   const handleFallbackMode = (jobRole: string, industry: string) => {
     console.log("Using fallback interview mode...");
@@ -91,55 +126,35 @@ export const useInterviewSetup = (
       console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
-      // Add a delay to ensure session is created in database before generating questions
-      console.log("Waiting for session to be available...");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Verify session exists before generating questions with retries
+      console.log("Verifying session exists...");
+      const isVerified = await verifySession(sessionId);
       
-      // Verify session exists before generating questions
+      if (!isVerified) {
+        console.error("Failed to verify session after multiple attempts:", sessionId);
+        throw new Error("Session verification failed after multiple attempts");
+      }
+      
+      // Step 2: Generate interview questions after successful verification
       try {
-        const { data: sessionCheck, error: checkError } = await supabase
-          .from('interview_sessions')
-          .select('id')
-          .eq('session_id', sessionId)
-          .single();
-          
-        if (checkError) {
-          console.error("Error verifying session:", checkError);
-          throw new Error(`Session verification error: ${checkError.message}`);
-        }
+        console.log("Session verified. Generating questions for session with ID:", sessionId);
+        // Pass parameters in the correct order
+        await generateQuestions(industry, jobRole, jobDescription, sessionId);
+        setInterviewReady(true);
+      } catch (questionError) {
+        console.error("Error generating questions:", questionError);
         
-        if (!sessionCheck) {
-          console.error("Session not found after creation:", sessionId);
-          throw new Error("Session not found after creation");
-        }
+        // Use fallback questions instead
+        console.log("Using fallback questions due to error");
+        const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
+        setQuestions(fallbackQuestions);
+        setUsedFallbackQuestions(true);
+        setInterviewReady(true);
         
-        console.log("Session verified, proceeding with question generation:", sessionCheck);
-        
-        // Step 2: Generate interview questions - directly after session creation
-        try {
-          console.log("Generating questions for session with ID:", sessionId);
-          // Pass parameters in the correct order
-          await generateQuestions(industry, jobRole, jobDescription, sessionId);
-          setInterviewReady(true);
-        } catch (questionError) {
-          console.error("Error generating questions:", questionError);
-          
-          // Use fallback questions instead
-          console.log("Using fallback questions due to error");
-          const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
-          setQuestions(fallbackQuestions);
-          setUsedFallbackQuestions(true);
-          setInterviewReady(true);
-          
-          setSessionCreationErrors(prev => [
-            ...prev, 
-            `Question generation failed: ${questionError instanceof Error ? questionError.message : 'Unknown error'}`
-          ]);
-        }
-      } catch (verificationError) {
-        console.error("Session verification failed:", verificationError);
-        setSessionCreationErrors(prev => [...prev, "Failed to verify session creation"]);
-        handleFallbackMode(jobRole, industry);
+        setSessionCreationErrors(prev => [
+          ...prev, 
+          `Question generation failed: ${questionError instanceof Error ? questionError.message : 'Unknown error'}`
+        ]);
       }
     } catch (error) {
       console.error("Error starting interview:", error);
