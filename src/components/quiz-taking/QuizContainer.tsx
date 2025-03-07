@@ -42,7 +42,7 @@ export const QuizContainer = () => {
           .is('completed_at', null)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
           
         if (savedProgress) {
           toast({
@@ -52,6 +52,7 @@ export const QuizContainer = () => {
         }
       }
       
+      console.log("Fetching quiz data for ID:", id);
       const { data, error } = await supabase
         .from('quizzes')
         .select(`
@@ -80,18 +81,21 @@ export const QuizContainer = () => {
         throw new Error("No questions found for this quiz");
       }
       
+      console.log("Quiz data fetched successfully:", data);
       return data as Quiz;
     },
   });
 
   useEffect(() => {
     if (quiz && quiz.quiz_questions && quiz.quiz_questions.length > 0) {
+      console.log("Setting quiz questions:", quiz.quiz_questions);
       setQuizQuestions(quiz.quiz_questions);
       setQuizId(quiz.id);
     }
   }, [quiz]);
 
   if (quizError) {
+    console.error("Quiz error:", quizError);
     return <QuizError error={quizError} />;
   }
 
@@ -100,6 +104,7 @@ export const QuizContainer = () => {
   }
 
   if (!quiz || !quiz.quiz_questions || quiz.quiz_questions.length === 0) {
+    console.error("Quiz empty state triggered");
     return <QuizEmpty />;
   }
 
