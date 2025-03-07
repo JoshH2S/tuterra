@@ -19,7 +19,7 @@ export const CourseCard = ({ course }: CourseCardProps) => {
   
   // These would be real in a production app, but we'll mock them for now
   const progressValue = 75;
-  const studentCount = a24;
+  const studentCount = 24;
   
   return (
     <motion.div
