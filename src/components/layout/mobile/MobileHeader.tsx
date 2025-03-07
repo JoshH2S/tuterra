@@ -22,7 +22,7 @@ export function MobileHeader() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0">
-            <MobileMenu />
+            <MobileMenu onClose={() => {}} />
           </SheetContent>
         </Sheet>
 
