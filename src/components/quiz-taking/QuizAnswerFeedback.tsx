@@ -1,20 +1,30 @@
 
-import { Info, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { Info, CheckCircle, XCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 
-interface QuizAnswerFeedbackProps {
+export interface QuizAnswerFeedbackProps {
+  question: QuizQuestion;
+  userAnswer: string;
   isCorrect: boolean;
-  correctAnswerText: string;
   explanation?: string;
-  isLoadingExplanation?: boolean;
+  isLoading?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
 export const QuizAnswerFeedback = ({
+  question,
+  userAnswer,
   isCorrect,
-  correctAnswerText,
   explanation,
-  isLoadingExplanation = false,
+  isLoading = false,
+  expanded = false,
+  onToggle,
 }: QuizAnswerFeedbackProps) => {
+  // Get the correct answer text from the question options
+  const correctAnswerText = question.options[question.correct_answer] || '';
+
   return (
     <Alert className={isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}>
       {isCorrect ? (
@@ -32,7 +42,7 @@ export const QuizAnswerFeedback = ({
         }
         
         <div className="mt-2">
-          {isLoadingExplanation ? (
+          {isLoading ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-1">
                 <Info className="h-4 w-4" /> 
@@ -41,11 +51,20 @@ export const QuizAnswerFeedback = ({
               <div className="w-full bg-gray-200 h-2 rounded-full animate-pulse"></div>
             </div>
           ) : explanation ? (
-            <div>
+            <div className={`overflow-hidden transition-all duration-300 ${expanded ? 'max-h-none' : 'max-h-24'}`}>
               <p className="font-semibold flex items-center gap-1">
                 <Info className="h-4 w-4" /> Explanation:
               </p>
               <p className="text-sm mt-1">{explanation}</p>
+              
+              {explanation.length > 120 && (
+                <button 
+                  onClick={onToggle}
+                  className="mt-2 text-xs text-primary hover:underline focus:outline-none"
+                >
+                  {expanded ? "Show less" : "Show more"}
+                </button>
+              )}
             </div>
           ) : null}
         </div>
