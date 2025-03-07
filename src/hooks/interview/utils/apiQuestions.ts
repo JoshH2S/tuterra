@@ -21,7 +21,7 @@ export const generateQuestionsFromApi = async (
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
     
-    // Create a clean payload that's guaranteed to have the required fields
+    // Create a clean payload with proper serialization
     const payload = {
       industry: params.industry,
       jobRole: params.jobRole,
@@ -29,9 +29,10 @@ export const generateQuestionsFromApi = async (
       sessionId: params.sessionId
     };
     
-    console.log("Calling generate-interview-questions edge function with payload:", JSON.stringify(payload));
+    // Log the exact payload being sent to help with debugging
+    console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // Call the edge function with the clean payload
+    // Use the invoke method with the clean payload
     const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
       body: payload,
       headers: {
