@@ -32,7 +32,10 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are a helpful educational assistant.' },
+          { 
+            role: 'system', 
+            content: 'You are a helpful educational assistant that provides clear, concise explanations about quiz answers. Focus on explaining why answers are correct or incorrect in a supportive, encouraging tone. Use simple language and provide relevant examples or facts when appropriate. Keep explanations to 3-4 sentences for mobile readability.'
+          },
           { role: 'user', content: prompt }
         ],
         temperature,
@@ -40,14 +43,15 @@ serve(async (req) => {
       })
     });
 
-    const data = await openaiResponse.json();
-
     if (!openaiResponse.ok) {
-      console.error('OpenAI API error:', data);
-      throw new Error(data.error?.message || 'Unknown error from OpenAI API');
+      const errorData = await openaiResponse.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(errorData.error?.message || 'Unknown error from OpenAI API');
     }
 
+    const data = await openaiResponse.json();
     const response = data.choices?.[0]?.message?.content?.trim() || '';
+    
     console.log("OpenAI API response:", response.substring(0, 100) + "...");
 
     return new Response(
@@ -58,7 +62,10 @@ serve(async (req) => {
     console.error('Error processing prompt:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        fallbackResponse: "I couldn't generate a detailed explanation. This answer is based on the course materials covered in this section."
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QuizQuestion } from "./quizTypes";
 import { toast } from "@/components/ui/use-toast";
@@ -10,14 +10,29 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [explanations, setExplanations] = useState<Record<number, string>>({});
   const [isGeneratingExplanation, setIsGeneratingExplanation] = useState(false);
+  const [expandedFeedback, setExpandedFeedback] = useState<number | null>(null);
+  
+  // Use a ref to track pending explanation requests
+  const pendingExplanations = useRef<Record<number, boolean>>({});
 
-  // Generate an explanation for the answer
+  // Toggle expanded feedback
+  const toggleFeedback = useCallback((questionIndex: number) => {
+    setExpandedFeedback(prev => prev === questionIndex ? null : questionIndex);
+  }, []);
+
+  // Generate an explanation for the answer with improved mobile UX
   const generateExplanation = useCallback(async (
     questionIndex: number, 
     question: QuizQuestion, 
     selectedAnswer: string
   ) => {
     if (!question) return;
+    
+    // If this question already has a pending explanation request, don't start another
+    if (pendingExplanations.current[questionIndex]) {
+      console.log("Explanation already being generated for question", questionIndex);
+      return;
+    }
     
     // If there's already an explanation from the database, use that
     if (question.explanation) {
@@ -26,7 +41,10 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
       return;
     }
     
+    // Mark this question as having a pending explanation
+    pendingExplanations.current[questionIndex] = true;
     setIsGeneratingExplanation(true);
+    
     try {
       const isCorrect = selectedAnswer === question.correct_answer;
       const selectedText = question.options[selectedAnswer] || "No answer selected";
@@ -53,7 +71,7 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
             "The student answered incorrectly. Provide a detailed explanation (3-4 sentences) of why their answer is wrong and why the correct answer is right. Explain the misconception they might have had. Be supportive and educational."
           }
           
-          Your explanation should be educational and help the student understand the concept better.`,
+          Your explanation should be educational and help the student understand the concept better. Keep it concise for mobile readability.`,
           temperature: 0.7,
           max_tokens: 200
         }
@@ -64,32 +82,44 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
         throw error;
       }
       
-      console.log("Received explanation data:", data);
-      
       if (data && data.response) {
         setExplanations(prev => ({ ...prev, [questionIndex]: data.response }));
         console.log("Successfully saved explanation for question", questionIndex);
+        
+        // Automatically expand the first explanation when it's generated
+        if (Object.keys(explanations).length === 0) {
+          setExpandedFeedback(questionIndex);
+        }
       } else {
         console.error("No response received from OpenAI", data);
         throw new Error("No explanation returned from AI");
       }
     } catch (error) {
       console.error("Error generating explanation:", error);
-      // Still set a fallback explanation if the AI fails
+      // Set a fallback explanation if the AI fails
+      let fallbackMessage = "We couldn't generate a detailed explanation for this answer right now. The correct answer is based on the course materials covered.";
+      
+      // If the error response has a fallback message, use that
+      if (error.fallbackResponse) {
+        fallbackMessage = error.fallbackResponse;
+      }
+      
       setExplanations(prev => ({ 
         ...prev, 
-        [questionIndex]: "We couldn't generate an explanation for this answer. The correct answer is based on the course materials covered." 
+        [questionIndex]: fallbackMessage 
       }));
       
       toast({
         title: "Explanation Generation Failed",
-        description: "We couldn't generate a detailed explanation. Please try again later.",
+        description: "We couldn't generate a detailed explanation. A basic explanation has been provided instead.",
         variant: "destructive",
       });
     } finally {
       setIsGeneratingExplanation(false);
+      // Mark this question as no longer having a pending explanation
+      pendingExplanations.current[questionIndex] = false;
     }
-  }, []);
+  }, [explanations]);
 
   const handleAnswerSelect = useCallback((questionIndex: number, answer: string) => {
     if (showFeedback && selectedAnswers[questionIndex]) return; // Don't allow changing answer after feedback is shown
@@ -109,6 +139,8 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
     setExplanations({});
     setShowFeedback(false);
     setIsGeneratingExplanation(false);
+    setExpandedFeedback(null);
+    pendingExplanations.current = {};
   }, []);
 
   return {
@@ -116,7 +148,9 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
     showFeedback,
     explanations,
     isGeneratingExplanation,
+    expandedFeedback,
     handleAnswerSelect,
+    toggleFeedback,
     resetAnswers,
     setShowFeedback
   };

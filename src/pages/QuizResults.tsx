@@ -33,6 +33,12 @@ export default function QuizResults() {
               id,
               title,
               allow_retakes
+            ),
+            question_responses: quiz_question_responses(
+              question_id,
+              student_answer,
+              is_correct,
+              question:quiz_questions(*)
             )
           `)
           .eq('id', id)
