@@ -1,12 +1,12 @@
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useResponsive } from "@/hooks/useResponsive";
-import { Card } from "@/components/ui/card";
 
-interface DesktopCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface DesktopCardProps extends Omit<HTMLMotionProps<"div">, "className"> {
   children: React.ReactNode;
+  className?: string;
   variant?: "default" | "subtle" | "outline";
   hoverEffect?: "lift" | "scale" | "glow" | "border" | "none";
 }
@@ -76,6 +76,13 @@ export function DesktopCard({
   );
 }
 
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  className?: string;
+}
+
 /**
  * Desktop Feature Card with hover effects
  * - Enhanced interaction for desktop users
@@ -85,14 +92,11 @@ export function DesktopFeatureCard({
   icon,
   title,
   description,
+  className,
   ...props
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
+}: FeatureCardProps) {
   return (
-    <DesktopCard hoverEffect="lift" {...props}>
+    <DesktopCard hoverEffect="lift" className={className} {...props}>
       <div className="flex flex-col items-start gap-4">
         <div className="p-3 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
           {icon}
@@ -102,6 +106,14 @@ export function DesktopFeatureCard({
       </div>
     </DesktopCard>
   );
+}
+
+interface StatsCardProps {
+  label: string;
+  value: string | number;
+  delta?: number;
+  icon?: React.ReactNode;
+  className?: string;
 }
 
 /**
@@ -114,17 +126,13 @@ export function DesktopStatsCard({
   value,
   delta,
   icon,
+  className,
   ...props
-}: {
-  label: string;
-  value: string | number;
-  delta?: number;
-  icon?: React.ReactNode;
-}) {
+}: StatsCardProps) {
   const deltaColor = delta && delta > 0 ? "text-green-600" : "text-red-600";
 
   return (
-    <DesktopCard hoverEffect="scale" variant="subtle" {...props}>
+    <DesktopCard hoverEffect="scale" variant="subtle" className={className} {...props}>
       <div className="flex justify-between items-start">
         <div className="space-y-1">
           <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
