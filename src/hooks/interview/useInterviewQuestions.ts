@@ -207,8 +207,7 @@ export const useInterviewQuestions = (
     try {
       console.log(`Fetching questions for session ${sessionId}`);
       
-      // Instead of trying to get questions from the interview_sessions table directly,
-      // get them from the interview_questions table where they should be stored
+      // First try to get questions from the interview_questions table
       const { data, error } = await supabase
         .from('interview_questions')
         .select('id, session_id, question, question_order, created_at')
@@ -216,8 +215,39 @@ export const useInterviewQuestions = (
         .order('question_order', { ascending: true });
       
       if (error) {
-        console.error("Error fetching questions:", error);
-        throw error;
+        console.error("Error fetching questions from interview_questions table:", error);
+        
+        // If there's an error with the direct query, try to get questions from the 
+        // interview_sessions table's questions JSON field as fallback
+        const sessionQuery = await supabase
+          .from('interview_sessions')
+          .select('questions')
+          .eq('session_id', sessionId)
+          .single();
+        
+        if (sessionQuery.error) {
+          console.error("Error fetching questions from interview_sessions:", sessionQuery.error);
+          throw new Error("Failed to retrieve questions from any source");
+        }
+        
+        if (sessionQuery.data && Array.isArray(sessionQuery.data.questions) && sessionQuery.data.questions.length > 0) {
+          console.log(`Retrieved ${sessionQuery.data.questions.length} questions from interview_sessions.questions`);
+          
+          // Format the questions from the session data
+          const formattedQuestions: InterviewQuestion[] = sessionQuery.data.questions.map((q: any, index: number) => ({
+            id: q.id || `session-q-${index}`,
+            session_id: sessionId,
+            question: q.question || q.text || '', // Handle different question formats
+            question_order: q.question_order !== undefined ? q.question_order : index,
+            created_at: q.created_at || new Date().toISOString()
+          }));
+          
+          setQuestions(formattedQuestions);
+          return;
+        } else {
+          console.error("No questions found in session data");
+          throw new Error("No questions found in database");
+        }
       }
       
       if (data && Array.isArray(data) && data.length > 0) {
@@ -235,7 +265,36 @@ export const useInterviewQuestions = (
         setQuestions(formattedQuestions);
       } else {
         console.log("No questions found in interview_questions table");
-        throw new Error("No questions found in database");
+        
+        // As a fallback, try to get questions from the session's questions field
+        const sessionQuery = await supabase
+          .from('interview_sessions')
+          .select('questions')
+          .eq('session_id', sessionId)
+          .single();
+        
+        if (sessionQuery.error) {
+          console.error("Error fetching session:", sessionQuery.error);
+          throw new Error("No questions found in database");
+        }
+        
+        if (sessionQuery.data && Array.isArray(sessionQuery.data.questions) && sessionQuery.data.questions.length > 0) {
+          console.log(`Retrieved ${sessionQuery.data.questions.length} questions from session data`);
+          
+          // Format the questions from the session data
+          const formattedQuestions: InterviewQuestion[] = sessionQuery.data.questions.map((q: any, index: number) => ({
+            id: q.id || `session-q-${index}`,
+            session_id: sessionId,
+            question: q.question || q.text || '', // Handle different question formats
+            question_order: q.question_order !== undefined ? q.question_order : index,
+            created_at: q.created_at || new Date().toISOString()
+          }));
+          
+          setQuestions(formattedQuestions);
+        } else {
+          console.error("No questions found in any source");
+          throw new Error("No questions found in database");
+        }
       }
     } catch (error) {
       console.error("Error fetching questions:", error);

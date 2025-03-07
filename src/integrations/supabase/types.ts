@@ -398,6 +398,8 @@ export type Database = {
           industry: string
           job_description: string | null
           job_title: string
+          questions: Json | null
+          session_id: string | null
           status: string
           user_id: string | null
         }
@@ -408,6 +410,8 @@ export type Database = {
           industry: string
           job_description?: string | null
           job_title: string
+          questions?: Json | null
+          session_id?: string | null
           status?: string
           user_id?: string | null
         }
@@ -418,6 +422,8 @@ export type Database = {
           industry?: string
           job_description?: string | null
           job_title?: string
+          questions?: Json | null
+          session_id?: string | null
           status?: string
           user_id?: string | null
         }
