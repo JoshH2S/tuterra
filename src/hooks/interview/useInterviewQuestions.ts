@@ -207,34 +207,35 @@ export const useInterviewQuestions = (
     try {
       console.log(`Fetching questions for session ${sessionId}`);
       
-      // First try to get questions from interview_sessions table directly
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('interview_sessions')
-        .select('questions')
+      // Instead of trying to get questions from the interview_sessions table directly,
+      // get them from the interview_questions table where they should be stored
+      const { data, error } = await supabase
+        .from('interview_questions')
+        .select('id, session_id, question, question_order, created_at')
         .eq('session_id', sessionId)
-        .single();
+        .order('question_order', { ascending: true });
       
-      if (sessionError) {
-        console.error("Error fetching questions from session data:", sessionError);
-        throw sessionError;
+      if (error) {
+        console.error("Error fetching questions:", error);
+        throw error;
       }
       
-      if (sessionData?.questions && Array.isArray(sessionData.questions) && sessionData.questions.length > 0) {
-        console.log(`Retrieved ${sessionData.questions.length} questions from session data`);
+      if (data && Array.isArray(data) && data.length > 0) {
+        console.log(`Retrieved ${data.length} questions from interview_questions table`);
         
-        // Format the questions from the session data
-        const formattedQuestions: InterviewQuestion[] = sessionData.questions.map((q: any, index: number) => ({
-          id: q.id || `session-q-${index}`,
-          session_id: sessionId,
-          question: q.question || q.text || '', // Handle different question formats
-          question_order: q.question_order !== undefined ? q.question_order : index,
-          created_at: q.created_at || new Date().toISOString()
+        // Format the questions from the query result
+        const formattedQuestions: InterviewQuestion[] = data.map((q) => ({
+          id: q.id,
+          session_id: q.session_id,
+          question: q.question,
+          question_order: q.question_order,
+          created_at: q.created_at
         }));
         
         setQuestions(formattedQuestions);
       } else {
-        console.log("No questions found or empty questions array in session data");
-        throw new Error("No questions found in session data");
+        console.log("No questions found in interview_questions table");
+        throw new Error("No questions found in database");
       }
     } catch (error) {
       console.error("Error fetching questions:", error);
