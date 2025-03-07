@@ -63,11 +63,11 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
     return 0;
   });
 
-  const handleToggleComplete = (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Modified this function to accept a boolean/string instead of an event
+  const handleToggleComplete = (taskId: string, checked: boolean | string) => {
     setTasks(prevTasks => 
       prevTasks.map(task => 
-        task.id === taskId ? { ...task, completed: !task.completed } : task
+        task.id === taskId ? { ...task, completed: !!checked } : task
       )
     );
   };
@@ -117,7 +117,7 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
                 courses={courses}
                 isExpanded={expandedTaskId === task.id}
                 onToggle={() => toggleExpandTask(task.id)}
-                onComplete={(e) => handleToggleComplete(task.id, e)} 
+                onComplete={(checked) => handleToggleComplete(task.id, checked)} 
               />
             ))}
           </div>
@@ -132,7 +132,7 @@ interface TaskItemProps {
   courses: StudentCourse[];
   isExpanded: boolean;
   onToggle: () => void;
-  onComplete: (e: React.MouseEvent) => void;
+  onComplete: (checked: boolean | string) => void;
 }
 
 function TaskItem({ task, courses, isExpanded, onToggle, onComplete }: TaskItemProps) {
@@ -158,7 +158,7 @@ function TaskItem({ task, courses, isExpanded, onToggle, onComplete }: TaskItemP
       )}
       onClick={onToggle}
     >
-      <div className="pt-0.5 min-w-[28px]">
+      <div className="pt-0.5 min-w-[28px]" onClick={(e) => e.stopPropagation()}>
         <Checkbox 
           checked={task.completed} 
           onCheckedChange={onComplete}
