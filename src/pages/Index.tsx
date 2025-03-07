@@ -1,12 +1,13 @@
 
 import { Link } from "react-router-dom";
-import { BookOpen, Brain, Bot, Users, Sparkles } from "lucide-react";
+import { BookOpen, Brain, Bot, Users, Sparkles, Info } from "lucide-react";
 import { HeroSection } from "@/components/blocks/hero-section-dark";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TextShimmer } from "@/components/ui/text-shimmer";
+import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
 
 const Index = () => {
   const { isOnline } = useNetworkStatus();
@@ -101,12 +102,27 @@ const Index = () => {
           
           <div className="relative">
             <div className="text-center mb-10 md:mb-16">
-              <TextShimmer 
-                as="h2"
-                className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl mb-3"
-              >
-                Featured Benefits
-              </TextShimmer>
+              <div className="flex items-center justify-center gap-2">
+                <TextShimmer 
+                  as="h2"
+                  className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl mb-3"
+                >
+                  Featured Benefits
+                </TextShimmer>
+                
+                <InteractiveTooltip
+                  trigger={
+                    <button aria-label="More information" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                      <Info className="h-5 w-5" />
+                    </button>
+                  }
+                  content={
+                    <div className="max-w-[200px] p-1">
+                      <p>Discover how our platform enhances your learning journey with AI-powered tools and personalized experiences.</p>
+                    </div>
+                  }
+                />
+              </div>
               <p className="mt-4 text-base md:text-lg leading-8 text-gray-600 dark:text-gray-300">
                 Discover how our platform can transform your learning experience
               </p>
