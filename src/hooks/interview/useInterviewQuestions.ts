@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { InterviewQuestion } from "@/types/interview";
+import { InterviewQuestion, EnhancedInterviewQuestion } from "@/types/interview";
 import { generateFallbackQuestions } from "./utils/fallbackQuestions";
 import { generateQuestionsFromApi } from "./utils/apiQuestions";
 import { fetchQuestionsFromDb } from "./utils/questionFetching";
@@ -59,8 +59,30 @@ export const useInterviewQuestions = (
     }
   };
 
-  const generateFallbackQuestionsWrapper = (jobRole: string, industry: string): InterviewQuestion[] => {
-    return generateFallbackQuestions(jobRole, industry, sessionId);
+  const generateFallbackQuestionsWrapper = async (jobRole: string, industry: string): Promise<InterviewQuestion[]> => {
+    try {
+      const fallbackQuestions = await generateFallbackQuestions(jobRole, industry, sessionId);
+      return fallbackQuestions;
+    } catch (error) {
+      console.error("Error generating fallback questions:", error);
+      // Return a minimal set of questions as last resort
+      return [
+        {
+          id: `emergency-fallback-1`,
+          session_id: sessionId || '',
+          question: `Tell me about your experience and skills relevant to this ${jobRole} position.`,
+          question_order: 0,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: `emergency-fallback-2`,
+          session_id: sessionId || '',
+          question: `What interests you about working in the ${industry} industry?`,
+          question_order: 1,
+          created_at: new Date().toISOString()
+        }
+      ];
+    }
   };
 
   const fetchQuestions = async () => {

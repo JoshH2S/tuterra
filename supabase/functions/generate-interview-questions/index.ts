@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 
@@ -6,14 +7,17 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 
-// Define interface for interview questions
-interface InterviewQuestion {
+// Define interface for enhanced interview questions
+interface EnhancedInterviewQuestion {
   id: string;
   text: string;
-  category: string;
-  difficulty: string;
+  category: 'behavioral' | 'technical' | 'role-specific' | 'situational' | 'problem-solving';
+  difficulty: 'entry' | 'intermediate' | 'advanced';
   estimatedTimeSeconds: number;
-  keywords?: string[];
+  context?: string;
+  keywords: string[];
+  followUp?: string[];
+  expectedTopics?: string[];
   question_order: number;
   created_at: string;
 }
@@ -27,31 +31,12 @@ interface RequestBody {
   sessionId: string;
 }
 
-// Define interface for response body
-interface ResponseBody {
-  success: boolean;
-  sessionId: string;
-  questions: InterviewQuestion[];
-}
-
 // CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
-
-// Validate environment at startup
-const validateEnvironment = () => {
-  const required = ['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
-  const missing = required.filter(key => !Deno.env.get(key));
-  if (missing.length > 0) {
-    console.error(`Missing environment variables: ${missing.join(', ')}`);
-    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
-  }
-};
-
-validateEnvironment();
 
 // Initialize Supabase client with admin rights
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
@@ -186,7 +171,7 @@ serve(async (req) => {
     // For testing quickly without session verification - comment out in production
     if (sessionId === "test-123") {
       console.log("Test session ID detected, bypassing session verification");
-      const questions = generateInterviewQuestions(industry, effectiveRole, jobDescription);
+      const questions = generateBasicInterviewQuestions(industry, effectiveRole, jobDescription);
       
       return new Response(
         JSON.stringify({ 
@@ -198,13 +183,13 @@ serve(async (req) => {
       );
     }
     
-    // Verify session exists in database before proceeding - using a more robust check
+    // Verify session exists in database before proceeding
     console.log(`Verifying session ${sessionId} exists in database`);
     const { data: sessionData, error: sessionError } = await supabase
       .from('interview_sessions')
       .select('id, session_id')
       .eq('session_id', sessionId)
-      .maybeSingle(); // Use maybeSingle() instead of single() to handle not found case without error
+      .maybeSingle();
 
     console.log("Session verification result:", { 
       sessionData, 
@@ -236,22 +221,38 @@ serve(async (req) => {
       );
     }
     
-    console.log(`Session verified. Generating questions for session ${sessionId}`);
-    console.log("Parameters:", { 
-      industry, 
-      role: effectiveRole, 
-      jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A" 
-    });
-    
-    // Generate the questions with updated format
-    const questions = generateInterviewQuestions(industry, effectiveRole, jobDescription);
-    console.log(`Generated ${questions.length} questions`);
+    console.log(`Session verified. Generating enhanced questions for session ${sessionId}`);
+    let questions = [];
+    let requirements = [];
+
+    try {
+      // 1. Extract key requirements from job description if available
+      if (jobDescription && jobDescription.trim().length > 50) {
+        const requirementsResponse = await extractRequirements(effectiveRole, industry, jobDescription);
+        requirements = requirementsResponse;
+        console.log(`Extracted ${requirements.length} key requirements from job description`);
+      } else {
+        requirements = [`Role: ${effectiveRole}`, `Industry: ${industry}`];
+        console.log("No detailed job description provided, using basic requirements");
+      }
+
+      // 2. Generate enhanced questions based on requirements
+      questions = await generateEnhancedQuestions(effectiveRole, industry, requirements, jobDescription);
+      console.log(`Generated ${questions.length} enhanced questions`);
+    } catch (aiError) {
+      console.error("Error in AI-based question generation:", aiError);
+      console.log("Falling back to basic question generation");
+      questions = generateBasicInterviewQuestions(industry, effectiveRole, jobDescription);
+    }
     
     // Save the questions to the database
     console.log("Updating session with generated questions");
     const { error: updateError } = await supabase
       .from('interview_sessions')
-      .update({ questions })
+      .update({ 
+        questions,
+        job_description: jobDescription || null
+      })
       .eq('session_id', sessionId);
     
     if (updateError) {
@@ -289,58 +290,262 @@ serve(async (req) => {
   }
 });
 
-// Generate interview questions based on industry, job role, and description
-// Updated to match client-expected format
-function generateInterviewQuestions(industry: string, role: string, jobDescription?: string): InterviewQuestion[] {
+// Extract key requirements from job description using OpenAI
+async function extractRequirements(role: string, industry: string, jobDescription: string): Promise<string[]> {
+  try {
+    if (!openaiApiKey) {
+      console.warn("OpenAI API key not found, skipping requirements extraction");
+      return [`Role: ${role}`, `Industry: ${industry}`];
+    }
+
+    const prompt = `
+      Analyze this job description for a ${role} position in the ${industry} industry and extract key requirements:
+      
+      ${jobDescription}
+      
+      Return the response as a JSON array of strings containing only the 5-8 most important key requirements.
+    `;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert at analyzing job requirements."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("OpenAI API error:", response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log("OpenAI requirements response:", data);
+    
+    try {
+      const content = data.choices[0].message.content;
+      const parsedRequirements = JSON.parse(content);
+      
+      if (Array.isArray(parsedRequirements) && parsedRequirements.length > 0) {
+        return parsedRequirements;
+      } else {
+        console.warn("Failed to parse requirements from OpenAI response");
+        return [`Role: ${role}`, `Industry: ${industry}`];
+      }
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI response:", parseError);
+      return [`Role: ${role}`, `Industry: ${industry}`];
+    }
+  } catch (error) {
+    console.error("Error extracting requirements:", error);
+    return [`Role: ${role}`, `Industry: ${industry}`];
+  }
+}
+
+// Generate enhanced interview questions with OpenAI
+async function generateEnhancedQuestions(
+  role: string, 
+  industry: string, 
+  requirements: string[], 
+  jobDescription?: string
+): Promise<EnhancedInterviewQuestion[]> {
+  try {
+    if (!openaiApiKey) {
+      console.warn("OpenAI API key not found, using fallback question generation");
+      return generateBasicInterviewQuestions(industry, role, jobDescription);
+    }
+
+    const questionPrompt = `
+      Create an interview question set for a ${role} position in the ${industry} industry.
+      
+      Key Requirements:
+      ${requirements.join('\n')}
+      
+      Additional context: ${jobDescription ? jobDescription.substring(0, 200) + "..." : "None provided"}
+      
+      Generate 8-10 questions with this distribution:
+      - 3 Behavioral questions relevant to the role
+      - 3-4 Technical/Role-specific questions based on the requirements
+      - 2 Situational questions related to the industry
+      - 1-2 Problem-solving questions
+      
+      For each question, provide:
+      1. The main question text
+      2. Category (behavioral/technical/role-specific/situational/problem-solving)
+      3. Difficulty level (entry/intermediate/advanced)
+      4. Expected topics to be covered in the answer (array of strings)
+      5. 1-2 follow-up questions (array of strings)
+      6. Estimated answer time in seconds (between 60-180)
+      7. Keywords related to the question (array of strings)
+      
+      Ensure each question:
+      - Directly relates to the job requirements
+      - Cannot be answered with yes/no
+      - Is specific to the role
+      - Has clear assessment criteria
+      - Progresses in difficulty within each category
+      
+      Return the response as a JSON array where each object has:
+      {
+        "text": "question text",
+        "category": "one of the categories",
+        "difficulty": "entry/intermediate/advanced",
+        "estimatedTimeSeconds": number,
+        "expectedTopics": ["topic1", "topic2"],
+        "followUp": ["follow-up question 1", "follow-up question 2"],
+        "keywords": ["keyword1", "keyword2"]
+      }
+    `;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert technical interviewer with deep knowledge of industry-specific requirements."
+          },
+          {
+            role: "user",
+            content: questionPrompt
+          }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("OpenAI API error:", response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log("OpenAI questions response:", data);
+
+    try {
+      const content = data.choices[0].message.content;
+      // Sometimes the API returns content with markdown code blocks
+      const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      const parsedQuestions = JSON.parse(cleanedContent);
+
+      if (Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
+        // Map to proper format and add required fields
+        return parsedQuestions.map((q, index) => ({
+          id: crypto.randomUUID(),
+          text: q.text,
+          category: q.category,
+          difficulty: q.difficulty,
+          estimatedTimeSeconds: q.estimatedTimeSeconds || 120,
+          expectedTopics: q.expectedTopics || [],
+          followUp: q.followUp || [],
+          keywords: q.keywords || [],
+          context: `${industry} - ${role}`,
+          question_order: index,
+          created_at: new Date().toISOString()
+        }));
+      } else {
+        console.warn("Failed to parse questions from OpenAI response");
+        return generateBasicInterviewQuestions(industry, role, jobDescription);
+      }
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI questions response:", parseError);
+      return generateBasicInterviewQuestions(industry, role, jobDescription);
+    }
+  } catch (error) {
+    console.error("Error generating enhanced questions:", error);
+    return generateBasicInterviewQuestions(industry, role, jobDescription);
+  }
+}
+
+// Generate basic fallback interview questions as backup
+function generateBasicInterviewQuestions(industry: string, role: string, jobDescription?: string) {
   const currentDate = new Date().toISOString();
-  const baseQuestions: InterviewQuestion[] = [
+  
+  // Format role name for better display
+  const formattedRole = role
+    .split(/[-_\s]/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+  
+  const baseQuestions: EnhancedInterviewQuestion[] = [
     {
-      id: `q-${crypto.randomUUID()}`,
-      text: `Tell me about your experience as a ${role} in the ${industry} industry.`,
-      category: "experience",
-      difficulty: "medium",
+      id: crypto.randomUUID(),
+      text: `Tell me about your experience as a ${formattedRole} in the ${industry} industry.`,
+      category: "behavioral",
+      difficulty: "entry",
       estimatedTimeSeconds: 120,
       keywords: [role.toLowerCase(), industry.toLowerCase(), "experience"],
+      expectedTopics: ["previous roles", "responsibilities", "achievements"],
+      followUp: ["What specific skills did you develop?", "How did your experience prepare you for this role?"],
       question_order: 0,
       created_at: currentDate
     },
     {
-      id: `q-${crypto.randomUUID()}`,
-      text: `What skills do you have that make you a good fit for this ${role} position?`,
-      category: "skills",
-      difficulty: "medium",
+      id: crypto.randomUUID(),
+      text: `What skills do you have that make you a good fit for this ${formattedRole} position?`,
+      category: "behavioral",
+      difficulty: "entry",
       estimatedTimeSeconds: 90,
       keywords: [role.toLowerCase(), "skills", "qualifications"],
+      expectedTopics: ["technical skills", "soft skills", "relevant qualifications"],
+      followUp: ["How have you applied these skills in previous roles?"],
       question_order: 1,
       created_at: currentDate
     },
     {
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: `Describe a challenging situation you've faced in a previous role and how you handled it.`,
       category: "behavioral",
-      difficulty: "hard",
+      difficulty: "intermediate",
       estimatedTimeSeconds: 150,
       keywords: ["challenge", "problem-solving", "experience"],
+      expectedTopics: ["problem identification", "solution approach", "results"],
+      followUp: ["What would you do differently now?"],
       question_order: 2,
       created_at: currentDate
     },
     {
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: `How do you stay updated with trends and changes in the ${industry} industry?`,
-      category: "industry knowledge",
-      difficulty: "medium",
+      category: "technical",
+      difficulty: "intermediate",
       estimatedTimeSeconds: 100,
       keywords: [industry.toLowerCase(), "trends", "professional development"],
+      expectedTopics: ["learning sources", "industry publications", "networking"],
+      followUp: ["What recent industry trend do you find most interesting?"],
       question_order: 3,
       created_at: currentDate
     },
     {
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: `Where do you see yourself professionally in five years?`,
-      category: "career goals",
-      difficulty: "medium",
+      category: "behavioral",
+      difficulty: "intermediate",
       estimatedTimeSeconds: 90,
       keywords: ["goals", "career development", "ambition"],
+      expectedTopics: ["career goals", "growth plans", "aspirations"],
+      followUp: ["How does this role fit into your long-term plans?"],
       question_order: 4,
       created_at: currentDate
     }
@@ -349,34 +554,40 @@ function generateInterviewQuestions(industry: string, role: string, jobDescripti
   // Add industry-specific questions
   if (industry.toLowerCase() === 'technology' || industry.toLowerCase() === 'tech') {
     baseQuestions.push({
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: "Describe a technical project you worked on that you're particularly proud of.",
-      category: "technical experience",
-      difficulty: "hard",
+      category: "technical",
+      difficulty: "advanced",
       estimatedTimeSeconds: 150,
       keywords: ["project", "technical", "achievement"],
+      expectedTopics: ["project goals", "technologies used", "personal contribution", "outcomes"],
+      followUp: ["What technical challenges did you overcome?", "How did you measure success?"],
       question_order: 5,
       created_at: currentDate
     });
   } else if (industry.toLowerCase() === 'finance') {
     baseQuestions.push({
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: "How do you ensure accuracy and attention to detail in your financial work?",
-      category: "attention to detail",
-      difficulty: "medium",
+      category: "technical",
+      difficulty: "intermediate",
       estimatedTimeSeconds: 120,
       keywords: ["finance", "accuracy", "detail-oriented"],
+      expectedTopics: ["quality control processes", "error prevention", "review methodologies"],
+      followUp: ["Can you describe a time when your attention to detail prevented a significant error?"],
       question_order: 5,
       created_at: currentDate
     });
   } else if (industry.toLowerCase() === 'healthcare') {
     baseQuestions.push({
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: "How do you balance patient care with administrative responsibilities?",
-      category: "balance",
-      difficulty: "hard",
+      category: "situational",
+      difficulty: "advanced",
       estimatedTimeSeconds: 140,
       keywords: ["healthcare", "patient care", "administration"],
+      expectedTopics: ["time management", "prioritization", "delegation"],
+      followUp: ["How do you maintain quality of care under time constraints?"],
       question_order: 5,
       created_at: currentDate
     });
@@ -385,38 +596,58 @@ function generateInterviewQuestions(industry: string, role: string, jobDescripti
   // Add role-specific questions
   if (role.toLowerCase().includes('manager') || role.toLowerCase().includes('leader')) {
     baseQuestions.push({
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: "Describe your management style and how you motivate your team.",
-      category: "leadership",
-      difficulty: "hard",
+      category: "role-specific",
+      difficulty: "advanced",
       estimatedTimeSeconds: 150,
       keywords: ["management", "leadership", "team motivation"],
+      expectedTopics: ["leadership philosophy", "motivation techniques", "team development"],
+      followUp: ["How do you handle conflicts within your team?", "How do you adapt your style to different team members?"],
       question_order: 6,
       created_at: currentDate
     });
   } else if (role.toLowerCase().includes('engineer') || role.toLowerCase().includes('developer')) {
     baseQuestions.push({
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: "How do you approach debugging and troubleshooting complex technical issues?",
-      category: "problem solving",
-      difficulty: "hard",
+      category: "problem-solving",
+      difficulty: "advanced",
       estimatedTimeSeconds: 150,
       keywords: ["debugging", "troubleshooting", "technical"],
+      expectedTopics: ["systematic approach", "tools used", "root cause analysis"],
+      followUp: ["Describe a particularly difficult bug you solved and how you approached it."],
       question_order: 6,
       created_at: currentDate
     });
   } else if (role.toLowerCase().includes('analyst')) {
     baseQuestions.push({
-      id: `q-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       text: "Describe how you would approach analyzing a complex dataset to extract meaningful insights.",
-      category: "analytical skills",
-      difficulty: "hard",
+      category: "technical",
+      difficulty: "advanced",
       estimatedTimeSeconds: 160,
       keywords: ["analysis", "data", "insights"],
+      expectedTopics: ["data cleaning", "analysis methodology", "visualization", "communication of findings"],
+      followUp: ["What tools do you typically use for data analysis?", "How do you validate your findings?"],
       question_order: 6,
       created_at: currentDate
     });
   }
   
+  // Add a situational question
+  baseQuestions.push({
+    id: crypto.randomUUID(),
+    text: `How would you handle a situation where you need to meet a tight deadline but you're waiting on input from colleagues who are unavailable?`,
+    category: "situational",
+    difficulty: "intermediate",
+    estimatedTimeSeconds: 120,
+    keywords: ["deadlines", "teamwork", "problem-solving"],
+    expectedTopics: ["communication strategies", "contingency planning", "prioritization"],
+    followUp: ["How would you prevent this situation in the future?"],
+    question_order: baseQuestions.length,
+    created_at: currentDate
+  });
+
   return baseQuestions;
 }

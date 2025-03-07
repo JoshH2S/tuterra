@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { InterviewQuestion, EdgeFunctionQuestion } from "@/types/interview";
+import { InterviewQuestion, EdgeFunctionQuestion, EnhancedInterviewQuestion } from "@/types/interview";
 import { EdgeFunctionResponse, QuestionGenerationParams } from "../types/questionTypes";
 
 /**
@@ -43,15 +43,14 @@ export const generateQuestionsFromApi = async (
     const accessToken = session?.access_token;
     
     if (!accessToken) {
-      console.error("No authentication token available. User may not be signed in.");
-      throw new Error("Authentication required. Please sign in.");
+      console.log("No authentication token available. Using anonymous access.");
     }
     
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
+        ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
       },
       body: JSON.stringify(payload)
     });
@@ -75,16 +74,32 @@ export const generateQuestionsFromApi = async (
     if (response_data?.questions && Array.isArray(response_data.questions)) {
       console.log(`Received ${response_data.questions.length} questions from edge function`);
       
-      // Process the questions from edge function's format to our application format
-      const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EdgeFunctionQuestion, index: number) => ({
-        id: q.id || `q-${crypto.randomUUID()}`,
-        session_id: params.sessionId,
-        question: q.text || '', // Map text field to question field
-        question_order: q.question_order || index,
-        created_at: q.created_at || new Date().toISOString()
-      }));
-      
-      return formattedQuestions;
+      // Check if we have enhanced questions with the new format
+      const hasEnhancedFormat = response_data.questions.length > 0 && 
+                              'text' in response_data.questions[0] && 
+                              'category' in response_data.questions[0];
+
+      if (hasEnhancedFormat) {
+        // Process enhanced question format
+        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EnhancedInterviewQuestion, index: number) => ({
+          id: q.id || `q-${crypto.randomUUID()}`,
+          session_id: params.sessionId,
+          question: q.text || '', // Text field contains the question
+          question_order: q.question_order !== undefined ? q.question_order : index,
+          created_at: q.created_at || new Date().toISOString()
+        }));
+        return formattedQuestions;
+      } else {
+        // Process legacy question format
+        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EdgeFunctionQuestion, index: number) => ({
+          id: q.id || `q-${crypto.randomUUID()}`,
+          session_id: params.sessionId,
+          question: q.text || '', // Map text field to question field
+          question_order: q.question_order || index,
+          created_at: q.created_at || new Date().toISOString()
+        }));
+        return formattedQuestions;
+      }
     } else {
       console.error("Questions array missing or invalid in response:", data);
       throw new Error("Invalid response format from server");

@@ -810,6 +810,42 @@ export type Database = {
           },
         ]
       }
+      question_templates: {
+        Row: {
+          created_at: string | null
+          difficulty: string
+          id: string
+          industry: string
+          keywords: string[]
+          question_type: string
+          role_category: string
+          template: string
+          variables: Json
+        }
+        Insert: {
+          created_at?: string | null
+          difficulty: string
+          id?: string
+          industry: string
+          keywords?: string[]
+          question_type: string
+          role_category: string
+          template: string
+          variables: Json
+        }
+        Update: {
+          created_at?: string | null
+          difficulty?: string
+          id?: string
+          industry?: string
+          keywords?: string[]
+          question_type?: string
+          role_category?: string
+          template?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       quiz_questions: {
         Row: {
           correct_answer: string

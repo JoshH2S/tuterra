@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useInterviewPersistence } from "./useInterviewPersistence";
@@ -66,15 +67,40 @@ export const useInterviewSetup = (
     return false;
   };
   
-  const handleFallbackMode = (jobRole: string, industry: string) => {
+  const handleFallbackMode = async (jobRole: string, industry: string) => {
     console.log("Using fallback interview mode...");
     const sessionId = uuidv4();
     setCurrentSessionId(sessionId);
     
-    const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
-    setQuestions(fallbackQuestions);
-    setUsedFallbackQuestions(true);
-    setInterviewReady(true);
+    try {
+      const fallbackQuestions = await generateFallbackQuestions(jobRole, industry);
+      setQuestions(fallbackQuestions);
+      setUsedFallbackQuestions(true);
+      setInterviewReady(true);
+    } catch (error) {
+      console.error("Error generating fallback questions:", error);
+      
+      // Use minimal emergency questions as last resort
+      setQuestions([
+        {
+          id: `emergency-fallback-1`,
+          session_id: sessionId,
+          question: `Tell me about your experience and skills related to ${jobRole}.`,
+          question_order: 0,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: `emergency-fallback-2`,
+          session_id: sessionId,
+          question: `Why are you interested in this ${jobRole} position?`,
+          question_order: 1,
+          created_at: new Date().toISOString()
+        }
+      ]);
+      
+      setUsedFallbackQuestions(true);
+      setInterviewReady(true);
+    }
   };
   
   const handleStartInterview = async (industry: string, jobRole: string, jobDescription: string) => {
@@ -101,7 +127,7 @@ export const useInterviewSetup = (
     
     if (!isOnline) {
       console.log("Device is offline. Using fallback interview mode...");
-      handleFallbackMode(jobRole, industry);
+      await handleFallbackMode(jobRole, industry);
       
       setSessionCreationErrors([
         "You appear to be offline. Using local interview mode with standard questions."
@@ -138,7 +164,7 @@ export const useInterviewSetup = (
         console.error("Error generating questions:", questionError);
         
         console.log("Using fallback questions due to error");
-        const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
+        const fallbackQuestions = await generateFallbackQuestions(jobRole, industry);
         setQuestions(fallbackQuestions);
         setUsedFallbackQuestions(true);
         setInterviewReady(true);
@@ -151,7 +177,7 @@ export const useInterviewSetup = (
     } catch (error) {
       console.error("Error starting interview:", error);
       
-      handleFallbackMode(jobRole, industry);
+      await handleFallbackMode(jobRole, industry);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const isConnectionError = errorMessage.includes('network') || 

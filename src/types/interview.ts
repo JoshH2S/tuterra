@@ -1,4 +1,3 @@
-
 export interface InterviewSession {
   id: string;
   user_id: string;
@@ -28,6 +27,21 @@ export interface EdgeFunctionQuestion {
   difficulty: string;
   estimatedTimeSeconds: number;
   keywords?: string[];
+  question_order: number;
+  created_at: string;
+}
+
+// Enhanced question format with more detailed structure
+export interface EnhancedInterviewQuestion {
+  id: string;
+  text: string;
+  category: 'behavioral' | 'technical' | 'role-specific' | 'situational' | 'problem-solving';
+  difficulty: 'entry' | 'intermediate' | 'advanced';
+  estimatedTimeSeconds: number;
+  context?: string;
+  keywords: string[];
+  followUp?: string[];
+  expectedTopics?: string[];
   question_order: number;
   created_at: string;
 }
