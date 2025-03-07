@@ -21,11 +21,19 @@ export const generateQuestionsFromApi = async (
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
     
-    console.log("Calling generate-interview-questions edge function with payload:", JSON.stringify(params));
+    // Create a clean payload that's guaranteed to have the required fields
+    const payload = {
+      industry: params.industry,
+      jobRole: params.jobRole,
+      jobDescription: params.jobDescription || "",
+      sessionId: params.sessionId
+    };
     
-    // Call the edge function
+    console.log("Calling generate-interview-questions edge function with payload:", JSON.stringify(payload));
+    
+    // Call the edge function with the clean payload
     const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
-      body: params,
+      body: payload,
       headers: {
         'Content-Type': 'application/json'
       }
