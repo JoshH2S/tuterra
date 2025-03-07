@@ -2,13 +2,12 @@
 import { useEffect } from "react";
 import { useInterviewSession } from "@/hooks/interview/useInterviewSession";
 import { useInterviewSetup } from "@/hooks/interview/useInterviewSetup";
-import { useInterviewFeedback } from "@/hooks/interview/useInterviewFeedback";
 import { InterviewForm } from "@/components/interview/InterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
-import { InterviewFeedbackComponent } from "@/components/interview/InterviewFeedback";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
 import { InterviewDebug } from "@/components/interview/InterviewDebug";
 import { InterviewLogo } from "@/components/interview/InterviewLogo";
+import { InterviewCompletion } from "@/components/interview/InterviewCompletion";
 import { Wifi, WifiOff } from "lucide-react";
 
 const JobInterviewSimulator = () => {
@@ -47,15 +46,6 @@ const JobInterviewSimulator = () => {
     isOnline
   } = useInterviewSetup(setCurrentSessionId, setQuestions, setIsGeneratingQuestions);
 
-  const { generateFeedback, feedback, loading: feedbackLoading, hasError, retry } = useInterviewFeedback(currentSessionId);
-
-  // Generate feedback when transcript is ready
-  useEffect(() => {
-    if (isInterviewComplete && transcript.length > 0 && !feedback && !hasError) {
-      generateFeedback(transcript);
-    }
-  }, [isInterviewComplete, transcript, feedback, hasError, generateFeedback]);
-
   const handleStartInterviewWithParams = (industry: string, jobRole: string, jobDescription: string) => {
     setIndustry(industry);
     setJobRole(jobRole);
@@ -66,11 +56,6 @@ const JobInterviewSimulator = () => {
   const handleStartNewInterview = () => {
     handleStartNew();
     setInterviewReady(false);
-  };
-
-  const handleRetryFeedbackGeneration = () => {
-    retry();
-    generateFeedback(transcript);
   };
 
   return (
@@ -129,14 +114,10 @@ const JobInterviewSimulator = () => {
         
         {/* Interview completed */}
         {isInterviewComplete && (
-          <InterviewFeedbackComponent
-            feedback={feedback}
+          <InterviewCompletion
             transcript={transcript}
             onDownloadTranscript={handleDownloadTranscript}
             onStartNew={handleStartNewInterview}
-            loading={feedbackLoading}
-            hasError={hasError}
-            onRetry={handleRetryFeedbackGeneration}
           />
         )}
       </div>
