@@ -17,6 +17,18 @@ export interface InterviewQuestion {
   created_at: string;
 }
 
+// Edge function question format (for reference)
+export interface EdgeFunctionQuestion {
+  id: string;
+  text: string;
+  category: string;
+  difficulty: string;
+  estimatedTimeSeconds: number;
+  keywords?: string[];
+  question_order: number;
+  created_at: string;
+}
+
 export interface InterviewResponse {
   id: string;
   question_id: string;

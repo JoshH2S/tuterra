@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -36,10 +35,10 @@ export const useInterviewQuestions = (
     });
     
     try {
-      // Create the request payload - using 'role' instead of 'jobRole' to match server expectations
+      // Create the request payload
       const payload = { 
         industry, 
-        role: jobRole, // Key change: parameter name standardization
+        jobRole, // Now correctly matched with the edge function
         jobDescription, 
         sessionId 
       };
@@ -69,11 +68,11 @@ export const useInterviewQuestions = (
       if (data?.questions && Array.isArray(data.questions)) {
         console.log(`Received ${data.questions.length} questions from edge function`);
         
-        // Validate the shape of the received questions
+        // Process the questions from edge function's format to our application format
         const formattedQuestions = data.questions.map((q: any) => ({
           id: q.id || `q-${crypto.randomUUID()}`,
           session_id: sessionId,
-          question: q.question || '',
+          question: q.text || '', // Map text field to question field
           question_order: q.question_order || 0,
           created_at: q.created_at || new Date().toISOString()
         }));

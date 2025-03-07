@@ -7,6 +7,34 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 
+// Define interface for interview questions
+interface InterviewQuestion {
+  id: string;
+  text: string; // Changed from 'question' to 'text'
+  category: string;
+  difficulty: string;
+  estimatedTimeSeconds: number;
+  keywords?: string[];
+  question_order: number;
+  created_at: string;
+}
+
+// Define interface for request body
+interface RequestBody {
+  industry: string;
+  role?: string;
+  jobRole?: string;
+  jobDescription?: string;
+  sessionId: string;
+}
+
+// Define interface for response body
+interface ResponseBody {
+  success: boolean;
+  sessionId: string;
+  questions: InterviewQuestion[];
+}
+
 // Validate environment at startup
 const validateEnvironment = () => {
   const required = ['OPENAI_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
@@ -29,7 +57,7 @@ const corsHeaders = {
 };
 
 // Validate request body
-const validateRequest = (body: any) => {
+const validateRequest = (body: any): body is RequestBody => {
   console.log("Validating request body:", JSON.stringify(body));
   
   if (!body) {
@@ -39,21 +67,14 @@ const validateRequest = (body: any) => {
   // Check for both 'role' and 'jobRole' parameters to handle both naming conventions
   const role = body.role || body.jobRole;
   
-  const required = ['industry', 'sessionId'];
-  const missing = required.filter(key => !body[key]);
-  
-  if (missing.length > 0 || !role) {
-    const missingParams = !role ? [...missing, 'role/jobRole'] : missing;
-    throw new Error(`Missing required fields: ${missingParams.join(', ')}`);
+  if (!body.industry || !role || !body.sessionId) {
+    throw new Error(`Missing required fields: ${[
+      !body.industry && 'industry',
+      !role && 'role/jobRole',
+      !body.sessionId && 'sessionId'
+    ].filter(Boolean).join(', ')}`);
   }
 
-  if (typeof body.industry !== 'string' || 
-      typeof role !== 'string' || 
-      typeof body.sessionId !== 'string') {
-    throw new Error('Invalid parameter types');
-  }
-  
-  console.log("Request validation passed");
   return true;
 };
 
@@ -143,8 +164,8 @@ serve(async (req) => {
       jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A" 
     });
     
-    // Generate the questions
-    const questions = generateMockQuestions(industry, effectiveRole, jobDescription);
+    // Generate the questions with updated format
+    const questions = generateInterviewQuestions(industry, effectiveRole, jobDescription);
     console.log(`Generated ${questions.length} questions`);
     
     // Save the questions to the database
@@ -189,37 +210,58 @@ serve(async (req) => {
   }
 });
 
-// Generate mock questions based on industry, job role, and description
-function generateMockQuestions(industry: string, role: string, jobDescription?: string) {
+// Generate interview questions based on industry, job role, and description
+// Updated to match client-expected format
+function generateInterviewQuestions(industry: string, role: string, jobDescription?: string): InterviewQuestion[] {
   const currentDate = new Date().toISOString();
-  const baseQuestions = [
+  const baseQuestions: InterviewQuestion[] = [
     {
       id: `q-${crypto.randomUUID()}`,
-      question: `Tell me about your experience as a ${role} in the ${industry} industry.`,
+      text: `Tell me about your experience as a ${role} in the ${industry} industry.`,
+      category: "experience",
+      difficulty: "medium",
+      estimatedTimeSeconds: 120,
+      keywords: [role.toLowerCase(), industry.toLowerCase(), "experience"],
       question_order: 0,
       created_at: currentDate
     },
     {
       id: `q-${crypto.randomUUID()}`,
-      question: `What skills do you have that make you a good fit for this ${role} position?`,
+      text: `What skills do you have that make you a good fit for this ${role} position?`,
+      category: "skills",
+      difficulty: "medium",
+      estimatedTimeSeconds: 90,
+      keywords: [role.toLowerCase(), "skills", "qualifications"],
       question_order: 1,
       created_at: currentDate
     },
     {
       id: `q-${crypto.randomUUID()}`,
-      question: `Describe a challenging situation you've faced in a previous role and how you handled it.`,
+      text: `Describe a challenging situation you've faced in a previous role and how you handled it.`,
+      category: "behavioral",
+      difficulty: "hard",
+      estimatedTimeSeconds: 150,
+      keywords: ["challenge", "problem-solving", "experience"],
       question_order: 2,
       created_at: currentDate
     },
     {
       id: `q-${crypto.randomUUID()}`,
-      question: `How do you stay updated with trends and changes in the ${industry} industry?`,
+      text: `How do you stay updated with trends and changes in the ${industry} industry?`,
+      category: "industry knowledge",
+      difficulty: "medium",
+      estimatedTimeSeconds: 100,
+      keywords: [industry.toLowerCase(), "trends", "professional development"],
       question_order: 3,
       created_at: currentDate
     },
     {
       id: `q-${crypto.randomUUID()}`,
-      question: `Where do you see yourself professionally in five years?`,
+      text: `Where do you see yourself professionally in five years?`,
+      category: "career goals",
+      difficulty: "medium",
+      estimatedTimeSeconds: 90,
+      keywords: ["goals", "career development", "ambition"],
       question_order: 4,
       created_at: currentDate
     }
@@ -229,21 +271,33 @@ function generateMockQuestions(industry: string, role: string, jobDescription?: 
   if (industry.toLowerCase() === 'technology' || industry.toLowerCase() === 'tech') {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
-      question: "Describe a technical project you worked on that you're particularly proud of.",
+      text: "Describe a technical project you worked on that you're particularly proud of.",
+      category: "technical experience",
+      difficulty: "hard",
+      estimatedTimeSeconds: 150,
+      keywords: ["project", "technical", "achievement"],
       question_order: 5,
       created_at: currentDate
     });
   } else if (industry.toLowerCase() === 'finance') {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
-      question: "How do you ensure accuracy and attention to detail in your financial work?",
+      text: "How do you ensure accuracy and attention to detail in your financial work?",
+      category: "attention to detail",
+      difficulty: "medium",
+      estimatedTimeSeconds: 120,
+      keywords: ["finance", "accuracy", "detail-oriented"],
       question_order: 5,
       created_at: currentDate
     });
   } else if (industry.toLowerCase() === 'healthcare') {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
-      question: "How do you balance patient care with administrative responsibilities?",
+      text: "How do you balance patient care with administrative responsibilities?",
+      category: "balance",
+      difficulty: "hard",
+      estimatedTimeSeconds: 140,
+      keywords: ["healthcare", "patient care", "administration"],
       question_order: 5,
       created_at: currentDate
     });
@@ -253,21 +307,33 @@ function generateMockQuestions(industry: string, role: string, jobDescription?: 
   if (role.toLowerCase().includes('manager') || role.toLowerCase().includes('leader')) {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
-      question: "Describe your management style and how you motivate your team.",
+      text: "Describe your management style and how you motivate your team.",
+      category: "leadership",
+      difficulty: "hard",
+      estimatedTimeSeconds: 150,
+      keywords: ["management", "leadership", "team motivation"],
       question_order: 6,
       created_at: currentDate
     });
   } else if (role.toLowerCase().includes('engineer') || role.toLowerCase().includes('developer')) {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
-      question: "How do you approach debugging and troubleshooting complex technical issues?",
+      text: "How do you approach debugging and troubleshooting complex technical issues?",
+      category: "problem solving",
+      difficulty: "hard",
+      estimatedTimeSeconds: 150,
+      keywords: ["debugging", "troubleshooting", "technical"],
       question_order: 6,
       created_at: currentDate
     });
   } else if (role.toLowerCase().includes('analyst')) {
     baseQuestions.push({
       id: `q-${crypto.randomUUID()}`,
-      question: "Describe how you would approach analyzing a complex dataset to extract meaningful insights.",
+      text: "Describe how you would approach analyzing a complex dataset to extract meaningful insights.",
+      category: "analytical skills",
+      difficulty: "hard",
+      estimatedTimeSeconds: 160,
+      keywords: ["analysis", "data", "insights"],
       question_order: 6,
       created_at: currentDate
     });
