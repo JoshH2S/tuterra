@@ -17,7 +17,7 @@ export interface InterviewQuestion {
   created_at: string;
 }
 
-// Edge function question format (for reference)
+// Edge function question format
 export interface EdgeFunctionQuestion {
   id: string;
   text: string;
