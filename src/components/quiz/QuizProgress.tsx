@@ -14,8 +14,8 @@ export function QuizProgress({ current, total }: QuizProgressProps) {
         className="h-2 bg-secondary"
       />
       <div className="flex justify-between mt-2 text-xs text-gray-500">
-        <span>Question {current} of {total}</span>
-        <span>{Math.round((current / total) * 100)}% Complete</span>
+        <span className="truncate">Question {current} of {total}</span>
+        <span className="ml-2">{Math.round((current / total) * 100)}%</span>
       </div>
     </div>
   );
