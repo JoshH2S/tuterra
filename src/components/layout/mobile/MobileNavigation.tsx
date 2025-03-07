@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { navigationItems } from "../sidebar/SidebarNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 export function MobileNavigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -234,16 +233,25 @@ function MobileUserProfile() {
 
   return (
     <div className="flex items-center gap-4">
-      <Avatar className="h-10 w-10">
-        <AvatarImage src={avatarUrl} alt="Profile" />
-        <AvatarFallback className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-          {getInitials()}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1">
-        <p className="font-medium">{firstName && lastName ? `${firstName} ${lastName}` : "User"}</p>
-        <p className="text-sm text-muted-foreground">user@example.com</p>
-      </div>
+      <Button 
+        variant="ghost" 
+        className="p-0 h-auto flex items-center gap-3 flex-1 touch-manipulation"
+        onClick={() => navigate("/profile-settings")}
+      >
+        <Avatar className="h-12 w-12">
+          <AvatarImage 
+            src={avatarUrl} 
+            alt="Profile" 
+            className="object-cover"
+          />
+          <AvatarFallback className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm font-medium">
+            {getInitials()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="text-left">
+          <p className="font-medium">{firstName && lastName ? `${firstName} ${lastName}` : "User"}</p>
+        </div>
+      </Button>
       <Button 
         variant="ghost" 
         size="icon"
