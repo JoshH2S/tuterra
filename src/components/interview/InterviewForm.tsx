@@ -37,9 +37,9 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
     
-    // Validate job role
-    if (!jobRole || !JOB_ROLE_OPTIONS.some(opt => opt.value === jobRole)) {
-      errors.jobRole = "Please select a valid job role";
+    // Validate job role - now allowing custom roles
+    if (!jobRole.trim()) {
+      errors.jobRole = "Please select or enter a job role";
       isValid = false;
     }
     
@@ -128,8 +128,10 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
                 setFormErrors(prev => ({ ...prev, jobRole: undefined }));
               }}
               options={JOB_ROLE_OPTIONS}
-              placeholder="Select a job role"
+              placeholder="Select or enter a job role"
               className={`w-full ${formErrors.jobRole ? 'border-red-500' : ''}`}
+              allowCustomValue={true}
+              customValuePlaceholder="Enter specific job role..."
             />
             {formErrors.jobRole && (
               <p className="text-xs sm:text-sm text-red-500">{formErrors.jobRole}</p>
