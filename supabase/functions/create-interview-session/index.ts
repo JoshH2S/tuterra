@@ -24,6 +24,21 @@ serve(async (req) => {
     });
   }
 
+  // Add schema verification at the start
+  try {
+    const { data: schemaInfo, error: schemaError } = await supabase
+      .from('interview_sessions')
+      .select()
+      .limit(1);
+      
+    console.log("Current table schema:", {
+      error: schemaError?.message,
+      columns: schemaInfo && schemaInfo.length > 0 ? Object.keys(schemaInfo[0]) : []
+    });
+  } catch (e) {
+    console.error("Failed to check schema:", e);
+  }
+
   try {
     // Log headers for debugging
     console.log("Request headers:", Object.fromEntries(req.headers.entries()));
@@ -51,7 +66,7 @@ serve(async (req) => {
     console.log("Attempting to create session in database:", {
       session_id: sessionId,
       industry,
-      role
+      job_role: role // Note: we're using job_role instead of role
     });
     
     // Create the interview session with empty questions and responses initially
@@ -60,7 +75,7 @@ serve(async (req) => {
       .insert({
         session_id: sessionId,
         industry,
-        role,
+        job_role: role, // Changed from 'role' to 'job_role' to match the DB schema
         job_description: jobDescription || null,
         questions: [],
         user_responses: {}

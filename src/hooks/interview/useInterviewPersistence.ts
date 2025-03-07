@@ -56,7 +56,7 @@ export const useInterviewPersistence = () => {
         body: {
           sessionId,
           industry,
-          role: jobRole, // 'role' instead of 'job_role' to match DB schema
+          role: jobRole, // We keep 'role' in the API contract, but map to 'job_role' in the edge function
           jobDescription
         }
       });
