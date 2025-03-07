@@ -24,7 +24,7 @@ export function MobileNavigation() {
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t z-50 lg:hidden"
+        className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t z-50 lg:hidden safe-area-bottom"
       >
         <nav className="flex items-center justify-around p-4">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
