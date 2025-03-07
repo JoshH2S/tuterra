@@ -41,6 +41,11 @@ export const generateQuestionsFromApi = async (
     const { data: { session } } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
     
+    if (!accessToken) {
+      console.error("No authentication token available. User may not be signed in.");
+      throw new Error("Authentication required. Please sign in.");
+    }
+    
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
