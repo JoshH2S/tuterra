@@ -5,7 +5,6 @@ import { useInterviewQuestions } from "./useInterviewQuestions";
 import { InterviewQuestion } from "@/types/interview";
 import { v4 as uuidv4 } from "@/lib/uuid";
 import { supabase } from "@/integrations/supabase/client";
-import { JOB_ROLE_OPTIONS } from "@/components/interview/constants";
 
 export const useInterviewSetup = (
   setCurrentSessionId: (id: string) => void,
@@ -84,10 +83,18 @@ export const useInterviewSetup = (
     setSessionCreationErrors([]);
     setUsedFallbackQuestions(false);
     
-    if (!industry?.trim() || !jobRole?.trim()) {
-      console.error("Invalid inputs:", { industry, jobRole });
-      setSessionCreationErrors(["Industry and job role are required"]);
-      handleFallbackMode(jobRole || "Unknown Role", industry || "General");
+    if (!industry?.trim()) {
+      console.error("Invalid industry:", industry);
+      setSessionCreationErrors(["Industry is required"]);
+      handleFallbackMode(jobRole || "Unknown Role", "General");
+      setIsGeneratingQuestions(false);
+      return;
+    }
+    
+    if (!jobRole?.trim()) {
+      console.error("Invalid job role:", jobRole);
+      setSessionCreationErrors(["Job role is required"]);
+      handleFallbackMode("Unknown Role", industry || "General");
       setIsGeneratingQuestions(false);
       return;
     }

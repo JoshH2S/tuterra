@@ -66,7 +66,7 @@ serve(async (req) => {
     console.log("Attempting to create session in database:", {
       session_id: sessionId,
       industry,
-      job_title: role // Note: we're using job_title instead of job_role based on the schema
+      job_title: role
     });
     
     // Create the interview session with empty questions initially
@@ -74,7 +74,7 @@ serve(async (req) => {
       .from('interview_sessions')
       .insert({
         session_id: sessionId,
-        job_title: role, // Changed from 'job_role' to 'job_title' to match the DB schema
+        job_title: role,
         industry,
         job_description: jobDescription || null,
         questions: [],

@@ -3,10 +3,11 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { SelectInput } from "@/components/interview/SelectInput";
-import { INDUSTRY_OPTIONS, JOB_ROLE_OPTIONS } from "@/components/interview/constants";
+import { INDUSTRY_OPTIONS } from "@/components/interview/constants";
 
 interface InterviewFormProps {
   onSubmit: (industry: string, jobRole: string, jobDescription: string) => void;
@@ -37,9 +38,9 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
     
-    // Validate job role - now allowing custom roles
+    // Validate job role - now a simple text input
     if (!jobRole.trim()) {
-      errors.jobRole = "Please select or enter a job role";
+      errors.jobRole = "Please enter a job role";
       isValid = false;
     }
     
@@ -79,7 +80,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     
     console.log("Form validated, submitting to parent component");
     
-    // Submit the values (custom or selected job role)
+    // Submit the values with the entered job role
     onSubmit(industry, jobRole, jobDescription);
   };
 
@@ -119,19 +120,17 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
             <Label htmlFor="jobRole" className="flex justify-between text-sm sm:text-base">
               Job Role <span className="text-red-500">*</span>
             </Label>
-            <SelectInput
+            <Input
               id="jobRole"
               value={jobRole}
-              onChange={(val) => {
+              onChange={(e) => {
+                const val = e.target.value;
                 console.log("Job role changed to:", val);
                 setJobRole(val);
                 setFormErrors(prev => ({ ...prev, jobRole: undefined }));
               }}
-              options={JOB_ROLE_OPTIONS}
-              placeholder="Select or enter a job role"
+              placeholder="Enter the job role"
               className={`w-full ${formErrors.jobRole ? 'border-red-500' : ''}`}
-              allowCustomValue={true}
-              customValuePlaceholder="Enter specific job role..."
             />
             {formErrors.jobRole && (
               <p className="text-xs sm:text-sm text-red-500">{formErrors.jobRole}</p>
