@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useInterviewPersistence } from "./useInterviewPersistence";
@@ -6,6 +5,7 @@ import { useInterviewQuestions } from "./useInterviewQuestions";
 import { InterviewQuestion } from "@/types/interview";
 import { v4 as uuidv4 } from "@/lib/uuid";
 import { supabase } from "@/integrations/supabase/client";
+import { JOB_ROLE_OPTIONS } from "@/components/interview/constants";
 
 export const useInterviewSetup = (
   setCurrentSessionId: (id: string) => void,
@@ -21,7 +21,6 @@ export const useInterviewSetup = (
   const [usedFallbackQuestions, setUsedFallbackQuestions] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
-  // Monitor online status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -35,7 +34,6 @@ export const useInterviewSetup = (
     };
   }, []);
   
-  // Helper function to verify session with retries
   const verifySession = async (sessionId: string, maxRetries = 3, delayMs = 1000): Promise<boolean> => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       console.log(`Verifying session attempt ${attempt}/${maxRetries}...`);
@@ -45,7 +43,7 @@ export const useInterviewSetup = (
           .from('interview_sessions')
           .select('id, session_id')
           .eq('session_id', sessionId)
-          .maybeSingle(); // Use maybeSingle() instead of single()
+          .maybeSingle();
         
         if (error) {
           console.error(`Verification attempt ${attempt} failed:`, error);
@@ -56,9 +54,8 @@ export const useInterviewSetup = (
           console.log(`Session not found on attempt ${attempt}`);
         }
         
-        // If we haven't succeeded but have more retries, wait before trying again
         if (attempt < maxRetries) {
-          const backoffDelay = delayMs * Math.pow(1.5, attempt - 1); // Exponential backoff
+          const backoffDelay = delayMs * Math.pow(1.5, attempt - 1);
           console.log(`Waiting ${backoffDelay}ms before next attempt...`);
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
         }
@@ -70,14 +67,11 @@ export const useInterviewSetup = (
     return false;
   };
   
-  // Helper function for fallback mode
   const handleFallbackMode = (jobRole: string, industry: string) => {
     console.log("Using fallback interview mode...");
-    // Generate a fallback session ID
     const sessionId = uuidv4();
     setCurrentSessionId(sessionId);
     
-    // Generate fallback questions
     const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
     setQuestions(fallbackQuestions);
     setUsedFallbackQuestions(true);
@@ -90,7 +84,6 @@ export const useInterviewSetup = (
     setSessionCreationErrors([]);
     setUsedFallbackQuestions(false);
     
-    // Validate inputs
     if (!industry?.trim() || !jobRole?.trim()) {
       console.error("Invalid inputs:", { industry, jobRole });
       setSessionCreationErrors(["Industry and job role are required"]);
@@ -99,7 +92,6 @@ export const useInterviewSetup = (
       return;
     }
     
-    // If we're offline, immediately go to fallback mode
     if (!isOnline) {
       console.log("Device is offline. Using fallback interview mode...");
       handleFallbackMode(jobRole, industry);
@@ -113,8 +105,6 @@ export const useInterviewSetup = (
     }
     
     try {
-      // Step 1: Create a new interview session
-      console.log("Creating new interview session...");
       const sessionId = await createSession(industry, jobRole, jobDescription);
       
       if (!sessionId) {
@@ -126,8 +116,6 @@ export const useInterviewSetup = (
       console.log("Session created successfully with ID:", sessionId);
       setCurrentSessionId(sessionId);
       
-      // Verify session exists before generating questions with retries
-      console.log("Verifying session exists...");
       const isVerified = await verifySession(sessionId);
       
       if (!isVerified) {
@@ -135,16 +123,13 @@ export const useInterviewSetup = (
         throw new Error("Session verification failed after multiple attempts");
       }
       
-      // Step 2: Generate interview questions after successful verification
       try {
         console.log("Session verified. Generating questions for session with ID:", sessionId);
-        // Pass parameters in the correct order
         await generateQuestions(industry, jobRole, jobDescription, sessionId);
         setInterviewReady(true);
       } catch (questionError) {
         console.error("Error generating questions:", questionError);
         
-        // Use fallback questions instead
         console.log("Using fallback questions due to error");
         const fallbackQuestions = generateFallbackQuestions(jobRole, industry);
         setQuestions(fallbackQuestions);
@@ -159,7 +144,6 @@ export const useInterviewSetup = (
     } catch (error) {
       console.error("Error starting interview:", error);
       
-      // Set up generic interview with fallback questions
       handleFallbackMode(jobRole, industry);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

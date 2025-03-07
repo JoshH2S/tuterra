@@ -52,7 +52,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
 
-    console.log("Form validation result:", { isValid, errors });
+    console.log("Form validation result:", { isValid, errors, jobRole });
     setFormErrors(errors);
     return isValid;
   };
@@ -79,7 +79,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     
     console.log("Form validated, submitting to parent component");
     
-    // Get the actual values for submission (use values, not labels)
+    // Submit the values (custom or selected job role)
     onSubmit(industry, jobRole, jobDescription);
   };
 

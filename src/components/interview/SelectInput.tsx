@@ -72,7 +72,7 @@ export const SelectInput = ({
     setIsCustom(true);
     setIsOpen(false);
     // Initialize with current value if it's already custom
-    if (!options.some(option => option.value === value)) {
+    if (value && !options.some(option => option.value === value)) {
       setCustomValue(value);
     }
   };
@@ -83,7 +83,10 @@ export const SelectInput = ({
 
   const handleCustomValueSubmit = () => {
     if (customValue.trim()) {
+      console.log("Custom value submitted:", customValue.trim());
       onChange(customValue.trim());
+    } else {
+      console.log("Custom value is empty, not submitting");
     }
     setIsCustom(false);
   };
@@ -98,6 +101,7 @@ export const SelectInput = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
+      e.preventDefault(); // Prevent form submission
       handleCustomValueSubmit();
     } else if (e.key === "Escape") {
       handleCancel();
