@@ -25,27 +25,94 @@ export default function QuizResults() {
     const fetchResults = async () => {
       try {
         setLoading(true);
+        
+        // First check if the quiz response exists
         const { data: responseData, error: responseError } = await supabase
           .from('quiz_responses')
           .select(`
-            *,
-            quiz:quizzes(
-              id,
-              title,
-              allow_retakes
-            ),
-            question_responses: quiz_question_responses(
-              question_id,
-              student_answer,
-              is_correct,
-              question:quiz_questions(*)
-            )
+            id,
+            quiz_id,
+            student_id,
+            score,
+            correct_answers,
+            total_questions,
+            completed_at,
+            topic_performance,
+            ai_feedback,
+            attempt_number
           `)
           .eq('id', id)
           .single();
 
         if (responseError) throw responseError;
-        console.log("Quiz response data:", responseData);
+        
+        if (!responseData) {
+          throw new Error("Quiz response not found");
+        }
+        
+        // Now fetch the quiz separately
+        const { data: quizData, error: quizError } = await supabase
+          .from('quizzes')
+          .select(`
+            id,
+            title,
+            allow_retakes
+          `)
+          .eq('id', responseData.quiz_id)
+          .single();
+          
+        if (quizError) throw quizError;
+        
+        // Now fetch question responses separately
+        const { data: questionResponsesData, error: questionResponsesError } = await supabase
+          .from('question_responses')
+          .select(`
+            question_id,
+            student_answer,
+            is_correct,
+            topic
+          `)
+          .eq('quiz_response_id', id);
+          
+        if (questionResponsesError) {
+          console.error("Error fetching question responses:", questionResponsesError);
+          // Don't throw here - we can still show basic results without question details
+        }
+        
+        // Get question details separately
+        let questionDetails = [];
+        if (questionResponsesData && questionResponsesData.length > 0) {
+          const questionIds = questionResponsesData.map(qr => qr.question_id);
+          
+          const { data: questionsData, error: questionsError } = await supabase
+            .from('quiz_questions')
+            .select('*')
+            .in('id', questionIds);
+            
+          if (questionsError) {
+            console.error("Error fetching questions:", questionsError);
+          } else {
+            questionDetails = questionsData;
+          }
+        }
+        
+        // Merge question responses with question details
+        const enhancedQuestionResponses = questionResponsesData?.map(qr => {
+          const question = questionDetails.find(q => q.id === qr.question_id);
+          return {
+            ...qr,
+            question: question || null
+          };
+        }) || [];
+        
+        // Construct a complete result object
+        const completeResults = {
+          ...responseData,
+          quiz: quizData,
+          question_responses: enhancedQuestionResponses
+        };
+        
+        console.log("Quiz response data:", completeResults);
         
         // Check if AI feedback exists and has content - with proper type checking/casting
         let feedback: AIFeedback | null = null;
@@ -82,8 +149,8 @@ export default function QuizResults() {
           console.log("AI Feedback:", responseData.ai_feedback);
         }
         
-        setResults(responseData);
-        setQuiz(responseData.quiz);
+        setResults(completeResults);
+        setQuiz(quizData);
         setError(null);
       } catch (error: any) {
         console.error('Error fetching results:', error);
