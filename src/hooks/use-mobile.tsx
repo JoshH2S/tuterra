@@ -21,3 +21,23 @@ export const useIsMobile = () => {
 
   return isMobile;
 };
+
+// Add touch interaction detection
+export const useTouchDevice = () => {
+  const [isTouch, setIsTouch] = useState(false);
+  
+  useEffect(() => {
+    // Check if device supports touch
+    const checkTouchDevice = () => {
+      setIsTouch(
+        'ontouchstart' in window || 
+        navigator.maxTouchPoints > 0 ||
+        navigator.msMaxTouchPoints > 0
+      );
+    };
+    
+    checkTouchDevice();
+  }, []);
+  
+  return isTouch;
+};
