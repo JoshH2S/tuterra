@@ -36,7 +36,6 @@ export function EnhancedNavigation({ sections }: EnhancedNavigationProps) {
         setActiveSection(prevSection.id);
       }
     },
-    preventDefaultTouchmoveEvent: true,
     trackMouse: false
   });
 

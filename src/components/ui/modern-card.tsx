@@ -1,11 +1,11 @@
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeable } from "react-swipeable";
 
-interface ModernCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ModernCardProps extends Omit<HTMLMotionProps<"div">, "onAnimationStart"> {
   gradient?: boolean;
   interactive?: boolean;
   variant?: 'default' | 'outline' | 'glass';
@@ -29,8 +29,7 @@ export function ModernCard({
   const swipeHandlers = useSwipeable({
     onSwipedLeft: onSwipeLeft,
     onSwipedRight: onSwipeRight,
-    trackMouse: false,
-    preventDefaultTouchmoveEvent: false
+    trackMouse: false
   });
   
   // Apply appropriate animations based on device type
@@ -43,11 +42,20 @@ export function ModernCard({
     ? { scale: 0.98 } 
     : { scale: 0.95 };
 
+  const motionProps: any = {
+    ...props,
+    whileHover: hoverAnimation,
+    whileTap: interactive ? tapAnimation : undefined,
+  };
+
+  if (isMobile && (onSwipeLeft || onSwipeRight)) {
+    motionProps.drag = false; // Disable built-in framer motion drag when using swipeable
+  }
+
   return (
     <motion.div
+      {...motionProps}
       {...(isMobile && (onSwipeLeft || onSwipeRight) ? swipeHandlers : {})}
-      whileHover={hoverAnimation}
-      whileTap={interactive ? tapAnimation : undefined}
       className={cn(
         "rounded-xl overflow-hidden",
         "transition-all duration-200",
@@ -61,7 +69,6 @@ export function ModernCard({
         interactive && 'cursor-pointer',
         className
       )}
-      {...props}
     >
       {children}
     </motion.div>
