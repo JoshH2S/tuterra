@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useInterviewSession } from "@/hooks/interview/useInterviewSession";
 import { useInterviewSetup } from "@/hooks/interview/useInterviewSetup";
@@ -61,7 +60,6 @@ const JobInterviewSimulator = () => {
   return (
     <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
       <div className="space-y-4 md:space-y-8">
-        {/* Online/Offline indicator - Mobile friendly positioning */}
         <div className="flex justify-end items-center sticky top-0 z-10 bg-opacity-90 bg-background backdrop-blur-sm py-1">
           <div className="text-xs flex items-center gap-1 text-gray-500">
             {isOnline ? (
@@ -78,13 +76,10 @@ const JobInterviewSimulator = () => {
           </div>
         </div>
         
-        {/* Company Logo - Added at the top of the page */}
         <InterviewLogo />
         
-        {/* Debug info - Important for showing errors */}
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
-        {/* Interview setup form */}
         {!interviewReady && !isInterviewInProgress && !isInterviewComplete && (
           <InterviewForm 
             onSubmit={handleStartInterviewWithParams} 
@@ -92,7 +87,6 @@ const JobInterviewSimulator = () => {
           />
         )}
         
-        {/* Ready to start interview */}
         {interviewReady && !isInterviewInProgress && !isInterviewComplete && (
           <InterviewReadyPrompt
             jobRole={jobRole}
@@ -101,7 +95,6 @@ const JobInterviewSimulator = () => {
           />
         )}
         
-        {/* Interview in progress */}
         {isInterviewInProgress && (
           <InterviewChat
             currentQuestion={currentQuestion}
@@ -112,7 +105,6 @@ const JobInterviewSimulator = () => {
           />
         )}
         
-        {/* Interview completed */}
         {isInterviewComplete && (
           <InterviewCompletion
             transcript={transcript}
