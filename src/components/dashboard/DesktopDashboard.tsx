@@ -4,7 +4,10 @@ import { StudentPerformance } from "@/types/student";
 import { StudySession } from "@/hooks/useStudySessions";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertTriangle, BarChart as BarChartIcon, TrendingUp } from "lucide-react";
+import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
+import { TasksList } from "@/components/dashboard/TasksList";
 import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
+import { StudentCourse } from "@/types/student";
 
 interface DesktopDashboardProps {
   performance: StudentPerformance[];
@@ -14,6 +17,7 @@ interface DesktopDashboardProps {
     metric?: number;
   }>;
   sessions: StudySession[];
+  courses: StudentCourse[];
   createSession: (sessionData: Omit<StudySession, 'id' | 'student_id'>) => Promise<void>;
   children?: React.ReactNode;
 }
@@ -22,6 +26,7 @@ export function DesktopDashboard({
   performance, 
   insights, 
   sessions, 
+  courses,
   createSession,
   children 
 }: DesktopDashboardProps) {
@@ -50,6 +55,11 @@ export function DesktopDashboard({
     quizzes: p.completed_quizzes,
   }));
 
+  // Create a function to handle opening the study session dialog
+  const handleOpenSessionDialog = () => {
+    // This will be implemented in the TasksList component
+  };
+
   return (
     <div className="space-y-8">
       {/* News Feed at the top */}
@@ -75,6 +85,19 @@ export function DesktopDashboard({
             <p className="text-2xl font-bold">{totalCompletionRate.toFixed(1)}%</p>
           </div>
         </Card>
+      </section>
+
+      {/* Activity & Tasks Section */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ActivityTimeline sessions={sessions} courses={courses} />
+        <TasksList 
+          sessions={sessions} 
+          courses={courses} 
+          onCreateSession={() => {
+            // This will need to trigger the same dialog as in StudyCalendar
+            // For now we'll leave this empty
+          }}
+        />
       </section>
 
       {/* Insights Section */}

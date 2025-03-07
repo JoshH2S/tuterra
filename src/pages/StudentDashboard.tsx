@@ -1,4 +1,3 @@
-
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
@@ -10,6 +9,8 @@ import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 import { DesktopDashboard } from "@/components/dashboard/DesktopDashboard";
+import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
+import { TasksList } from "@/components/dashboard/TasksList";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -84,6 +85,16 @@ export default function StudentDashboard() {
           )}
 
           <div className="grid gap-6">
+            <ActivityTimeline sessions={sessions} courses={courses} maxItems={3} />
+            
+            <TasksList 
+              sessions={sessions} 
+              courses={courses} 
+              onCreateSession={() => {
+                // This would need to open the same dialog as StudyCalendar
+              }}
+            />
+
             <div className="space-y-6">
               <PerformanceOverview performance={performance} />
 
@@ -100,6 +111,7 @@ export default function StudentDashboard() {
           performance={performance}
           insights={insights}
           sessions={sessions}
+          courses={courses}
           createSession={handleCreateSession}
         >
           <NewsFeed courses={courses} />
