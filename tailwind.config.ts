@@ -28,6 +28,12 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        brand: {
+          light: 'hsl(45, 70%, 98%)', // Base brand color
+          DEFAULT: 'hsl(45, 70%, 90%)',
+          dark: 'hsl(45, 70%, 85%)',
+          accent: '#f1c40f',
+        },
         primary: {
           DEFAULT: "#B8860B", // Dark gold
           foreground: "#FFFFFF",
@@ -40,6 +46,8 @@ export default {
           700: "#7C5707", // Even darker gold
           800: "#634505", // Very dark gold
           900: "#4A3403", // Extremely dark gold
+          blue: '#3498db',
+          green: '#2ecc71',
         },
         secondary: {
           DEFAULT: "#8B4513", // Saddle brown
@@ -57,6 +65,10 @@ export default {
         accent: {
           DEFAULT: "#FFD700",
           foreground: "#000000",
+        },
+        neutral: {
+          text: '#333333',
+          muted: '#666666',
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -79,6 +91,9 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
       },
       keyframes: {
         "accordion-down": {
