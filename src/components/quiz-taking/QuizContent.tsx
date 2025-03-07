@@ -107,6 +107,11 @@ export const QuizContent = ({ quizId, quiz, questions, onQuizSubmitted }: QuizCo
 
   const currentQuestionData = questions[currentQuestion];
   const currentSelectedAnswer = selectedAnswers[currentQuestion];
+  
+  // Create array of answered question indices
+  const answeredQuestionIndices = Object.keys(selectedAnswers)
+    .map(key => parseInt(key))
+    .filter(index => selectedAnswers[index] !== undefined);
 
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6">
@@ -121,6 +126,8 @@ export const QuizContent = ({ quizId, quiz, questions, onQuizSubmitted }: QuizCo
         showFeedback={showFeedback}
         explanations={explanations}
         isGeneratingExplanation={isGeneratingExplanation}
+        timeRemaining={timeRemaining}
+        answeredQuestions={answeredQuestionIndices}
       />
       
       <QuizControls

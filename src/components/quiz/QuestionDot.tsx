@@ -1,4 +1,5 @@
 
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface QuestionDotProps {
@@ -9,12 +10,15 @@ interface QuestionDotProps {
 
 export function QuestionDot({ isActive, isAnswered, onClick }: QuestionDotProps) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      whileHover={{ scale: 1.2 }}
+      whileTap={{ scale: 0.95 }}
       className={cn(
-        "w-2 h-2 rounded-full transition-all touch-manipulation",
+        "w-2.5 h-2.5 rounded-full transition-all touch-manipulation",
         onClick && "cursor-pointer",
-        isActive ? "w-3 bg-primary" : isAnswered ? "bg-primary/60" : "bg-gray-300 dark:bg-gray-600"
+        isActive ? "ring-2 ring-primary ring-offset-2" : "",
+        isAnswered ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
       )}
       type="button"
       aria-label={isActive ? "Current question" : isAnswered ? "Answered question" : "Unanswered question"}

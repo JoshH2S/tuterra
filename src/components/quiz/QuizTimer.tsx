@@ -1,4 +1,5 @@
 
+import { motion } from "framer-motion";
 import { Clock } from "lucide-react";
 import { 
   HoverCard,
@@ -22,12 +23,15 @@ export function QuizTimer({ timeRemaining }: QuizTimerProps) {
   return (
     <HoverCard>
       <HoverCardTrigger>
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800">
+        <motion.div 
+          whileHover={{ scale: 1.05 }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800"
+        >
           <Clock className="w-3.5 h-3.5" />
           <span className="font-medium text-xs sm:text-sm">
             {formatTime(timeRemaining)}
           </span>
-        </div>
+        </motion.div>
       </HoverCardTrigger>
       <HoverCardContent className="w-auto p-2 text-xs">
         Time remaining
