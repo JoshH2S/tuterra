@@ -32,8 +32,10 @@ export const generateQuestionsFromApi = async (
     // Log the exact payload being sent to help with debugging
     console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // Use supabase.supabaseUrl and supabase.supabaseKey which are public properties
-    const functionUrl = `${supabase.supabaseUrl}/functions/v1/generate-interview-questions`;
+    // Get the URL from the supabase client configuration
+    const url = new URL(supabase.auth.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    const functionUrl = `${baseUrl}/functions/v1/generate-interview-questions`;
     
     console.log("Endpoint URL:", functionUrl);
     
@@ -41,7 +43,7 @@ export const generateQuestionsFromApi = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabase.supabaseKey}`
+        'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`
       },
       body: JSON.stringify(payload)
     });
