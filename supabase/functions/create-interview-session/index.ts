@@ -25,17 +25,34 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId, industry, role, jobDescription } = await req.json();
+    // Log headers for debugging
+    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
+    
+    const body = await req.json();
+    console.log("Request body:", body);
+    
+    const { sessionId, industry, role, jobDescription } = body;
     
     console.log("Create session request received:", { sessionId, industry, role });
     
+    // Validate input
     if (!sessionId || !industry || !role) {
       console.error("Missing required parameters:", { sessionId, industry, role });
       return new Response(
-        JSON.stringify({ error: "Missing required parameters" }),
+        JSON.stringify({ 
+          error: "Missing required parameters",
+          received: { sessionId, industry, role }
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
+    
+    // Add logging before database operation
+    console.log("Attempting to create session in database:", {
+      session_id: sessionId,
+      industry,
+      role
+    });
     
     // Create the interview session with empty questions and responses initially
     const { data, error } = await supabase

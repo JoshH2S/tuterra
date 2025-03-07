@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -60,18 +61,19 @@ export const useInterviewPersistence = () => {
         }
       });
 
-      if (error) {
-        console.error("Error creating session:", error);
-        throw new Error(`Failed to create session: ${error.message || 'Network error'}`);
+      // Add proper error handling
+      if (error || !data?.success) {
+        console.error("Edge function error:", { error, data });
+        throw new Error(error?.message || 'Failed to create session');
       }
       
-      if (!data || !data.success) {
-        console.error("Invalid response from create-interview-session:", data);
-        throw new Error("Received invalid response from server");
+      // Only return sessionId if we got a successful response
+      if (data?.success && data?.id) {
+        console.log("Session created successfully:", { sessionId, dbId: data.id });
+        return sessionId;
       }
       
-      console.log("Session created successfully:", { sessionId, dbId: data.id });
-      return sessionId;
+      throw new Error("Invalid response from create-interview-session");
       
     } catch (error) {
       console.error("Error creating session:", error);
