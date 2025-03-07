@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { QuizQuestion } from "./quizTypes";
+import { toast } from "@/components/ui/use-toast";
 
 export const useQuizAnswers = (questions: QuizQuestion[]) => {
   // Initialize with empty object to ensure no pre-selected answers
@@ -20,6 +21,7 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
     
     // If there's already an explanation from the database, use that
     if (question.explanation) {
+      console.log("Using existing explanation from the database");
       setExplanations(prev => ({ ...prev, [questionIndex]: question.explanation! }));
       return;
     }
@@ -27,8 +29,11 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
     setIsGeneratingExplanation(true);
     try {
       const isCorrect = selectedAnswer === question.correct_answer;
-      const selectedText = question.options[selectedAnswer];
-      const correctText = question.options[question.correct_answer];
+      const selectedText = question.options[selectedAnswer] || "No answer selected";
+      const correctText = question.options[question.correct_answer] || "No correct answer found";
+      
+      console.log(`Generating explanation for question: "${question.question.substring(0, 30)}..."`);
+      console.log(`Student selected: ${selectedAnswer} (${selectedText}), correct: ${isCorrect}`);
       
       const { data, error } = await supabase.functions.invoke('process-with-openai', {
         body: {
@@ -54,18 +59,33 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("OpenAI function invocation error:", error);
+        throw error;
+      }
+      
+      console.log("Received explanation data:", data);
       
       if (data && data.response) {
         setExplanations(prev => ({ ...prev, [questionIndex]: data.response }));
+        console.log("Successfully saved explanation for question", questionIndex);
+      } else {
+        console.error("No response received from OpenAI", data);
+        throw new Error("No explanation returned from AI");
       }
     } catch (error) {
       console.error("Error generating explanation:", error);
-      // Still set the feedback even if explanation fails
+      // Still set a fallback explanation if the AI fails
       setExplanations(prev => ({ 
         ...prev, 
-        [questionIndex]: "Sorry, we couldn't generate an explanation for this answer." 
+        [questionIndex]: "We couldn't generate an explanation for this answer. The correct answer is based on the course materials covered." 
       }));
+      
+      toast({
+        title: "Explanation Generation Failed",
+        description: "We couldn't generate a detailed explanation. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsGeneratingExplanation(false);
     }
@@ -79,6 +99,7 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
     
     // Generate explanation for this answer
     if (questions[questionIndex]) {
+      console.log("Generating explanation for answer to question", questionIndex);
       generateExplanation(questionIndex, questions[questionIndex], answer);
     }
   }, [showFeedback, questions, generateExplanation, selectedAnswers]);

@@ -50,25 +50,31 @@ export const QuizAnswerFeedback = ({
                 <Info className="h-4 w-4" /> 
                 <p className="font-semibold">Generating explanation...</p>
               </div>
-              <div className="w-full bg-gray-200 h-2 rounded-full animate-pulse"></div>
+              <div className="h-2 rounded-full animate-pulse bg-gray-200 dark:bg-gray-700 w-full"></div>
             </div>
           ) : explanation ? (
-            <div className={`overflow-hidden transition-all duration-300 ${expanded ? 'max-h-none' : 'max-h-24'}`}>
-              <p className="font-semibold flex items-center gap-1">
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expanded ? 'max-h-96' : 'max-h-24'}`}>
+              <p className="font-semibold flex items-center gap-1 mb-1">
                 <Info className="h-4 w-4" /> Explanation:
               </p>
-              <p className="text-sm mt-1">{explanation}</p>
+              <p className="text-sm">{explanation}</p>
               
               {explanation.length > 120 && (
                 <button 
                   onClick={onToggle}
                   className="mt-2 text-xs text-primary hover:underline focus:outline-none"
+                  aria-label={expanded ? "Show less" : "Show more"}
                 >
                   {expanded ? "Show less" : "Show more"}
                 </button>
               )}
             </div>
-          ) : null}
+          ) : (
+            <div className="flex items-center gap-1 text-sm italic text-gray-500">
+              <Info className="h-4 w-4" /> 
+              <p>No explanation available for this question.</p>
+            </div>
+          )}
         </div>
       </AlertDescription>
     </Alert>

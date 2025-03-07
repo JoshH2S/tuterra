@@ -20,6 +20,8 @@ serve(async (req) => {
       );
     }
 
+    console.log("Sending request to OpenAI API with prompt:", prompt.substring(0, 100) + "...");
+
     // Call OpenAI API
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -46,6 +48,7 @@ serve(async (req) => {
     }
 
     const response = data.choices?.[0]?.message?.content?.trim() || '';
+    console.log("OpenAI API response:", response.substring(0, 100) + "...");
 
     return new Response(
       JSON.stringify({ response }),
