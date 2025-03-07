@@ -34,45 +34,30 @@ serve(async (req) => {
       );
     }
     
-    // Query for feedback
+    // Fetch feedback from the database
     const { data, error } = await supabase
       .from('interview_feedback')
       .select('*')
       .eq('session_id', sessionId)
       .single();
     
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No feedback found for this session
+        return new Response(
+          JSON.stringify({ message: "No feedback found for this session" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: `Database error: ${error.message}` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
     
-    // If no feedback found, return empty response
-    if (!data) {
-      return new Response(
-        JSON.stringify({ feedback: null }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-      );
-    }
-    
-    // Process the feedback data to ensure it has the expected structure
-    const processedFeedback = {
-      id: data.id,
-      session_id: data.session_id,
-      feedback: data.feedback?.feedback || data.feedback || '',
-      strengths: Array.isArray(data.strengths) ? data.strengths : 
-                (data.feedback?.strengths || []),
-      areas_for_improvement: Array.isArray(data.areas_for_improvement) ? data.areas_for_improvement : 
-                            (data.feedback?.areas_for_improvement || []),
-      overall_score: typeof data.overall_score === 'number' ? data.overall_score : 
-                    (data.feedback?.overall_score || 0),
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    };
-    
     return new Response(
-      JSON.stringify({ feedback: processedFeedback }),
+      JSON.stringify({ feedback: data }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
