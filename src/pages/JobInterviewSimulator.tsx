@@ -8,6 +8,7 @@ import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewFeedbackComponent } from "@/components/interview/InterviewFeedback";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
 import { InterviewDebug } from "@/components/interview/InterviewDebug";
+import { InterviewLogo } from "@/components/interview/InterviewLogo";
 import { Wifi, WifiOff } from "lucide-react";
 
 const JobInterviewSimulator = () => {
@@ -86,6 +87,9 @@ const JobInterviewSimulator = () => {
             )}
           </div>
         </div>
+        
+        {/* Company Logo - Added at the top of the page */}
+        <InterviewLogo />
         
         {/* Debug info - Important for showing errors */}
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
