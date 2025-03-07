@@ -24,6 +24,8 @@ export const QuizAnswerFeedback = ({
 }: QuizAnswerFeedbackProps) => {
   // Get the correct answer text from the question options
   const correctAnswerText = question.options[question.correct_answer] || '';
+  // Get the user's selected answer text
+  const userAnswerText = question.options[userAnswer] || '';
 
   return (
     <Alert className={isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}>
@@ -37,8 +39,8 @@ export const QuizAnswerFeedback = ({
       </AlertTitle>
       <AlertDescription className="mt-2">
         {isCorrect 
-          ? "Great job! You selected the correct answer." 
-          : `The correct answer was: ${correctAnswerText}`
+          ? `Great job! You selected "${userAnswerText}", which is correct.` 
+          : `You selected "${userAnswerText}". The correct answer was: "${correctAnswerText}"`
         }
         
         <div className="mt-2">

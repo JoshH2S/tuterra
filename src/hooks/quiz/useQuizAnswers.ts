@@ -32,7 +32,7 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
       
       const { data, error } = await supabase.functions.invoke('process-with-openai', {
         body: {
-          prompt: `You are an educational assistant providing feedback on quiz answers.
+          prompt: `You are an educational assistant providing detailed feedback on quiz answers.
           
           The question was: "${question.question}"
           
@@ -44,13 +44,13 @@ export const useQuizAnswers = (questions: QuizQuestion[]) => {
           The student selected: ${selectedAnswer} (${selectedText})
           
           ${isCorrect ? 
-            "The student answered correctly. Explain why this is the correct answer in 2-3 sentences. Use an encouraging, positive tone." : 
-            "The student answered incorrectly. Explain why their answer is wrong and why the correct answer is right in 2-3 sentences. Be supportive and educational."
+            "The student answered correctly. Provide a detailed explanation (3-4 sentences) of why this answer is correct. Include relevant facts or concepts that support this answer. Use an encouraging, positive tone." : 
+            "The student answered incorrectly. Provide a detailed explanation (3-4 sentences) of why their answer is wrong and why the correct answer is right. Explain the misconception they might have had. Be supportive and educational."
           }
           
-          Your explanation should be concise, educational, and help the student understand the concept better.`,
+          Your explanation should be educational and help the student understand the concept better.`,
           temperature: 0.7,
-          max_tokens: 150
+          max_tokens: 200
         }
       });
       
