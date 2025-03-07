@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { InterviewFeedback, InterviewTranscript } from "@/types/interview";
 import { motion } from "framer-motion";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface InterviewFeedbackProps {
   feedback: InterviewFeedback | null;
@@ -10,6 +12,8 @@ interface InterviewFeedbackProps {
   onDownloadTranscript: (format: 'txt' | 'pdf') => void;
   onStartNew: () => void;
   loading: boolean;
+  hasError?: boolean;
+  onRetry?: () => void;
 }
 
 export const InterviewFeedbackComponent = ({
@@ -17,7 +21,9 @@ export const InterviewFeedbackComponent = ({
   transcript,
   onDownloadTranscript,
   onStartNew,
-  loading
+  loading,
+  hasError = false,
+  onRetry
 }: InterviewFeedbackProps) => {
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
@@ -47,6 +53,24 @@ export const InterviewFeedbackComponent = ({
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
                 <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
               </div>
+            ) : hasError ? (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Feedback Generation Failed</AlertTitle>
+                <AlertDescription className="mt-2">
+                  <p className="mb-4">There was an error generating your interview feedback.</p>
+                  {onRetry && (
+                    <Button 
+                      onClick={onRetry} 
+                      variant="outline" 
+                      size="sm"
+                      className="mt-1"
+                    >
+                      Try Again
+                    </Button>
+                  )}
+                </AlertDescription>
+              </Alert>
             ) : feedback ? (
               <>
                 <div className="space-y-2">

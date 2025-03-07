@@ -47,14 +47,14 @@ const JobInterviewSimulator = () => {
     isOnline
   } = useInterviewSetup(setCurrentSessionId, setQuestions, setIsGeneratingQuestions);
 
-  const { generateFeedback, feedback, loading: feedbackLoading } = useInterviewFeedback(currentSessionId);
+  const { generateFeedback, feedback, loading: feedbackLoading, hasError, retry } = useInterviewFeedback(currentSessionId);
 
   // Generate feedback when transcript is ready
   useEffect(() => {
-    if (isInterviewComplete && transcript.length > 0 && !feedback) {
+    if (isInterviewComplete && transcript.length > 0 && !feedback && !hasError) {
       generateFeedback(transcript);
     }
-  }, [isInterviewComplete, transcript, feedback, generateFeedback]);
+  }, [isInterviewComplete, transcript, feedback, hasError, generateFeedback]);
 
   const handleStartInterviewWithParams = (industry: string, jobRole: string, jobDescription: string) => {
     setIndustry(industry);
@@ -66,6 +66,11 @@ const JobInterviewSimulator = () => {
   const handleStartNewInterview = () => {
     handleStartNew();
     setInterviewReady(false);
+  };
+
+  const handleRetryFeedbackGeneration = () => {
+    retry();
+    generateFeedback(transcript);
   };
 
   return (
@@ -130,6 +135,8 @@ const JobInterviewSimulator = () => {
             onDownloadTranscript={handleDownloadTranscript}
             onStartNew={handleStartNewInterview}
             loading={feedbackLoading}
+            hasError={hasError}
+            onRetry={handleRetryFeedbackGeneration}
           />
         )}
       </div>

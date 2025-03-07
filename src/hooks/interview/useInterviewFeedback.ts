@@ -10,9 +10,10 @@ export const useInterviewFeedback = (
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   const generateFeedback = async (transcript: InterviewTranscript[]) => {
-    if (!sessionId || transcript.length === 0) return;
+    if (!sessionId || transcript.length === 0 || hasError) return;
     
     setLoading(true);
     try {
@@ -39,6 +40,7 @@ export const useInterviewFeedback = (
         };
         
         setFeedback(processedFeedback);
+        setHasError(false);
         toast({
           title: "Feedback generated",
           description: "Your interview feedback is ready!",
@@ -46,9 +48,10 @@ export const useInterviewFeedback = (
       }
     } catch (error) {
       console.error("Error generating feedback:", error);
+      setHasError(true);
       toast({
         title: "Error",
-        description: "Failed to generate feedback. Please try again.",
+        description: "Failed to generate feedback. Please try manually generating feedback.",
         variant: "destructive",
       });
     } finally {
@@ -101,6 +104,8 @@ export const useInterviewFeedback = (
     generateFeedback,
     fetchFeedback,
     feedback,
-    loading
+    loading,
+    hasError,
+    retry: () => setHasError(false)
   };
 };
