@@ -98,14 +98,63 @@ serve(async (req) => {
     let reqBody;
     try {
       console.log("Attempting to parse request body...");
-      reqBody = await req.json();
-      console.log("Request body parsed successfully:", JSON.stringify(reqBody));
-    } catch (parseError) {
-      console.error("Failed to parse request body:", parseError);
+      
+      if (req.bodyUsed) {
+        console.error("Request body already consumed");
+        return new Response(
+          JSON.stringify({ 
+            error: "Request body already consumed",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+      
+      // Check if the content type is correct
+      const contentType = req.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("Invalid content type:", contentType);
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid content type. Expected application/json",
+            receivedContentType: contentType
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+      
+      const bodyText = await req.text();
+      console.log("Raw request body:", bodyText);
+      
+      if (!bodyText || bodyText.trim() === "") {
+        console.error("Empty request body");
+        return new Response(
+          JSON.stringify({ 
+            error: "Empty request body",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+      
+      try {
+        reqBody = JSON.parse(bodyText);
+        console.log("Request body parsed successfully:", JSON.stringify(reqBody));
+      } catch (parseError) {
+        console.error("Failed to parse request body:", parseError);
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid request format: could not parse JSON body",
+            details: parseError.message,
+            receivedBody: bodyText
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+    } catch (error) {
+      console.error("Error handling request body:", error);
       return new Response(
         JSON.stringify({ 
-          error: "Invalid request format: could not parse JSON body",
-          details: parseError.message
+          error: "Error handling request body",
+          details: error.message
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
