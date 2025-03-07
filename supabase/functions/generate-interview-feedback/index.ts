@@ -1,16 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { Configuration, OpenAIApi } from "https://esm.sh/openai@3.3.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 
 // Get environment variables
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
-
-// Initialize OpenAI
-const configuration = new Configuration({ apiKey: openaiApiKey });
-const openai = new OpenAIApi(configuration);
 
 // Initialize Supabase client with admin rights
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
@@ -31,29 +26,60 @@ serve(async (req) => {
   }
 
   try {
+    // Get OpenAI API key from environment
+    const openAiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAiKey) {
+      throw new Error("OPENAI_API_KEY is not set");
+    }
+
+    // Initialize OpenAI client properly
+    const configuration = new Configuration({
+      apiKey: openAiKey,
+      // Remove any default headers that might conflict
+      baseOptions: {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    });
+
+    // Create OpenAI client without any custom Axios config
+    const openai = new OpenAIApi(configuration);
+
     const { sessionId, transcript } = await req.json();
     
-    if (!sessionId || !transcript || !Array.isArray(transcript)) {
+    if (!sessionId) {
       return new Response(
-        JSON.stringify({ error: "Missing required parameters" }),
+        JSON.stringify({ error: "Missing session ID" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+    
+    if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid transcript data",
+          details: "Transcript must be a non-empty array"
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400
+        }
       );
     }
     
     console.log(`Generating feedback for interview session ${sessionId}`);
     
     // Format the transcript for the prompt
-    let transcriptText = "";
-    transcript.forEach((item, index) => {
-      transcriptText += `Question ${index + 1}: ${item.question}\n`;
-      transcriptText += `Answer: ${item.answer}\n\n`;
-    });
+    const formattedTranscript = transcript
+      .map((item, index) => `Question ${index + 1}: ${item.question}\nAnswer: ${item.answer}`)
+      .join("\n\n");
     
     // Generate feedback with OpenAI
     const promptText = `
     You are an expert interview coach. Review the following job interview transcript and provide constructive feedback:
     
-    ${transcriptText}
+    ${formattedTranscript}
     
     Provide an analysis in JSON format with the following structure:
     {
@@ -64,56 +90,65 @@ serve(async (req) => {
     }
     `;
     
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "You are a helpful interview coach that provides constructive feedback." },
-        { role: "user", content: promptText }
-      ],
-      temperature: 0.7,
-    });
-    
-    const responseText = completion.data.choices[0]?.message?.content || "{}";
-    
-    // Parse the response to extract the feedback
-    let feedbackData;
     try {
-      // Clean the response text to ensure it's valid JSON
-      const cleaned = responseText.replace(/```json|```/g, "").trim();
-      feedbackData = JSON.parse(cleaned);
-    } catch (error) {
-      console.error("Error parsing feedback:", error);
+      // Make the OpenAI API call
+      const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "You are a helpful interview coach that provides constructive feedback." },
+          { role: "user", content: promptText }
+        ],
+        temperature: 0.7,
+      });
+      
+      const responseText = completion.data.choices[0]?.message?.content || "{}";
+      
+      // Parse the response to extract the feedback
+      let feedbackData;
+      try {
+        // Clean the response text to ensure it's valid JSON
+        const cleaned = responseText.replace(/```json|```/g, "").trim();
+        feedbackData = JSON.parse(cleaned);
+      } catch (error) {
+        console.error("Error parsing feedback:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to parse feedback from AI response" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
+      }
+      
+      // Save feedback to the database
+      const { data, error } = await supabase
+        .from('interview_feedback')
+        .insert({
+          session_id: sessionId,
+          feedback: feedbackData.feedback,
+          strengths: feedbackData.strengths,
+          areas_for_improvement: feedbackData.areas_for_improvement,
+          overall_score: feedbackData.overall_score
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error saving feedback:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to save feedback to the database" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ error: "Failed to parse feedback from AI response" }),
+        JSON.stringify({ feedback: data }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    } catch (openAiError) {
+      console.error("OpenAI API error:", openAiError);
+      return new Response(
+        JSON.stringify({ error: `OpenAI API error: ${openAiError.message}` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
-    
-    // Save feedback to the database
-    const { data, error } = await supabase
-      .from('interview_feedback')
-      .insert({
-        session_id: sessionId,
-        feedback: feedbackData.feedback,
-        strengths: feedbackData.strengths,
-        areas_for_improvement: feedbackData.areas_for_improvement,
-        overall_score: feedbackData.overall_score
-      })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error("Error saving feedback:", error);
-      return new Response(
-        JSON.stringify({ error: "Failed to save feedback to the database" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-      );
-    }
-    
-    return new Response(
-      JSON.stringify({ feedback: data }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-    );
   } catch (error) {
     console.error("Error processing request:", error);
     
