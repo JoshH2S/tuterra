@@ -3,7 +3,7 @@ export interface InterviewSession {
   id: string;
   user_id: string;
   industry: string;
-  job_role: string; // Changed from 'job_role' to match database schema
+  job_role: string;
   job_description: string;
   created_at: string;
   updated_at: string;
