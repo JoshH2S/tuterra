@@ -19,7 +19,7 @@ export const CourseCard = ({ course }: CourseCardProps) => {
   
   // These would be real in a production app, but we'll mock them for now
   const progressValue = 75;
-  const studentCount = 24;
+  const studentCount = a24;
   
   return (
     <motion.div
@@ -31,10 +31,10 @@ export const CourseCard = ({ course }: CourseCardProps) => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary-100 to-primary-200" />
         <div className="absolute bottom-4 left-4">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {course.id.substring(0, 6).toUpperCase()}
+            {course.title}
           </h3>
           <p className="text-sm text-gray-700 dark:text-gray-200">
-            {course.title}
+            Created {format(new Date(course.created_at || new Date()), 'MMM d, yyyy')}
           </p>
         </div>
       </div>
