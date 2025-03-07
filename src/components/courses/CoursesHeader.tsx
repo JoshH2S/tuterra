@@ -1,44 +1,94 @@
 
 import { Button } from "@/components/ui/button";
-import { PlusCircle, FileText } from "lucide-react";
+import { Plus, ClipboardList, Search, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useResponsive } from "@/hooks/useResponsive";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CoursesHeaderProps {
   onCreateClick: () => void;
+  onSearch?: (query: string) => void;
+  onSort?: (value: string) => void;
+  onFilter?: (value: string) => void;
 }
 
-export const CoursesHeader = ({ onCreateClick }: CoursesHeaderProps) => {
+export const CoursesHeader = ({ 
+  onCreateClick, 
+  onSearch, 
+  onSort, 
+  onFilter 
+}: CoursesHeaderProps) => {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  const { isMobile } = useResponsive();
 
   return (
-    <div className={`flex flex-col ${isMobile ? 'gap-3' : 'gap-4'}`}>
-      <div>
-        <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'} text-gray-900 mb-2`}>
-          Courses
-        </h1>
-        <p className={`text-gray-600 ${isMobile ? 'text-sm' : ''}`}>
-          Create and manage your courses
-        </p>
+    <div className="mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'} text-gray-900 dark:text-white`}>
+            Courses
+          </h1>
+          <p className={`text-gray-600 dark:text-gray-300 ${isMobile ? 'text-sm' : ''} mt-1`}>
+            Create and manage your courses
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/quizzes')}
+            className={isMobile ? 'px-3 py-2 text-sm' : ''}
+          >
+            <ClipboardList className="w-4 h-4 mr-2" />
+            View Quizzes
+          </Button>
+          
+          <Button 
+            onClick={onCreateClick}
+            className={isMobile ? 'px-3 py-2 text-sm' : ''}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Course
+          </Button>
+        </div>
       </div>
-      
-      <div className={`flex ${isMobile ? 'flex-col' : ''} gap-3`}>
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/quizzes')}
-          className={isMobile ? 'w-full justify-center py-6' : ''}
-        >
-          <FileText className="mr-2 h-4 w-4" />
-          View Quizzes
-        </Button>
-        <Button 
-          onClick={onCreateClick}
-          className={isMobile ? 'w-full justify-center py-6' : ''}
-        >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create New Course
-        </Button>
+
+      {/* Filters and Search */}
+      <div className="mt-6 flex flex-col md:flex-row md:items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Search courses..."
+            className="w-full pl-10"
+            onChange={(e) => onSearch && onSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Select onValueChange={(value) => onSort && onSort(value)}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Recently Created</SelectItem>
+              <SelectItem value="alpha">Alphabetical</SelectItem>
+              <SelectItem value="students">Most Students</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select onValueChange={(value) => onFilter && onFilter(value)}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Filter by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Courses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );
