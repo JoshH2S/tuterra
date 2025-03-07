@@ -6,6 +6,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { MainSidebar } from "./MainSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
 import { MobileHeader } from "./mobile/MobileHeader";
+import { DesktopHeader } from "./desktop/DesktopHeader";
 import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,7 +23,7 @@ export const MainLayout = () => {
         <div className="min-h-screen flex w-full">
           <MainSidebar />
           <div className="flex-1 flex flex-col">
-            {isMobile && <MobileHeader />}
+            {isMobile ? <MobileHeader /> : <DesktopHeader />}
             <main className="flex-1 px-4 md:px-8 py-4 md:py-8 pb-24 lg:pb-8">
               <AppRoutes />
             </main>
