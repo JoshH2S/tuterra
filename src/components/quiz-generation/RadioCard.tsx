@@ -32,19 +32,22 @@ export const RadioCard = ({
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className={cn(
-          "flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors",
-          "peer-checked:border-primary peer-checked:bg-primary/5",
+          "flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors relative",
+          "peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:ring-2 peer-checked:ring-primary/50",
           "hover:bg-gray-50 dark:hover:bg-gray-800/50",
           "touch-action-manipulation",
           className
         )}
       >
-        <Icon className="w-5 h-5 mt-0.5 text-primary" />
+        <Icon className="w-5 h-5 mt-0.5 text-primary peer-checked:text-primary-600" />
         <div className="flex-1">
           <p className="font-medium mb-1">{label}</p>
           {description && (
             <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
           )}
+        </div>
+        <div className="absolute right-3 top-3 opacity-0 peer-checked:opacity-100 text-primary">
+          <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
         </div>
       </motion.label>
     </div>

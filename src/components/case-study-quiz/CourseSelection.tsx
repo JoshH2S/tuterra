@@ -27,7 +27,7 @@ export const CourseSelection = ({
           onValueChange={setSelectedCourseId}
           disabled={isLoadingCourses}
         >
-          <SelectTrigger>
+          <SelectTrigger className={`${selectedCourseId ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : ''}`}>
             <SelectValue placeholder="Select a course" />
           </SelectTrigger>
           <SelectContent>
@@ -38,6 +38,13 @@ export const CourseSelection = ({
             ))}
           </SelectContent>
         </Select>
+        {selectedCourseId && (
+          <div className="mt-1 text-xs text-primary">
+            <span className="inline-flex items-center">
+              <span className="mr-1">✓</span> Course selected
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -46,7 +53,7 @@ export const CourseSelection = ({
           value={difficulty}
           onValueChange={(value: QuestionDifficulty) => setDifficulty(value)}
         >
-          <SelectTrigger>
+          <SelectTrigger className={`${difficulty ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : ''}`}>
             <SelectValue placeholder="Select education level" />
           </SelectTrigger>
           <SelectContent>
@@ -56,6 +63,13 @@ export const CourseSelection = ({
             <SelectItem value="post_graduate">Post Graduate</SelectItem>
           </SelectContent>
         </Select>
+        {difficulty && (
+          <div className="mt-1 text-xs text-primary">
+            <span className="inline-flex items-center">
+              <span className="mr-1">✓</span> {difficulty.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} selected
+            </span>
+          </div>
+        )}
       </div>
     </>
   );

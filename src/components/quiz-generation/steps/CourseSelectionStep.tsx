@@ -51,6 +51,13 @@ export const CourseSelectionStep = ({
         <p className="text-gray-600 dark:text-gray-400">
           Choose the course you want to create a quiz for
         </p>
+        {selectedCourseId && (
+          <div className="mt-2 text-sm text-primary font-medium">
+            <span className="inline-flex items-center">
+              <span className="mr-1">✓</span> Course selected
+            </span>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -88,7 +95,17 @@ export const CourseSelectionStep = ({
       )}
 
       <div className="pt-6">
-        <h3 className="text-xl font-bold mb-4">Education Level</h3>
+        <h3 className="text-xl font-bold mb-2">Education Level</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Select the appropriate education level for your quiz
+        </p>
+        {difficulty && (
+          <div className="mb-2 text-sm text-primary font-medium">
+            <span className="inline-flex items-center">
+              <span className="mr-1">✓</span> {difficulty.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} selected
+            </span>
+          </div>
+        )}
         <RadioGroup
           value={difficulty}
           onValueChange={(value) => setDifficulty(value as QuestionDifficulty)}
