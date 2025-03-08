@@ -18,9 +18,12 @@ import { Badge } from "@/components/ui/badge";
 import { useGenerateQuiz } from "@/hooks/case-study-quiz/useGenerateQuiz";
 import { AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const CaseStudyQuizGeneration = () => {
   const [step, setStep] = useState(1);
+  const [title, setTitle] = useState("");
   const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [difficulty, setDifficulty] = useState<QuestionDifficulty>("high_school");
@@ -43,6 +46,15 @@ const CaseStudyQuizGeneration = () => {
       return;
     }
 
+    if (step === 1 && !title.trim()) {
+      toast({
+        title: "Title required",
+        description: "Please enter a quiz title before continuing",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (step === 2 && !topics[0].description) {
       toast({
         title: "Topic required",
@@ -60,14 +72,14 @@ const CaseStudyQuizGeneration = () => {
   };
 
   const canProceedToNextStep = () => {
-    if (step === 1) return !!selectedCourseId;
+    if (step === 1) return !!selectedCourseId && !!title.trim();
     if (step === 2) return !!topics[0].description;
     return true;
   };
 
   const handleGenerate = async () => {
     try {
-      await generateQuiz(topics, selectedCourseId, difficulty);
+      await generateQuiz(topics, selectedCourseId, difficulty, title);
     } catch (err) {
       console.error("Error in handleGenerate:", err);
     }
@@ -110,12 +122,27 @@ const CaseStudyQuizGeneration = () => {
           <AnimatePresence mode="wait">
             {step === 1 && (
               <StepContainer key="course">
-                <CourseSetupStep
-                  selectedCourseId={selectedCourseId}
-                  setSelectedCourseId={setSelectedCourseId}
-                  difficulty={difficulty}
-                  setDifficulty={setDifficulty}
-                />
+                <div className="mb-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quiz-title">Quiz Title</Label>
+                    <Input
+                      id="quiz-title"
+                      placeholder="Enter a title for your quiz"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="w-full"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      This title will appear in the quizzes section
+                    </p>
+                  </div>
+                  <CourseSetupStep
+                    selectedCourseId={selectedCourseId}
+                    setSelectedCourseId={setSelectedCourseId}
+                    difficulty={difficulty}
+                    setDifficulty={setDifficulty}
+                  />
+                </div>
               </StepContainer>
             )}
 
@@ -139,6 +166,8 @@ const CaseStudyQuizGeneration = () => {
             {step === 4 && (
               <StepContainer key="preview">
                 <QuizPreviewStep
+                  title={title}
+                  setTitle={setTitle}
                   questions={quizQuestions}
                   isGenerating={isGenerating}
                   error={error}

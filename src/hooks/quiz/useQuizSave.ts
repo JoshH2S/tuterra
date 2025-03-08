@@ -11,6 +11,7 @@ export const useQuizSave = () => {
     questions: Question[], 
     topics: { description: string }[], 
     duration: number,
+    title: string,
     courseId?: string
   ) => {
     try {
@@ -21,7 +22,7 @@ export const useQuizSave = () => {
 
       // Create the quiz with title, teacher_id, and duration
       const quizData = {
-        title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
+        title: title,
         teacher_id: session.user.id,
         duration_minutes: duration
       };

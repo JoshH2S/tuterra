@@ -20,4 +20,11 @@ export interface Question {
   difficulty: QuestionDifficulty;
 }
 
+export interface QuizSettings {
+  title: string;
+  duration: number;
+  courseId?: string;
+  difficulty: QuestionDifficulty;
+}
+
 export const MAX_CONTENT_LENGTH = 50 * 1024 * 1024; // 50MB

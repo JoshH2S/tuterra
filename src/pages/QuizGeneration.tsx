@@ -20,6 +20,7 @@ const QuizGeneration = () => {
   const totalSteps = 4;
   
   const {
+    title,
     selectedFile,
     topics,
     isProcessing,
@@ -28,6 +29,7 @@ const QuizGeneration = () => {
     duration,
     selectedCourseId,
     difficulty,
+    setTitle,
     handleFileSelect,
     addTopic,
     updateTopic,
@@ -56,7 +58,7 @@ const QuizGeneration = () => {
   const canProceedToNextStep = () => {
     switch (currentStep) {
       case 1:
-        return !!selectedCourseId;
+        return !!selectedCourseId && !!title;
       case 2:
         return !!selectedFile;
       case 3:
@@ -71,7 +73,7 @@ const QuizGeneration = () => {
   const handleSaveTemplate = async () => {
     if (quizQuestions.length > 0) {
       await createTemplate(
-        `Quiz Template - ${topics.map(t => t.description).join(", ")}`,
+        title || `Quiz Template - ${topics.map(t => t.description).join(", ")}`,
         {
           type: "quiz",
           topics,
@@ -107,6 +109,8 @@ const QuizGeneration = () => {
             {currentStep === 1 && (
               <StepContainer key="course-selection">
                 <CourseSelectionStep
+                  title={title}
+                  setTitle={setTitle}
                   selectedCourseId={selectedCourseId}
                   setSelectedCourseId={setSelectedCourseId}
                   difficulty={difficulty}
@@ -138,6 +142,8 @@ const QuizGeneration = () => {
             {currentStep === 4 && (
               <StepContainer key="preview">
                 <PreviewStep
+                  title={title}
+                  setTitle={setTitle}
                   questions={quizQuestions}
                   duration={duration}
                   setDuration={setDuration}

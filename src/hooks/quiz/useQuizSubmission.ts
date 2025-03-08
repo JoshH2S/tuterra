@@ -16,6 +16,7 @@ export const useQuizSubmission = () => {
     fileContent: string,
     topics: Topic[],
     difficulty: QuestionDifficulty,
+    title: string,
     duration: number,
     courseId?: string
   ) => {
@@ -46,8 +47,11 @@ export const useQuizSubmission = () => {
       const generatedQuestions = await generateQuiz(trimmedContent, topics, difficulty);
       setQuizQuestions(generatedQuestions);
       
+      // Use the provided title or generate a default one
+      const quizTitle = title.trim() ? title : `Quiz on ${topics.map(t => t.description).join(", ")}`;
+      
       // Save the generated quiz to the database
-      await saveQuizToDatabase(generatedQuestions, topics, duration, courseId);
+      await saveQuizToDatabase(generatedQuestions, topics, duration, quizTitle, courseId);
 
       toast({
         title: "Success",

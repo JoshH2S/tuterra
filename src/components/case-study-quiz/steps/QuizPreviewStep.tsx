@@ -8,8 +8,12 @@ import { EmptyState } from "@/components/quiz-generation/EmptyState";
 import { Quiz } from "@/components/quiz-generation/QuizOutput";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface QuizPreviewStepProps {
+  title: string;
+  setTitle: (title: string) => void;
   questions: Question[];
   isGenerating: boolean;
   error?: string | null;
@@ -17,6 +21,8 @@ interface QuizPreviewStepProps {
 }
 
 export const QuizPreviewStep = ({
+  title,
+  setTitle,
   questions,
   isGenerating,
   error,
@@ -47,7 +53,18 @@ export const QuizPreviewStep = ({
       {validQuestions.length > 0 ? (
         <div className="space-y-6">
           <Card>
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-4 sm:p-6 space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="quiz-title-final">Quiz Title</Label>
+                <Input
+                  id="quiz-title-final"
+                  placeholder="Enter a title for your quiz"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              
               <h3 className="text-lg font-semibold mb-4">Quiz Preview</h3>
               <Quiz questions={validQuestions} />
               

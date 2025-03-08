@@ -25,9 +25,11 @@ export const useQuizGeneration = () => {
   } = useQuizSubmission();
   
   const { 
+    title,
     duration, 
     selectedCourseId, 
     difficulty, 
+    setTitle,
     setDuration, 
     setSelectedCourseId, 
     setDifficulty 
@@ -37,7 +39,7 @@ export const useQuizGeneration = () => {
     if (!selectedFile) return;
     
     const fileContent = await selectedFile.text();
-    return handleSubmit(fileContent, topics, difficulty, duration, selectedCourseId);
+    return handleSubmit(fileContent, topics, difficulty, title, duration, selectedCourseId);
   };
 
   return {
@@ -57,9 +59,11 @@ export const useQuizGeneration = () => {
     handleSubmit: submitQuiz,
     
     // Quiz settings
+    title,
     duration,
     selectedCourseId,
     difficulty,
+    setTitle,
     setDuration,
     setSelectedCourseId,
     setDifficulty,

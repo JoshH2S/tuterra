@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { QuizDurationInput } from "@/components/quiz-generation/QuizDurationInput";
 import { Question } from "@/types/quiz-generation";
 import { QuizQuestionItem } from "@/components/quiz-generation/QuizQuestionItem";
+import { QuizTitleInput } from "@/components/quiz-generation/QuizTitleInput";
 
 interface PreviewStepProps {
+  title: string;
+  setTitle: (title: string) => void;
   questions: Question[];
   duration: number;
   setDuration: (duration: number) => void;
@@ -15,6 +18,8 @@ interface PreviewStepProps {
 }
 
 export const PreviewStep = ({ 
+  title,
+  setTitle,
   questions, 
   duration, 
   setDuration, 
@@ -32,9 +37,14 @@ export const PreviewStep = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Quiz Duration</CardTitle>
+          <CardTitle>Quiz Settings</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          <QuizTitleInput 
+            title={title}
+            onChange={setTitle}
+          />
+          
           <QuizDurationInput 
             duration={duration}
             onChange={setDuration}
