@@ -1,7 +1,7 @@
 
-import { Label } from "@/components/ui/label";
-import { DIFFICULTY_COLORS, Question, QuestionDifficulty } from "@/types/quiz";
-import { Badge } from "@/components/ui/badge";
+import { Question } from "@/types/quiz";
+import { DifficultyBadge } from "./DifficultyBadge";
+import { QuestionExplanation } from "./QuestionExplanation";
 
 interface QuizQuestionItemProps {
   question: Question;
@@ -16,12 +16,7 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <p className="font-medium">{question.question}</p>
-            <Badge 
-              variant="secondary" 
-              className={`${DIFFICULTY_COLORS[question.difficulty]} capitalize ml-2`}
-            >
-              {question.difficulty}
-            </Badge>
+            <DifficultyBadge difficulty={question.difficulty} />
           </div>
           <div className="mt-2 space-y-1">
             {Object.entries(question.options).map(([letter, text]) => (
@@ -34,11 +29,9 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
           <p className="text-sm text-muted-foreground mt-2">
             Answer: {question.correctAnswer}
           </p>
-          {question.explanation && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Explanation: {question.explanation}
-            </p>
-          )}
+          
+          <QuestionExplanation explanation={question.explanation} />
+          
           <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
             <span>Topic: {question.topic}</span>
             <span>•</span>
