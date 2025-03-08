@@ -53,7 +53,7 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
               {isCaseStudy && caseStudyQuestion.analysisType && (
                 <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 px-2 py-1 text-xs font-medium">
                   {typeof caseStudyQuestion.analysisType === 'string' 
-                    ? caseStudyQuestion.analysisType.replace('_', ' ')
+                    ? caseStudyQuestion.analysisType.replace(/_/g, ' ')
                     : 'Analysis'}
                 </span>
               )}
