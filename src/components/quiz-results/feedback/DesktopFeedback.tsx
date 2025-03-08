@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { FeedbackHeader } from "./FeedbackHeader";
-import { AIFeedback } from "../DetailedFeedback";
+import { AIFeedback } from "@/types/quiz-results";
 import { BookOpen, ThumbsUp, Lightbulb } from "lucide-react";
 
 interface DesktopFeedbackProps {

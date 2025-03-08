@@ -114,11 +114,32 @@ export default function QuizResults() {
           }
         }
         
-        // Construct a complete result object
+        // Process topic_performance to ensure it's the correct type
+        let processedTopicPerformance: Record<string, { correct: number; total: number }> | null = null;
+        
+        if (responseData.topic_performance) {
+          // Handle string format (sometimes stored as JSON string)
+          if (typeof responseData.topic_performance === 'string') {
+            try {
+              processedTopicPerformance = JSON.parse(responseData.topic_performance);
+            } catch (e) {
+              console.error("Error parsing topic_performance:", e);
+              processedTopicPerformance = null;
+            }
+          } 
+          // Handle object format
+          else if (typeof responseData.topic_performance === 'object') {
+            processedTopicPerformance = responseData.topic_performance as Record<string, { correct: number; total: number }>;
+          }
+        }
+        
+        // Construct a complete result object with proper typing
         const completeResults: QuizResponse = {
           ...responseData,
           quiz: quizData,
-          question_responses: questionResponsesWithQuestions
+          question_responses: questionResponsesWithQuestions,
+          // Ensure topic_performance is properly typed
+          topic_performance: processedTopicPerformance
         };
         
         console.log("Quiz response data:", completeResults);
@@ -224,6 +245,7 @@ export default function QuizResults() {
         
         // Make sure the feedback is properly typed
         let typedFeedback: AIFeedback | null = null;
+        let processedTopicPerformance: Record<string, { correct: number; total: number }> | null = null;
         
         if (responseData.ai_feedback) {
           // Handle different formats
@@ -238,10 +260,23 @@ export default function QuizResults() {
           }
         }
         
+        // Process topic_performance
+        if (responseData.topic_performance) {
+          if (typeof responseData.topic_performance === 'string') {
+            try {
+              processedTopicPerformance = JSON.parse(responseData.topic_performance);
+            } catch (e) {
+              console.error("Error parsing topic_performance:", e);
+            }
+          } else {
+            processedTopicPerformance = responseData.topic_performance as Record<string, { correct: number; total: number }>;
+          }
+        }
+        
         return {
           ...prev,
           ai_feedback: typedFeedback,
-          topic_performance: responseData.topic_performance as Record<string, { correct: number; total: number }> | null
+          topic_performance: processedTopicPerformance
         };
       });
       

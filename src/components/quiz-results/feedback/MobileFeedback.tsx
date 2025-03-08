@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FeedbackHeader } from "./FeedbackHeader";
-import { AIFeedback } from "../DetailedFeedback";
+import { AIFeedback } from "@/types/quiz-results";
 import { ThumbsUp, BookOpen, Lightbulb } from "lucide-react";
 
 interface MobileFeedbackProps {
