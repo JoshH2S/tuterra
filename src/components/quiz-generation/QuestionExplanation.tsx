@@ -2,7 +2,7 @@
 import { Info } from "lucide-react";
 
 interface QuestionExplanationProps {
-  explanation: string;
+  explanation?: string | undefined;
 }
 
 export const QuestionExplanation = ({ explanation }: QuestionExplanationProps) => {

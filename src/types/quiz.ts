@@ -42,6 +42,16 @@ export interface RegularQuestion extends BaseQuestion {
   learningObjective: string;
 }
 
+// Type guard to check if a question is a RegularQuestion
+export const isRegularQuestion = (question: Question): question is RegularQuestion => {
+  return 'conceptTested' in question;
+};
+
+// Type guard to check if a question is a CaseStudyQuestion
+export const isCaseStudyQuestion = (question: Question): question is CaseStudyQuestion => {
+  return 'caseStudy' in question && 'analysisType' in question;
+};
+
 export interface QuizMetadata {
   courseId: string;
   difficulty: QuestionDifficulty;

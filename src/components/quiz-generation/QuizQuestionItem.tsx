@@ -1,5 +1,10 @@
 
-import { Question, CaseStudyQuestion } from "@/types/quiz";
+import { 
+  Question, 
+  CaseStudyQuestion, 
+  isRegularQuestion, 
+  isCaseStudyQuestion 
+} from "@/types/quiz";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { QuestionExplanation } from "./QuestionExplanation";
 import { ExternalLink } from "lucide-react";
@@ -13,9 +18,8 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
   // Ensure we have valid options object
   const options = question.options || { A: '', B: '', C: '', D: '' };
   
-  // Check if this is a case study question
-  const isCaseStudy = 'caseStudy' in question;
-  const caseStudyQuestion = isCaseStudy ? question as CaseStudyQuestion : null;
+  // Use the type guards to safely check question types
+  const isCaseStudy = isCaseStudyQuestion(question);
   
   // Function to format analysis type for display
   const formatAnalysisType = (type: string): string => {
@@ -28,15 +32,15 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
         <span className="font-medium min-w-[20px] text-right">{index + 1}.</span>
         <div className="flex-1">
           {/* Case Study Information */}
-          {isCaseStudy && caseStudyQuestion?.caseStudy && (
+          {isCaseStudy && (
             <div className="mb-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Source: {caseStudyQuestion.caseStudy.source} • {caseStudyQuestion.caseStudy.date}
+                  Source: {question.caseStudy.source} • {question.caseStudy.date}
                 </p>
-                {caseStudyQuestion.caseStudy.url && (
+                {question.caseStudy.url && (
                   <a 
-                    href={caseStudyQuestion.caseStudy.url} 
+                    href={question.caseStudy.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-sm flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400"
@@ -47,7 +51,7 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
                 )}
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                {caseStudyQuestion.caseStudy.context}
+                {question.caseStudy.context}
               </p>
             </div>
           )}
@@ -55,9 +59,9 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
           <div className="flex flex-wrap items-start gap-2 mb-2">
             <p className="font-medium flex-1">{question.question || 'No question text'}</p>
             <div className="flex flex-wrap gap-2">
-              {isCaseStudy && caseStudyQuestion?.analysisType && (
+              {isCaseStudy && (
                 <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 px-2 py-1 text-xs font-medium">
-                  {formatAnalysisType(caseStudyQuestion.analysisType)}
+                  {formatAnalysisType(question.analysisType)}
                 </span>
               )}
               {question.difficulty && (
@@ -86,8 +90,8 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
             <span className="hidden sm:inline">•</span>
             <span>{question.points || 1} points</span>
             
-            {/* If it's a regular question with conceptTested */}
-            {'conceptTested' in question && question.conceptTested && (
+            {/* Only show concept information for regular questions */}
+            {isRegularQuestion(question) && question.conceptTested && (
               <>
                 <span className="hidden sm:inline">•</span>
                 <span>Concept: {question.conceptTested}</span>
