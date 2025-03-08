@@ -6,12 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { QuizNavigationLinks } from "@/components/quiz-generation/QuizNavigationLinks";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
-import { QuizTimer } from "./QuizTimer";
 import { QuizQuestionCard } from "./QuizQuestionCard";
 import { QuizNavigation } from "./QuizNavigation";
 import { QuizSubmitButton } from "./QuizSubmitButton";
 import { QuizHeader } from "./QuizHeader";
 import { QuizExitDialog } from "./QuizExitDialog";
+import { QuizTimer } from "./QuizTimer";
 
 interface QuizContentProps {
   quizId: string;
@@ -35,6 +35,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [timeRemaining, setTimeRemaining] = useState<number>(quiz.duration_minutes * 60);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSelectAnswer = (answer: string) => {
     setSelectedAnswers(prev => ({
@@ -57,6 +58,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
 
   const handleSubmitQuiz = async () => {
     try {
+      setIsSubmitting(true);
       // Get user session
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData?.session?.user?.id;
@@ -118,6 +120,8 @@ const QuizContent: React.FC<QuizContentProps> = ({
         description: "Failed to submit quiz. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -126,6 +130,9 @@ const QuizContent: React.FC<QuizContentProps> = ({
   if (!currentQuestion) {
     return <div>Question not found</div>;
   }
+
+  const answeredQuestionsCount = Object.keys(selectedAnswers).length;
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -136,46 +143,52 @@ const QuizContent: React.FC<QuizContentProps> = ({
         <Card className="max-w-4xl mx-auto mt-6 p-6">
           <QuizHeader 
             title={quiz.title} 
-            currentQuestion={currentQuestionIndex + 1} 
-            totalQuestions={questions.length}
-            onExit={() => setShowExitDialog(true)}
+            timeRemaining={timeRemaining}
+            onTimeUp={handleSubmitQuiz}
           />
           
-          <QuizTimer 
-            initialTime={quiz.duration_minutes * 60}
-            onTimeUpdate={setTimeRemaining}
-            onTimeExpired={handleSubmitQuiz}
-          />
+          <div className="text-center my-4">
+            <p className="text-sm font-medium">
+              Question {currentQuestionIndex + 1} of {questions.length}
+            </p>
+          </div>
           
           <QuizQuestionCard
             question={currentQuestion}
+            currentIndex={currentQuestionIndex}
+            totalQuestions={questions.length}
             selectedAnswer={selectedAnswers[currentQuestionIndex]}
-            onSelectAnswer={handleSelectAnswer}
+            onAnswerSelect={handleSelectAnswer}
+            onNext={handleNextQuestion}
+            onPrevious={handlePreviousQuestion}
+            showFeedback={false}
+            explanations={{}}
+            isGeneratingExplanation={false}
+            timeRemaining={timeRemaining}
+            answeredQuestions={Object.keys(selectedAnswers).map(key => parseInt(key))}
           />
           
           <QuizNavigation
             currentQuestion={currentQuestionIndex + 1}
             totalQuestions={questions.length}
-            canGoPrevious={currentQuestionIndex > 0}
-            canGoNext={currentQuestionIndex < questions.length - 1}
-            onPrevious={handlePreviousQuestion}
             onNext={handleNextQuestion}
+            onPrevious={handlePreviousQuestion}
           />
           
-          <QuizSubmitButton 
-            currentQuestion={currentQuestionIndex + 1}
-            totalQuestions={questions.length}
-            timeRemaining={timeRemaining}
-            answeredQuestions={Object.keys(selectedAnswers).length}
-            onSubmit={handleSubmitQuiz}
-          />
+          <div className="mt-8 flex justify-end">
+            <QuizSubmitButton
+              isSubmitting={isSubmitting}
+              onSubmit={handleSubmitQuiz}
+              isLastQuestion={isLastQuestion}
+            />
+          </div>
         </Card>
       </div>
       
       <QuizExitDialog
         open={showExitDialog}
         onClose={() => setShowExitDialog(false)}
-        onConfirm={() => navigate('/quizzes')}
+        onConfirmExit={() => navigate('/quizzes')}
       />
     </div>
   );
