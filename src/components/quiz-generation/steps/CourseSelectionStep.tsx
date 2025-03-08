@@ -29,6 +29,9 @@ export const CourseSelectionStep = ({
 }: CourseSelectionStepProps) => {
   const { courses, isLoading } = useCourses();
 
+  // Find the selected course object
+  const selectedCourse = courses.find(course => course.id === selectedCourseId);
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -51,10 +54,10 @@ export const CourseSelectionStep = ({
         <p className="text-gray-600 dark:text-gray-400">
           Choose the course you want to create a quiz for
         </p>
-        {selectedCourseId && (
+        {selectedCourseId && selectedCourse && (
           <div className="mt-2 text-sm text-primary font-medium">
             <span className="inline-flex items-center">
-              <span className="mr-1">✓</span> Course selected
+              <span className="mr-1">✓</span> Course selected: <span className="ml-1 font-semibold">{selectedCourse.title}</span>
             </span>
           </div>
         )}

@@ -17,6 +17,9 @@ export const CourseSelection = ({
   setDifficulty 
 }: CourseSelectionProps) => {
   const { courses, isLoading: isLoadingCourses } = useCourses();
+  
+  // Find the selected course
+  const selectedCourse = courses.find(course => course.id === selectedCourseId);
 
   return (
     <>
@@ -38,6 +41,12 @@ export const CourseSelection = ({
             ))}
           </SelectContent>
         </Select>
+        
+        {selectedCourseId && selectedCourse && (
+          <p className="text-xs text-primary font-medium mt-1 flex items-center">
+            <span className="mr-1">✓</span> Selected: {selectedCourse.title}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
