@@ -1,8 +1,8 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { QuizDurationInput } from "@/components/quiz-generation/QuizDurationInput";
-import { FeedbackGenerateButton } from "@/components/quiz-results/FeedbackGenerateButton";
 import { Question } from "@/types/quiz-generation";
 import { QuizQuestionItem } from "@/components/quiz-generation/QuizQuestionItem";
 
@@ -69,11 +69,13 @@ export const PreviewStep = ({
             <p className="text-gray-500 mb-6 max-w-md">
               Complete the previous steps and generate your quiz to see a preview of the questions
             </p>
-            <FeedbackGenerateButton 
-              onGenerate={handleSubmit} 
-              isGenerating={isProcessing}
-              fullWidth={true}
-            />
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isProcessing}
+              className="w-full md:w-auto"
+            >
+              {isProcessing ? 'Generating...' : 'Generate Quiz'}
+            </Button>
           </CardContent>
         </Card>
       )}

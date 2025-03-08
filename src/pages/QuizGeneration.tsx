@@ -205,14 +205,24 @@ const QuizGeneration = () => {
               Previous
             </Button>
             
-            <Button
-              onClick={handleNextStep}
-              disabled={!canProceedToNextStep()}
-              className="px-6 py-2 h-12"
-            >
-              {currentStep === 4 ? 'Generate Quiz' : 'Next'}
-              {currentStep !== 4 && <ArrowRight className="w-4 h-4 ml-2" />}
-            </Button>
+            {currentStep < 4 ? (
+              <Button
+                onClick={handleNextStep}
+                disabled={!canProceedToNextStep()}
+                className="px-6 py-2 h-12"
+              >
+                Next
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={isProcessing || !canProceedToNextStep()}
+                className="px-6 py-2 h-12"
+              >
+                {isProcessing ? 'Generating...' : 'Generate Quiz'}
+              </Button>
+            )}
           </div>
 
           {/* Publish and Navigation Buttons at the bottom */}
