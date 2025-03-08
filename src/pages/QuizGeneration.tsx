@@ -1,23 +1,20 @@
 
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
-import { TopicsCard } from "@/components/quiz-generation/TopicsCard";
-import { CourseMaterialUpload } from "@/components/lesson-planning/CourseMaterialUpload";
-import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
-import { QuizDurationInput } from "@/components/quiz-generation/QuizDurationInput";
+import { CourseSelectionStep } from "@/components/quiz-generation/steps/CourseSelectionStep";
+import { MaterialUploadStep } from "@/components/quiz-generation/steps/MaterialUploadStep";
+import { TopicsStep } from "@/components/quiz-generation/steps/TopicsStep";
+import { PreviewStep } from "@/components/quiz-generation/steps/PreviewStep";
+import { StepIndicator } from "@/components/quiz-generation/StepIndicator";
 import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
-import { useCourseTemplates } from "@/hooks/useCourseTemplates";
-import { useCourses } from "@/hooks/useCourses";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue, 
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { QuestionDifficulty } from "@/types/quiz";
 
 const QuizGeneration = () => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 4;
+  
   const {
     selectedFile,
     topics,
@@ -36,8 +33,34 @@ const QuizGeneration = () => {
     setDifficulty,
   } = useQuizGeneration();
 
-  const { createTemplate } = useCourseTemplates();
-  const { courses, isLoading: isLoadingCourses } = useCourses();
+  const handleNextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(prevStep => prevStep + 1);
+    } else if (currentStep === totalSteps) {
+      handleSubmit();
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prevStep => prevStep - 1);
+    }
+  };
+
+  const canProceedToNextStep = () => {
+    switch (currentStep) {
+      case 1:
+        return !!selectedCourseId;
+      case 2:
+        return !!selectedFile;
+      case 3:
+        return topics.every(topic => !!topic.description);
+      case 4:
+        return !isProcessing;
+      default:
+        return true;
+    }
+  };
 
   const handleSaveTemplate = async () => {
     if (quizQuestions.length > 0) {
@@ -56,82 +79,107 @@ const QuizGeneration = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
-        <QuizGenerationHeader onSaveTemplate={quizQuestions.length > 0 ? handleSaveTemplate : undefined} />
-        
-        <div className="grid gap-8 md:grid-cols-2">
-          <div className="space-y-8">
-            <CourseMaterialUpload 
-              onFileSelect={handleFileSelect}
-              contentLength={contentLength}
-            />
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiz Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Select Course</label>
-                  <Select
-                    value={selectedCourseId}
-                    onValueChange={setSelectedCourseId}
-                    disabled={isLoadingCourses}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course.id} value={course.id}>
-                          {course.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Education Level</label>
-                  <Select
-                    value={difficulty}
-                    onValueChange={(value: QuestionDifficulty) => setDifficulty(value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select education level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="middle_school">Middle School</SelectItem>
-                      <SelectItem value="high_school">High School</SelectItem>
-                      <SelectItem value="university">University</SelectItem>
-                      <SelectItem value="post_graduate">Post Graduate</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            <TopicsCard 
-              topics={topics}
-              onTopicChange={updateTopic}
-              onAddTopic={addTopic}
-              onSubmit={handleSubmit}
-              isProcessing={isProcessing}
-              isSubmitDisabled={isProcessing || !selectedFile || !selectedCourseId || topics.some(topic => !topic.description)}
-            />
-            <QuizDurationInput 
-              duration={duration}
-              onChange={setDuration}
-            />
+      {/* Floating Header */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+        <div className="container mx-auto px-4">
+          <div className="h-16 flex items-center justify-between">
+            <QuizGenerationHeader onSaveTemplate={quizQuestions.length > 0 ? handleSaveTemplate : undefined} />
+            <div className="hidden md:block">
+              <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
+            </div>
           </div>
-          
-          <QuizOutput
-            questions={quizQuestions}
-          />
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Step-based Content with AnimatePresence for transitions */}
+          <AnimatePresence mode="wait">
+            {currentStep === 1 && (
+              <StepContainer key="course-selection">
+                <CourseSelectionStep
+                  selectedCourseId={selectedCourseId}
+                  setSelectedCourseId={setSelectedCourseId}
+                  difficulty={difficulty}
+                  setDifficulty={setDifficulty}
+                />
+              </StepContainer>
+            )}
+
+            {currentStep === 2 && (
+              <StepContainer key="material-upload">
+                <MaterialUploadStep
+                  selectedFile={selectedFile}
+                  handleFileSelect={handleFileSelect}
+                  contentLength={contentLength}
+                />
+              </StepContainer>
+            )}
+
+            {currentStep === 3 && (
+              <StepContainer key="topics">
+                <TopicsStep
+                  topics={topics}
+                  updateTopic={updateTopic}
+                  addTopic={addTopic}
+                />
+              </StepContainer>
+            )}
+
+            {currentStep === 4 && (
+              <StepContainer key="preview">
+                <PreviewStep
+                  questions={quizQuestions}
+                  duration={duration}
+                  setDuration={setDuration}
+                  handleSubmit={handleSubmit}
+                  isProcessing={isProcessing}
+                />
+              </StepContainer>
+            )}
+          </AnimatePresence>
+
+          {/* Mobile step indicator */}
+          <div className="md:hidden mt-6">
+            <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
+          </div>
+
+          {/* Navigation */}
+          <div className="mt-8 flex items-center justify-between">
+            <Button
+              variant="outline"
+              onClick={handlePreviousStep}
+              disabled={currentStep === 1}
+              className="px-4 py-2 h-12"
+            >
+              Previous
+            </Button>
+            
+            <Button
+              onClick={handleNextStep}
+              disabled={!canProceedToNextStep()}
+              className="px-6 py-2 h-12"
+            >
+              {currentStep === 4 ? 'Generate Quiz' : 'Next'}
+            </Button>
+          </div>
         </div>
       </main>
     </div>
   );
 };
+
+// Wrapper component for step animations
+const StepContainer = ({ children }: { children: React.ReactNode }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.3 }}
+    className="mb-6"
+  >
+    {children}
+  </motion.div>
+);
 
 export default QuizGeneration;
