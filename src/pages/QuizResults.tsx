@@ -87,7 +87,10 @@ export default function QuizResults() {
         }
         
         // Get question details separately
-        const questionResponsesWithDetails = [...(questionResponsesData || [])];
+        const questionResponsesWithQuestions = [...(questionResponsesData || [])].map(qr => ({
+          ...qr,
+          question: null
+        }));
         
         if (questionResponsesData && questionResponsesData.length > 0) {
           const questionIds = questionResponsesData.map(qr => qr.question_id);
@@ -101,9 +104,9 @@ export default function QuizResults() {
             console.error("Error fetching questions:", questionsError);
           } else if (questionsData) {
             // Merge question responses with question details
-            questionResponsesWithDetails.forEach((qr, index) => {
+            questionResponsesWithQuestions.forEach((qr, index) => {
               const question = questionsData.find(q => q.id === qr.question_id);
-              questionResponsesWithDetails[index] = {
+              questionResponsesWithQuestions[index] = {
                 ...qr,
                 question: question || null
               };
@@ -115,7 +118,7 @@ export default function QuizResults() {
         const completeResults: QuizResponse = {
           ...responseData,
           quiz: quizData,
-          question_responses: questionResponsesWithDetails
+          question_responses: questionResponsesWithQuestions
         };
         
         console.log("Quiz response data:", completeResults);
@@ -179,14 +182,17 @@ export default function QuizResults() {
       
       // First update results with a placeholder for better UX
       if (results) {
-        setResults(prev => prev ? {
-          ...prev,
-          ai_feedback: {
-            strengths: ["Generating feedback..."],
-            areas_for_improvement: ["Analyzing your answers..."],
-            advice: "Please wait while we analyze your quiz performance."
-          }
-        } : null);
+        setResults(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            ai_feedback: {
+              strengths: ["Generating feedback..."],
+              areas_for_improvement: ["Analyzing your answers..."],
+              advice: "Please wait while we analyze your quiz performance."
+            }
+          };
+        });
       }
       
       // Toast to inform user
@@ -213,11 +219,31 @@ export default function QuizResults() {
       console.log("Updated feedback from database:", responseData.ai_feedback);
       
       // Update the results state with fresh data
-      setResults(prev => prev ? {
-        ...prev,
-        ai_feedback: responseData.ai_feedback,
-        topic_performance: responseData.topic_performance
-      } : null);
+      setResults(prev => {
+        if (!prev) return null;
+        
+        // Make sure the feedback is properly typed
+        let typedFeedback: AIFeedback | null = null;
+        
+        if (responseData.ai_feedback) {
+          // Handle different formats
+          if (typeof responseData.ai_feedback === 'string') {
+            try {
+              typedFeedback = JSON.parse(responseData.ai_feedback);
+            } catch (e) {
+              console.error("Error parsing AI feedback:", e);
+            }
+          } else {
+            typedFeedback = responseData.ai_feedback as unknown as AIFeedback;
+          }
+        }
+        
+        return {
+          ...prev,
+          ai_feedback: typedFeedback,
+          topic_performance: responseData.topic_performance as Record<string, { correct: number; total: number }> | null
+        };
+      });
       
       toast({
         title: "Success",
@@ -233,10 +259,13 @@ export default function QuizResults() {
       
       // Reset the placeholder if there was an error
       if (results?.ai_feedback?.strengths?.[0] === "Generating feedback...") {
-        setResults(prev => prev ? {
-          ...prev,
-          ai_feedback: null
-        } : null);
+        setResults(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            ai_feedback: null
+          };
+        });
       }
     } finally {
       setGeneratingFeedback(false);

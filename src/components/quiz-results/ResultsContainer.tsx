@@ -1,17 +1,15 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { ResultsHeader } from "./ResultsHeader";
 import { StatsCard } from "./StatsCard";
 import { CircularProgress } from "@/components/ui/circular-progress";
-import { QuestionReviewCard } from "./QuestionReviewCard";
 import { TopicPerformanceCard } from "./TopicPerformanceCard";
 import { DetailedFeedback } from "./DetailedFeedback";
-import { QuestionFilter } from "./QuestionFilter";
 import { FeedbackGenerateButton } from "./FeedbackGenerateButton";
 import { ResultActions } from "./ResultActions";
 import { CheckCircle, XCircle, ListChecks } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { QuizResponse, Quiz, ProcessedQuestion } from "@/types/quiz-results";
+import { QuizResponse, Quiz } from "@/types/quiz-results";
 import { ResultsError } from "./ResultsError";
 
 interface ResultsContainerProps {
@@ -28,9 +26,6 @@ export function ResultsContainer({
   generatingFeedback 
 }: ResultsContainerProps) {
   const isMobile = useIsMobile();
-  const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
-  const [filterType, setFilterType] = useState("all");
-  const [filteredQuestions, setFilteredQuestions] = useState<ProcessedQuestion[]>([]);
   
   // Make sure we have valid results
   if (!results || !quiz) {
@@ -50,37 +45,7 @@ export function ResultsContainer({
     return "Keep practicing";
   };
 
-  // Process questions and answers from results
-  useEffect(() => {
-    if (results && results.question_responses) {
-      // Map questions with student answers in a more type-safe way
-      const processedQuestions: ProcessedQuestion[] = results.question_responses
-        .filter(resp => resp.question !== null)
-        .map(resp => ({
-          ...(resp.question as any), // Cast to any as a workaround for the type
-          studentAnswer: resp.student_answer || "",
-          isCorrect: resp.is_correct
-        }));
-      
-      // Apply filtering
-      let filtered = [...processedQuestions];
-      
-      if (filterType === "correct") {
-        filtered = filtered.filter(q => q.isCorrect);
-      } else if (filterType === "incorrect") {
-        filtered = filtered.filter(q => !q.isCorrect);
-      }
-      
-      setFilteredQuestions(filtered);
-    }
-  }, [results, filterType]);
-
-  // Toggle question expansion
-  const toggleQuestion = (index: number) => {
-    setExpandedQuestion(prevIndex => prevIndex === index ? null : index);
-  };
-
-  // Check if we have meaningful feedback (not just empty arrays/strings)
+  // Check if we have meaningful feedback
   const hasStrengths = results.ai_feedback?.strengths?.length > 0 && 
     results.ai_feedback.strengths[0] !== "";
   const hasAreasForImprovement = results.ai_feedback?.areas_for_improvement?.length > 0 && 
@@ -89,17 +54,17 @@ export function ResultsContainer({
     results.ai_feedback.advice !== "";
   
   const hasMeaningfulFeedback = hasStrengths || hasAreasForImprovement || hasAdvice;
-  // Don't show the "generating" message as meaningful feedback
   const isGeneratingMessage = results.ai_feedback?.strengths?.[0] === "Generating feedback...";
   const shouldShowGenerateButton = !hasMeaningfulFeedback || isGeneratingMessage;
   
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="px-4 sm:px-6">
+      <div className="px-4 sm:px-6 space-y-8">
+        {/* Header */}
         <ResultsHeader title={quiz.title} />
         
         {/* Hero Section with Score */}
-        <div className="relative mb-8 mt-4 flex flex-col items-center">
+        <div className="relative flex flex-col items-center bg-gradient-to-b from-primary/10 to-transparent rounded-2xl p-8">
           <div className="relative">
             <CircularProgress 
               percentage={percentageScore} 
@@ -119,7 +84,7 @@ export function ResultsContainer({
         </div>
         
         {/* Stats Cards */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 mb-8">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <StatsCard 
             title="Correct Answers"
             value={results.correct_answers}
@@ -140,68 +105,39 @@ export function ResultsContainer({
           />
         </div>
         
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-8 mb-8">
-          {/* Question Review Section */}
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Question Review
-              </h2>
-              <QuestionFilter 
-                value={filterType} 
-                onChange={setFilterType}
-              />
-            </div>
-            
-            {filteredQuestions.length > 0 ? (
-              <div className="space-y-4">
-                {filteredQuestions.map((question, index) => (
-                  <QuestionReviewCard
-                    key={index}
-                    question={question}
-                    userAnswer={question.studentAnswer}
-                    isExpanded={expandedQuestion === index}
-                    onToggle={() => toggleQuestion(index)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No questions match your filter. Try a different filter.
-              </div>
-            )}
+        {/* Topic Performance */}
+        {results.topic_performance && Object.keys(results.topic_performance).length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <TopicPerformanceCard topics={results.topic_performance} />
           </div>
+        )}
+        
+        {/* AI Feedback Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <DetailedFeedback 
+            feedback={results.ai_feedback} 
+            isGenerating={generatingFeedback}
+          />
           
-          {/* Sidebar Content */}
-          <div className="space-y-6">
-            {/* Topic Performance */}
-            {results.topic_performance && Object.keys(results.topic_performance).length > 0 && (
-              <TopicPerformanceCard topics={results.topic_performance} />
-            )}
-            
-            {/* AI Feedback */}
-            <DetailedFeedback 
-              feedback={results.ai_feedback} 
-              isGenerating={generatingFeedback}
-            />
-            
-            {shouldShowGenerateButton && !generatingFeedback && (
+          {shouldShowGenerateButton && !generatingFeedback && (
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
               <FeedbackGenerateButton 
                 onGenerate={generateFeedback}
                 isGenerating={generatingFeedback}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
         
         {/* Action Buttons */}
-        <ResultActions 
-          quizId={quiz.id} 
-          quizTitle={quiz.title}
-          allowRetakes={quiz.allow_retakes}
-          previousScore={percentageScore}
-        />
+        <div className="pt-4">
+          <ResultActions 
+            quizId={quiz.id} 
+            quizTitle={quiz.title}
+            allowRetakes={quiz.allow_retakes}
+            previousScore={percentageScore}
+          />
+        </div>
       </div>
     </div>
   );

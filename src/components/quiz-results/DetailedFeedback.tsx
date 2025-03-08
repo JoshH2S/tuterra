@@ -5,12 +5,7 @@ import { MobileFeedback } from "./feedback/MobileFeedback";
 import { DesktopFeedback } from "./feedback/DesktopFeedback";
 import { LoadingFeedback } from "./feedback/LoadingFeedback";
 import { EmptyFeedback } from "./feedback/EmptyFeedback";
-
-export interface AIFeedback {
-  strengths?: string[];
-  areas_for_improvement?: string[];
-  advice?: string;
-}
+import { AIFeedback } from "@/types/quiz-results";
 
 interface DetailedFeedbackProps {
   feedback: AIFeedback | null | undefined;
