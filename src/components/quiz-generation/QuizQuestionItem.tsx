@@ -15,7 +15,12 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
   
   // Check if this is a case study question
   const isCaseStudy = 'caseStudy' in question;
-  const caseStudyQuestion = question as CaseStudyQuestion;
+  const caseStudyQuestion = isCaseStudy ? question as CaseStudyQuestion : null;
+  
+  // Function to format analysis type for display
+  const formatAnalysisType = (type: string): string => {
+    return type.replace(/_/g, ' ');
+  };
   
   return (
     <div className="space-y-2">
@@ -23,7 +28,7 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
         <span className="font-medium min-w-[20px] text-right">{index + 1}.</span>
         <div className="flex-1">
           {/* Case Study Information */}
-          {isCaseStudy && caseStudyQuestion.caseStudy && (
+          {isCaseStudy && caseStudyQuestion?.caseStudy && (
             <div className="mb-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -50,11 +55,9 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
           <div className="flex flex-wrap items-start gap-2 mb-2">
             <p className="font-medium flex-1">{question.question || 'No question text'}</p>
             <div className="flex flex-wrap gap-2">
-              {isCaseStudy && caseStudyQuestion.analysisType && (
+              {isCaseStudy && caseStudyQuestion?.analysisType && (
                 <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 px-2 py-1 text-xs font-medium">
-                  {typeof caseStudyQuestion.analysisType === 'string' 
-                    ? caseStudyQuestion.analysisType.replace(/_/g, ' ')
-                    : 'Analysis'}
+                  {formatAnalysisType(caseStudyQuestion.analysisType)}
                 </span>
               )}
               {question.difficulty && (
