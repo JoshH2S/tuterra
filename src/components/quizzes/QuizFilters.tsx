@@ -1,4 +1,5 @@
-import { Search, Filter, Plus } from "lucide-react";
+
+import { Search, Filter, Plus, RefreshCw } from "lucide-react";
 import { Select } from "@/components/ui/select-simple";
 import { Button } from "@/components/ui/button";
 import { Course } from "@/types/course";
@@ -12,6 +13,7 @@ interface QuizFiltersProps {
   setSelectedCourse: (value: string) => void;
   setSelectedStatus: (value: string) => void;
   handleCreateQuiz: () => void;
+  refreshQuizzes?: () => void; // Add refresh function prop
 }
 
 export function QuizFilters({
@@ -22,7 +24,8 @@ export function QuizFilters({
   setSearchTerm,
   setSelectedCourse,
   setSelectedStatus,
-  handleCreateQuiz
+  handleCreateQuiz,
+  refreshQuizzes
 }: QuizFiltersProps) {
   // Build course options for the select dropdown
   const courseOptions = [
@@ -47,6 +50,11 @@ export function QuizFilters({
         </div>
 
         <div className="flex items-center gap-3">
+          {refreshQuizzes && (
+            <Button variant="outline" onClick={refreshQuizzes} size="icon" title="Refresh quizzes">
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          )}
           <Button variant="outline">
             <Filter className="w-4 h-4 mr-2" />
             Filter

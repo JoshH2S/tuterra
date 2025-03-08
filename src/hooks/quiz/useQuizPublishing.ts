@@ -54,10 +54,8 @@ export const useQuizPublishing = (duration: number, title?: string) => {
         description: "Quiz published successfully! Students can now take this quiz.",
       });
 
-      // Optionally navigate to quizzes page after publishing
-      setTimeout(() => {
-        navigate('/quizzes');
-      }, 1500);
+      // Navigate to quizzes page after publishing and force a refresh
+      navigate('/quizzes', { replace: true });
     } catch (error) {
       console.error('Error publishing quiz:', error);
       toast({
