@@ -10,6 +10,7 @@ import { TopicsStep } from "@/components/quiz-generation/steps/TopicsStep";
 import { PreviewStep } from "@/components/quiz-generation/steps/PreviewStep";
 import { StepIndicator } from "@/components/quiz-generation/StepIndicator";
 import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
+import { useCourseTemplates } from "@/hooks/useCourseTemplates";
 
 const QuizGeneration = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -32,6 +33,8 @@ const QuizGeneration = () => {
     setSelectedCourseId,
     setDifficulty,
   } = useQuizGeneration();
+
+  const { createTemplate } = useCourseTemplates();
 
   const handleNextStep = () => {
     if (currentStep < totalSteps) {
