@@ -57,7 +57,7 @@ export const useQuizGeneration = () => {
     // Quiz submission
     isProcessing,
     quizQuestions,
-    quizId,
+    quizId, // Ensure quizId is exposed here
     handleSubmit: submitQuiz,
     
     // Quiz settings

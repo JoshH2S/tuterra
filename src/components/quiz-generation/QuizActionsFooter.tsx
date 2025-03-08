@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Question } from "@/types/quiz-generation";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 import { Loader2 } from "lucide-react";
 
 interface QuizActionsFooterProps {
-  quizId?: string; // Make quizId optional for backward compatibility
+  quizId?: string;
   quizQuestions: Question[];
   title?: string;
   duration?: number;
@@ -23,12 +22,23 @@ export const QuizActionsFooter = ({
 }: QuizActionsFooterProps) => {
   const { handlePublish, isPublishing } = useQuizPublishing();
 
-  if (quizQuestions.length === 0 || !quizId) {
+  // Only display if we have quizQuestions and a quizId
+  if (quizQuestions.length === 0) {
     return null;
   }
 
   const onPublish = () => {
-    handlePublish(quizId, duration, title);
+    console.log("Publishing quiz with ID:", quizId);
+    if (quizId) {
+      handlePublish(quizId, duration, title);
+    } else {
+      console.error("No quiz ID available for publishing");
+      toast({
+        title: "Error",
+        description: "No quiz ID available for publishing. Please try regenerating the quiz.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -39,7 +49,7 @@ export const QuizActionsFooter = ({
             onClick={onPublish}
             size="lg"
             className="w-full md:w-auto"
-            disabled={isPublishing}
+            disabled={isPublishing || !quizId}
           >
             {isPublishing ? (
               <>
@@ -50,6 +60,11 @@ export const QuizActionsFooter = ({
               'Publish Quiz'
             )}
           </Button>
+          {!quizId && quizQuestions.length > 0 && (
+            <p className="text-red-500 text-sm mt-2">
+              Quiz ID is missing. Please try regenerating the quiz.
+            </p>
+          )}
         </div>
       </Card>
     </div>

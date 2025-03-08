@@ -17,6 +17,7 @@ export const useGenerateQuiz = () => {
   const [newsSources, setNewsSources] = useState<NewsSource[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [quizMetadata, setQuizMetadata] = useState<QuizMetadata | null>(null);
+  const [quizId, setQuizId] = useState<string | null>(null); // Add state for quiz ID
   const { saveQuizToDatabase } = useQuizSave();
 
   const generateQuiz = async (
@@ -38,6 +39,7 @@ export const useGenerateQuiz = () => {
     setNewsSources([]);
     setError(null);
     setQuizMetadata(null);
+    setQuizId(null); // Reset quiz ID
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -137,7 +139,7 @@ export const useGenerateQuiz = () => {
       // Save quiz to database using the shared hook
       try {
         const estimatedDuration = data.metadata?.estimatedDuration || 30;
-        const success = await saveQuizToDatabase(
+        const { success, quizId } = await saveQuizToDatabase(
           validatedQuestions, 
           topics, 
           estimatedDuration,
@@ -145,10 +147,21 @@ export const useGenerateQuiz = () => {
           selectedCourseId
         );
 
-        if (success) {
+        if (success && quizId) {
+          console.log("Quiz saved with ID:", quizId);
+          setQuizId(quizId); // Store the quiz ID
+          
           toast({
             title: "Success",
             description: "Case study quiz generated and saved successfully!",
+          });
+        } else {
+          console.error("No quiz ID returned from saveQuizToDatabase");
+          
+          toast({
+            title: "Warning",
+            description: "Quiz generated but may not be properly saved. Saving issue detected.",
+            variant: "destructive",
           });
         }
       } catch (saveError) {
@@ -186,6 +199,7 @@ export const useGenerateQuiz = () => {
     quizQuestions,
     newsSources,
     quizMetadata,
+    quizId, // Return the quiz ID
     error,
     generateQuiz
   };

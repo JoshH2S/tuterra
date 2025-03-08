@@ -11,6 +11,7 @@ import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { MouseEventHandler } from "react";
 
 interface QuizPreviewStepProps {
   title: string;
@@ -35,16 +36,17 @@ export const QuizPreviewStep = ({
   const validQuestions = Array.isArray(questions) ? questions : [];
   
   // Use the quiz publishing hook
-  const { handlePublish } = useQuizPublishing();
+  const { handlePublish, isPublishing } = useQuizPublishing();
 
   // Create a wrapper function for the publish button
-  const onPublish = () => {
+  const onPublish: MouseEventHandler<HTMLButtonElement> = () => {
+    console.log("Publishing with quiz ID:", quizId);
     if (quizId) {
       handlePublish(quizId, 30, title);
     } else {
       toast({
         title: "Error",
-        description: "No quiz ID available for publishing",
+        description: "No quiz ID available for publishing. Please try regenerating the quiz.",
         variant: "destructive",
       });
     }
@@ -82,7 +84,7 @@ export const QuizPreviewStep = ({
               </div>
               
               <h3 className="text-lg font-semibold mb-4">Quiz Preview</h3>
-              <Quiz questions={validQuestions} />
+              <Quiz questions={validQuestions} quizId={quizId} />
               
               {/* Add publish button after quiz is displayed */}
               <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
@@ -90,9 +92,22 @@ export const QuizPreviewStep = ({
                   onClick={onPublish}
                   className="w-full sm:w-auto"
                   size="lg"
+                  disabled={isPublishing || !quizId}
                 >
-                  Publish Quiz
+                  {isPublishing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    'Publish Quiz'
+                  )}
                 </Button>
+                {!quizId && (
+                  <p className="text-red-500 text-sm mt-2">
+                    Quiz ID is missing. Please try regenerating the quiz.
+                  </p>
+                )}
                 <p className="text-sm text-muted-foreground mt-2">
                   Publishing will make this quiz available for students to take
                 </p>
