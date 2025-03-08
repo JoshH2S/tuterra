@@ -1,6 +1,6 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FormLabel } from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 import { useCourses } from "@/hooks/useCourses";
 
 interface CourseSelectorProps {
@@ -9,15 +9,15 @@ interface CourseSelectorProps {
 }
 
 export function CourseSelector({ selectedCourseId, setSelectedCourseId }: CourseSelectorProps) {
-  const { courses, loading } = useCourses();
+  const { courses, isLoading } = useCourses();
 
   return (
     <div className="space-y-2">
-      <FormLabel htmlFor="course-select">Course</FormLabel>
+      <Label htmlFor="course-select">Course</Label>
       <Select
         value={selectedCourseId}
         onValueChange={setSelectedCourseId}
-        disabled={loading}
+        disabled={isLoading}
       >
         <SelectTrigger id="course-select" className="w-full">
           <SelectValue placeholder="Select a course" />

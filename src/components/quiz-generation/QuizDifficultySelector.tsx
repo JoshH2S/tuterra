@@ -1,6 +1,6 @@
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { FormLabel } from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 import { QuestionDifficulty } from "@/types/quiz";
 
 interface QuizDifficultySelectorProps {
@@ -18,7 +18,7 @@ export function QuizDifficultySelector({ difficulty, setDifficulty }: QuizDiffic
 
   return (
     <div className="space-y-3">
-      <FormLabel>Difficulty Level</FormLabel>
+      <Label>Difficulty Level</Label>
       <RadioGroup
         value={difficulty}
         onValueChange={(value) => setDifficulty(value as QuestionDifficulty)}
@@ -34,12 +34,12 @@ export function QuizDifficultySelector({ difficulty, setDifficulty }: QuizDiffic
             onClick={() => setDifficulty(option.value)}
           >
             <RadioGroupItem value={option.value} id={option.value} />
-            <FormLabel
+            <Label
               htmlFor={option.value}
               className="cursor-pointer font-normal"
             >
               {option.label}
-            </FormLabel>
+            </Label>
           </div>
         ))}
       </RadioGroup>

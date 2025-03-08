@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Book, 
@@ -79,7 +78,7 @@ const CaseStudyQuizGeneration = () => {
 
   const handleGenerate = async () => {
     try {
-      await generateQuiz(topics, selectedCourseId, difficulty, title);
+      await generateQuiz(topics, selectedCourseId, difficulty);
     } catch (err) {
       console.error("Error in handleGenerate:", err);
     }

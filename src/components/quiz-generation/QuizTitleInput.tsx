@@ -1,6 +1,6 @@
 
 import { Input } from "@/components/ui/input";
-import { FormLabel } from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 
 interface QuizTitleInputProps {
   title: string;
@@ -10,7 +10,7 @@ interface QuizTitleInputProps {
 export function QuizTitleInput({ title, onChange }: QuizTitleInputProps) {
   return (
     <div className="space-y-2">
-      <FormLabel htmlFor="quiz-title">Quiz Title</FormLabel>
+      <Label htmlFor="quiz-title">Quiz Title</Label>
       <Input
         id="quiz-title"
         placeholder="Enter a title for your quiz"

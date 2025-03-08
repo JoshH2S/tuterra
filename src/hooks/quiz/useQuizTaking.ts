@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuizAPI } from "./useQuizAPI";
 import { useQuizSave } from "./useQuizSave";
@@ -33,8 +34,8 @@ export const useQuizTaking = () => {
     }
   };
 
-  const submitQuiz = async (fileContent: string, topics: Topic[], difficulty: QuestionDifficulty, duration: number, courseId?: string) => {
-    return handleSubmit(fileContent, topics, difficulty, duration, courseId);
+  const submitQuiz = async (fileContent: string, topics: Topic[], difficulty: QuestionDifficulty, title: string, duration: number, courseId?: string) => {
+    return handleSubmit(fileContent, topics, difficulty, title, duration, courseId);
   };
 
   const calculateScore = () => {
