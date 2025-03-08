@@ -84,11 +84,11 @@ export const QuizPreviewStep = ({
               </div>
               
               <h3 className="text-lg font-semibold mb-4">Quiz Preview</h3>
-              {/* Remove quizId prop since Quiz component doesn't accept it */}
+              {/* The Quiz component doesn't accept quizId prop, so we don't pass it */}
               <Quiz questions={validQuestions} />
               
               {/* Add publish button after quiz is displayed */}
-              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-3 items-center">
                 <Button 
                   onClick={onPublish}
                   className="w-full sm:w-auto"
@@ -105,11 +105,11 @@ export const QuizPreviewStep = ({
                   )}
                 </Button>
                 {!quizId && (
-                  <p className="text-red-500 text-sm mt-2">
+                  <p className="text-red-500 text-sm mt-2 sm:mt-0">
                     Quiz ID is missing. Please try regenerating the quiz.
                   </p>
                 )}
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-muted-foreground mt-2 sm:mt-0 sm:ml-auto">
                   Publishing will make this quiz available for students to take
                 </p>
               </div>
