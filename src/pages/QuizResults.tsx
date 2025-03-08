@@ -133,13 +133,34 @@ export default function QuizResults() {
           }
         }
         
+        // Process ai_feedback to ensure it's the correct type
+        let processedAIFeedback: AIFeedback | null = null;
+        
+        if (responseData.ai_feedback) {
+          // If it's a string (from JSON.stringify), parse it
+          if (typeof responseData.ai_feedback === 'string') {
+            try {
+              processedAIFeedback = JSON.parse(responseData.ai_feedback) as AIFeedback;
+            } catch (e) {
+              console.error("Error parsing AI feedback:", e);
+              processedAIFeedback = null;
+            }
+          } 
+          // If it's already an object
+          else {
+            processedAIFeedback = responseData.ai_feedback as unknown as AIFeedback;
+          }
+        }
+        
         // Construct a complete result object with proper typing
         const completeResults: QuizResponse = {
           ...responseData,
           quiz: quizData,
           question_responses: questionResponsesWithQuestions,
           // Ensure topic_performance is properly typed
-          topic_performance: processedTopicPerformance
+          topic_performance: processedTopicPerformance,
+          // Ensure ai_feedback is properly typed
+          ai_feedback: processedAIFeedback
         };
         
         console.log("Quiz response data:", completeResults);
