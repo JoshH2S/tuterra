@@ -11,10 +11,12 @@ import { FeedbackGenerateButton } from "./FeedbackGenerateButton";
 import { ResultActions } from "./ResultActions";
 import { CheckCircle, XCircle, ListChecks } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { QuizResponse, Quiz, ProcessedQuestion } from "@/types/quiz-results";
+import { ResultsError } from "./ResultsError";
 
 interface ResultsContainerProps {
-  results: any;
-  quiz: any;
+  results: QuizResponse;
+  quiz: Quiz;
   generateFeedback: () => void;
   generatingFeedback: boolean;
 }
@@ -28,8 +30,12 @@ export function ResultsContainer({
   const isMobile = useIsMobile();
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null);
   const [filterType, setFilterType] = useState("all");
-  const [filteredQuestions, setFilteredQuestions] = useState<any[]>([]);
-  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [filteredQuestions, setFilteredQuestions] = useState<ProcessedQuestion[]>([]);
+  
+  // Make sure we have valid results
+  if (!results || !quiz) {
+    return <ResultsError error="Missing quiz results data" />;
+  }
   
   // Calculate percentage score correctly
   const percentageScore = results.total_questions > 0 
@@ -47,29 +53,27 @@ export function ResultsContainer({
   // Process questions and answers from results
   useEffect(() => {
     if (results && results.question_responses) {
-      let questions = results.question_responses.map((resp: any, idx: number) => {
-        // Assuming each response has the full question and student answer
-        setUserAnswers(prev => ({
-          ...prev,
-          [idx]: resp.student_answer || ""
+      // Map questions with student answers in a more type-safe way
+      const processedQuestions: ProcessedQuestion[] = results.question_responses
+        .filter(resp => resp.question !== null)
+        .map(resp => ({
+          ...(resp.question as any), // Cast to any as a workaround for the type
+          studentAnswer: resp.student_answer || "",
+          isCorrect: resp.is_correct
         }));
-        return resp.question || {};
-      });
       
       // Apply filtering
+      let filtered = [...processedQuestions];
+      
       if (filterType === "correct") {
-        questions = questions.filter((_, idx) => 
-          userAnswers[idx] === questions[idx].correct_answer
-        );
+        filtered = filtered.filter(q => q.isCorrect);
       } else if (filterType === "incorrect") {
-        questions = questions.filter((_, idx) => 
-          userAnswers[idx] !== questions[idx].correct_answer
-        );
+        filtered = filtered.filter(q => !q.isCorrect);
       }
       
-      setFilteredQuestions(questions);
+      setFilteredQuestions(filtered);
     }
-  }, [results, filterType, userAnswers]);
+  }, [results, filterType]);
 
   // Toggle question expansion
   const toggleQuestion = (index: number) => {
@@ -88,9 +92,6 @@ export function ResultsContainer({
   // Don't show the "generating" message as meaningful feedback
   const isGeneratingMessage = results.ai_feedback?.strengths?.[0] === "Generating feedback...";
   const shouldShowGenerateButton = !hasMeaningfulFeedback || isGeneratingMessage;
-
-  // Get enhanced feedback with prioritized topic-specific content
-  const enhancedFeedback = results.ai_feedback;
   
   return (
     <div className="max-w-4xl mx-auto">
@@ -159,7 +160,7 @@ export function ResultsContainer({
                   <QuestionReviewCard
                     key={index}
                     question={question}
-                    userAnswer={userAnswers[index] || ""}
+                    userAnswer={question.studentAnswer}
                     isExpanded={expandedQuestion === index}
                     onToggle={() => toggleQuestion(index)}
                   />
@@ -181,7 +182,7 @@ export function ResultsContainer({
             
             {/* AI Feedback */}
             <DetailedFeedback 
-              feedback={enhancedFeedback} 
+              feedback={results.ai_feedback} 
               isGenerating={generatingFeedback}
             />
             

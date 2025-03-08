@@ -1,13 +1,13 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { QuizQuestion } from "@/hooks/quiz/quizTypes";
+import { ProcessedQuestion } from "@/types/quiz-results";
 
 interface QuestionReviewCardProps {
-  question: QuizQuestion;
+  question: ProcessedQuestion;
   userAnswer: string;
   isExpanded?: boolean;
   onToggle: () => void;
@@ -19,7 +19,7 @@ export function QuestionReviewCard({
   isExpanded = false,
   onToggle
 }: QuestionReviewCardProps) {
-  const isCorrect = userAnswer === question.correct_answer;
+  const isCorrect = question.isCorrect;
   const correctOptionText = question.options[question.correct_answer] || "";
   const userOptionText = question.options[userAnswer] || "";
 

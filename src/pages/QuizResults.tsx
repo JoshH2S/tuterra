@@ -6,25 +6,26 @@ import { toast } from "@/components/ui/use-toast";
 import { ResultsLoader } from "@/components/quiz-results/ResultsLoader";
 import { ResultsError } from "@/components/quiz-results/ResultsError";
 import { ResultsContainer } from "@/components/quiz-results/ResultsContainer";
-
-interface AIFeedback {
-  strengths: string[];
-  areas_for_improvement: string[];
-  advice: string;
-}
+import { QuizResponse, AIFeedback } from "@/types/quiz-results";
 
 export default function QuizResults() {
   const { id } = useParams();
-  const [results, setResults] = useState<any>(null);
-  const [quiz, setQuiz] = useState<any>(null);
+  const [results, setResults] = useState<QuizResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [generatingFeedback, setGeneratingFeedback] = useState(false);
 
   useEffect(() => {
     const fetchResults = async () => {
+      if (!id) {
+        setError("No quiz ID provided");
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
+        setError(null);
         
         // First check if the quiz response exists
         const { data: responseData, error: responseError } = await supabase
@@ -44,7 +45,10 @@ export default function QuizResults() {
           .eq('id', id)
           .single();
 
-        if (responseError) throw responseError;
+        if (responseError) {
+          console.error("Error fetching quiz response:", responseError);
+          throw new Error("Failed to load quiz response");
+        }
         
         if (!responseData) {
           throw new Error("Quiz response not found");
@@ -61,7 +65,10 @@ export default function QuizResults() {
           .eq('id', responseData.quiz_id)
           .single();
           
-        if (quizError) throw quizError;
+        if (quizError) {
+          console.error("Error fetching quiz:", quizError);
+          throw new Error("Failed to load quiz details");
+        }
         
         // Now fetch question responses separately
         const { data: questionResponsesData, error: questionResponsesError } = await supabase
@@ -80,7 +87,8 @@ export default function QuizResults() {
         }
         
         // Get question details separately
-        let questionDetails = [];
+        const questionResponsesWithDetails = [...(questionResponsesData || [])];
+        
         if (questionResponsesData && questionResponsesData.length > 0) {
           const questionIds = questionResponsesData.map(qr => qr.question_id);
           
@@ -91,25 +99,23 @@ export default function QuizResults() {
             
           if (questionsError) {
             console.error("Error fetching questions:", questionsError);
-          } else {
-            questionDetails = questionsData;
+          } else if (questionsData) {
+            // Merge question responses with question details
+            questionResponsesWithDetails.forEach((qr, index) => {
+              const question = questionsData.find(q => q.id === qr.question_id);
+              questionResponsesWithDetails[index] = {
+                ...qr,
+                question: question || null
+              };
+            });
           }
         }
         
-        // Merge question responses with question details
-        const enhancedQuestionResponses = questionResponsesData?.map(qr => {
-          const question = questionDetails.find(q => q.id === qr.question_id);
-          return {
-            ...qr,
-            question: question || null
-          };
-        }) || [];
-        
         // Construct a complete result object
-        const completeResults = {
+        const completeResults: QuizResponse = {
           ...responseData,
           quiz: quizData,
-          question_responses: enhancedQuestionResponses
+          question_responses: questionResponsesWithDetails
         };
         
         console.log("Quiz response data:", completeResults);
@@ -133,24 +139,19 @@ export default function QuizResults() {
           }
         }
         
-        // Check for topic-specific feedback (more specific criteria)
-        const hasTopicSpecificFeedback = feedback && 
+        // Check for valid topic-specific feedback (more specific criteria)
+        const hasValidFeedback = feedback && 
           Array.isArray(feedback.strengths) && 
-          feedback.strengths.some(s => s.includes("Strong understanding of")) &&
-          Array.isArray(feedback.areas_for_improvement) && 
-          (feedback.areas_for_improvement.some(a => a.includes("Need to review")) || 
-           feedback.areas_for_improvement.length > 0);
+          feedback.strengths.length > 0 &&
+          feedback.strengths[0] !== "Generating feedback..." &&
+          Array.isArray(feedback.areas_for_improvement);
            
         // Auto-generate feedback if it doesn't exist or lacks topic-specific content
-        if (responseData?.completed_at && !hasTopicSpecificFeedback) {
-          console.log("No topic-specific AI feedback available - generating now");
-          generateFeedback();
-        } else {
-          console.log("AI Feedback:", responseData.ai_feedback);
+        if (responseData?.completed_at && !hasValidFeedback) {
+          console.log("No valid AI feedback available - will generate if needed");
         }
         
         setResults(completeResults);
-        setQuiz(quizData);
         setError(null);
       } catch (error: any) {
         console.error('Error fetching results:', error);
@@ -177,14 +178,16 @@ export default function QuizResults() {
       setGeneratingFeedback(true);
       
       // First update results with a placeholder for better UX
-      setResults(prev => ({
-        ...prev,
-        ai_feedback: {
-          strengths: ["Generating feedback..."],
-          areas_for_improvement: ["Analyzing your answers..."],
-          advice: "Please wait while we analyze your quiz performance."
-        }
-      }));
+      if (results) {
+        setResults(prev => prev ? {
+          ...prev,
+          ai_feedback: {
+            strengths: ["Generating feedback..."],
+            areas_for_improvement: ["Analyzing your answers..."],
+            advice: "Please wait while we analyze your quiz performance."
+          }
+        } : null);
+      }
       
       // Toast to inform user
       toast({
@@ -210,11 +213,11 @@ export default function QuizResults() {
       console.log("Updated feedback from database:", responseData.ai_feedback);
       
       // Update the results state with fresh data
-      setResults(prev => ({
+      setResults(prev => prev ? {
         ...prev,
         ai_feedback: responseData.ai_feedback,
         topic_performance: responseData.topic_performance
-      }));
+      } : null);
       
       toast({
         title: "Success",
@@ -230,10 +233,10 @@ export default function QuizResults() {
       
       // Reset the placeholder if there was an error
       if (results?.ai_feedback?.strengths?.[0] === "Generating feedback...") {
-        setResults(prev => ({
+        setResults(prev => prev ? {
           ...prev,
           ai_feedback: null
-        }));
+        } : null);
       }
     } finally {
       setGeneratingFeedback(false);
@@ -241,14 +244,13 @@ export default function QuizResults() {
   };
 
   if (loading) return <ResultsLoader />;
-
-  if (error || !results || !quiz) return <ResultsError error={error} />;
+  if (error || !results || !results.quiz) return <ResultsError error={error} />;
 
   return (
     <div className="container mx-auto py-8">
       <ResultsContainer 
         results={results}
-        quiz={quiz}
+        quiz={results.quiz}
         generateFeedback={generateFeedback}
         generatingFeedback={generatingFeedback}
       />
