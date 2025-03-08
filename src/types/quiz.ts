@@ -6,7 +6,8 @@ export interface Topic {
   numQuestions: number;
 }
 
-export interface Question {
+export interface BaseQuestion {
+  id?: string;
   question: string;
   options: {
     A: string;
@@ -18,7 +19,35 @@ export interface Question {
   topic: string;
   points: number;
   explanation?: string;
+}
+
+export interface Question extends BaseQuestion {
   difficulty: QuestionDifficulty;
+}
+
+export interface CaseStudyQuestion extends BaseQuestion {
+  difficulty: QuestionDifficulty;
+  caseStudy: {
+    source: string;
+    date: string;
+    context: string;
+    url?: string;
+  };
+  analysisType: "critical_thinking" | "application" | "evaluation" | "synthesis";
+}
+
+export interface RegularQuestion extends BaseQuestion {
+  difficulty: QuestionDifficulty;
+  conceptTested: string;
+  learningObjective: string;
+}
+
+export interface QuizMetadata {
+  courseId: string;
+  difficulty: QuestionDifficulty;
+  topics: string[];
+  totalPoints: number;
+  estimatedDuration: number;
 }
 
 export const DIFFICULTY_COLORS = {

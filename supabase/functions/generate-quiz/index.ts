@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { content, topics, teacherName, school } = await req.json();
+    const { content, topics, difficulty, teacherName, school } = await req.json();
 
     if (!content || !topics) {
       throw new Error('Missing required parameters: content and topics');
@@ -26,51 +26,8 @@ serve(async (req) => {
     console.log('Processing request with content length:', trimmedContent.length);
     console.log('Number of topics:', topics.length);
 
-    const prompt = `
-      As an expert educator, create a comprehensive multiple-choice quiz based on the following content and topics.
-      Format your response as a pure JSON array without any markdown formatting.
-      Each question should have these properties:
-      - question: the actual question text
-      - options: an array of 4 options labeled A, B, C, and D
-      - correctAnswer: one of "A", "B", "C", or "D"
-      - topic: which topic this question relates to
-      - points: number of points for this question (1 point for each question)
-
-      Example of expected format for each question:
-      {
-        "question": "What is the capital of France?",
-        "options": {
-          "A": "London",
-          "B": "Berlin",
-          "C": "Paris",
-          "D": "Madrid"
-        },
-        "correctAnswer": "C",
-        "topic": "Geography",
-        "points": 1
-      }
-
-      Teacher Information:
-      Teacher: ${teacherName || 'Not specified'}
-      School: ${school || 'Not specified'}
-
-      Content:
-      ${trimmedContent}
-
-      Topics to cover (with number of questions per topic):
-      ${topics.map((topic: any, index: number) => 
-        `${index + 1}. ${topic.description} (Number of questions: ${topic.numQuestions})`
-      ).join('\n')}
-
-      Instructions:
-      1. Create multiple-choice questions with EXACTLY 4 options (A, B, C, D)
-      2. Ensure questions are clear and unambiguous
-      3. Create EXACTLY the specified number of questions for each topic
-      4. Return ONLY a valid JSON array without any markdown formatting or explanatory text
-      5. Each question is worth 1 point
-      6. Each option should be distinctly different and plausible
-      7. The correct answer should be specified as "A", "B", "C", or "D"
-    `;
+    const teacherContext = { name: teacherName, school: school };
+    const prompt = generateRegularQuizPrompt(topics, difficulty, trimmedContent, teacherContext);
 
     console.log('Sending request to OpenAI API');
     
@@ -113,13 +70,27 @@ serve(async (req) => {
       content_text = content_text.replace(/```json\n|\n```|```/g, '');
     }
 
-    console.log('Attempting to parse response:', content_text);
+    console.log('Attempting to parse response');
     
     try {
       const quizQuestions = JSON.parse(content_text);
       console.log('Successfully parsed quiz questions');
 
-      return new Response(JSON.stringify({ quizQuestions }), {
+      // Calculate total points
+      const totalPoints = quizQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
+      
+      // Estimate duration (avg 1 min per question)
+      const estimatedDuration = quizQuestions.length * 1;
+
+      return new Response(JSON.stringify({ 
+        quizQuestions,
+        metadata: {
+          topics: topics.map(t => t.description),
+          difficulty,
+          totalPoints,
+          estimatedDuration
+        }
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (parseError) {
@@ -141,3 +112,61 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to generate the regular quiz prompt
+function generateRegularQuizPrompt(
+  topics: Array<{ description: string, numQuestions: number }>,
+  difficulty: string,
+  contentContext: string,
+  teacherContext?: { name?: string; school?: string }
+) {
+  return `
+    As an expert educational content creator, generate a comprehensive quiz based on this content:
+    
+    ${contentContext}
+    
+    Follow these specific guidelines for topics: ${topics.map(t => t.description).join(", ")}
+
+    QUESTION DESIGN:
+    1. Create questions that:
+       - Test conceptual understanding
+       - Apply knowledge to scenarios
+       - Build from simpler to complex concepts
+       - Match ${difficulty} education level
+
+    2. Include a mix of:
+       - Concept application
+       - Problem-solving
+       - Analytical thinking
+       - Term/concept relationships
+
+    3. Ensure questions:
+       - Are clearly worded
+       - Have one unambiguous correct answer
+       - Include plausible distractors
+       - Test understanding, not memorization
+
+    TECHNICAL REQUIREMENTS:
+    Return a JSON array where each question has:
+    {
+      "question": "clear, specific question text",
+      "options": {
+        "A": "option text",
+        "B": "option text",
+        "C": "option text",
+        "D": "option text"
+      },
+      "correctAnswer": "A|B|C|D",
+      "topic": "specific topic",
+      "points": number (1-5),
+      "explanation": "detailed explanation",
+      "difficulty": "${difficulty}",
+      "conceptTested": "specific concept",
+      "learningObjective": "what this tests"
+    }
+
+    Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions.
+    ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
+    ${teacherContext?.school ? `for ${teacherContext.school}` : ''}
+  `;
+}

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Topic, Question, QuestionDifficulty } from "@/types/quiz";
+import { Topic, Question, QuestionDifficulty, CaseStudyQuestion, QuizMetadata } from "@/types/quiz";
 import { useQuizSave } from "@/hooks/quiz/useQuizSave";
 
 interface NewsSource {
@@ -16,6 +16,7 @@ export const useGenerateQuiz = () => {
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [newsSources, setNewsSources] = useState<NewsSource[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [quizMetadata, setQuizMetadata] = useState<QuizMetadata | null>(null);
   const { saveQuizToDatabase } = useQuizSave();
 
   const generateQuiz = async (
@@ -36,6 +37,7 @@ export const useGenerateQuiz = () => {
     setQuizQuestions([]);
     setNewsSources([]);
     setError(null);
+    setQuizMetadata(null);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -95,7 +97,20 @@ export const useGenerateQuiz = () => {
         topic: q.topic || '',
         points: q.points || 1,
         explanation: q.explanation || '',
-        difficulty: difficulty // Ensure difficulty is set
+        difficulty: difficulty, // Ensure difficulty is set
+        
+        // Include case study data if available
+        ...(q.caseStudy ? {
+          caseStudy: {
+            source: q.caseStudy.source || '',
+            date: q.caseStudy.date || '',
+            context: q.caseStudy.context || '',
+            url: q.caseStudy.url || ''
+          }
+        } : {}),
+        
+        // Include analysis type if available
+        ...(q.analysisType ? { analysisType: q.analysisType } : {})
       }));
       
       setQuizQuestions(validatedQuestions);
@@ -104,13 +119,25 @@ export const useGenerateQuiz = () => {
       if (data.metadata && Array.isArray(data.metadata.newsSourcesUsed)) {
         setNewsSources(data.metadata.newsSourcesUsed);
       }
+      
+      // Store quiz metadata
+      if (data.metadata) {
+        setQuizMetadata({
+          courseId: data.metadata.courseId || selectedCourseId,
+          difficulty: difficulty,
+          topics: data.metadata.topics || topics.map(t => t.description),
+          totalPoints: data.metadata.totalPoints || validatedQuestions.reduce((sum, q) => sum + q.points, 0),
+          estimatedDuration: data.metadata.estimatedDuration || 30
+        });
+      }
 
       // Save quiz to database using the shared hook
       try {
+        const estimatedDuration = data.metadata?.estimatedDuration || 30;
         const success = await saveQuizToDatabase(
           validatedQuestions, 
           topics, 
-          30, // Default duration
+          estimatedDuration,
           selectedCourseId
         );
 
@@ -154,6 +181,7 @@ export const useGenerateQuiz = () => {
     isGenerating,
     quizQuestions,
     newsSources,
+    quizMetadata,
     error,
     generateQuiz
   };

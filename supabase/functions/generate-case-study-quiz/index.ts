@@ -66,34 +66,9 @@ serve(async (req) => {
       publishedAt: article.publishedAt
     }));
 
-    const topicsString = topics.map((t: { description: string }) => t.description).join(", ");
+    const teacherContext = { name: teacherName, school: school };
 
-    const prompt = `
-      Create a case study-based quiz about ${topicsString} using the following REAL news stories as context for your case studies:
-      
-      ${JSON.stringify(newsContext, null, 2)}
-      
-      For each case study:
-      1. Use one of the real news stories provided above as the foundation
-      2. Include the source and approximate date of the news story in the case description
-      3. Create a detailed scenario based on the news story that tests understanding
-      4. Focus on analysis and critical thinking about REAL situations
-      5. Include questions about potential implications, ethical considerations, and solutions
-      6. Incorporate key terminology and concepts from ${topicsString}
-      7. Match the ${difficulty} education level
-
-      Format your response as a JSON array with questions that have these properties:
-      - question: detailed scenario from a real news story followed by the specific question
-      - options: object with A, B, C, D keys containing possible answers
-      - correctAnswer: one of "A", "B", "C", or "D"
-      - topic: the specific topic this question relates to
-      - points: number between 1-5 based on difficulty
-      - explanation: brief explanation of why the correct answer is right
-
-      Generate ${topics.reduce((sum: number, t: { numQuestions: number }) => sum + t.numQuestions, 0)} multiple-choice questions total.
-      ${teacherName ? `Created by ${teacherName}` : ''}
-      ${school ? `for ${school}` : ''}
-    `;
+    const prompt = generateCaseStudyPrompt(topics, newsContext, difficulty, teacherContext);
 
     console.log("Sending prompt to OpenAI with real news context...");
 
@@ -136,13 +111,21 @@ serve(async (req) => {
       const quizQuestions = JSON.parse(content);
       console.log(`Successfully parsed ${quizQuestions.length} questions based on real news stories`);
 
+      // Calculate total points
+      const totalPoints = quizQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
+      
+      // Estimate duration (avg 1 min per question)
+      const estimatedDuration = quizQuestions.length * 1;
+
       return new Response(
         JSON.stringify({ 
           quizQuestions,
           metadata: {
             courseId,
             difficulty,
-            topics: topicsString,
+            topics: topicDescriptions,
+            totalPoints,
+            estimatedDuration,
             newsSourcesUsed: newsArticles.map((a: any) => ({ 
               title: a.title, 
               source: a.source.name,
@@ -176,3 +159,72 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to generate the case study prompt
+function generateCaseStudyPrompt(
+  topics: Array<{ description: string, numQuestions: number }>,
+  newsContext: any[],
+  difficulty: string,
+  teacherContext?: { name?: string; school?: string }
+) {
+  return `
+    As an expert educational content creator, generate a case study quiz using these REAL current news stories. 
+    Follow these specific guidelines:
+
+    CASE STUDY STRUCTURE:
+    1. Each case study should:
+       - Use one recent news story as foundation
+       - Include source attribution and publication date
+       - Present a complex real-world scenario
+       - Connect explicitly to ${topics.map(t => t.description).join(", ")}
+       - Match ${difficulty} education level
+
+    QUESTION REQUIREMENTS:
+    For each case study, create questions that:
+    1. Test HIGHER-ORDER THINKING:
+       - Analysis of implications
+       - Evaluation of solutions
+       - Application of concepts
+       - Synthesis of information
+
+    2. Follow this specific format:
+       - Clear scenario from the news story
+       - Explicit connection to course concepts
+       - Four distinct, plausible options
+       - One clearly correct answer
+       - Detailed explanation of the correct answer
+
+    3. Ensure questions:
+       - Use clear, concise language
+       - Avoid ambiguity
+       - Test understanding, not memorization
+       - Include real-world implications
+
+    TECHNICAL REQUIREMENTS:
+    Return a JSON array where each question has:
+    {
+      "question": "detailed scenario + specific question",
+      "options": {
+        "A": "option text",
+        "B": "option text",
+        "C": "option text",
+        "D": "option text"
+      },
+      "correctAnswer": "A|B|C|D",
+      "topic": "specific topic",
+      "points": number (1-5),
+      "explanation": "detailed explanation",
+      "caseStudy": {
+        "source": "news source",
+        "date": "publication date",
+        "context": "brief context",
+        "url": "source url"
+      },
+      "analysisType": "critical_thinking|application|evaluation|synthesis"
+    }
+
+    Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions.
+    ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
+    ${teacherContext?.school ? `for ${teacherContext.school}` : ''}
+  `;
+}
