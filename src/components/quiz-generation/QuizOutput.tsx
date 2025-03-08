@@ -12,9 +12,10 @@ import { useResponsive } from "@/hooks/useResponsive";
 
 interface QuizOutputProps {
   questions: Question[];
+  quizId?: string;
 }
 
-export const QuizOutput = ({ questions }: QuizOutputProps) => {
+export const QuizOutput = ({ questions, quizId }: QuizOutputProps) => {
   const [duration, setDuration] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
   
@@ -22,7 +23,7 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
   const { isMobile } = useResponsive();
   const questionsPerPage = isMobile ? 2 : 3;
   
-  const { handlePublish } = useQuizPublishing(duration);
+  const { handlePublish } = useQuizPublishing();
   const { handleDownloadPDF } = usePdfGeneration(questions, duration);
 
   // Validate questions first
@@ -49,6 +50,19 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
     }
   };
 
+  // Create a wrapper function for the publish action
+  const onPublish = () => {
+    if (quizId) {
+      handlePublish(quizId, duration);
+    } else {
+      toast({
+        title: "Error",
+        description: "No quiz ID available for publishing",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!validQuestions || validQuestions.length === 0) {
     return (
       <Card className="shadow-sm">
@@ -66,7 +80,7 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6">
         <CardTitle className="text-xl">Generated Quiz</CardTitle>
         <QuizActions 
-          onPublish={handlePublish}
+          onPublish={onPublish}
           onDownload={handleDownloadPDF}
         />
       </CardHeader>

@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 
 interface QuizPreviewStepProps {
   title: string;
@@ -18,6 +19,7 @@ interface QuizPreviewStepProps {
   isGenerating: boolean;
   error?: string | null;
   onGenerate: () => void;
+  quizId?: string;
 }
 
 export const QuizPreviewStep = ({
@@ -27,12 +29,26 @@ export const QuizPreviewStep = ({
   isGenerating,
   error,
   onGenerate,
+  quizId,
 }: QuizPreviewStepProps) => {
   // Ensure we always have a valid array of questions
   const validQuestions = Array.isArray(questions) ? questions : [];
   
-  // Use the quiz publishing hook to handle publishing - pass the title
-  const { handlePublish } = useQuizPublishing(30, title); // Default 30 minute duration, pass title
+  // Use the quiz publishing hook
+  const { handlePublish } = useQuizPublishing();
+
+  // Create a wrapper function for the publish button
+  const onPublish = () => {
+    if (quizId) {
+      handlePublish(quizId, 30, title);
+    } else {
+      toast({
+        title: "Error",
+        description: "No quiz ID available for publishing",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -71,7 +87,7 @@ export const QuizPreviewStep = ({
               {/* Add publish button after quiz is displayed */}
               <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <Button 
-                  onClick={handlePublish}
+                  onClick={onPublish}
                   className="w-full sm:w-auto"
                   size="lg"
                 >

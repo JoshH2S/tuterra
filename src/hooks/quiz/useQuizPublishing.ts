@@ -8,7 +8,7 @@ export const useQuizPublishing = () => {
   const navigate = useNavigate();
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const handlePublish = async (quizId: string, duration: number, title?: string) => {
+  const handlePublish = async (quizId: string, duration: number = 30, title?: string) => {
     if (!quizId) {
       toast({
         title: "Error",
