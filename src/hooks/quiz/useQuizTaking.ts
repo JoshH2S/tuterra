@@ -1,59 +1,75 @@
-import { useEffect } from "react";
-import { useQuizAnswers } from "./useQuizAnswers";
-import { useQuizNavigation } from "./useQuizNavigation";
+import { useState } from "react";
+import { useQuizAPI } from "./useQuizAPI";
+import { useQuizSave } from "./useQuizSave";
+import { toast } from "@/components/ui/use-toast";
+import { Topic, Question, MAX_CONTENT_LENGTH } from "@/types/quiz-generation";
+import { QuestionDifficulty } from "@/types/quiz";
 import { useQuizSubmission } from "./useQuizSubmission";
-import { QuizQuestion } from "./quizTypes";
 
-export const useQuizTaking = (
-  quizId: string,
-  questions: QuizQuestion[],
-  onSubmitSuccess?: () => void
-) => {
-  const {
-    selectedAnswers,
-    showFeedback,
-    explanations,
-    isGeneratingExplanation,
-    handleAnswerSelect,
-    resetAnswers,
-    setShowFeedback
-  } = useQuizAnswers(questions);
+export const useQuizTaking = () => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  
+  const { isProcessing, quizQuestions, handleSubmit } = useQuizSubmission();
+  
+  const selectAnswer = (questionIndex: number, answer: string) => {
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [questionIndex]: answer
+    }));
+  };
 
-  const {
-    currentQuestion,
-    handleNextQuestion,
-    handlePreviousQuestion,
-    resetNavigation
-  } = useQuizNavigation(questions.length);
-
-  const {
-    isSubmitting,
-    handleSubmit
-  } = useQuizSubmission(quizId, questions, selectedAnswers, onSubmitSuccess);
-
-  // Reset state when quiz changes - ensure no pre-selected answers
-  useEffect(() => {
-    if (quizId && questions.length > 0) {
-      resetNavigation();
-      resetAnswers();
+  const goToNextQuestion = () => {
+    if (currentQuestionIndex < quizQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
     }
-  }, [quizId, questions, resetNavigation, resetAnswers]);
+  };
+
+  const goToPreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const submitQuiz = async (fileContent: string, topics: Topic[], difficulty: QuestionDifficulty, duration: number, courseId?: string) => {
+    return handleSubmit(fileContent, topics, difficulty, duration, courseId);
+  };
+
+  const calculateScore = () => {
+    let correctAnswers = 0;
+    let totalPoints = 0;
+
+    quizQuestions.forEach((question, index) => {
+      const selectedAnswer = selectedAnswers[index];
+      if (selectedAnswer === question.correctAnswer) {
+        correctAnswers++;
+        totalPoints += question.points || 1;
+      }
+    });
+
+    return {
+      correctAnswers,
+      totalQuestions: quizQuestions.length,
+      percentage: Math.round((correctAnswers / quizQuestions.length) * 100),
+      totalPoints
+    };
+  };
 
   return {
-    // From useQuizAnswers
+    currentQuestionIndex,
     selectedAnswers,
-    showFeedback,
-    explanations,
-    isGeneratingExplanation,
-    handleAnswerSelect,
-    
-    // From useQuizNavigation
-    currentQuestion,
-    handleNextQuestion,
-    handlePreviousQuestion,
-    
-    // From useQuizSubmission
-    isSubmitting,
-    handleSubmit,
+    quizCompleted,
+    timeRemaining,
+    quizQuestions,
+    isProcessing,
+    selectAnswer,
+    goToNextQuestion,
+    goToPreviousQuestion,
+    submitQuiz,
+    calculateScore,
+    setQuizCompleted,
+    setTimeRemaining
   };
 };

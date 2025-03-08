@@ -25,7 +25,7 @@ export const useQuizSubmission = () => {
         description: "Please select a file first",
         variant: "destructive",
       });
-      return;
+      return null;
     }
 
     if (topics.some(topic => !topic.description)) {
@@ -34,7 +34,7 @@ export const useQuizSubmission = () => {
         description: "Please fill out all topics",
         variant: "destructive",
       });
-      return;
+      return null;
     }
 
     setIsProcessing(true);

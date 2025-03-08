@@ -11,6 +11,7 @@ import { StepIndicator } from "@/components/quiz-generation/StepIndicator";
 import { StepContainer } from "@/components/quiz-generation/StepContainer";
 import { QuizNavigationButtons } from "@/components/quiz-generation/QuizNavigationButtons";
 import { QuizActionsFooter } from "@/components/quiz-generation/QuizActionsFooter";
+import { QuizNavigationLinks } from "@/components/quiz-generation/QuizNavigationLinks";
 import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
 import { useCourseTemplates } from "@/hooks/useCourseTemplates";
 
@@ -98,6 +99,9 @@ const QuizGeneration = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
+          {/* Persistent navigation links */}
+          <QuizNavigationLinks />
+          
           {/* Step-based Content with AnimatePresence for transitions */}
           <AnimatePresence mode="wait">
             {currentStep === 1 && (
