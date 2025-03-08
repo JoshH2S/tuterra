@@ -9,6 +9,7 @@ import { QuestionDifficulty } from "@/types/quiz";
 export const useQuizSubmission = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [quizId, setQuizId] = useState<string | null>(null);
   const { generateQuiz } = useQuizAPI();
   const { saveQuizToDatabase } = useQuizSave();
 
@@ -26,7 +27,7 @@ export const useQuizSubmission = () => {
         description: "Please select a file first",
         variant: "destructive",
       });
-      return null;
+      return { questions: null, quizId: null };
     }
 
     if (topics.some(topic => !topic.description)) {
@@ -35,11 +36,12 @@ export const useQuizSubmission = () => {
         description: "Please fill out all topics",
         variant: "destructive",
       });
-      return null;
+      return { questions: null, quizId: null };
     }
 
     setIsProcessing(true);
     setQuizQuestions([]);
+    setQuizId(null);
 
     try {
       const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
@@ -51,14 +53,20 @@ export const useQuizSubmission = () => {
       const quizTitle = title.trim() ? title : `Quiz on ${topics.map(t => t.description).join(", ")}`;
       
       // Save the generated quiz to the database
-      await saveQuizToDatabase(generatedQuestions, topics, duration, quizTitle, courseId);
-
-      toast({
-        title: "Success",
-        description: "Quiz generated and saved successfully!",
-      });
-
-      return generatedQuestions;
+      const { success, quizId } = await saveQuizToDatabase(generatedQuestions, topics, duration, quizTitle, courseId);
+      
+      if (success && quizId) {
+        setQuizId(quizId);
+        
+        toast({
+          title: "Success",
+          description: "Quiz generated and saved successfully!",
+        });
+        
+        return { questions: generatedQuestions, quizId };
+      } else {
+        throw new Error("Failed to save quiz to database");
+      }
     } catch (error) {
       console.error('Error processing quiz:', error);
       toast({
@@ -66,7 +74,7 @@ export const useQuizSubmission = () => {
         description: "Failed to generate quiz. Please try again.",
         variant: "destructive",
       });
-      return null;
+      return { questions: null, quizId: null };
     } finally {
       setIsProcessing(false);
     }
@@ -75,6 +83,7 @@ export const useQuizSubmission = () => {
   return {
     isProcessing,
     quizQuestions,
+    quizId,
     handleSubmit,
   };
 };

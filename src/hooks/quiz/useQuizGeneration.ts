@@ -20,7 +20,8 @@ export const useQuizGeneration = () => {
   
   const { 
     isProcessing, 
-    quizQuestions, 
+    quizQuestions,
+    quizId,
     handleSubmit 
   } = useQuizSubmission();
   
@@ -36,7 +37,7 @@ export const useQuizGeneration = () => {
   } = useQuizSettings();
 
   const submitQuiz = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) return { questions: null, quizId: null };
     
     const fileContent = await selectedFile.text();
     return handleSubmit(fileContent, topics, difficulty, title, duration, selectedCourseId);
@@ -56,6 +57,7 @@ export const useQuizGeneration = () => {
     // Quiz submission
     isProcessing,
     quizQuestions,
+    quizId,
     handleSubmit: submitQuiz,
     
     // Quiz settings

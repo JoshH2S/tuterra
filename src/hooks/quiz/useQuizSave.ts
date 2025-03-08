@@ -17,14 +17,15 @@ export const useQuizSave = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        return false;
+        return { success: false, quizId: null };
       }
 
       // Create the quiz with title, teacher_id, and duration
       const quizData = {
         title: title, // Use the provided title or default
         teacher_id: session.user.id,
-        duration_minutes: duration
+        duration_minutes: duration,
+        published: false // Add explicit published flag
       };
 
       // Only add course_id if it exists
@@ -62,7 +63,7 @@ export const useQuizSave = () => {
         description: "Quiz saved successfully!",
       });
       
-      return true;
+      return { success: true, quizId: quiz.id };
     } catch (error) {
       console.error('Error saving quiz:', error);
       toast({
@@ -70,7 +71,7 @@ export const useQuizSave = () => {
         description: "Failed to save quiz. Please try again.",
         variant: "destructive",
       });
-      return false;
+      return { success: false, quizId: null };
     }
   };
 

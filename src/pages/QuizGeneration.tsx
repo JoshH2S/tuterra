@@ -25,6 +25,7 @@ const QuizGeneration = () => {
     topics,
     isProcessing,
     quizQuestions,
+    quizId,
     contentLength,
     duration,
     selectedCourseId,
@@ -171,7 +172,12 @@ const QuizGeneration = () => {
           />
 
           {/* Publish and Navigation Buttons at the bottom */}
-          <QuizActionsFooter quizQuestions={quizQuestions} />
+          <QuizActionsFooter 
+            quizQuestions={quizQuestions} 
+            quizId={quizId} 
+            title={title}
+            duration={duration}
+          />
         </div>
       </main>
     </div>

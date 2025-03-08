@@ -2,33 +2,29 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
-export const useQuizPublishing = (duration: number, title?: string) => {
+export const useQuizPublishing = () => {
   const navigate = useNavigate();
+  const [isPublishing, setIsPublishing] = useState(false);
 
-  const handlePublish = async () => {
+  const handlePublish = async (quizId: string, duration: number, title?: string) => {
+    if (!quizId) {
+      toast({
+        title: "Error",
+        description: "No quiz ID provided for publishing",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setIsPublishing(true);
     try {
       // Show loading toast
       toast({
         title: "Publishing quiz",
         description: "Your quiz is being published...",
       });
-
-      const { data: latestQuiz } = await supabase
-        .from('quizzes')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (!latestQuiz) {
-        toast({
-          title: "Error",
-          description: "No quiz found to publish",
-          variant: "destructive",
-        });
-        return;
-      }
 
       // Prepare the update data
       const updateData: any = { 
@@ -44,7 +40,7 @@ export const useQuizPublishing = (duration: number, title?: string) => {
       const { error } = await supabase
         .from('quizzes')
         .update(updateData)
-        .eq('id', latestQuiz.id);
+        .eq('id', quizId);
 
       if (error) throw error;
 
@@ -56,6 +52,7 @@ export const useQuizPublishing = (duration: number, title?: string) => {
 
       // Navigate to quizzes page after publishing and force a refresh
       navigate('/quizzes', { replace: true });
+      return true;
     } catch (error) {
       console.error('Error publishing quiz:', error);
       toast({
@@ -63,8 +60,11 @@ export const useQuizPublishing = (duration: number, title?: string) => {
         description: "Failed to publish quiz. Please try again.",
         variant: "destructive",
       });
+      return false;
+    } finally {
+      setIsPublishing(false);
     }
   };
 
-  return { handlePublish };
+  return { handlePublish, isPublishing };
 };
