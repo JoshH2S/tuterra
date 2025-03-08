@@ -29,6 +29,7 @@ const CaseStudyQuizGeneration = () => {
     isGenerating, 
     quizQuestions, 
     newsSources, 
+    error,
     generateQuiz 
   } = useGenerateQuiz();
 
@@ -65,7 +66,11 @@ const CaseStudyQuizGeneration = () => {
   };
 
   const handleGenerate = async () => {
-    await generateQuiz(topics, selectedCourseId, difficulty);
+    try {
+      await generateQuiz(topics, selectedCourseId, difficulty);
+    } catch (err) {
+      console.error("Error in handleGenerate:", err);
+    }
   };
 
   const steps = [
@@ -136,6 +141,7 @@ const CaseStudyQuizGeneration = () => {
                 <QuizPreviewStep
                   questions={quizQuestions}
                   isGenerating={isGenerating}
+                  error={error}
                   onGenerate={handleGenerate}
                 />
               </StepContainer>

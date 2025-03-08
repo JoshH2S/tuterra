@@ -2,20 +2,23 @@
 import { StepHeader } from "@/components/quiz-generation/StepHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, Loader2, Wand2 } from "lucide-react";
+import { AlertCircle, Eye, Loader2, Wand2 } from "lucide-react";
 import { Question } from "@/types/quiz";
 import { EmptyState } from "@/components/quiz-generation/EmptyState";
 import { Quiz } from "@/components/quiz-generation/QuizOutput";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface QuizPreviewStepProps {
   questions: Question[];
   isGenerating: boolean;
+  error?: string | null;
   onGenerate: () => void;
 }
 
 export const QuizPreviewStep = ({
   questions,
   isGenerating,
+  error,
   onGenerate,
 }: QuizPreviewStepProps) => {
   return (
@@ -25,6 +28,14 @@ export const QuizPreviewStep = ({
         description="Review and generate your case study quiz"
         icon={Eye}
       />
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {questions.length > 0 ? (
         <div className="space-y-6">

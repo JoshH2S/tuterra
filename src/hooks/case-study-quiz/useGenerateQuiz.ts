@@ -15,6 +15,7 @@ export const useGenerateQuiz = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [newsSources, setNewsSources] = useState<NewsSource[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const { saveQuizToDatabase } = useQuizSave();
 
   const generateQuiz = async (
@@ -34,6 +35,7 @@ export const useGenerateQuiz = () => {
     setIsGenerating(true);
     setQuizQuestions([]);
     setNewsSources([]);
+    setError(null);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -47,6 +49,8 @@ export const useGenerateQuiz = () => {
         .eq('id', session.user.id)
         .single();
 
+      console.log("Sending request to generate case study quiz with topics:", topics);
+      
       const response = await fetch(
         'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-case-study-quiz',
         {
@@ -72,6 +76,12 @@ export const useGenerateQuiz = () => {
       }
 
       const data = await response.json();
+      console.log("Received quiz data:", data);
+      
+      if (!data.quizQuestions || !Array.isArray(data.quizQuestions)) {
+        throw new Error("Invalid quiz data received from server");
+      }
+      
       setQuizQuestions(data.quizQuestions);
       
       // Store news sources if available
@@ -97,11 +107,15 @@ export const useGenerateQuiz = () => {
       return true;
     } catch (error) {
       console.error('Error generating case study quiz:', error);
+      const errorMessage = typeof error === 'object' && error !== null && 'message' in error
+        ? String(error.message)
+        : "Failed to generate quiz. Please try again.";
+      
+      setError(errorMessage);
+      
       toast({
         title: "Error",
-        description: typeof error === 'object' && error !== null && 'message' in error
-          ? String(error.message)
-          : "Failed to generate quiz. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
@@ -114,6 +128,7 @@ export const useGenerateQuiz = () => {
     isGenerating,
     quizQuestions,
     newsSources,
+    error,
     generateQuiz
   };
 };
