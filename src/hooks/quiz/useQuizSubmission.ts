@@ -1,153 +1,76 @@
-import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+
+import { useState } from "react";
+import { useQuizAPI } from "./useQuizAPI";
+import { useQuizSave } from "./useQuizSave";
 import { toast } from "@/components/ui/use-toast";
-import { QuizQuestion } from "./quizTypes";
+import { Topic, Question, MAX_CONTENT_LENGTH } from "@/types/quiz-generation";
+import { QuestionDifficulty } from "@/types/quiz";
 
-export const useQuizSubmission = (
-  quizId: string,
-  questions: QuizQuestion[],
-  selectedAnswers: Record<number, string>,
-  onSubmitSuccess?: () => void
-) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const navigate = useNavigate();
+export const useQuizSubmission = () => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const { generateQuiz } = useQuizAPI();
+  const { saveQuizToDatabase } = useQuizSave();
 
-  const handleSubmit = useCallback(async () => {
-    if (isSubmitting) return; // Prevent double submission
-    
-    // Validation checks
-    if (!quizId) {
+  const handleSubmit = async (
+    fileContent: string,
+    topics: Topic[],
+    difficulty: QuestionDifficulty,
+    duration: number,
+    courseId?: string
+  ) => {
+    if (!fileContent) {
       toast({
         title: "Error",
-        description: "Quiz ID is missing. Cannot submit quiz.",
+        description: "Please select a file first",
         variant: "destructive",
       });
       return;
     }
-    
-    if (!questions || questions.length === 0) {
+
+    if (topics.some(topic => !topic.description)) {
       toast({
         title: "Error",
-        description: "No questions found for this quiz.",
+        description: "Please fill out all topics",
         variant: "destructive",
       });
       return;
     }
-    
-    setIsSubmitting(true);
+
+    setIsProcessing(true);
+    setQuizQuestions([]);
+
     try {
-      console.log("Submitting quiz", quizId, "with answers:", selectedAnswers);
+      const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
       
-      // Calculate how many answers are correct
-      const correctAnswersCount = questions.reduce((count, question, index) => {
-        const selectedAnswer = selectedAnswers[index];
-        return selectedAnswer === question.correct_answer ? count + 1 : count;
-      }, 0);
-
-      // Calculate score as a percentage (0-100) instead of a decimal
-      const scorePercentage = Math.round((correctAnswersCount / questions.length) * 100);
-
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error("Authentication error:", sessionError);
-        throw new Error("Authentication error");
-      }
+      const generatedQuestions = await generateQuiz(trimmedContent, topics, difficulty);
+      setQuizQuestions(generatedQuestions);
       
-      if (!sessionData?.session?.user) {
-        throw new Error("Not authenticated");
-      }
-
-      // Get previous attempts to determine attempt number
-      const { data: previousAttempts, error: previousAttemptsError } = await supabase
-        .from('quiz_responses')
-        .select('attempt_number')
-        .eq('quiz_id', quizId)
-        .eq('student_id', sessionData.session.user.id)
-        .order('attempt_number', { ascending: false })
-        .limit(1);
-        
-      if (previousAttemptsError) {
-        console.error("Error getting previous attempts:", previousAttemptsError);
-      }
-      
-      // Calculate attempt number
-      const attemptNumber = previousAttempts && previousAttempts.length > 0 
-        ? previousAttempts[0].attempt_number + 1 
-        : 1;
-
-      // Prepare topic performance data
-      const topicPerformance: Record<string, { correct: number; total: number }> = {};
-      questions.forEach((question, index) => {
-        const topic = question.topic;
-        if (!topicPerformance[topic]) {
-          topicPerformance[topic] = { correct: 0, total: 0 };
-        }
-        topicPerformance[topic].total++;
-        if (selectedAnswers[index] === question.correct_answer) {
-          topicPerformance[topic].correct++;
-        }
-      });
-
-      // Create initial AI feedback structure
-      const initialAiFeedback = {
-        strengths: [],
-        areas_for_improvement: [],
-        advice: ""
-      };
-
-      const { data, error } = await supabase
-        .from('quiz_responses')
-        .insert([
-          {
-            quiz_id: quizId,
-            student_id: sessionData.session.user.id,
-            score: scorePercentage,
-            correct_answers: correctAnswersCount,
-            total_questions: questions.length,
-            topic_performance: topicPerformance,
-            ai_feedback: initialAiFeedback,
-            completed_at: new Date().toISOString(),
-            attempt_number: attemptNumber
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error submitting quiz:", error);
-        throw error;
-      }
+      // Save the generated quiz to the database
+      await saveQuizToDatabase(generatedQuestions, topics, duration, courseId);
 
       toast({
         title: "Success",
-        description: attemptNumber > 1 
-          ? `Quiz retaken and submitted successfully! (Attempt #${attemptNumber})` 
-          : "Quiz submitted successfully!",
+        description: "Quiz generated and saved successfully!",
       });
-      
-      // Call the success callback if provided
-      if (onSubmitSuccess) {
-        onSubmitSuccess();
-      }
-      
-      // Ensure we navigate to the quiz results page with the new response ID
-      console.log("Navigating to quiz results:", `/quiz-results/${data.id}`);
-      navigate(`/quiz-results/${data.id}`);
-    } catch (error: any) {
-      console.error("Error submitting quiz:", error);
+
+      return generatedQuestions;
+    } catch (error) {
+      console.error('Error processing quiz:', error);
       toast({
         title: "Error",
-        description: "Failed to submit quiz. Please try again.",
+        description: "Failed to generate quiz. Please try again.",
         variant: "destructive",
       });
+      return null;
     } finally {
-      setIsSubmitting(false);
+      setIsProcessing(false);
     }
-  }, [quizId, questions, selectedAnswers, navigate, isSubmitting, onSubmitSuccess]);
+  };
 
   return {
-    isSubmitting,
-    handleSubmit
+    isProcessing,
+    quizQuestions,
+    handleSubmit,
   };
 };
