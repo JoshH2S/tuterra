@@ -8,6 +8,8 @@ import { QuizDurationInput } from "./QuizDurationInput";
 import { QuizActions } from "./QuizActions";
 import { QuizQuestionItem } from "./QuizQuestionItem";
 import { Question, QuestionDifficulty } from "@/types/quiz";
+import { motion } from "framer-motion";
+import { Swipeable } from "react-swipeable";
 
 interface QuizOutputProps {
   questions: Question[];
@@ -32,6 +34,9 @@ export const Quiz = ({ questions }: { questions: Question[] }) => {
 
 export const QuizOutput = ({ questions }: QuizOutputProps) => {
   const [duration, setDuration] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const questionsPerPage = 3; // Show fewer questions per page on mobile
+  const totalPages = Math.ceil((questions?.length || 0) / questionsPerPage);
 
   const handlePublish = async () => {
     try {
@@ -142,12 +147,30 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
     doc.save('quiz.pdf');
   };
 
+  const handleChangePage = (newPage: number) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handleSwipe = (direction: 'left' | 'right') => {
+    if (direction === 'left') {
+      handleChangePage(currentPage + 1);
+    } else if (direction === 'right') {
+      handleChangePage(currentPage - 1);
+    }
+  };
+
   if (!questions || questions.length === 0) return null;
 
+  const startIdx = currentPage * questionsPerPage;
+  const endIdx = Math.min(startIdx + questionsPerPage, questions.length);
+  const currentQuestions = questions.slice(startIdx, endIdx);
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Generated Quiz</CardTitle>
+    <Card className="overflow-hidden shadow-sm">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <CardTitle className="text-xl">Generated Quiz</CardTitle>
         <QuizActions 
           onPublish={handlePublish}
           onDownload={handleDownloadPDF}
@@ -158,15 +181,72 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
           duration={duration}
           onChange={setDuration}
         />
-        <div className="space-y-6">
-          {questions.map((question: Question, index: number) => (
-            <QuizQuestionItem 
-              key={index}
-              question={question}
-              index={index}
-            />
-          ))}
+        
+        {/* Swipeable container for touch gesture support */}
+        <div className="w-full touch-manipulation">
+          <div 
+            className="space-y-6 mt-4"
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              const startX = touch.clientX;
+              
+              const handleTouchEnd = (e: TouchEvent) => {
+                const touch = e.changedTouches[0];
+                const endX = touch.clientX;
+                const diff = startX - endX;
+                
+                if (Math.abs(diff) > 50) { // Minimum swipe distance
+                  if (diff > 0) {
+                    handleSwipe('left');
+                  } else {
+                    handleSwipe('right');
+                  }
+                }
+                
+                document.removeEventListener('touchend', handleTouchEnd);
+              };
+              
+              document.addEventListener('touchend', handleTouchEnd);
+            }}
+          >
+            {currentQuestions.map((question: Question, index: number) => (
+              <motion.div
+                key={startIdx + index}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <QuizQuestionItem 
+                  question={question}
+                  index={startIdx + index}
+                />
+              </motion.div>
+            ))}
+          </div>
         </div>
+        
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <div className="text-sm text-gray-500">
+              Page {currentPage + 1} of {totalPages}
+            </div>
+            <div className="flex gap-1">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleChangePage(i)}
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                    i === currentPage 
+                      ? "bg-primary" 
+                      : "bg-gray-200 dark:bg-gray-700"
+                  }`}
+                  aria-label={`Go to page ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
