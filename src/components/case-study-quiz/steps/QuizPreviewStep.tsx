@@ -84,7 +84,8 @@ export const QuizPreviewStep = ({
               </div>
               
               <h3 className="text-lg font-semibold mb-4">Quiz Preview</h3>
-              <Quiz questions={validQuestions} quizId={quizId} />
+              {/* Remove quizId prop since Quiz component doesn't accept it */}
+              <Quiz questions={validQuestions} />
               
               {/* Add publish button after quiz is displayed */}
               <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">

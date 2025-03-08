@@ -15,8 +15,17 @@ export const useQuizSave = () => {
     courseId?: string
   ) => {
     try {
+      console.log("Starting saveQuizToDatabase with:", { 
+        questionCount: questions.length, 
+        topicCount: topics.length, 
+        duration,
+        title,
+        courseId
+      });
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.error("No active session found during quiz save");
         return { success: false, quizId: null };
       }
 
@@ -33,13 +42,20 @@ export const useQuizSave = () => {
         Object.assign(quizData, { course_id: courseId });
       }
 
+      console.log("Inserting quiz with data:", quizData);
+
       const { data: quiz, error: quizError } = await supabase
         .from('quizzes')
         .insert(quizData)
         .select()
         .single();
 
-      if (quizError) throw quizError;
+      if (quizError) {
+        console.error("Error inserting quiz:", quizError);
+        throw quizError;
+      }
+
+      console.log("Quiz saved successfully with ID:", quiz.id);
 
       // Map questions to the database schema
       const questionsToInsert = questions.map(q => ({
@@ -52,11 +68,16 @@ export const useQuizSave = () => {
         difficulty: mapDifficultyToDatabase(q.difficulty) as QuestionDifficulty
       }));
 
+      console.log(`Inserting ${questionsToInsert.length} quiz questions for quiz ID: ${quiz.id}`);
+
       const { error: questionsError } = await supabase
         .from('quiz_questions')
         .insert(questionsToInsert);
 
-      if (questionsError) throw questionsError;
+      if (questionsError) {
+        console.error("Error inserting quiz questions:", questionsError);
+        throw questionsError;
+      }
 
       toast({
         title: "Success",

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Book, 
@@ -31,6 +32,7 @@ const CaseStudyQuizGeneration = () => {
     isGenerating, 
     quizQuestions, 
     newsSources, 
+    quizId, // Make sure we're using the quizId from useGenerateQuiz
     error,
     generateQuiz 
   } = useGenerateQuiz();
@@ -171,6 +173,7 @@ const CaseStudyQuizGeneration = () => {
                   isGenerating={isGenerating}
                   error={error}
                   onGenerate={handleGenerate}
+                  quizId={quizId} // Pass the quizId to the component
                 />
               </StepContainer>
             )}
