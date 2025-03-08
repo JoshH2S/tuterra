@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QuizDurationInput } from "./QuizDurationInput";
 import { QuizActions } from "./QuizActions";
@@ -9,6 +8,7 @@ import { usePdfGeneration } from "@/hooks/quiz/usePdfGeneration";
 import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 import { useState } from "react";
 import { useResponsive } from "@/hooks/useResponsive";
+import { toast } from "@/hooks/use-toast";
 
 interface QuizOutputProps {
   questions: Question[];
@@ -19,17 +19,14 @@ export const QuizOutput = ({ questions, quizId }: QuizOutputProps) => {
   const [duration, setDuration] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
   
-  // Use the useResponsive hook instead of useMediaQuery
   const { isMobile } = useResponsive();
   const questionsPerPage = isMobile ? 2 : 3;
   
   const { handlePublish } = useQuizPublishing();
   const { handleDownloadPDF } = usePdfGeneration(questions, duration);
 
-  // Validate questions first
   const validQuestions = Array.isArray(questions) ? questions : [];
 
-  // Calculate pagination values
   const totalPages = Math.ceil((validQuestions?.length || 0) / questionsPerPage);
   const startIdx = currentPage * questionsPerPage;
   const endIdx = Math.min(startIdx + questionsPerPage, validQuestions.length);
@@ -41,7 +38,6 @@ export const QuizOutput = ({ questions, quizId }: QuizOutputProps) => {
     }
   };
 
-  // Handle swipe for mobile navigation
   const handleSwipe = (direction: 'left' | 'right') => {
     if (direction === 'left') {
       handleChangePage(currentPage + 1);
@@ -50,7 +46,6 @@ export const QuizOutput = ({ questions, quizId }: QuizOutputProps) => {
     }
   };
 
-  // Create a wrapper function for the publish action
   const onPublish = () => {
     if (quizId) {
       handlePublish(quizId, duration);
@@ -108,5 +103,4 @@ export const QuizOutput = ({ questions, quizId }: QuizOutputProps) => {
   );
 };
 
-// Re-export the Quiz component to maintain API compatibility
 export { Quiz } from "./Quiz";
