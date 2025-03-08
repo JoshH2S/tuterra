@@ -31,8 +31,8 @@ export const QuizPreviewStep = ({
   // Ensure we always have a valid array of questions
   const validQuestions = Array.isArray(questions) ? questions : [];
   
-  // Use the quiz publishing hook to handle publishing
-  const { handlePublish } = useQuizPublishing(30); // Default 30 minute duration
+  // Use the quiz publishing hook to handle publishing - pass the title
+  const { handlePublish } = useQuizPublishing(30, title); // Default 30 minute duration, pass title
 
   return (
     <div className="space-y-6">

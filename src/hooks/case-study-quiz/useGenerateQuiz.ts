@@ -131,6 +131,9 @@ export const useGenerateQuiz = () => {
         });
       }
 
+      // Generate a default title based on topics
+      const defaultTitle = `Case Study: ${topics[0].description}${topics.length > 1 ? ' & More' : ''}`;
+
       // Save quiz to database using the shared hook
       try {
         const estimatedDuration = data.metadata?.estimatedDuration || 30;
@@ -138,6 +141,7 @@ export const useGenerateQuiz = () => {
           validatedQuestions, 
           topics, 
           estimatedDuration,
+          defaultTitle, // Add a default title
           selectedCourseId
         );
 

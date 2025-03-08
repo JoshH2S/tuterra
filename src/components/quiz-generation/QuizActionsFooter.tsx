@@ -5,52 +5,20 @@ import { Card } from "@/components/ui/card";
 import { Question } from "@/types/quiz-generation";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 
 interface QuizActionsFooterProps {
   quizQuestions: Question[];
+  title?: string; // Make title optional
+  duration?: number; // Make duration optional
 }
 
 export const QuizActionsFooter = ({
-  quizQuestions
+  quizQuestions,
+  title = "Untitled Quiz", // Default title
+  duration = 30 // Default duration
 }: QuizActionsFooterProps) => {
-  const handlePublishQuiz = async () => {
-    try {
-      const { data: latestQuiz } = await supabase
-        .from('quizzes')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (!latestQuiz) {
-        toast({
-          title: "Error",
-          description: "No quiz found to publish",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('quizzes')
-        .update({ published: true })
-        .eq('id', latestQuiz.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Quiz published successfully!",
-      });
-    } catch (error) {
-      console.error('Error publishing quiz:', error);
-      toast({
-        title: "Error",
-        description: "Failed to publish quiz. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  const { handlePublish } = useQuizPublishing(duration, title);
 
   if (quizQuestions.length === 0) {
     return null;
@@ -61,7 +29,7 @@ export const QuizActionsFooter = ({
       <Card className="bg-gray-50 dark:bg-gray-800/50 p-6">
         <div className="flex flex-col items-center justify-center">
           <Button 
-            onClick={handlePublishQuiz}
+            onClick={handlePublish}
             size="lg"
             className="w-full md:w-auto"
           >

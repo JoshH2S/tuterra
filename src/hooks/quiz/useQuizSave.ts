@@ -11,7 +11,7 @@ export const useQuizSave = () => {
     questions: Question[], 
     topics: { description: string }[], 
     duration: number,
-    title: string,
+    title: string = "Untitled Quiz", // Default title if none provided
     courseId?: string
   ) => {
     try {
@@ -22,7 +22,7 @@ export const useQuizSave = () => {
 
       // Create the quiz with title, teacher_id, and duration
       const quizData = {
-        title: title,
+        title: title, // Use the provided title or default
         teacher_id: session.user.id,
         duration_minutes: duration
       };

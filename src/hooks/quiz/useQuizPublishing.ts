@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
-export const useQuizPublishing = (duration: number) => {
+export const useQuizPublishing = (duration: number, title?: string) => {
   const navigate = useNavigate();
 
   const handlePublish = async () => {
@@ -30,12 +30,20 @@ export const useQuizPublishing = (duration: number) => {
         return;
       }
 
+      // Prepare the update data
+      const updateData: any = { 
+        published: true,
+        duration_minutes: duration || 30 // Default to 30 minutes if no duration set
+      };
+      
+      // Add title if provided
+      if (title) {
+        updateData.title = title;
+      }
+
       const { error } = await supabase
         .from('quizzes')
-        .update({ 
-          published: true,
-          duration_minutes: duration || 30 // Default to 30 minutes if no duration set
-        })
+        .update(updateData)
         .eq('id', latestQuiz.id);
 
       if (error) throw error;
