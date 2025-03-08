@@ -25,13 +25,13 @@ export const Quiz = ({ questions }: QuizProps) => {
                   key={oIndex}
                   className={cn(
                     "p-3 rounded-md border flex items-start gap-3",
-                    key === question.correct_answer
+                    key === question.correctAnswer
                       ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700"
                       : "bg-white dark:bg-gray-950"
                   )}
                 >
                   <div className="mt-0.5">
-                    {key === question.correct_answer ? (
+                    {key === question.correctAnswer ? (
                       <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
                         <Check className="h-3 w-3 text-white" />
                       </div>

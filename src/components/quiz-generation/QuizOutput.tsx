@@ -13,6 +13,23 @@ interface QuizOutputProps {
   questions: Question[];
 }
 
+// Add the missing Quiz component that's being imported
+export const Quiz = ({ questions }: { questions: Question[] }) => {
+  if (!questions || questions.length === 0) return null;
+  
+  return (
+    <div className="space-y-6">
+      {questions.map((question, index) => (
+        <QuizQuestionItem 
+          key={index}
+          question={question}
+          index={index}
+        />
+      ))}
+    </div>
+  );
+};
+
 export const QuizOutput = ({ questions }: QuizOutputProps) => {
   const [duration, setDuration] = useState<number>(0);
 
