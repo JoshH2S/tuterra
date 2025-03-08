@@ -1,10 +1,19 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export const useQuizPublishing = (duration: number) => {
+  const navigate = useNavigate();
+
   const handlePublish = async () => {
     try {
+      // Show loading toast
+      toast({
+        title: "Publishing quiz",
+        description: "Your quiz is being published...",
+      });
+
       const { data: latestQuiz } = await supabase
         .from('quizzes')
         .select('id')
@@ -25,16 +34,22 @@ export const useQuizPublishing = (duration: number) => {
         .from('quizzes')
         .update({ 
           published: true,
-          duration_minutes: duration 
+          duration_minutes: duration || 30 // Default to 30 minutes if no duration set
         })
         .eq('id', latestQuiz.id);
 
       if (error) throw error;
 
+      // Show success toast
       toast({
         title: "Success",
-        description: "Quiz published successfully!",
+        description: "Quiz published successfully! Students can now take this quiz.",
       });
+
+      // Optionally navigate to quizzes page after publishing
+      setTimeout(() => {
+        navigate('/quizzes');
+      }, 1500);
     } catch (error) {
       console.error('Error publishing quiz:', error);
       toast({

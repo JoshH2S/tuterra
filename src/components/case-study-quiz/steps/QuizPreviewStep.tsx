@@ -7,6 +7,7 @@ import { Question } from "@/types/quiz";
 import { EmptyState } from "@/components/quiz-generation/EmptyState";
 import { Quiz } from "@/components/quiz-generation/QuizOutput";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 
 interface QuizPreviewStepProps {
   questions: Question[];
@@ -23,6 +24,9 @@ export const QuizPreviewStep = ({
 }: QuizPreviewStepProps) => {
   // Ensure we always have a valid array of questions
   const validQuestions = Array.isArray(questions) ? questions : [];
+  
+  // Use the quiz publishing hook to handle publishing
+  const { handlePublish } = useQuizPublishing(30); // Default 30 minute duration
 
   return (
     <div className="space-y-6">
@@ -46,6 +50,20 @@ export const QuizPreviewStep = ({
             <CardContent className="p-4 sm:p-6">
               <h3 className="text-lg font-semibold mb-4">Quiz Preview</h3>
               <Quiz questions={validQuestions} />
+              
+              {/* Add publish button after quiz is displayed */}
+              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <Button 
+                  onClick={handlePublish}
+                  className="w-full sm:w-auto"
+                  size="lg"
+                >
+                  Publish Quiz
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Publishing will make this quiz available for students to take
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>
