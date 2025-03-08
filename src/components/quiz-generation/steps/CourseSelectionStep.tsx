@@ -1,18 +1,18 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { QuestionDifficulty } from "@/types/quiz";
+import { RadioGroup } from "@/components/ui/radio-group";
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue, 
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+  Book, 
+  GraduationCap, 
+  School, 
+  Trophy, 
+  Brain 
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { RadioCard } from "../RadioCard";
 import { useCourses } from "@/hooks/useCourses";
-import { Book, GraduationCap, School, Trophy } from "lucide-react";
+import { motion } from "framer-motion";
+import { QuestionDifficulty } from "@/types/quiz";
 
 interface CourseSelectionStepProps {
   selectedCourseId: string;
@@ -21,119 +21,101 @@ interface CourseSelectionStepProps {
   setDifficulty: (difficulty: QuestionDifficulty) => void;
 }
 
-export const CourseSelectionStep = ({ 
-  selectedCourseId, 
-  setSelectedCourseId, 
-  difficulty, 
-  setDifficulty 
+export const CourseSelectionStep = ({
+  selectedCourseId,
+  setSelectedCourseId,
+  difficulty,
+  setDifficulty,
 }: CourseSelectionStepProps) => {
-  const { courses, isLoading: isLoadingCourses } = useCourses();
+  const { courses, isLoading } = useCourses();
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Course & Difficulty</h2>
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Select a Course</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Select the course and education level for your quiz
+          Choose the course you want to create a quiz for
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Course</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select
-              value={selectedCourseId}
-              onValueChange={setSelectedCourseId}
-              disabled={isLoadingCourses}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a course" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
-                    {course.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="w-full h-[72px] animate-pulse">
+              <CardContent className="p-0 h-full bg-gray-200 dark:bg-gray-700" />
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="space-y-4"
+        >
+          <RadioGroup
+            value={selectedCourseId}
+            onValueChange={setSelectedCourseId}
+            className="space-y-3"
+          >
+            {courses.map((course) => (
+              <motion.div key={course.id} variants={item}>
+                <RadioCard
+                  value={course.id}
+                  icon={Book}
+                  label={course.title}
+                  description={course.description}
+                />
+              </motion.div>
+            ))}
+          </RadioGroup>
+        </motion.div>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Education Level</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RadioGroup
-              value={difficulty}
-              onValueChange={(value: QuestionDifficulty) => setDifficulty(value)}
-              className="grid grid-cols-2 gap-4"
-            >
-              <LevelOption 
-                value="middle_school" 
-                label="Middle School" 
-                icon={<School className="h-5 w-5" />} 
-                currentValue={difficulty}
-              />
-              <LevelOption 
-                value="high_school" 
-                label="High School" 
-                icon={<Book className="h-5 w-5" />} 
-                currentValue={difficulty}
-              />
-              <LevelOption 
-                value="university" 
-                label="University" 
-                icon={<GraduationCap className="h-5 w-5" />} 
-                currentValue={difficulty}
-              />
-              <LevelOption 
-                value="post_graduate" 
-                label="Post Graduate" 
-                icon={<Trophy className="h-5 w-5" />} 
-                currentValue={difficulty}
-              />
-            </RadioGroup>
-          </CardContent>
-        </Card>
+      <div className="pt-6">
+        <h3 className="text-xl font-bold mb-4">Education Level</h3>
+        <RadioGroup
+          value={difficulty}
+          onValueChange={(value) => setDifficulty(value as QuestionDifficulty)}
+          className="grid grid-cols-1 md:grid-cols-2 gap-3"
+        >
+          <RadioCard
+            value="middle_school"
+            icon={School}
+            label="Middle School"
+          />
+          <RadioCard
+            value="high_school"
+            icon={GraduationCap}
+            label="High School"
+          />
+          <RadioCard
+            value="university"
+            icon={Trophy}
+            label="University"
+          />
+          <RadioCard
+            value="post_graduate"
+            icon={Brain}
+            label="Post Graduate"
+          />
+        </RadioGroup>
       </div>
     </div>
   );
 };
-
-interface LevelOptionProps {
-  value: QuestionDifficulty;
-  label: string;
-  icon: React.ReactNode;
-  currentValue: QuestionDifficulty;
-}
-
-const LevelOption = ({ value, label, icon, currentValue }: LevelOptionProps) => (
-  <Label
-    htmlFor={`level-${value}`}
-    className={cn(
-      "flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all",
-      "hover:bg-primary/5",
-      currentValue === value 
-        ? "border-primary bg-primary/10" 
-        : "border-gray-200 dark:border-gray-700"
-    )}
-  >
-    <RadioGroupItem 
-      value={value} 
-      id={`level-${value}`} 
-      className="sr-only" 
-    />
-    {icon}
-    <span className="mt-2 text-sm font-medium">{label}</span>
-  </Label>
-);
-
-// Import cn function if not already in scope
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}

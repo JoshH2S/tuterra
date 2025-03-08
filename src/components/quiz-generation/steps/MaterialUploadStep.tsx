@@ -1,20 +1,28 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { UploadCloud, File, X } from "lucide-react";
+import { UploadCloud, File, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { motion } from "framer-motion";
 
 interface MaterialUploadStepProps {
   selectedFile: File | null;
   handleFileSelect: (file: File) => void;
   contentLength: number;
+  isProcessing?: boolean;
+  processingProgress?: number;
+  processingError?: string | null;
 }
 
 export const MaterialUploadStep = ({ 
   selectedFile, 
   handleFileSelect, 
-  contentLength 
+  contentLength,
+  isProcessing = false,
+  processingProgress = 0,
+  processingError = null
 }: MaterialUploadStepProps) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -56,9 +64,10 @@ export const MaterialUploadStep = ({
       </div>
 
       {!selectedFile ? (
-        <div
+        <motion.div
+          whileHover={{ scale: 1.01 }}
           className={cn(
-            "border-2 border-dashed rounded-xl p-8 transition-colors cursor-pointer",
+            "border-2 border-dashed rounded-xl p-6 md:p-8 transition-colors cursor-pointer",
             "hover:border-primary hover:bg-primary/5",
             "flex flex-col items-center justify-center text-center"
           )}
@@ -73,18 +82,19 @@ export const MaterialUploadStep = ({
             className="hidden"
             accept=".pdf,.docx,.txt,.md"
           />
-          <UploadCloud className="h-12 w-12 text-gray-400 mb-4" />
+          <UploadCloud className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium mb-2">
-            Drop your file here or click to browse
+            Drop your file here or tap to browse
           </h3>
           <p className="text-sm text-gray-500 max-w-md mx-auto">
             Upload your lecture notes, textbook chapters, or any course material to generate relevant quiz questions
           </p>
-        </div>
+          <Button className="mt-4 md:hidden">Browse Files</Button>
+        </motion.div>
       ) : (
         <Card className="overflow-hidden">
           <CardContent className="p-0">
-            <div className="p-6 flex items-start space-x-4">
+            <div className="p-4 md:p-6 flex items-start space-x-4">
               <div className="bg-primary/10 p-3 rounded-lg">
                 <File className="h-8 w-8 text-primary" />
               </div>
@@ -94,9 +104,23 @@ export const MaterialUploadStep = ({
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB · {selectedFile.type || 'Unknown type'}
                 </p>
                 {contentLength > 0 && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 mt-1">
                     Content length: {contentLength.toLocaleString()} characters
                   </p>
+                )}
+                
+                {isProcessing && (
+                  <div className="mt-3">
+                    <Progress value={processingProgress} className="h-1.5" />
+                    <p className="text-xs text-gray-500 mt-1">Processing file: {processingProgress}%</p>
+                  </div>
+                )}
+                
+                {processingError && (
+                  <div className="flex items-center mt-2 text-red-500 text-sm">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {processingError}
+                  </div>
                 )}
               </div>
               <Button
