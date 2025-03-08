@@ -1,16 +1,26 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Question, QuestionDifficulty } from "@/types/quiz";
-import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
-import { Topic } from "@/types/quiz";
-import { TopicsForm } from "@/components/case-study-quiz/TopicsForm";
-import { CourseSelection } from "@/components/case-study-quiz/CourseSelection";
-import { GenerateButton } from "@/components/case-study-quiz/GenerateButton";
-import { NewsSources } from "@/components/case-study-quiz/NewsSources";
+import { 
+  Book, 
+  ListChecks, 
+  Newspaper, 
+  Eye 
+} from "lucide-react";
+import { Question, QuestionDifficulty, Topic } from "@/types/quiz";
+import { StepContainer } from "@/components/quiz-generation/StepContainer";
+import { CourseSetupStep } from "@/components/case-study-quiz/steps/CourseSetupStep";
+import { TopicsSetupStep } from "@/components/case-study-quiz/steps/TopicsSetupStep";
+import { NewsSourcesStep } from "@/components/case-study-quiz/steps/NewsSourcesStep";
+import { QuizPreviewStep } from "@/components/case-study-quiz/steps/QuizPreviewStep";
+import { StepProgress } from "@/components/quiz-generation/StepProgress";
+import { NavigationFooter } from "@/components/quiz-generation/NavigationFooter";
+import { Badge } from "@/components/ui/badge";
 import { useGenerateQuiz } from "@/hooks/case-study-quiz/useGenerateQuiz";
+import { AnimatePresence } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 
 const CaseStudyQuizGeneration = () => {
+  const [step, setStep] = useState(1);
   const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [difficulty, setDifficulty] = useState<QuestionDifficulty>("high_school");
@@ -22,45 +32,128 @@ const CaseStudyQuizGeneration = () => {
     generateQuiz 
   } = useGenerateQuiz();
 
+  const handleNextStep = () => {
+    if (step === 1 && !selectedCourseId) {
+      toast({
+        title: "Course required",
+        description: "Please select a course before continuing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (step === 2 && !topics[0].description) {
+      toast({
+        title: "Topic required",
+        description: "Please enter at least one topic before continuing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStep(prev => Math.min(prev + 1, 4));
+  };
+
+  const handlePreviousStep = () => {
+    setStep(prev => Math.max(prev - 1, 1));
+  };
+
+  const canProceedToNextStep = () => {
+    if (step === 1) return !!selectedCourseId;
+    if (step === 2) return !!topics[0].description;
+    return true;
+  };
+
   const handleGenerate = async () => {
     await generateQuiz(topics, selectedCourseId, difficulty);
   };
 
+  const steps = [
+    { label: "Course", icon: Book },
+    { label: "Topics", icon: ListChecks },
+    { label: "Sources", icon: Newspaper },
+    { label: "Preview", icon: Eye }
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Generate Real-World Case Study Quiz</CardTitle>
-              <CardDescription>Creates case studies based on current news stories</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <CourseSelection
-                selectedCourseId={selectedCourseId}
-                setSelectedCourseId={setSelectedCourseId}
-                difficulty={difficulty}
-                setDifficulty={setDifficulty}
-              />
-
-              <TopicsForm
-                topics={topics}
-                setTopics={setTopics}
-              />
-
-              <GenerateButton
-                onClick={handleGenerate}
-                disabled={isGenerating || !topics[0].description || !selectedCourseId}
-                isGenerating={isGenerating}
-              />
-            </CardContent>
-          </Card>
-
-          <NewsSources newsSources={newsSources} />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Floating Header with Progress */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+        <div className="container mx-auto px-4">
+          <div className="h-16 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-semibold">
+                Case Study Quiz Generator
+              </h1>
+              {newsSources.length > 0 && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                  {newsSources.length} Sources Found
+                </Badge>
+              )}
+            </div>
+            
+            <StepProgress 
+              steps={steps}
+              currentStep={step}
+            />
+          </div>
         </div>
+      </header>
 
-        <QuizOutput questions={quizQuestions} />
-      </div>
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <StepContainer key="course">
+                <CourseSetupStep
+                  selectedCourseId={selectedCourseId}
+                  setSelectedCourseId={setSelectedCourseId}
+                  difficulty={difficulty}
+                  setDifficulty={setDifficulty}
+                />
+              </StepContainer>
+            )}
+
+            {step === 2 && (
+              <StepContainer key="topics">
+                <TopicsSetupStep
+                  topics={topics}
+                  setTopics={setTopics}
+                />
+              </StepContainer>
+            )}
+
+            {step === 3 && (
+              <StepContainer key="sources">
+                <NewsSourcesStep
+                  newsSources={newsSources}
+                />
+              </StepContainer>
+            )}
+
+            {step === 4 && (
+              <StepContainer key="preview">
+                <QuizPreviewStep
+                  questions={quizQuestions}
+                  isGenerating={isGenerating}
+                  onGenerate={handleGenerate}
+                />
+              </StepContainer>
+            )}
+          </AnimatePresence>
+
+          {/* Navigation */}
+          <NavigationFooter
+            currentStep={step}
+            totalSteps={4}
+            onNext={handleNextStep}
+            onPrevious={handlePreviousStep}
+            isNextDisabled={!canProceedToNextStep()}
+            isGenerating={isGenerating}
+            onGenerate={step === 4 ? handleGenerate : undefined}
+          />
+        </div>
+      </main>
     </div>
   );
 };
