@@ -8,7 +8,7 @@ import { QuizPagination } from "./QuizPagination";
 import { usePdfGeneration } from "@/hooks/quiz/usePdfGeneration";
 import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 import { useState } from "react";
-import { useMediaQuery } from "@/hooks/useResponsive";
+import { useResponsive } from "@/hooks/useResponsive";
 
 interface QuizOutputProps {
   questions: Question[];
@@ -18,9 +18,9 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
   const [duration, setDuration] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
   
-  // Responsive questionsPerPage
-  const isSmallScreen = useMediaQuery("(max-width: 640px)");
-  const questionsPerPage = isSmallScreen ? 2 : 3;
+  // Use the useResponsive hook instead of useMediaQuery
+  const { isMobile } = useResponsive();
+  const questionsPerPage = isMobile ? 2 : 3;
   
   const { handlePublish } = useQuizPublishing(duration);
   const { handleDownloadPDF } = usePdfGeneration(questions, duration);
@@ -79,7 +79,7 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
         <Quiz 
           questions={currentQuestions} 
           startIndex={startIdx}
-          onSwipe={isSmallScreen ? handleSwipe : undefined}
+          onSwipe={isMobile ? handleSwipe : undefined}
         />
         
         {totalPages > 1 && (
