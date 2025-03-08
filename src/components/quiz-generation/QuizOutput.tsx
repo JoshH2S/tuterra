@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -9,13 +8,12 @@ import { QuizActions } from "./QuizActions";
 import { QuizQuestionItem } from "./QuizQuestionItem";
 import { Question, QuestionDifficulty } from "@/types/quiz";
 import { motion } from "framer-motion";
-import { Swipeable } from "react-swipeable";
+import { useSwipeable } from "react-swipeable";
 
 interface QuizOutputProps {
   questions: Question[];
 }
 
-// Add the missing Quiz component that's being imported
 export const Quiz = ({ questions }: { questions: Question[] }) => {
   if (!questions || questions.length === 0) return null;
   
@@ -86,37 +84,31 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
     const margin = 20;
     let yPosition = margin;
 
-    // Set title
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("Generated Quiz", margin, yPosition);
     yPosition += 15;
 
-    // Add duration if set
     if (duration > 0) {
       doc.setFontSize(12);
       doc.text(`Duration: ${duration} minutes`, margin, yPosition);
       yPosition += 10;
     }
 
-    // Add questions
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
 
     questions.forEach((question, index) => {
-      // Check if we need a new page
       if (yPosition > doc.internal.pageSize.getHeight() - margin) {
         doc.addPage();
         yPosition = margin;
       }
 
-      // Add question
       const questionText = `${index + 1}. [${question.points} pts] ${question.question}`;
       const questionLines = doc.splitTextToSize(questionText, pageWidth - (margin * 2));
       doc.text(questionLines, margin, yPosition);
       yPosition += 10 * questionLines.length;
 
-      // Add options
       Object.entries(question.options).forEach(([letter, text]) => {
         if (yPosition > doc.internal.pageSize.getHeight() - margin) {
           doc.addPage();
@@ -128,7 +120,6 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
         yPosition += 7 * optionLines.length;
       });
 
-      // Add answer and explanation
       const answerText = `Answer: ${question.correctAnswer}`;
       const answerLines = doc.splitTextToSize(answerText, pageWidth - (margin * 2));
       doc.text(answerLines, margin, yPosition);
@@ -141,7 +132,7 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
         yPosition += 10 * explanationLines.length;
       }
 
-      yPosition += 10; // Add space between questions
+      yPosition += 10;
     });
 
     doc.save('quiz.pdf');
@@ -160,6 +151,14 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
       handleChangePage(currentPage - 1);
     }
   };
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => handleSwipe('left'),
+    onSwipedRight: () => handleSwipe('right'),
+    trackMouse: false,
+    swipeDuration: 500,
+    preventScrollOnSwipe: true,
+  });
 
   if (!questions || questions.length === 0) return null;
 
@@ -182,33 +181,8 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
           onChange={setDuration}
         />
         
-        {/* Swipeable container for touch gesture support */}
-        <div className="w-full touch-manipulation">
-          <div 
-            className="space-y-6 mt-4"
-            onTouchStart={(e) => {
-              const touch = e.touches[0];
-              const startX = touch.clientX;
-              
-              const handleTouchEnd = (e: TouchEvent) => {
-                const touch = e.changedTouches[0];
-                const endX = touch.clientX;
-                const diff = startX - endX;
-                
-                if (Math.abs(diff) > 50) { // Minimum swipe distance
-                  if (diff > 0) {
-                    handleSwipe('left');
-                  } else {
-                    handleSwipe('right');
-                  }
-                }
-                
-                document.removeEventListener('touchend', handleTouchEnd);
-              };
-              
-              document.addEventListener('touchend', handleTouchEnd);
-            }}
-          >
+        <div className="w-full touch-manipulation" {...swipeHandlers}>
+          <div className="space-y-6 mt-4">
             {currentQuestions.map((question: Question, index: number) => (
               <motion.div
                 key={startIdx + index}
@@ -225,7 +199,6 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
           </div>
         </div>
         
-        {/* Pagination controls */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-6">
             <div className="text-sm text-gray-500">
