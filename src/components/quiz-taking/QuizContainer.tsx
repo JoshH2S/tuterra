@@ -9,7 +9,7 @@ import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 import { QuizLoading } from "./QuizLoading";
 import { QuizError } from "./QuizError";
 import { QuizEmpty } from "./QuizEmpty";
-import { QuizContent } from "./QuizContent";
+import QuizContent from "./QuizContent";
 
 interface Quiz {
   id: string;

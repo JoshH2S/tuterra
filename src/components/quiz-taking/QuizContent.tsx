@@ -1,190 +1,184 @@
-import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
+
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { QuizGenerationHeader } from "@/components/quiz-generation/QuizGenerationHeader";
-import { CourseSelectionStep } from "@/components/quiz-generation/steps/CourseSelectionStep";
-import { MaterialUploadStep } from "@/components/quiz-generation/steps/MaterialUploadStep";
-import { TopicsStep } from "@/components/quiz-generation/steps/TopicsStep";
-import { PreviewStep } from "@/components/quiz-generation/steps/PreviewStep";
-import { StepIndicator } from "@/components/quiz-generation/StepIndicator";
-import { StepContainer } from "@/components/quiz-generation/StepContainer";
-import { QuizNavigationButtons } from "@/components/quiz-generation/QuizNavigationButtons";
-import { QuizActionsFooter } from "@/components/quiz-generation/QuizActionsFooter";
-import { Link } from "react-router-dom";
-import { FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
-import { useCourseTemplates } from "@/hooks/useCourseTemplates";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
+import { QuizNavigationLinks } from "@/components/quiz-generation/QuizNavigationLinks";
+import { QuizQuestion } from "@/hooks/quiz/quizTypes";
+import { QuizTimer } from "./QuizTimer";
+import { QuizQuestionCard } from "./QuizQuestionCard";
+import { QuizNavigation } from "./QuizNavigation";
+import { QuizSubmitButton } from "./QuizSubmitButton";
+import { QuizHeader } from "./QuizHeader";
+import { QuizExitDialog } from "./QuizExitDialog";
 
-const QuizGeneration = () => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 4;
+interface QuizContentProps {
+  quizId: string;
+  quiz: {
+    id: string;
+    title: string;
+    duration_minutes: number;
+  };
+  questions: QuizQuestion[];
+  onQuizSubmitted: () => void;
+}
+
+const QuizContent: React.FC<QuizContentProps> = ({ 
+  quizId, 
+  quiz, 
+  questions, 
+  onQuizSubmitted 
+}) => {
+  const navigate = useNavigate();
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [timeRemaining, setTimeRemaining] = useState<number>(quiz.duration_minutes * 60);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   
-  const {
-    selectedFile,
-    topics,
-    isProcessing,
-    quizQuestions,
-    contentLength,
-    duration,
-    selectedCourseId,
-    difficulty,
-    handleFileSelect,
-    addTopic,
-    updateTopic,
-    handleSubmit,
-    setDuration,
-    setSelectedCourseId,
-    setDifficulty,
-  } = useQuizGeneration();
+  const handleSelectAnswer = (answer: string) => {
+    setSelectedAnswers(prev => ({
+      ...prev,
+      [currentQuestionIndex]: answer
+    }));
+  };
 
-  const { createTemplate } = useCourseTemplates();
-
-  const handleNextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(prevStep => prevStep + 1);
-    } else if (currentStep === totalSteps) {
-      handleSubmit();
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
     }
   };
 
-  const handlePreviousStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prevStep => prevStep - 1);
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
     }
   };
 
-  const canProceedToNextStep = () => {
-    switch (currentStep) {
-      case 1:
-        return !!selectedCourseId;
-      case 2:
-        return !!selectedFile;
-      case 3:
-        return topics.every(topic => !!topic.description);
-      case 4:
-        return !isProcessing;
-      default:
-        return true;
-    }
-  };
-
-  const handleSaveTemplate = async () => {
-    if (quizQuestions.length > 0) {
-      await createTemplate(
-        `Quiz Template - ${topics.map(t => t.description).join(", ")}`,
-        {
-          type: "quiz",
-          topics,
-          questions: quizQuestions,
-          duration,
-          difficulty
+  const handleSubmitQuiz = async () => {
+    try {
+      // Get user session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      
+      if (!userId) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to submit a quiz",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Calculate score
+      let correctAnswers = 0;
+      let totalPoints = 0;
+      
+      questions.forEach((question, index) => {
+        const selectedAnswer = selectedAnswers[index];
+        if (selectedAnswer === question.correct_answer) {
+          correctAnswers++;
+          totalPoints += question.points || 1;
         }
-      );
+      });
+      
+      const score = Math.round((correctAnswers / questions.length) * 100);
+      
+      // Create quiz response
+      const { data: response, error } = await supabase
+        .from('quiz_responses')
+        .insert({
+          quiz_id: quizId,
+          student_id: userId,
+          score,
+          answers: selectedAnswers,
+          completed_at: new Date().toISOString(),
+          total_questions: questions.length,
+          correct_answers: correctAnswers,
+          total_points: totalPoints
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Quiz Submitted",
+        description: `Your score: ${score}%`,
+      });
+      
+      onQuizSubmitted();
+      navigate(`/quiz-results/${response.id}`);
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit quiz. Please try again.",
+        variant: "destructive",
+      });
     }
   };
+
+  const currentQuestion = questions[currentQuestionIndex];
+  
+  if (!currentQuestion) {
+    return <div>Question not found</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Floating Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4">
-          <div className="h-16 flex items-center justify-between">
-            <QuizGenerationHeader onSaveTemplate={quizQuestions.length > 0 ? handleSaveTemplate : undefined} />
-            <div className="hidden md:block">
-              <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto">
-          {/* Persistent navigation links */}
-          <div className="flex flex-col sm:flex-row w-full justify-center gap-4 mt-6 mb-4">
-            <Link to="/case-study-quiz" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full">
-                <FileText className="w-4 h-4 mr-2" />
-                Case Study Quiz
-              </Button>
-            </Link>
-            
-            <Link to="/quizzes" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full">
-                <FileText className="w-4 h-4 mr-2" />
-                View Quizzes
-              </Button>
-            </Link>
-          </div>
-          
-          {/* Step-based Content with AnimatePresence for transitions */}
-          <AnimatePresence mode="wait">
-            {currentStep === 1 && (
-              <StepContainer key="course-selection">
-                <CourseSelectionStep
-                  selectedCourseId={selectedCourseId}
-                  setSelectedCourseId={setSelectedCourseId}
-                  difficulty={difficulty}
-                  setDifficulty={setDifficulty}
-                />
-              </StepContainer>
-            )}
-
-            {currentStep === 2 && (
-              <StepContainer key="material-upload">
-                <MaterialUploadStep
-                  selectedFile={selectedFile}
-                  handleFileSelect={handleFileSelect}
-                  contentLength={contentLength}
-                />
-              </StepContainer>
-            )}
-
-            {currentStep === 3 && (
-              <StepContainer key="topics">
-                <TopicsStep
-                  topics={topics}
-                  updateTopic={updateTopic}
-                  addTopic={addTopic}
-                />
-              </StepContainer>
-            )}
-
-            {currentStep === 4 && (
-              <StepContainer key="preview">
-                <PreviewStep
-                  questions={quizQuestions}
-                  duration={duration}
-                  setDuration={setDuration}
-                  handleSubmit={handleSubmit}
-                  isProcessing={isProcessing}
-                />
-              </StepContainer>
-            )}
-          </AnimatePresence>
-
-          {/* Mobile step indicator */}
-          <div className="md:hidden mt-6">
-            <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
-          </div>
-
-          {/* Navigation */}
-          <QuizNavigationButtons
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            handlePreviousStep={handlePreviousStep}
-            handleNextStep={handleNextStep}
-            canProceedToNextStep={canProceedToNextStep()}
-            isProcessing={isProcessing}
-            handleSubmit={handleSubmit}
+    <div className="min-h-screen bg-background pb-20">
+      <div className="container mx-auto px-4 py-6">
+        {/* Persistent navigation links */}
+        <QuizNavigationLinks />
+        
+        <Card className="max-w-4xl mx-auto mt-6 p-6">
+          <QuizHeader 
+            title={quiz.title} 
+            currentQuestion={currentQuestionIndex + 1} 
+            totalQuestions={questions.length}
+            onExit={() => setShowExitDialog(true)}
           />
-
-          {/* Publish and Navigation Buttons at the bottom */}
-          <QuizActionsFooter quizQuestions={quizQuestions} />
-        </div>
-      </main>
+          
+          <QuizTimer 
+            initialTime={quiz.duration_minutes * 60}
+            onTimeUpdate={setTimeRemaining}
+            onTimeExpired={handleSubmitQuiz}
+          />
+          
+          <QuizQuestionCard
+            question={currentQuestion}
+            selectedAnswer={selectedAnswers[currentQuestionIndex]}
+            onSelectAnswer={handleSelectAnswer}
+          />
+          
+          <QuizNavigation
+            currentQuestion={currentQuestionIndex + 1}
+            totalQuestions={questions.length}
+            canGoPrevious={currentQuestionIndex > 0}
+            canGoNext={currentQuestionIndex < questions.length - 1}
+            onPrevious={handlePreviousQuestion}
+            onNext={handleNextQuestion}
+          />
+          
+          <QuizSubmitButton 
+            currentQuestion={currentQuestionIndex + 1}
+            totalQuestions={questions.length}
+            timeRemaining={timeRemaining}
+            answeredQuestions={Object.keys(selectedAnswers).length}
+            onSubmit={handleSubmitQuiz}
+          />
+        </Card>
+      </div>
+      
+      <QuizExitDialog
+        open={showExitDialog}
+        onClose={() => setShowExitDialog(false)}
+        onConfirm={() => navigate('/quizzes')}
+      />
     </div>
   );
 };
 
-export default QuizGeneration;
+export default QuizContent;
