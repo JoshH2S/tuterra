@@ -82,25 +82,51 @@ export const useGenerateQuiz = () => {
         throw new Error("Invalid quiz data received from server");
       }
       
-      setQuizQuestions(data.quizQuestions);
+      // Validate and normalize question data
+      const validatedQuestions = data.quizQuestions.map((q: any) => ({
+        question: q.question || '',
+        options: {
+          A: q.options?.A || '',
+          B: q.options?.B || '',
+          C: q.options?.C || '',
+          D: q.options?.D || ''
+        },
+        correctAnswer: q.correctAnswer || '',
+        topic: q.topic || '',
+        points: q.points || 1,
+        explanation: q.explanation || '',
+        difficulty: difficulty // Ensure difficulty is set
+      }));
+      
+      setQuizQuestions(validatedQuestions);
       
       // Store news sources if available
-      if (data.metadata && data.metadata.newsSourcesUsed) {
+      if (data.metadata && Array.isArray(data.metadata.newsSourcesUsed)) {
         setNewsSources(data.metadata.newsSourcesUsed);
       }
 
       // Save quiz to database using the shared hook
-      const success = await saveQuizToDatabase(
-        data.quizQuestions, 
-        topics, 
-        30, // Default duration
-        selectedCourseId
-      );
+      try {
+        const success = await saveQuizToDatabase(
+          validatedQuestions, 
+          topics, 
+          30, // Default duration
+          selectedCourseId
+        );
 
-      if (success) {
+        if (success) {
+          toast({
+            title: "Success",
+            description: "Case study quiz generated and saved successfully!",
+          });
+        }
+      } catch (saveError) {
+        console.error("Error saving quiz to database:", saveError);
+        // We don't throw here as we want to show the generated quiz even if saving fails
         toast({
-          title: "Success",
-          description: "Case study quiz generated and saved successfully!",
+          title: "Warning",
+          description: "Quiz generated but couldn't be saved. Try again later.",
+          variant: "destructive",
         });
       }
       

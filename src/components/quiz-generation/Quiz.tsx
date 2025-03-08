@@ -15,6 +15,10 @@ export const Quiz = ({
   startIndex = 0,
   onSwipe
 }: QuizProps) => {
+  // Ensure questions is always a valid array
+  const validQuestions = Array.isArray(questions) ? questions : [];
+
+  // Only set up swipe handlers if onSwipe callback is provided
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => onSwipe && onSwipe('left'),
     onSwipedRight: () => onSwipe && onSwipe('right'),
@@ -22,17 +26,23 @@ export const Quiz = ({
     swipeDuration: 500,
     preventScrollOnSwipe: true,
   });
-
-  if (!questions || questions.length === 0) return null;
   
   const swipeProps = onSwipe ? swipeHandlers : {};
+
+  if (validQuestions.length === 0) {
+    return (
+      <div className="text-center p-4 text-gray-500">
+        No questions available to display
+      </div>
+    );
+  }
   
   return (
     <div className="w-full touch-manipulation" {...swipeProps}>
       <div className="space-y-6 mt-4">
-        {questions.map((question, index) => (
+        {validQuestions.map((question, index) => (
           <motion.div
-            key={startIndex + index}
+            key={`question-${startIndex + index}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}

@@ -21,6 +21,9 @@ export const QuizPreviewStep = ({
   error,
   onGenerate,
 }: QuizPreviewStepProps) => {
+  // Ensure we always have a valid array of questions
+  const validQuestions = Array.isArray(questions) ? questions : [];
+
   return (
     <div className="space-y-6">
       <StepHeader
@@ -37,18 +40,18 @@ export const QuizPreviewStep = ({
         </Alert>
       )}
 
-      {questions.length > 0 ? (
+      {validQuestions.length > 0 ? (
         <div className="space-y-6">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <h3 className="text-lg font-semibold mb-4">Quiz Preview</h3>
-              <Quiz questions={questions} />
+              <Quiz questions={validQuestions} />
             </CardContent>
           </Card>
         </div>
       ) : (
         <Card>
-          <CardContent className="py-12">
+          <CardContent className="py-8 sm:py-12">
             <EmptyState
               icon={Eye}
               title="No Questions Generated Yet"
@@ -58,7 +61,7 @@ export const QuizPreviewStep = ({
                   onClick={onGenerate}
                   disabled={isGenerating}
                   size="lg"
-                  className="mt-2"
+                  className="mt-2 w-full sm:w-auto"
                 >
                   {isGenerating ? (
                     <>

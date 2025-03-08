@@ -8,6 +8,7 @@ import { QuizPagination } from "./QuizPagination";
 import { usePdfGeneration } from "@/hooks/quiz/usePdfGeneration";
 import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 import { useState } from "react";
+import { useMediaQuery } from "@/hooks/useResponsive";
 
 interface QuizOutputProps {
   questions: Question[];
@@ -16,16 +17,22 @@ interface QuizOutputProps {
 export const QuizOutput = ({ questions }: QuizOutputProps) => {
   const [duration, setDuration] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
-  const questionsPerPage = 3; // Show fewer questions per page on mobile
+  
+  // Responsive questionsPerPage
+  const isSmallScreen = useMediaQuery("(max-width: 640px)");
+  const questionsPerPage = isSmallScreen ? 2 : 3;
   
   const { handlePublish } = useQuizPublishing(duration);
   const { handleDownloadPDF } = usePdfGeneration(questions, duration);
 
+  // Validate questions first
+  const validQuestions = Array.isArray(questions) ? questions : [];
+
   // Calculate pagination values
-  const totalPages = Math.ceil((questions?.length || 0) / questionsPerPage);
+  const totalPages = Math.ceil((validQuestions?.length || 0) / questionsPerPage);
   const startIdx = currentPage * questionsPerPage;
-  const endIdx = Math.min(startIdx + questionsPerPage, questions.length);
-  const currentQuestions = questions.slice(startIdx, endIdx);
+  const endIdx = Math.min(startIdx + questionsPerPage, validQuestions.length);
+  const currentQuestions = validQuestions.slice(startIdx, endIdx);
 
   const handleChangePage = (newPage: number) => {
     if (newPage >= 0 && newPage < totalPages) {
@@ -33,18 +40,37 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
     }
   };
 
-  if (!questions || questions.length === 0) return null;
+  // Handle swipe for mobile navigation
+  const handleSwipe = (direction: 'left' | 'right') => {
+    if (direction === 'left') {
+      handleChangePage(currentPage + 1);
+    } else {
+      handleChangePage(currentPage - 1);
+    }
+  };
+
+  if (!validQuestions || validQuestions.length === 0) {
+    return (
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <p className="text-center text-muted-foreground py-6">
+            No quiz questions available
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden shadow-sm">
-      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6">
         <CardTitle className="text-xl">Generated Quiz</CardTitle>
         <QuizActions 
           onPublish={handlePublish}
           onDownload={handleDownloadPDF}
         />
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
         <QuizDurationInput 
           duration={duration}
           onChange={setDuration}
@@ -52,7 +78,8 @@ export const QuizOutput = ({ questions }: QuizOutputProps) => {
         
         <Quiz 
           questions={currentQuestions} 
-          startIndex={startIdx} 
+          startIndex={startIdx}
+          onSwipe={isSmallScreen ? handleSwipe : undefined}
         />
         
         {totalPages > 1 && (
