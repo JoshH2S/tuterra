@@ -1,11 +1,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Sparkles } from "lucide-react";
+import { PaperclipIcon, SendIcon, Sparkles, Smile } from "lucide-react";
 import FileUpload from "@/components/FileUpload";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Subscription } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { useRef, useEffect } from "react";
 
 interface TutorChatInputProps {
   message: string;
@@ -34,14 +36,33 @@ export const TutorChatInput = ({
 }: TutorChatInputProps) => {
   const isMobile = useIsMobile();
   const isPremium = subscription.tier === "premium";
+  const isPro = subscription.tier === "pro";
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize the textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const adjustHeight = () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    };
+
+    textarea.addEventListener('input', adjustHeight);
+    adjustHeight(); // Initial adjustment
+
+    return () => textarea.removeEventListener('input', adjustHeight);
+  }, [message]);
 
   const uploadButton = (
     <Button 
       variant="ghost" 
       size="icon"
-      className="flex-shrink-0"
+      className="flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground"
       aria-label="Upload file"
       type="button"
+      disabled={isLoading}
       onClick={(e) => {
         // Prevent the button's default action
         e.preventDefault();
@@ -52,41 +73,78 @@ export const TutorChatInput = ({
         }
       }}
     >
-      <Upload className="h-5 w-5" />
+      <PaperclipIcon className="h-5 w-5" />
     </Button>
   );
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="flex gap-2">
-        <FileUpload
-          onFileSelect={onFileUpload}
-          acceptedTypes=".txt,.pdf,.doc,.docx"
-          trigger={uploadButton}
-        />
-        <div className="flex-1">
+    <form onSubmit={onSubmit} className="space-y-2">
+      <div className="flex items-end gap-2">
+        {(isPremium || isPro) && (
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <FileUpload
+              onFileSelect={onFileUpload}
+              acceptedTypes=".txt,.pdf,.doc,.docx"
+              trigger={uploadButton}
+            />
+          </motion.div>
+        )}
+
+        <div className="relative flex-1">
           <Textarea
+            ref={textareaRef}
             value={message}
             onChange={(e) => onMessageChange(e.target.value)}
             placeholder={isPremium ? "Ask anything with enhanced AI..." : "Ask me anything..."}
             className={cn(
-              "resize-none",
-              isMobile ? "h-[80px]" : "h-[60px]",
-              isPremium && "border-amber-200 focus-visible:ring-amber-300"
+              "resize-none min-h-[44px] pr-12 transition-all",
+              isMobile ? "py-2 text-sm" : "py-2.5",
+              isPremium 
+                ? "focus-visible:ring-amber-300" 
+                : "",
+              "rounded-full px-4"
             )}
+            disabled={isLoading}
+            onKeyDown={(e) => {
+              // Submit form on Enter (but not with Shift+Enter)
+              if (e.key === "Enter" && !e.shiftKey && !isMobile) {
+                e.preventDefault();
+                if (message.trim()) {
+                  onSubmit(e);
+                }
+              }
+            }}
           />
-        </div>
-        <Button 
-          type="submit" 
-          disabled={isLoading || !message.trim()}
-          className={cn(
-            "flex-shrink-0",
-            isPremium && "bg-amber-500 hover:bg-amber-600"
+          
+          {(isPremium || isPro) && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="absolute right-12 bottom-1.5 text-muted-foreground hover:text-foreground"
+              disabled={isLoading}
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
           )}
-        >
-          {isPremium && <Sparkles className="h-4 w-4 mr-2" />}
-          {isLoading ? "Sending..." : "Send"}
-        </Button>
+          
+          <Button 
+            type="submit" 
+            size="icon"
+            disabled={isLoading || !message.trim()}
+            className={cn(
+              "absolute right-1 bottom-1 rounded-full h-8 w-8",
+              isPremium ? "bg-amber-500 hover:bg-amber-600" : ""
+            )}
+            aria-label="Send message"
+          >
+            <SendIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </form>
   );

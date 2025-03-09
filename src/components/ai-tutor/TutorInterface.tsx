@@ -10,7 +10,6 @@ import { SubscriptionBadge } from "./SubscriptionBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SmartNotesPanel } from "./SmartNotesPanel";
-import { Card } from "@/components/ui/card";
 
 interface TutorInterfaceProps {
   onConversationStart?: () => void;
@@ -103,8 +102,13 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
     fetchConversationData();
   }, [user]);
 
+  const sidebarAnimation = {
+    hidden: { x: isMobile ? -280 : 0, opacity: isMobile ? 0 : 1 },
+    visible: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } }
+  };
+
   return (
-    <div className="rounded-lg overflow-hidden border border-border">
+    <div className="rounded-lg overflow-hidden border border-border bg-background">
       <TutorHeader 
         activeStep={activeStep}
         totalSteps={learningSteps.length}
@@ -115,14 +119,14 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         <SubscriptionBadge tier={subscription.tier} />
       </TutorHeader>
 
-      <div className="flex flex-col md:flex-row min-h-[600px]">
+      <div className="flex flex-col md:flex-row min-h-[600px] max-h-[80vh]">
         {/* Learning path sidebar - conditionally shown based on mobile and subscription */}
         {showSidebar && (
           <motion.div 
             className={`${isMobile ? 'absolute z-10 h-[calc(100%-4rem)] w-[80%] shadow-xl' : 'w-64 border-r'} bg-background`}
-            initial={{ x: isMobile ? -280 : 0 }}
-            animate={{ x: 0 }}
-            transition={{ duration: 0.3 }}
+            initial="hidden"
+            animate="visible"
+            variants={sidebarAnimation}
           >
             <LearningPathPanel 
               activeStep={activeStep} 
@@ -135,9 +139,9 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         )}
 
         {/* Main content area with responsive layout for subscription tiers */}
-        <div className={`flex-grow grid grid-cols-12 gap-0 md:gap-4 p-0 md:p-4`}>
+        <div className="flex-grow grid grid-cols-12 gap-0 md:gap-4 p-0 md:p-4 max-h-[calc(100vh-8rem)] md:max-h-[calc(80vh-2rem)]">
           {/* Larger chat area for free tier, smaller for paid tiers */}
-          <div className={`${subscription.tier === 'free' ? 'col-span-12' : 'col-span-12 lg:col-span-8'}`}>
+          <div className={`${subscription.tier === 'free' ? 'col-span-12' : 'col-span-12 lg:col-span-8'} max-h-full`}>
             <TutorChat 
               onSendMessage={handleSendMessage} 
               subscription={subscription}
@@ -148,7 +152,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
 
           {/* Smart Notes Panel - only for premium tier */}
           {subscription.tier === 'premium' && (
-            <div className="hidden lg:block lg:col-span-4">
+            <div className="hidden lg:block lg:col-span-4 max-h-full">
               <SmartNotesPanel notes={smartNotes} />
             </div>
           )}
