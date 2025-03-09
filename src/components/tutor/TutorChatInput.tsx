@@ -102,13 +102,12 @@ export const TutorChatInput = ({
             placeholder={isPremium ? "Ask anything with enhanced AI..." : "Ask me anything..."}
             className={cn(
               "resize-none min-h-[44px] pr-12 transition-all",
-              isMobile ? "py-2 text-sm leading-tight" : "py-2.5 leading-normal",
+              isMobile ? "py-2 text-sm" : "py-2.5",
               isPremium 
                 ? "focus-visible:ring-amber-300" 
                 : "",
-              "rounded-full px-4 flex items-center"
+              "rounded-full px-4"
             )}
-            style={{ paddingTop: "12px", paddingBottom: "12px" }}
             disabled={isLoading}
             onKeyDown={(e) => {
               // Submit form on Enter (but not with Shift+Enter)
@@ -126,7 +125,7 @@ export const TutorChatInput = ({
               type="button"
               size="icon"
               variant="ghost"
-              className="absolute right-12 bottom-[7px] text-muted-foreground hover:text-foreground"
+              className="absolute right-12 bottom-1.5 text-muted-foreground hover:text-foreground"
               disabled={isLoading}
             >
               <Smile className="h-5 w-5" />
@@ -138,7 +137,7 @@ export const TutorChatInput = ({
             size="icon"
             disabled={isLoading || !message.trim()}
             className={cn(
-              "absolute right-1 bottom-[7px] rounded-full h-8 w-8",
+              "absolute right-1 bottom-1 rounded-full h-8 w-8",
               isPremium ? "bg-amber-500 hover:bg-amber-600" : ""
             )}
             aria-label="Send message"
