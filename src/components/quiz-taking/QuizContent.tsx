@@ -12,6 +12,7 @@ import { QuizSubmitButton } from "./QuizSubmitButton";
 import { QuizHeader } from "./QuizHeader";
 import { QuizExitDialog } from "./QuizExitDialog";
 import { QuizTimer } from "./QuizTimer";
+import { QuizDisclaimerText } from "@/components/quiz-generation/QuizDisclaimer";
 
 interface QuizContentProps {
   quizId: string;
@@ -181,6 +182,11 @@ const QuizContent: React.FC<QuizContentProps> = ({
               onSubmit={handleSubmitQuiz}
               isLastQuestion={isLastQuestion}
             />
+          </div>
+          
+          {/* Add the disclaimer at the bottom of the card */}
+          <div className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <QuizDisclaimerText />
           </div>
         </Card>
       </div>

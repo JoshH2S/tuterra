@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -10,6 +11,7 @@ import { QuizzesEmptyState } from "@/components/quizzes/QuizzesEmptyState";
 import { RetakeConfirmDialog } from "@/components/quiz-taking/RetakeConfirmDialog";
 import { Quiz, QuizzesByCourse, ProcessedCourse, ProcessedQuiz } from "@/types/quiz-display";
 import { Plus } from "lucide-react";
+import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
 
 export default function Quizzes() {
   const [quizzesByCourse, setQuizzesByCourse] = useState<QuizzesByCourse>({});
@@ -230,6 +232,11 @@ export default function Quizzes() {
           ))}
         </div>
       )}
+
+      {/* Add disclaimer at the bottom of the page */}
+      <div className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-800">
+        <QuizDisclaimer />
+      </div>
 
       {confirmRetakeQuiz && (
         <RetakeConfirmDialog

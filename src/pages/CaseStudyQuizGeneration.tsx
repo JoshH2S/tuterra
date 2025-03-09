@@ -20,6 +20,8 @@ import { AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
+import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
 
 const CaseStudyQuizGeneration = () => {
   const [step, setStep] = useState(1);
@@ -27,12 +29,13 @@ const CaseStudyQuizGeneration = () => {
   const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [difficulty, setDifficulty] = useState<QuestionDifficulty>("high_school");
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   
   const { 
     isGenerating, 
     quizQuestions, 
     newsSources, 
-    quizId, // Make sure we're using the quizId from useGenerateQuiz
+    quizId,
     error,
     generateQuiz 
   } = useGenerateQuiz();
@@ -76,6 +79,10 @@ const CaseStudyQuizGeneration = () => {
     if (step === 1) return !!selectedCourseId && !!title.trim();
     if (step === 2) return !!topics[0].description;
     return true;
+  };
+
+  const handleGenerateClick = () => {
+    setShowGenerateDialog(true);
   };
 
   const handleGenerate = async () => {
@@ -172,8 +179,8 @@ const CaseStudyQuizGeneration = () => {
                   questions={quizQuestions}
                   isGenerating={isGenerating}
                   error={error}
-                  onGenerate={handleGenerate}
-                  quizId={quizId} // Pass the quizId to the component
+                  onGenerate={handleGenerateClick}
+                  quizId={quizId}
                 />
               </StepContainer>
             )}
@@ -187,10 +194,22 @@ const CaseStudyQuizGeneration = () => {
             onPrevious={handlePreviousStep}
             isNextDisabled={!canProceedToNextStep()}
             isGenerating={isGenerating}
-            onGenerate={step === 4 ? handleGenerate : undefined}
+            onGenerate={step === 4 ? handleGenerateClick : undefined}
           />
+          
+          {/* Add disclaimer at the bottom of the page */}
+          <div className="mt-8">
+            <QuizDisclaimer />
+          </div>
         </div>
       </main>
+      
+      {/* Generate Quiz Confirmation Dialog */}
+      <GenerateQuizDialog
+        open={showGenerateDialog}
+        onOpenChange={setShowGenerateDialog}
+        onConfirm={handleGenerate}
+      />
     </div>
   );
 };

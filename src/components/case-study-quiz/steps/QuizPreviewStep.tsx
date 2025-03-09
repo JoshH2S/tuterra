@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { StepHeader } from "@/components/quiz-generation/StepHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { MouseEventHandler } from "react";
+import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
+import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
 
 interface QuizPreviewStepProps {
   title: string;
@@ -38,6 +41,9 @@ export const QuizPreviewStep = ({
   // Use the quiz publishing hook
   const { handlePublish, isPublishing } = useQuizPublishing();
 
+  // Add state for the generate dialog
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+
   // Create a wrapper function for the publish button
   const onPublish: MouseEventHandler<HTMLButtonElement> = () => {
     console.log("Publishing with quiz ID:", quizId);
@@ -50,6 +56,11 @@ export const QuizPreviewStep = ({
         variant: "destructive",
       });
     }
+  };
+
+  // Add a handler for the generate button that shows dialog first
+  const handleGenerateClick = () => {
+    setShowGenerateDialog(true);
   };
 
   return (
@@ -113,6 +124,9 @@ export const QuizPreviewStep = ({
                   Publishing will make this quiz available for students to take
                 </p>
               </div>
+              
+              {/* Add disclaimer footer */}
+              <QuizDisclaimer />
             </CardContent>
           </Card>
         </div>
@@ -125,7 +139,7 @@ export const QuizPreviewStep = ({
               description="Click generate to create your case study quiz based on current news stories"
               action={
                 <Button
-                  onClick={onGenerate}
+                  onClick={handleGenerateClick}
                   disabled={isGenerating}
                   size="lg"
                   className="mt-2 w-full sm:w-auto"
@@ -144,9 +158,17 @@ export const QuizPreviewStep = ({
                 </Button>
               }
             />
+            <QuizDisclaimer />
           </CardContent>
         </Card>
       )}
+
+      {/* Generate Quiz Confirmation Dialog */}
+      <GenerateQuizDialog
+        open={showGenerateDialog}
+        onOpenChange={setShowGenerateDialog}
+        onConfirm={onGenerate}
+      />
     </div>
   );
 };
