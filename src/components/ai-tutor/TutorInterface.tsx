@@ -4,7 +4,7 @@ import { LearningPathPanel } from "./LearningPathPanel";
 import { TutorChat } from "@/components/tutor/TutorChat";
 import { TutorHeader } from "./TutorHeader";
 import { useIsMobile, useTouchDevice } from "@/hooks/use-mobile";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { SubscriptionBadge } from "./SubscriptionBadge";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,14 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
     setShowSidebar(prev => !prev);
   };
 
+  // Close sidebar when clicking a step on mobile
+  const handleStepClick = (stepIndex: number) => {
+    setActiveStep(stepIndex);
+    if (isMobile) {
+      setShowSidebar(false);
+    }
+  };
+
   // Fetch conversation data if available
   useEffect(() => {
     const fetchConversationData = async () => {
@@ -76,22 +84,32 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
           }
           
           // Handle learning_path - ensure it's an array before setting state
-          if (data.learning_path && Array.isArray(data.learning_path) && data.learning_path.length > 0) {
-            // Map each JSON object to the LearningStep type to ensure it has the right properties
-            const typedLearningSteps = data.learning_path.map((step: any) => ({
-              title: typeof step.title === 'string' ? step.title : 'Unknown step',
-              completed: typeof step.completed === 'boolean' ? step.completed : false
-            }));
-            setLearningSteps(typedLearningSteps);
+          if (data.learning_path && Array.isArray(data.learning_path)) {
+            // Parse each item and ensure it has the proper structure
+            const validSteps = data.learning_path
+              .filter((step): step is {title: string, completed: boolean} => 
+                typeof step === 'object' && 
+                step !== null && 
+                'title' in step && 
+                'completed' in step &&
+                typeof step.title === 'string' &&
+                typeof step.completed === 'boolean'
+              );
+            
+            if (validSteps.length > 0) {
+              setLearningSteps(validSteps);
+            }
           }
           
           // Handle smart_notes - ensure it's an array before setting state
-          if (data.smart_notes && Array.isArray(data.smart_notes) && data.smart_notes.length > 0) {
+          if (data.smart_notes && Array.isArray(data.smart_notes)) {
             // Ensure we only have strings in our smart notes array
-            const typedSmartNotes = data.smart_notes
-              .filter((note): note is string => typeof note === 'string')
-              .map(note => note);
-            setSmartNotes(typedSmartNotes);
+            const validNotes = data.smart_notes
+              .filter((note): note is string => typeof note === 'string');
+            
+            if (validNotes.length > 0) {
+              setSmartNotes(validNotes);
+            }
           }
         }
       } catch (error) {
@@ -102,11 +120,6 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
     fetchConversationData();
   }, [user]);
 
-  const sidebarAnimation = {
-    hidden: { x: isMobile ? -280 : 0, opacity: isMobile ? 0 : 1 },
-    visible: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } }
-  };
-
   return (
     <div className="rounded-lg overflow-hidden border border-border bg-background">
       <TutorHeader 
@@ -114,34 +127,48 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         totalSteps={learningSteps.length}
         title={currentTopic || "AI Study Assistant"}
         toggleSidebar={toggleSidebar}
-        showSidebarToggle={isMobile}
+        showSidebarToggle={true}
       >
         <SubscriptionBadge tier={subscription.tier} />
       </TutorHeader>
 
-      <div className="flex flex-col md:flex-row min-h-[600px] max-h-[80vh]">
-        {/* Learning path sidebar - conditionally shown based on mobile and subscription */}
-        {showSidebar && (
+      <div className="flex flex-col md:flex-row relative h-[calc(100dvh-16rem)] md:h-[600px] md:max-h-[80vh]">
+        {/* Learning path sidebar with proper mobile layout */}
+        <AnimatePresence mode="wait">
+          {showSidebar && (
+            <motion.div 
+              className={`${isMobile ? 'absolute z-20 h-full w-[85%] shadow-xl' : 'md:w-64 border-r'} bg-background`}
+              initial={{ x: isMobile ? '-100%' : 0, opacity: isMobile ? 0 : 1 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: isMobile ? '-100%' : 0, opacity: isMobile ? 0 : 1 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+            >
+              <LearningPathPanel 
+                activeStep={activeStep} 
+                setActiveStep={handleStepClick}
+                subscriptionTier={subscription.tier}
+                steps={learningSteps}
+                onClose={isMobile ? () => setShowSidebar(false) : undefined}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Overlay to close sidebar on mobile */}
+        {isMobile && showSidebar && (
           <motion.div 
-            className={`${isMobile ? 'absolute z-10 h-[calc(100%-4rem)] w-[80%] shadow-xl' : 'w-64 border-r'} bg-background`}
-            initial="hidden"
-            animate="visible"
-            variants={sidebarAnimation}
-          >
-            <LearningPathPanel 
-              activeStep={activeStep} 
-              setActiveStep={setActiveStep}
-              subscriptionTier={subscription.tier}
-              steps={learningSteps}
-              onClose={isMobile ? () => setShowSidebar(false) : undefined}
-            />
-          </motion.div>
+            className="absolute inset-0 bg-black/40 z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowSidebar(false)}
+          />
         )}
 
         {/* Main content area with responsive layout for subscription tiers */}
-        <div className="flex-grow grid grid-cols-12 gap-0 md:gap-4 p-0 md:p-4 max-h-[calc(100vh-8rem)] md:max-h-[calc(80vh-2rem)]">
+        <div className="flex-grow grid grid-cols-12 gap-0 md:gap-4 p-0 md:p-4 h-full overflow-hidden">
           {/* Larger chat area for free tier, smaller for paid tiers */}
-          <div className={`${subscription.tier === 'free' ? 'col-span-12' : 'col-span-12 lg:col-span-8'} max-h-full`}>
+          <div className={`${subscription.tier === 'free' ? 'col-span-12' : 'col-span-12 lg:col-span-8'} h-full`}>
             <TutorChat 
               onSendMessage={handleSendMessage} 
               subscription={subscription}
@@ -152,7 +179,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
 
           {/* Smart Notes Panel - only for premium tier */}
           {subscription.tier === 'premium' && (
-            <div className="hidden lg:block lg:col-span-4 max-h-full">
+            <div className="hidden lg:block lg:col-span-4 h-full">
               <SmartNotesPanel notes={smartNotes} />
             </div>
           )}

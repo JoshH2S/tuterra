@@ -103,7 +103,7 @@ export const TutorChat = ({
         isTyping={isTyping}
       />
       
-      <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 pb-4 safe-area-bottom' : ''}`}>
+      <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 pb-4 pt-3 safe-area-bottom' : ''}`}>
         <TutorChatInput
           message={message}
           isLoading={isLoading}

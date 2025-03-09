@@ -106,7 +106,7 @@ export const TutorChatInput = ({
               isPremium 
                 ? "focus-visible:ring-amber-300" 
                 : "",
-              "rounded-full px-4"
+              "rounded-full px-4 flex items-center"
             )}
             disabled={isLoading}
             onKeyDown={(e) => {
@@ -118,6 +118,7 @@ export const TutorChatInput = ({
                 }
               }
             }}
+            style={{ paddingTop: '10px', paddingBottom: '10px' }}
           />
           
           {(isPremium || isPro) && (
@@ -137,7 +138,7 @@ export const TutorChatInput = ({
             size="icon"
             disabled={isLoading || !message.trim()}
             className={cn(
-              "absolute right-1 bottom-1 rounded-full h-8 w-8",
+              "absolute right-1 bottom-1.5 rounded-full h-8 w-8",
               isPremium ? "bg-amber-500 hover:bg-amber-600" : ""
             )}
             aria-label="Send message"
