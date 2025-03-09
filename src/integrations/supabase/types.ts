@@ -1130,6 +1130,7 @@ export type Database = {
           id: string
           level: string | null
           score: number
+          skill_scores: Json | null
           tier: string | null
           time_spent: number | null
           user_id: string
@@ -1143,6 +1144,7 @@ export type Database = {
           id?: string
           level?: string | null
           score: number
+          skill_scores?: Json | null
           tier?: string | null
           time_spent?: number | null
           user_id: string
@@ -1156,6 +1158,7 @@ export type Database = {
           id?: string
           level?: string | null
           score?: number
+          skill_scores?: Json | null
           tier?: string | null
           time_spent?: number | null
           user_id?: string

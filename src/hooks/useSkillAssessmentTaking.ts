@@ -259,8 +259,8 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined) => {
           score,
           answers: answers as Json,
           detailed_results: detailedResults as Json,
-          time_spent: totalTime - timeRemaining,
           skill_scores: skillScores as Json,
+          time_spent: totalTime - timeRemaining,
           level: assessment.level || "intermediate",
           tier: assessment.tier || userTier,
           completed_at: new Date().toISOString()
