@@ -25,7 +25,6 @@ interface QuestionDisplayProps {
   currentAnswer: string | string[] | undefined;
   onAnswerChange: (value: string | string[]) => void;
   progress: number;
-  isMobile?: boolean;
 }
 
 export const QuestionDisplay = ({
@@ -34,51 +33,32 @@ export const QuestionDisplay = ({
   totalQuestions,
   currentAnswer,
   onAnswerChange,
-  progress,
-  isMobile = false
+  progress
 }: QuestionDisplayProps) => {
   return (
-    <div className="space-y-6">
-      {/* Mobile progress bar */}
-      {isMobile && (
-        <div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div 
-              className="bg-primary h-2 rounded-full" 
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-            <span>Question {questionIndex + 1} of {totalQuestions}</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
+    <Card className="transition-all">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <span className="hidden md:inline">Question {questionIndex + 1} of {totalQuestions}</span>
+          <span className="md:hidden">Question {questionIndex + 1}</span>
+          {question.skill && (
+            <span className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
+              {question.skill}
+            </span>
+          )}
+        </CardTitle>
+        <CardDescription>
+          Select the best answer for this question
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-lg font-medium mb-4">
+          {question.question}
         </div>
-      )}
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="md:hidden">Question {questionIndex + 1}</span>
-            <span className="hidden md:inline">Question {questionIndex + 1} of {totalQuestions}</span>
-            {question.skill && (
-              <span className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
-                {question.skill}
-              </span>
-            )}
-          </CardTitle>
-          <CardDescription>
-            Select the best answer for this question
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-lg font-medium mb-4">
-            {question.question}
-          </div>
-
-          {renderQuestionOptions(question, currentAnswer, onAnswerChange)}
-        </CardContent>
-      </Card>
-    </div>
+        {renderQuestionOptions(question, currentAnswer, onAnswerChange)}
+      </CardContent>
+    </Card>
   );
 };
 
@@ -95,11 +75,11 @@ function renderQuestionOptions(
         className="space-y-3"
       >
         {Object.entries(question.options).map(([key, value]) => (
-          <div key={key} className="flex items-center space-x-2 border p-3 rounded-md">
+          <div key={key} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-muted/50 transition-colors touch-manipulation">
             <RadioGroupItem value={key} id={`option-${key}`} />
             <label 
               htmlFor={`option-${key}`}
-              className="flex-1 cursor-pointer"
+              className="flex-1 cursor-pointer py-1 touch-manipulation"
             >
               {value}
             </label>
@@ -116,7 +96,7 @@ function renderQuestionOptions(
           const isChecked = currentAnswers.includes(key);
           
           return (
-            <div key={key} className="flex items-start space-x-2 border p-3 rounded-md">
+            <div key={key} className="flex items-start space-x-2 border p-3 rounded-md hover:bg-muted/50 transition-colors touch-manipulation">
               <Checkbox 
                 id={`option-${key}`}
                 checked={isChecked}
@@ -130,7 +110,7 @@ function renderQuestionOptions(
               />
               <label
                 htmlFor={`option-${key}`}
-                className="flex-1 cursor-pointer"
+                className="flex-1 cursor-pointer py-1 touch-manipulation"
               >
                 {value}
               </label>

@@ -1,5 +1,6 @@
 
 import { useMemo } from "react";
+import { Clock } from "lucide-react";
 
 interface AssessmentHeaderProps {
   title: string;
@@ -19,10 +20,11 @@ export const AssessmentHeader = ({
   }, [timeRemaining]);
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
+      <h1 className="text-xl md:text-2xl font-bold truncate">{title}</h1>
+      <div className="flex flex-row items-center justify-between md:justify-end gap-4">
         <div className="flex items-center text-muted-foreground">
+          <Clock className="mr-1.5 h-4 w-4" />
           <span className="font-medium">{formatTime}</span>
         </div>
         {level && (

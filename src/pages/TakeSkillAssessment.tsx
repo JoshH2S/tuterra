@@ -9,6 +9,8 @@ import { AssessmentHeader } from "@/components/skill-assessment/AssessmentHeader
 import { QuestionDisplay } from "@/components/skill-assessment/QuestionDisplay";
 import { SubmissionControls } from "@/components/skill-assessment/SubmissionControls";
 import { useSkillAssessmentTaking } from "@/hooks/useSkillAssessmentTaking";
+import { MobileProgressBar } from "@/components/skill-assessment/MobileProgressBar";
+import { useSwipeable } from "react-swipeable";
 
 export default function TakeSkillAssessment() {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +37,14 @@ export default function TakeSkillAssessment() {
     handleSubmit
   } = useSkillAssessmentTaking(id);
 
+  // Setup swipe handlers for mobile
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => !isLastQuestion && goToNextQuestion(),
+    onSwipedRight: () => currentQuestionIndex > 0 && goToPreviousQuestion(),
+    preventDefaultTouchmoveEvent: true,
+    trackMouse: false
+  });
+
   if (loading) {
     return (
       <div className="container py-8 flex justify-center items-center min-h-[60vh]">
@@ -60,12 +70,21 @@ export default function TakeSkillAssessment() {
   }
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container py-4 md:py-6 space-y-4 md:space-y-6">
       <AssessmentHeader 
         title={assessment.title}
         timeRemaining={timeRemaining}
         level={assessment.level}
       />
+
+      {/* Mobile progress bar - visible only on mobile */}
+      <div className="md:hidden">
+        <MobileProgressBar 
+          progress={progress} 
+          currentQuestion={currentQuestionIndex + 1}
+          totalQuestions={totalQuestions}
+        />
+      </div>
 
       {error && (
         <Alert variant="destructive">
@@ -77,7 +96,7 @@ export default function TakeSkillAssessment() {
       )}
 
       <div className="md:grid md:grid-cols-4 gap-6">
-        {/* Left sidebar with progress */}
+        {/* Left sidebar with progress - desktop only */}
         <div className="hidden md:block">
           <Card>
             <CardContent className="p-4">
@@ -94,7 +113,10 @@ export default function TakeSkillAssessment() {
         </div>
         
         {/* Main content */}
-        <div className="md:col-span-3 space-y-6">
+        <div 
+          className="md:col-span-3 space-y-4 md:space-y-6 touch-manipulation"
+          {...swipeHandlers}
+        >
           {currentQuestion && (
             <>
               <QuestionDisplay
@@ -104,7 +126,6 @@ export default function TakeSkillAssessment() {
                 currentAnswer={answers[currentQuestionIndex]}
                 onAnswerChange={handleAnswerChange}
                 progress={progress}
-                isMobile={true}
               />
               
               <SubmissionControls
