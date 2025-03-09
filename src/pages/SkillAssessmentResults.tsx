@@ -83,10 +83,12 @@ export default function SkillAssessmentResults() {
 
         if (resultError) throw resultError;
         
-        // Cast the JSON detailed_results to the correct type
+        // Cast the JSON data to the correct types
         const typedResult: AssessmentResult = {
           ...resultData,
-          detailed_results: resultData.detailed_results as AssessmentResult['detailed_results']
+          detailed_results: resultData.detailed_results as AssessmentResult['detailed_results'],
+          // Fix for the type mismatch issue with skill_scores
+          skill_scores: resultData.skill_scores as unknown as Record<string, { correct: number; total: number; score: number }>,
         };
         
         setResult(typedResult);
