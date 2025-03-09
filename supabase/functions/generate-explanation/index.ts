@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { question, userAnswer, correctAnswer, isCorrect, topic } = await req.json();
+    const { question, userAnswer, correctAnswer, isCorrect, topic, tier = 'free' } = await req.json();
 
     if (!question || !userAnswer || !correctAnswer) {
       return new Response(
@@ -24,11 +24,15 @@ serve(async (req) => {
       );
     }
 
-    console.log("Generating explanation for:", { question, userAnswer, correctAnswer, isCorrect, topic });
+    console.log("Generating explanation for:", { question, userAnswer, correctAnswer, isCorrect, topic, tier });
 
-    // Create a prompt based on the parameters
-    const prompt = `
-      As an educational AI assistant, provide a brief, encouraging explanation for a quiz answer.
+    // Determine model and tokens based on tier
+    const model = tier === 'premium' ? 'gpt-4o' : tier === 'pro' ? 'gpt-4o-mini' : 'gpt-3.5-turbo';
+    const maxTokens = tier === 'premium' ? 200 : tier === 'pro' ? 150 : 100;
+
+    // Create a prompt based on the parameters and tier
+    const promptBase = `
+      As an educational AI assistant, provide a ${tier === 'free' ? 'brief' : 'detailed'} explanation for a quiz answer.
       
       Context:
       - Question: ${question}
@@ -36,15 +40,40 @@ serve(async (req) => {
       - Correct Answer: ${correctAnswer}
       - Topic: ${topic || "General Knowledge"}
       - Result: ${isCorrect ? 'Correct' : 'Incorrect'}
-
-      Provide a 2-3 sentence explanation that:
-      1. Acknowledges the student's answer
-      2. Explains why it's correct/incorrect
-      3. Reinforces the key concept from ${topic || "the subject"}
-      4. Maintains an encouraging tone
-
-      Keep the explanation concise and educational.
     `;
+
+    const tierSpecificPrompt = tier === 'premium' 
+      ? `
+        Provide a comprehensive explanation that:
+        1. Acknowledges the student's answer with specific feedback
+        2. Explains in depth why it's correct/incorrect with examples
+        3. Provides additional context and connects to broader concepts
+        4. Suggests further learning resources or related topics
+        5. Uses an encouraging and supportive tone
+        
+        Make this explanation educational, insightful, and personalized.
+      `
+      : tier === 'pro'
+      ? `
+        Provide a detailed explanation that:
+        1. Acknowledges the student's answer
+        2. Explains thoroughly why it's correct/incorrect
+        3. Reinforces key concepts and provides additional context
+        4. Maintains an encouraging tone
+
+        Keep the explanation educational and supportive.
+      `
+      : `
+        Provide a 2-3 sentence explanation that:
+        1. Acknowledges the student's answer
+        2. Explains why it's correct/incorrect
+        3. Reinforces the key concept
+        4. Maintains an encouraging tone
+
+        Keep the explanation concise and educational.
+      `;
+
+    const prompt = promptBase + tierSpecificPrompt;
 
     // Call OpenAI API
     const openAIResponse = await fetch(OPENAI_API_URL, {
@@ -54,7 +83,7 @@ serve(async (req) => {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: model,
         messages: [
           {
             role: "system",
@@ -66,7 +95,7 @@ serve(async (req) => {
           },
         ],
         temperature: 0.3,
-        max_tokens: 150,
+        max_tokens: maxTokens,
       }),
     });
 

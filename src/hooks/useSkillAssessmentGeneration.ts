@@ -47,8 +47,10 @@ export const useSkillAssessmentGeneration = () => {
   // Track feature interaction (analytics)
   const trackFeatureInteraction = async (feature: string, action: string) => {
     try {
+      if (!user) return;
+      
       await supabase.from('user_feature_interactions').insert({
-        user_id: user?.id,
+        user_id: user.id,
         feature,
         action,
         timestamp: new Date().toISOString()
@@ -87,8 +89,8 @@ export const useSkillAssessmentGeneration = () => {
       
       // Check limits based on tier
       if (tier === 'premium') return true; // Unlimited
-      if (tier === 'pro' && count < 20) return true;
-      if (tier === 'free' && count < 3) return true;
+      if (tier === 'pro' && (count || 0) < 20) return true;
+      if (tier === 'free' && (count || 0) < 3) return true;
       
       return false;
     } catch (error) {
@@ -137,7 +139,7 @@ export const useSkillAssessmentGeneration = () => {
 
       setProgress(30);
 
-      if (cachedAssessment) {
+      if (cachedAssessment && cachedAssessment.assessment_data) {
         // Use cached assessment
         await trackFeatureInteraction('skill-assessment-generation', 'cache-hit');
         setProgress(100);
@@ -173,7 +175,7 @@ export const useSkillAssessmentGeneration = () => {
       setProgress(80);
 
       // Cache the result for future use
-      if (!response.error) {
+      if (!response.error && response.data?.assessment) {
         // Calculate cache duration based on tier
         const cacheDuration = tier === 'free' ? 30 : 7; // days
         const cachedUntil = new Date();

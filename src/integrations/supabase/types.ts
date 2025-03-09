@@ -39,6 +39,36 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_analytics: {
+        Row: {
+          created_at: string
+          generation_time: number | null
+          id: string
+          model_used: string | null
+          token_usage: number | null
+          user_id: string
+          user_tier: string
+        }
+        Insert: {
+          created_at?: string
+          generation_time?: number | null
+          id?: string
+          model_used?: string | null
+          token_usage?: number | null
+          user_id: string
+          user_tier: string
+        }
+        Update: {
+          created_at?: string
+          generation_time?: number | null
+          id?: string
+          model_used?: string | null
+          token_usage?: number | null
+          user_id?: string
+          user_tier?: string
+        }
+        Relationships: []
+      }
       assignment_submissions: {
         Row: {
           assignment_id: string
@@ -69,6 +99,36 @@ export type Database = {
           student_id?: string
           submission_url?: string | null
           submitted_at?: string
+        }
+        Relationships: []
+      }
+      cached_assessments: {
+        Row: {
+          assessment_data: Json
+          cache_key: string
+          cached_until: string
+          created_at: string
+          generation_time: number | null
+          id: string
+          model_used: string | null
+        }
+        Insert: {
+          assessment_data: Json
+          cache_key: string
+          cached_until: string
+          created_at?: string
+          generation_time?: number | null
+          id?: string
+          model_used?: string | null
+        }
+        Update: {
+          assessment_data?: Json
+          cache_key?: string
+          cached_until?: string
+          created_at?: string
+          generation_time?: number | null
+          id?: string
+          model_used?: string | null
         }
         Relationships: []
       }
@@ -738,6 +798,7 @@ export type Database = {
           id: string
           last_name: string
           school: string
+          subscription_tier: string
           updated_at: string
           user_type: Database["public"]["Enums"]["user_type"]
         }
@@ -749,6 +810,7 @@ export type Database = {
           id: string
           last_name: string
           school: string
+          subscription_tier?: string
           updated_at?: string
           user_type: Database["public"]["Enums"]["user_type"]
         }
@@ -760,6 +822,7 @@ export type Database = {
           id?: string
           last_name?: string
           school?: string
+          subscription_tier?: string
           updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"]
         }
@@ -1500,6 +1563,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_feature_interactions: {
+        Row: {
+          action: string
+          feature: string
+          id: string
+          metadata: Json | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          feature: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          feature?: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_news_preferences: {
         Row: {
