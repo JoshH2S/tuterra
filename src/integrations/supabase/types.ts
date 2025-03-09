@@ -1124,6 +1124,7 @@ export type Database = {
         Row: {
           answers: Json | null
           assessment_id: string
+          completed_at: string | null
           created_at: string
           detailed_results: Json | null
           id: string
@@ -1134,6 +1135,7 @@ export type Database = {
         Insert: {
           answers?: Json | null
           assessment_id: string
+          completed_at?: string | null
           created_at?: string
           detailed_results?: Json | null
           id?: string
@@ -1144,6 +1146,7 @@ export type Database = {
         Update: {
           answers?: Json | null
           assessment_id?: string
+          completed_at?: string | null
           created_at?: string
           detailed_results?: Json | null
           id?: string
