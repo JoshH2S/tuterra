@@ -2,13 +2,28 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
 import { TextShimmer } from "@/components/ui/text-shimmer";
+import { Subscription } from "@/hooks/useSubscription";
+import { cn } from "@/lib/utils";
 
 interface TutorMessageProps {
   content: string;
   role: 'user' | 'assistant';
+  subscription?: Subscription;
 }
 
-export const TutorMessage = ({ content, role }: TutorMessageProps) => {
+export const TutorMessage = ({ 
+  content, 
+  role,
+  subscription = { 
+    tier: "free", 
+    features: { 
+      smartNotes: false, 
+      advancedModel: false, 
+      learningPath: false, 
+      streaming: false 
+    } 
+  }
+}: TutorMessageProps) => {
   const isAssistant = role === 'assistant';
   const isMobile = useIsMobile();
   
@@ -20,15 +35,18 @@ export const TutorMessage = ({ content, role }: TutorMessageProps) => {
       transition={{ duration: 0.3 }}
     >
       <div
-        className={`max-w-[85%] p-3 rounded-lg ${
+        className={cn(
+          "max-w-[85%] p-3 rounded-lg",
           isAssistant
-            ? 'bg-gray-100 text-gray-900'
-            : 'bg-primary text-primary-foreground'
-        } ${isMobile ? 'text-sm p-2.5' : ''}`}
+            ? "bg-gray-100 text-gray-900"
+            : "bg-primary text-primary-foreground",
+          subscription.tier !== "free" && "prose prose-sm max-w-none",
+          isMobile ? "text-sm p-2.5" : ""
+        )}
       >
         {isAssistant ? (
           <TextShimmer
-            duration={1.5}
+            duration={subscription.tier === "premium" ? 1 : 1.5}
             className="whitespace-pre-wrap font-normal [--base-color:#1a1a1a] [--base-gradient-color:#757575] dark:[--base-color:#e0e0e0] dark:[--base-gradient-color:#ffffff]"
           >
             {content}

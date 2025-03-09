@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import { TutorMessage } from "./TutorMessage";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Subscription } from "@/hooks/useSubscription";
 
 interface TutorChatMessagesProps {
   messages: Array<{
@@ -9,9 +10,21 @@ interface TutorChatMessagesProps {
     content: string;
     role: 'user' | 'assistant';
   }>;
+  subscription?: Subscription;
 }
 
-export const TutorChatMessages = ({ messages }: TutorChatMessagesProps) => {
+export const TutorChatMessages = ({ 
+  messages,
+  subscription = { 
+    tier: "free", 
+    features: { 
+      smartNotes: false, 
+      advancedModel: false, 
+      learningPath: false, 
+      streaming: false 
+    } 
+  }
+}: TutorChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
@@ -33,6 +46,13 @@ export const TutorChatMessages = ({ messages }: TutorChatMessagesProps) => {
               Ask me anything about your studies. I can help you understand concepts, 
               create study guides, or answer any academic questions.
             </p>
+            {subscription.tier !== "free" && (
+              <p className="mt-2 text-xs">
+                {subscription.tier === "premium" ? 
+                  "Premium features activated: Advanced AI model, Smart Notes, and Learning Path" : 
+                  "Pro features activated: Advanced AI model and Learning Path"}
+              </p>
+            )}
           </div>
         </div>
       ) : (
@@ -41,6 +61,7 @@ export const TutorChatMessages = ({ messages }: TutorChatMessagesProps) => {
             key={msg.id}
             content={msg.content}
             role={msg.role}
+            subscription={subscription}
           />
         ))
       )}

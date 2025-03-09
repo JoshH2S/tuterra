@@ -1,20 +1,22 @@
 
 import { Button } from "@/components/ui/button";
-import { Check, ChevronRight, Lock, X } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { CheckCircle2, Circle, Lock, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { SubscriptionTier } from "@/hooks/useSubscription";
 
 interface Step {
-  id: number;
   title: string;
-  description: string;
-  isLocked: boolean;
-  isPremiumOnly: boolean;
+  completed: boolean;
 }
 
 interface LearningPathPanelProps {
   activeStep: number;
   setActiveStep: (step: number) => void;
-  subscriptionTier: "free" | "pro" | "premium";
+  subscriptionTier: SubscriptionTier;
+  steps: Step[];
   onClose?: () => void;
 }
 
@@ -22,149 +24,76 @@ export const LearningPathPanel = ({
   activeStep,
   setActiveStep,
   subscriptionTier,
+  steps,
   onClose
 }: LearningPathPanelProps) => {
-  // Sample learning path steps
-  const steps: Step[] = [
-    {
-      id: 0,
-      title: "Topic Introduction",
-      description: "Get familiar with the subject",
-      isLocked: false,
-      isPremiumOnly: false
-    },
-    {
-      id: 1,
-      title: "Key Concepts",
-      description: "Understand fundamental ideas",
-      isLocked: false,
-      isPremiumOnly: false
-    },
-    {
-      id: 2,
-      title: "Interactive Examples",
-      description: "Learn through examples",
-      isLocked: activeStep < 1,
-      isPremiumOnly: false
-    },
-    {
-      id: 3,
-      title: "Practice Problems",
-      description: "Apply your knowledge",
-      isLocked: activeStep < 2,
-      isPremiumOnly: false
-    },
-    {
-      id: 4,
-      title: "Advanced Techniques",
-      description: "Master complex approaches",
-      isLocked: activeStep < 3,
-      isPremiumOnly: true
-    }
-  ];
-
-  const handleStepClick = (stepId: number, isLocked: boolean, isPremiumOnly: boolean) => {
-    if (isLocked) return;
-    if (isPremiumOnly && subscriptionTier === "free") return;
-    setActiveStep(stepId);
-    if (onClose) onClose();
-  };
+  const progress = Math.round(((activeStep + 1) / steps.length) * 100);
+  const isPaid = subscriptionTier !== "free";
 
   return (
-    <div className="h-full flex flex-col bg-muted/10 pt-2">
-      {onClose && (
-        <div className="px-4 mb-2 flex justify-end">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onClose}
-            className="h-8 w-8 touch-manipulation"
-            aria-label="Close sidebar"
-          >
-            <X className="h-4 w-4" />
+    <div className="p-4 h-full overflow-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-lg">Learning Path</h3>
+        {onClose && (
+          <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden">
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+
+      <div className="mb-4">
+        <Progress value={progress} className="h-2" />
+        <p className="text-xs text-muted-foreground mt-1">
+          {progress}% Complete
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {steps.map((step, index) => {
+          const isActive = index === activeStep;
+          const isCompleted = index < activeStep;
+          const isLocked = !isPaid && index > activeStep + 1;
+
+          return (
+            <motion.div
+              key={index}
+              className={cn(
+                "p-3 rounded-lg border",
+                isActive ? "bg-primary/5 border-primary/30" : "bg-background",
+                isLocked && "opacity-60"
+              )}
+              whileHover={!isLocked ? { scale: 1.02 } : {}}
+              onClick={() => {
+                if (!isLocked && isPaid) {
+                  setActiveStep(index);
+                }
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">
+                  {isCompleted ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  ) : isLocked ? (
+                    <Lock className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <Circle className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground")} />
+                  )}
+                </div>
+                <span className={cn("text-sm", isActive && "font-medium")}>{step.title}</span>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {!isPaid && (
+        <div className="mt-6 p-3 bg-muted rounded-lg text-xs text-center">
+          <p className="mb-2">Upgrade to unlock full learning path access</p>
+          <Button size="sm" variant="default" className="w-full">
+            Upgrade Now
           </Button>
         </div>
       )}
-      
-      <div className="px-4 pb-3">
-        <h2 className="text-sm font-semibold">Learning Path</h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Progress through these steps to master the topic
-        </p>
-      </div>
-      
-      <div className="flex-grow overflow-y-auto">
-        <div className="space-y-1 px-2 pb-4">
-          {steps.map((step) => {
-            const isActive = step.id === activeStep;
-            const isCompleted = step.id < activeStep;
-            const isDisabled = step.isLocked || (step.isPremiumOnly && subscriptionTier === "free");
-            
-            return (
-              <motion.div 
-                key={step.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2, delay: step.id * 0.05 }}
-                className="relative"
-              >
-                {step.id > 0 && (
-                  <div 
-                    className={`absolute left-[18px] top-[-8px] w-0.5 h-4 ${
-                      isCompleted ? "bg-primary" : "bg-muted-foreground/30"
-                    }`}
-                  />
-                )}
-                
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={`w-full justify-start text-left px-3 py-2 h-auto touch-manipulation ${
-                    isDisabled ? "opacity-60" : ""
-                  }`}
-                  onClick={() => handleStepClick(step.id, step.isLocked, step.isPremiumOnly)}
-                  disabled={isDisabled}
-                >
-                  <div className="flex items-center w-full">
-                    <div 
-                      className={`h-6 w-6 rounded-full flex items-center justify-center mr-3 flex-shrink-0 ${
-                        isActive ? "bg-primary text-primary-foreground" : 
-                        isCompleted ? "bg-primary/20 text-primary" : 
-                        "bg-muted-foreground/20 text-muted-foreground"
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <Check className="h-3.5 w-3.5" />
-                      ) : step.isLocked ? (
-                        <Lock className="h-3.5 w-3.5" />
-                      ) : (
-                        <span className="text-xs font-medium">{step.id + 1}</span>
-                      )}
-                    </div>
-                    
-                    <div className="flex-grow min-w-0">
-                      <div className="flex justify-between items-center">
-                        <div className="font-medium text-sm truncate">
-                          {step.title}
-                        </div>
-                        <ChevronRight className="h-4 w-4 ml-2 text-muted-foreground/70 flex-shrink-0" />
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
-                </Button>
-                
-                {step.isPremiumOnly && subscriptionTier === "free" && (
-                  <div className="absolute right-2 top-2 bg-amber-500/10 text-amber-500 text-xs font-medium px-1.5 py-0.5 rounded">
-                    Premium
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 };

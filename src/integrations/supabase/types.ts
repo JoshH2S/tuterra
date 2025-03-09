@@ -1456,6 +1456,33 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_feature_usage: {
+        Row: {
+          created_at: string | null
+          feature_name: string
+          id: string
+          last_used: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feature_name: string
+          id?: string
+          last_used?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feature_name?: string
+          id?: string
+          last_used?: string | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       temp_files: {
         Row: {
           created_at: string
@@ -1517,21 +1544,33 @@ export type Database = {
           course_id: string | null
           created_at: string
           id: string
+          learning_path: Json | null
+          progress: number | null
+          smart_notes: Json | null
           student_id: string
+          topic: string | null
           updated_at: string
         }
         Insert: {
           course_id?: string | null
           created_at?: string
           id?: string
+          learning_path?: Json | null
+          progress?: number | null
+          smart_notes?: Json | null
           student_id: string
+          topic?: string | null
           updated_at?: string
         }
         Update: {
           course_id?: string | null
           created_at?: string
           id?: string
+          learning_path?: Json | null
+          progress?: number | null
+          smart_notes?: Json | null
           student_id?: string
+          topic?: string | null
           updated_at?: string
         }
         Relationships: [

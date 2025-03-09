@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useConversation } from "./useConversation";
 import { useMessageTransform } from "./useMessageTransform";
+import { Subscription } from "./useSubscription";
 
 export const useTutorMessages = () => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -18,7 +19,11 @@ export const useTutorMessages = () => {
     }
   }, [conversationId]);
 
-  const sendMessage = async (message: string, materialPath?: string | null) => {
+  const sendMessage = async (
+    message: string, 
+    materialPath?: string | null,
+    subscription?: Subscription
+  ) => {
     if (!message.trim() || isLoading) return;
 
     setIsLoading(true);
@@ -26,12 +31,35 @@ export const useTutorMessages = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No session found');
 
+      // Add user message to UI immediately for better UX
+      const tempUserMessageId = `temp-${Date.now()}`;
+      setMessages(prev => [
+        ...prev,
+        {
+          id: tempUserMessageId,
+          content: message,
+          role: 'user'
+        }
+      ]);
+
       const response = await supabase.functions.invoke('ai-tutor', {
         body: {
           message,
           conversationId,
           studentId: session.user.id,
           materialPath,
+          subscription: subscription ? {
+            tier: subscription.tier,
+            features: subscription.features
+          } : {
+            tier: "free",
+            features: {
+              smartNotes: false,
+              advancedModel: false,
+              learningPath: false,
+              streaming: false
+            }
+          }
         },
       });
 
@@ -41,6 +69,11 @@ export const useTutorMessages = () => {
         setConversationId(response.data.conversationId);
         await fetchMessages(response.data.conversationId);
       }
+
+      // Return additional data like smart notes
+      return {
+        smartNotes: response.data.smartNotes
+      };
     } catch (error: any) {
       console.error('Error in sendMessage:', error);
       toast({

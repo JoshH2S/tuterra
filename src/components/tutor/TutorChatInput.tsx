@@ -1,9 +1,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload } from "lucide-react";
+import { Upload, Sparkles } from "lucide-react";
 import FileUpload from "@/components/FileUpload";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Subscription } from "@/hooks/useSubscription";
+import { cn } from "@/lib/utils";
 
 interface TutorChatInputProps {
   message: string;
@@ -11,6 +13,7 @@ interface TutorChatInputProps {
   onMessageChange: (message: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onFileUpload: (file: File) => Promise<void>;
+  subscription?: Subscription;
 }
 
 export const TutorChatInput = ({
@@ -19,8 +22,18 @@ export const TutorChatInput = ({
   onMessageChange,
   onSubmit,
   onFileUpload,
+  subscription = { 
+    tier: "free", 
+    features: { 
+      smartNotes: false, 
+      advancedModel: false, 
+      learningPath: false, 
+      streaming: false 
+    } 
+  }
 }: TutorChatInputProps) => {
   const isMobile = useIsMobile();
+  const isPremium = subscription.tier === "premium";
 
   const uploadButton = (
     <Button 
@@ -55,15 +68,23 @@ export const TutorChatInput = ({
           <Textarea
             value={message}
             onChange={(e) => onMessageChange(e.target.value)}
-            placeholder="Ask me anything..."
-            className={`resize-none ${isMobile ? 'h-[80px]' : 'h-[60px]'}`}
+            placeholder={isPremium ? "Ask anything with enhanced AI..." : "Ask me anything..."}
+            className={cn(
+              "resize-none",
+              isMobile ? "h-[80px]" : "h-[60px]",
+              isPremium && "border-amber-200 focus-visible:ring-amber-300"
+            )}
           />
         </div>
         <Button 
           type="submit" 
           disabled={isLoading || !message.trim()}
-          className="flex-shrink-0"
+          className={cn(
+            "flex-shrink-0",
+            isPremium && "bg-amber-500 hover:bg-amber-600"
+          )}
         >
+          {isPremium && <Sparkles className="h-4 w-4 mr-2" />}
           {isLoading ? "Sending..." : "Send"}
         </Button>
       </div>
