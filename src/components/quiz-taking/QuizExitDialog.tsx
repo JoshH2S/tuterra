@@ -28,7 +28,7 @@ export const QuizExitDialog: React.FC<QuizExitDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Exit Quiz?</DialogTitle>
           <DialogDescription>
-            Your progress will be saved so you can return later. You can resume this quiz from where you left off.
+            Warning: If you exit now, you will lose your progress. Are you sure you want to leave this quiz?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
@@ -36,12 +36,11 @@ export const QuizExitDialog: React.FC<QuizExitDialogProps> = ({
             Continue Quiz
           </Button>
           <Button 
-            variant="default" 
-            className="bg-blue-600 hover:bg-blue-700"
+            variant="destructive" 
             onClick={onConfirmExit}
           >
-            <Save className="w-4 h-4 mr-2" />
-            Save & Exit
+            <LogOut className="w-4 h-4 mr-2" />
+            Exit Quiz
           </Button>
         </DialogFooter>
       </DialogContent>

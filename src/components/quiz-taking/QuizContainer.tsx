@@ -10,6 +10,7 @@ import { QuizLoading } from "./QuizLoading";
 import { QuizError } from "./QuizError";
 import { QuizEmpty } from "./QuizEmpty";
 import QuizContent from "./QuizContent";
+import { QuizStartDialog } from "./QuizStartDialog";
 
 interface Quiz {
   id: string;
@@ -24,6 +25,8 @@ export const QuizContainer = () => {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizId, setQuizId] = useState<string>("");
+  const [showStartDialog, setShowStartDialog] = useState(true);
+  const [quizStarted, setQuizStarted] = useState(false);
 
   const { data: quiz, isLoading: isLoadingQuiz, error: quizError } = useQuery({
     queryKey: ['quiz', id],
@@ -49,6 +52,9 @@ export const QuizContainer = () => {
             title: "Quiz Progress Restored",
             description: "Your previous quiz progress has been loaded.",
           });
+          // If there's saved progress, we can skip the start dialog
+          setShowStartDialog(false);
+          setQuizStarted(true);
         }
       }
       
@@ -94,6 +100,11 @@ export const QuizContainer = () => {
     }
   }, [quiz]);
 
+  const handleStartQuiz = () => {
+    setShowStartDialog(false);
+    setQuizStarted(true);
+  };
+
   if (quizError) {
     console.error("Quiz error:", quizError);
     return <QuizError error={quizError} />;
@@ -109,11 +120,29 @@ export const QuizContainer = () => {
   }
 
   return (
-    <QuizContent 
-      quizId={quizId}
-      quiz={quiz}
-      questions={quizQuestions}
-      onQuizSubmitted={() => setQuizSubmitted(true)}
-    />
+    <>
+      <QuizStartDialog 
+        open={showStartDialog} 
+        onClose={() => {
+          // If user closes dialog without starting, redirect to quizzes
+          if (!quizStarted) {
+            navigate('/quizzes');
+          } else {
+            setShowStartDialog(false);
+          }
+        }}
+        onStart={handleStartQuiz}
+      />
+      
+      {(quizStarted || !showStartDialog) && (
+        <QuizContent 
+          quizId={quizId}
+          quiz={quiz}
+          questions={quizQuestions}
+          onQuizSubmitted={() => setQuizSubmitted(true)}
+          onExitQuiz={() => navigate('/quizzes')}
+        />
+      )}
+    </>
   );
 };

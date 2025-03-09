@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,8 @@ import { QuizHeader } from "./QuizHeader";
 import { QuizExitDialog } from "./QuizExitDialog";
 import { QuizTimer } from "./QuizTimer";
 import { QuizDisclaimerText } from "@/components/quiz-generation/QuizDisclaimer";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface QuizContentProps {
   quizId: string;
@@ -23,13 +25,15 @@ interface QuizContentProps {
   };
   questions: QuizQuestion[];
   onQuizSubmitted: () => void;
+  onExitQuiz: () => void;
 }
 
 const QuizContent: React.FC<QuizContentProps> = ({ 
   quizId, 
   quiz, 
   questions, 
-  onQuizSubmitted 
+  onQuizSubmitted,
+  onExitQuiz
 }) => {
   const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -37,6 +41,26 @@ const QuizContent: React.FC<QuizContentProps> = ({
   const [timeRemaining, setTimeRemaining] = useState<number>(quiz.duration_minutes * 60);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [timerActive, setTimerActive] = useState(true);
+  
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
+    if (timerActive && timeRemaining > 0) {
+      timer = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            handleSubmitQuiz();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => clearInterval(timer);
+  }, [timerActive, timeRemaining]);
   
   const handleSelectAnswer = (answer: string) => {
     setSelectedAnswers(prev => ({
@@ -55,6 +79,16 @@ const QuizContent: React.FC<QuizContentProps> = ({
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
     }
+  };
+  
+  const handleExitClick = () => {
+    setShowExitDialog(true);
+    setTimerActive(false); // Pause timer while dialog is open
+  };
+  
+  const handleExitDialogClose = () => {
+    setShowExitDialog(false);
+    setTimerActive(true); // Resume timer when dialog is closed
   };
 
   const handleSubmitQuiz = async () => {
@@ -139,7 +173,17 @@ const QuizContent: React.FC<QuizContentProps> = ({
     <div className="min-h-screen bg-background pb-20">
       <div className="container mx-auto px-4 py-6">
         {/* Persistent navigation links */}
-        <QuizNavigationLinks />
+        <div className="flex justify-between items-center mb-6">
+          <QuizNavigationLinks />
+          <Button
+            variant="outline"
+            onClick={handleExitClick}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Exit Quiz</span>
+          </Button>
+        </div>
         
         <Card className="max-w-4xl mx-auto mt-6 p-6">
           <QuizHeader 
@@ -193,8 +237,8 @@ const QuizContent: React.FC<QuizContentProps> = ({
       
       <QuizExitDialog
         open={showExitDialog}
-        onClose={() => setShowExitDialog(false)}
-        onConfirmExit={() => navigate('/quizzes')}
+        onClose={handleExitDialogClose}
+        onConfirmExit={onExitQuiz}
       />
     </div>
   );
