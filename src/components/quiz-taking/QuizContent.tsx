@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
@@ -9,7 +8,7 @@ import { QuizHeader } from "./QuizHeader";
 import { QuizExitDialog } from "./QuizExitDialog";
 import { QuizFooter } from "./QuizFooter";
 import { QuizContentWrapper } from "./QuizContentWrapper";
-import { useQuizSubmit } from "@/hooks/quiz/useQuizSubmission";
+import { useQuizSubmit } from "@/hooks/quiz/useQuizSubmit";
 
 interface QuizContentProps {
   quizId: string;
@@ -130,7 +129,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
           />
         </div>
         
-        {/* Add the disclaimer at the bottom of the card */}
         <QuizFooter />
       </QuizContentWrapper>
       
