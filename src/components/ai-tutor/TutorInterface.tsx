@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { SubscriptionBadge } from "./SubscriptionBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TutorInterfaceProps {
   onConversationStart?: () => void;
