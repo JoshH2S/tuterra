@@ -78,12 +78,21 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
           
           // Handle learning_path - ensure it's an array before setting state
           if (data.learning_path && Array.isArray(data.learning_path) && data.learning_path.length > 0) {
-            setLearningSteps(data.learning_path as LearningStep[]);
+            // Map each JSON object to the LearningStep type to ensure it has the right properties
+            const typedLearningSteps = data.learning_path.map((step: any) => ({
+              title: typeof step.title === 'string' ? step.title : 'Unknown step',
+              completed: typeof step.completed === 'boolean' ? step.completed : false
+            }));
+            setLearningSteps(typedLearningSteps);
           }
           
           // Handle smart_notes - ensure it's an array before setting state
           if (data.smart_notes && Array.isArray(data.smart_notes) && data.smart_notes.length > 0) {
-            setSmartNotes(data.smart_notes as string[]);
+            // Ensure we only have strings in our smart notes array
+            const typedSmartNotes = data.smart_notes
+              .filter((note): note is string => typeof note === 'string')
+              .map(note => note);
+            setSmartNotes(typedSmartNotes);
           }
         }
       } catch (error) {
