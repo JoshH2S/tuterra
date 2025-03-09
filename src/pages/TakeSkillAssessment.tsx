@@ -11,10 +11,14 @@ import { SubmissionControls } from "@/components/skill-assessment/SubmissionCont
 import { useSkillAssessmentTaking } from "@/hooks/useSkillAssessmentTaking";
 import { MobileProgressBar } from "@/components/skill-assessment/MobileProgressBar";
 import { useSwipeable } from "react-swipeable";
+import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile, useTouchDevice } from "@/hooks/use-mobile";
 
 export default function TakeSkillAssessment() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const isTouch = useTouchDevice();
   
   const {
     assessment,
@@ -37,13 +41,45 @@ export default function TakeSkillAssessment() {
     handleSubmit
   } = useSkillAssessmentTaking(id);
 
-  // Setup swipe handlers for mobile - fixed to use proper options
+  // Enhanced swipe handlers for mobile - with improved options
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => !isLastQuestion && goToNextQuestion(),
     onSwipedRight: () => currentQuestionIndex > 0 && goToPreviousQuestion(),
+    trackMouse: false,
+    preventScrollOnSwipe: true,
     touchEventOptions: { passive: false },
-    trackMouse: false
+    delta: 50, // Minimum swipe distance required
+    swipeDuration: 500, // Maximum time in ms allowed for swipe
   });
+
+  // Animation variants for question transitions
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? '30%' : '-30%',
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        x: { type: 'spring', stiffness: 300, damping: 30 },
+        opacity: { duration: 0.2 }
+      }
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? '30%' : '-30%',
+      opacity: 0,
+      transition: {
+        x: { type: 'spring', stiffness: 300, damping: 30 },
+        opacity: { duration: 0.2 }
+      }
+    })
+  };
+
+  // Determine swipe direction
+  const getDirection = () => {
+    return 1; // Default to right-to-left for new questions
+  };
 
   if (loading) {
     return (
@@ -70,7 +106,7 @@ export default function TakeSkillAssessment() {
   }
 
   return (
-    <div className="container py-4 md:py-6 space-y-4 md:space-y-6">
+    <div className="container py-4 md:py-6 space-y-4 md:space-y-6 overflow-hidden">
       <AssessmentHeader 
         title={assessment.title}
         timeRemaining={timeRemaining}
@@ -78,7 +114,7 @@ export default function TakeSkillAssessment() {
       />
 
       {/* Mobile progress bar - visible only on mobile */}
-      <div className="md:hidden">
+      <div className={`${isMobile ? 'block' : 'hidden'} sticky top-0 z-10 bg-background pt-2 pb-3 -mx-4 px-4 border-b`}>
         <MobileProgressBar 
           progress={progress} 
           currentQuestion={currentQuestionIndex + 1}
@@ -98,7 +134,7 @@ export default function TakeSkillAssessment() {
       <div className="md:grid md:grid-cols-4 gap-6">
         {/* Left sidebar with progress - desktop only */}
         <div className="hidden md:block">
-          <Card>
+          <Card className="sticky top-24">
             <CardContent className="p-4">
               <AssessmentProgressTracker 
                 sections={sections}
@@ -114,30 +150,57 @@ export default function TakeSkillAssessment() {
         
         {/* Main content */}
         <div 
-          className="md:col-span-3 space-y-4 md:space-y-6 touch-manipulation"
-          {...swipeHandlers}
+          className="md:col-span-3 space-y-4 md:space-y-6 touch-manipulation relative"
+          {...(isTouch ? swipeHandlers : {})}
         >
-          {currentQuestion && (
-            <>
-              <QuestionDisplay
-                question={currentQuestion}
-                questionIndex={currentQuestionIndex}
-                totalQuestions={totalQuestions}
-                currentAnswer={answers[currentQuestionIndex]}
-                onAnswerChange={handleAnswerChange}
-                progress={progress}
-              />
+          <AnimatePresence initial={false} custom={getDirection()} mode="wait">
+            {currentQuestion && (
+              <motion.div
+                key={currentQuestionIndex}
+                custom={getDirection()}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                className="w-full"
+              >
+                <QuestionDisplay
+                  question={currentQuestion}
+                  questionIndex={currentQuestionIndex}
+                  totalQuestions={totalQuestions}
+                  currentAnswer={answers[currentQuestionIndex]}
+                  onAnswerChange={handleAnswerChange}
+                  progress={progress}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
               
-              <SubmissionControls
-                isLastQuestion={isLastQuestion}
-                currentQuestionIndex={currentQuestionIndex}
-                isSubmitting={isSubmitting}
-                submissionProgress={submissionProgress}
-                onPrevious={goToPreviousQuestion}
-                onNext={goToNextQuestion}
-                onSubmit={handleSubmit}
-              />
-            </>
+          <div className="pb-20 md:pb-0">
+            <SubmissionControls
+              isLastQuestion={isLastQuestion}
+              currentQuestionIndex={currentQuestionIndex}
+              isSubmitting={isSubmitting}
+              submissionProgress={submissionProgress}
+              onPrevious={goToPreviousQuestion}
+              onNext={goToNextQuestion}
+              onSubmit={handleSubmit}
+            />
+          </div>
+
+          {/* Swipe hint for mobile users - shown only initially */}
+          {isMobile && isTouch && (
+            <motion.div 
+              className="fixed bottom-28 left-0 right-0 flex justify-center opacity-70 pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.7 }}
+              transition={{ delay: 1, duration: 0.5 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="bg-background/80 backdrop-blur-sm text-xs text-center rounded-full px-4 py-2 shadow-sm">
+                Swipe left/right to navigate questions
+              </div>
+            </motion.div>
           )}
         </div>
       </div>

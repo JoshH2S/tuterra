@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Question {
   question: string;
@@ -35,26 +37,38 @@ export const QuestionDisplay = ({
   onAnswerChange,
   progress
 }: QuestionDisplayProps) => {
+  const isMobile = useIsMobile();
+  
   return (
     <Card className="transition-all">
-      <CardHeader>
+      <CardHeader className={isMobile ? "px-4 py-4" : ""}>
         <CardTitle className="flex items-center gap-2 text-xl">
           <span className="hidden md:inline">Question {questionIndex + 1} of {totalQuestions}</span>
           <span className="md:hidden">Question {questionIndex + 1}</span>
           {question.skill && (
-            <span className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
+            <motion.span 
+              className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
               {question.skill}
-            </span>
+            </motion.span>
           )}
         </CardTitle>
         <CardDescription>
           Select the best answer for this question
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="text-lg font-medium mb-4">
+      <CardContent className={`space-y-4 ${isMobile ? "px-4 pb-4" : ""}`}>
+        <motion.div 
+          className="text-lg font-medium mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           {question.question}
-        </div>
+        </motion.div>
 
         {renderQuestionOptions(question, currentAnswer, onAnswerChange)}
       </CardContent>
@@ -67,6 +81,17 @@ function renderQuestionOptions(
   currentAnswer: string | string[] | undefined, 
   onAnswerChange: (value: string | string[]) => void
 ): ReactNode {
+  const optionsWithDelay = (component: ReactNode, index: number) => (
+    <motion.div
+      key={index}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay: index * 0.05 + 0.1 }}
+    >
+      {component}
+    </motion.div>
+  );
+
   if (question.type === 'multiple_choice') {
     return (
       <RadioGroup
@@ -74,16 +99,19 @@ function renderQuestionOptions(
         onValueChange={(value) => onAnswerChange(value)}
         className="space-y-3"
       >
-        {Object.entries(question.options).map(([key, value]) => (
-          <div key={key} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-muted/50 transition-colors touch-manipulation">
-            <RadioGroupItem value={key} id={`option-${key}`} />
-            <label 
-              htmlFor={`option-${key}`}
-              className="flex-1 cursor-pointer py-1 touch-manipulation"
-            >
-              {value}
-            </label>
-          </div>
+        {Object.entries(question.options).map(([key, value], index) => (
+          optionsWithDelay(
+            <div className="flex items-center space-x-2 border p-3 rounded-md hover:bg-muted/50 active:bg-muted/70 transition-colors touch-manipulation">
+              <RadioGroupItem value={key} id={`option-${key}`} />
+              <label 
+                htmlFor={`option-${key}`}
+                className="flex-1 cursor-pointer py-1 touch-manipulation"
+              >
+                {value}
+              </label>
+            </div>,
+            index
+          )
         ))}
       </RadioGroup>
     );
@@ -92,11 +120,11 @@ function renderQuestionOptions(
     
     return (
       <div className="space-y-3">
-        {Object.entries(question.options).map(([key, value]) => {
+        {Object.entries(question.options).map(([key, value], index) => {
           const isChecked = currentAnswers.includes(key);
           
-          return (
-            <div key={key} className="flex items-start space-x-2 border p-3 rounded-md hover:bg-muted/50 transition-colors touch-manipulation">
+          return optionsWithDelay(
+            <div className="flex items-start space-x-2 border p-3 rounded-md hover:bg-muted/50 active:bg-muted/70 transition-colors touch-manipulation">
               <Checkbox 
                 id={`option-${key}`}
                 checked={isChecked}
@@ -107,6 +135,7 @@ function renderQuestionOptions(
                     onAnswerChange(currentAnswers.filter(item => item !== key));
                   }
                 }}
+                className="mt-1" // Better vertical alignment
               />
               <label
                 htmlFor={`option-${key}`}
@@ -114,7 +143,8 @@ function renderQuestionOptions(
               >
                 {value}
               </label>
-            </div>
+            </div>,
+            index
           );
         })}
       </div>
