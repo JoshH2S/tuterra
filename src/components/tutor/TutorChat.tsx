@@ -5,10 +5,14 @@ import { TutorChatMessages } from "./TutorChatMessages";
 import { TutorChatInput } from "./TutorChatInput";
 import { processFileContent } from "@/utils/file-utils";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
-export const TutorChat = () => {
+interface TutorChatProps {
+  onSendMessage?: () => void;
+}
+
+export const TutorChat = ({ onSendMessage }: TutorChatProps) => {
   const [message, setMessage] = useState("");
   const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
   const { messages, isLoading, sendMessage } = useTutorMessages();
@@ -18,6 +22,9 @@ export const TutorChat = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
+      if (onSendMessage) {
+        onSendMessage();
+      }
       await sendMessage(message, uploadedFileId);
       setMessage("");
       setUploadedFileId(null);  // Reset the file ID after sending
@@ -49,25 +56,22 @@ export const TutorChat = () => {
   };
 
   return (
-    <Card className={`shadow-lg ${isMobile ? 'mx-0' : ''}`}>
-      <CardHeader className={isMobile ? 'p-3 space-y-1' : ''}>
-        <CardTitle className={isMobile ? 'text-lg' : ''}>Chat with your AI Study Assistant</CardTitle>
-        <CardDescription className={isMobile ? 'text-sm' : ''}>
-          Ask me anything about your studies. I can help you understand concepts, create study guides, or answer any academic questions.
-        </CardDescription>
-      </CardHeader>
-      <div className={`flex flex-col ${isMobile ? 'h-[500px]' : 'h-[600px]'}`}>
-        <TutorChatMessages messages={messages} />
-        <div className={`p-3 border-t ${isMobile ? 'pb-4' : ''}`}>
-          <TutorChatInput
-            message={message}
-            isLoading={isLoading}
-            onMessageChange={setMessage}
-            onSubmit={handleSubmit}
-            onFileUpload={handleFileUpload}
-          />
-        </div>
+    <motion.div 
+      className="flex flex-col h-full"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
+      <TutorChatMessages messages={messages} />
+      <div className={`p-3 border-t ${isMobile ? 'sticky bottom-0 bg-background pb-4' : ''}`}>
+        <TutorChatInput
+          message={message}
+          isLoading={isLoading}
+          onMessageChange={setMessage}
+          onSubmit={handleSubmit}
+          onFileUpload={handleFileUpload}
+        />
       </div>
-    </Card>
+    </motion.div>
   );
 };

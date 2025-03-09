@@ -1,42 +1,25 @@
 
 import { useState, useEffect } from "react";
 
-export const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
+export const useIsMobile = (breakpoint = 768) => {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
+  );
 
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < breakpoint);
     };
 
-    // Check immediately
-    checkIsMobile();
+    window.addEventListener("resize", handleResize);
+    handleResize();
 
-    // Add resize listener
-    window.addEventListener("resize", checkIsMobile);
-    
-    // Clean up
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [breakpoint]);
 
   return isMobile;
-};
-
-// Add touch interaction detection
-export const useTouchDevice = () => {
-  const [isTouch, setIsTouch] = useState(false);
-  
-  useEffect(() => {
-    // Check if device supports touch
-    const checkTouchDevice = () => {
-      setIsTouch(
-        'ontouchstart' in window || 
-        navigator.maxTouchPoints > 0
-      );
-    };
-    
-    checkTouchDevice();
-  }, []);
-  
-  return isTouch;
 };
