@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 export const useAssessmentTimer = (
   timeRemaining: number,
-  setTimeRemaining: (value: number) => void,
+  setTimeRemaining: (value: number | ((prev: number) => number)) => void,
   isActive: boolean,
   onTimeout: () => void
 ) => {
@@ -12,7 +12,7 @@ export const useAssessmentTimer = (
     if (timeRemaining <= 0 || !isActive) return;
     
     const timer = setInterval(() => {
-      setTimeRemaining(prev => {
+      setTimeRemaining((prev: number) => {
         if (prev <= 1) {
           clearInterval(timer);
           onTimeout();
