@@ -1,5 +1,6 @@
 
 import { CheckCircle2, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface QuestionResult {
   question: string;
@@ -22,16 +23,57 @@ export const DetailedQuestionsList = ({ questions }: DetailedQuestionsListProps)
     );
   }
 
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24
+      }
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-6"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
       {questions.map((item, index) => (
-        <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
+        <motion.div 
+          key={index} 
+          className="border-b pb-4 last:border-b-0 last:pb-0"
+          variants={item}
+          whileHover={{ scale: 1.01, backgroundColor: "rgba(0,0,0,0.01)" }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
           <div className="flex items-start gap-2">
-            {item.correct ? (
-              <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-            ) : (
-              <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
-            )}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: index * 0.05 + 0.2 }}
+            >
+              {item.correct ? (
+                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+              )}
+            </motion.div>
             <div>
               <p className="font-medium">{item.question}</p>
               <div className="mt-2 text-sm">
@@ -44,25 +86,35 @@ export const DetailedQuestionsList = ({ questions }: DetailedQuestionsListProps)
                   </span>
                 </p>
                 {!item.correct && (
-                  <p className="mt-1">
+                  <motion.p 
+                    className="mt-1"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ delay: 0.2 }}
+                  >
                     <span className="text-muted-foreground">Correct answer: </span>
                     <span className="text-green-600">
                       {Array.isArray(item.correctAnswer) 
                         ? item.correctAnswer.join(", ") 
                         : item.correctAnswer}
                     </span>
-                  </p>
+                  </motion.p>
                 )}
               </div>
               {item.skill && (
-                <span className="inline-block mt-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                <motion.span 
+                  className="inline-block mt-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 + 0.3 }}
+                >
                   {item.skill}
-                </span>
+                </motion.span>
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 };
