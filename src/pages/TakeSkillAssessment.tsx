@@ -1,17 +1,17 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { AssessmentProgressTracker } from "@/components/skill-assessment/AssessmentProgress";
 import { Json } from "@/integrations/supabase/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AssessmentHeader } from "@/components/skill-assessment/AssessmentHeader";
+import { QuestionDisplay } from "@/components/skill-assessment/QuestionDisplay";
+import { SubmissionControls } from "@/components/skill-assessment/SubmissionControls";
 
 // Define proper types for our data
 type SkillAssessment = {
@@ -395,19 +395,11 @@ export default function TakeSkillAssessment() {
 
   return (
     <div className="container py-6 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">{assessment.title}</h1>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center text-muted-foreground">
-            <span className="font-medium">{formatTime(timeRemaining)}</span>
-          </div>
-          {assessment.level && (
-            <div className="px-2 py-1 bg-muted rounded text-xs font-medium capitalize">
-              {assessment.level} level
-            </div>
-          )}
-        </div>
-      </div>
+      <AssessmentHeader 
+        title={assessment.title}
+        timeRemaining={timeRemaining}
+        level={assessment.level}
+      />
 
       {error && (
         <Alert variant="destructive">
@@ -437,133 +429,29 @@ export default function TakeSkillAssessment() {
         
         {/* Main content */}
         <div className="md:col-span-3 space-y-6">
-          {/* Mobile progress bar */}
-          <div className="md:hidden">
-            <div className="w-full bg-muted rounded-full h-2">
-              <div 
-                className="bg-primary h-2 rounded-full" 
-                style={{ width: `${progress}%` }}
+          {currentQuestion && (
+            <>
+              <QuestionDisplay
+                question={currentQuestion}
+                questionIndex={currentQuestionIndex}
+                totalQuestions={assessment.questions.length}
+                currentAnswer={answers[currentQuestionIndex]}
+                onAnswerChange={handleAnswerChange}
+                progress={progress}
+                isMobile={true}
               />
-            </div>
-            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-              <span>Question {currentQuestionIndex + 1} of {assessment.questions?.length}</span>
-              <span>{Math.round(progress)}%</span>
-            </div>
-          </div>
-
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="md:hidden">Question {currentQuestionIndex + 1}</span>
-                <span className="hidden md:inline">Question {currentQuestionIndex + 1} of {assessment.questions?.length}</span>
-                {currentQuestion?.skill && (
-                  <span className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
-                    {currentQuestion.skill}
-                  </span>
-                )}
-              </CardTitle>
-              <CardDescription>
-                Select the best answer for this question
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {currentQuestion && (
-                <>
-                  <div className="text-lg font-medium mb-4">
-                    {currentQuestion.question}
-                  </div>
-
-                  {currentQuestion.type === 'multiple_choice' ? (
-                    <RadioGroup
-                      value={answers[currentQuestionIndex] as string || ""}
-                      onValueChange={(value) => handleAnswerChange(value)}
-                      className="space-y-3"
-                    >
-                      {Object.entries(currentQuestion.options).map(([key, value]) => (
-                        <div key={key} className="flex items-center space-x-2 border p-3 rounded-md">
-                          <RadioGroupItem value={key} id={`option-${key}`} />
-                          <label 
-                            htmlFor={`option-${key}`}
-                            className="flex-1 cursor-pointer"
-                          >
-                            {value}
-                          </label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  ) : currentQuestion.type === 'multiple_answer' ? (
-                    <div className="space-y-3">
-                      {Object.entries(currentQuestion.options).map(([key, value]) => {
-                        const currentAnswers = (answers[currentQuestionIndex] as string[]) || [];
-                        const isChecked = currentAnswers.includes(key);
-                        
-                        return (
-                          <div key={key} className="flex items-start space-x-2 border p-3 rounded-md">
-                            <Checkbox 
-                              id={`option-${key}`}
-                              checked={isChecked}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  handleAnswerChange([...currentAnswers, key]);
-                                } else {
-                                  handleAnswerChange(currentAnswers.filter(item => item !== key));
-                                }
-                              }}
-                            />
-                            <label
-                              htmlFor={`option-${key}`}
-                              className="flex-1 cursor-pointer"
-                            >
-                              {value}
-                            </label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <p>Question type not supported</p>
-                    </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-between mt-4">
-            <Button
-              variant="outline"
-              onClick={goToPreviousQuestion}
-              disabled={currentQuestionIndex === 0}
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Previous
-            </Button>
-
-            {isLastQuestion ? (
-              <Button 
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {submissionProgress > 0 ? `Submitting (${submissionProgress}%)` : 'Submitting...'}
-                  </>
-                ) : (
-                  <>
-                    <Flag className="mr-2 h-4 w-4" />
-                    Finish Assessment
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button onClick={goToNextQuestion}>
-                Next
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            )}
-          </div>
+              
+              <SubmissionControls
+                isLastQuestion={isLastQuestion}
+                currentQuestionIndex={currentQuestionIndex}
+                isSubmitting={isSubmitting}
+                submissionProgress={submissionProgress}
+                onPrevious={goToPreviousQuestion}
+                onNext={goToNextQuestion}
+                onSubmit={handleSubmit}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
