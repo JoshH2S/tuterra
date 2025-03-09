@@ -37,11 +37,11 @@ export default function TakeSkillAssessment() {
     handleSubmit
   } = useSkillAssessmentTaking(id);
 
-  // Setup swipe handlers for mobile
+  // Setup swipe handlers for mobile - fixed to use proper options
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => !isLastQuestion && goToNextQuestion(),
     onSwipedRight: () => currentQuestionIndex > 0 && goToPreviousQuestion(),
-    preventDefaultTouchmoveEvent: true,
+    touchEventOptions: { passive: false },
     trackMouse: false
   });
 
