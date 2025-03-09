@@ -54,7 +54,7 @@ export const DetailedQuestionsList = ({ questions }: DetailedQuestionsListProps)
       initial="hidden"
       animate="show"
     >
-      {questions.map((item, index) => (
+      {questions.map((questionItem, index) => (
         <motion.div 
           key={index} 
           className="border-b pb-4 last:border-b-0 last:pb-0"
@@ -68,24 +68,24 @@ export const DetailedQuestionsList = ({ questions }: DetailedQuestionsListProps)
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: index * 0.05 + 0.2 }}
             >
-              {item.correct ? (
+              {questionItem.correct ? (
                 <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
               ) : (
                 <XCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
               )}
             </motion.div>
             <div>
-              <p className="font-medium">{item.question}</p>
+              <p className="font-medium">{questionItem.question}</p>
               <div className="mt-2 text-sm">
                 <p>
                   <span className="text-muted-foreground">Your answer: </span>
-                  <span className={item.correct ? "text-green-600" : "text-red-600"}>
-                    {Array.isArray(item.userAnswer) 
-                      ? item.userAnswer.join(", ") 
-                      : item.userAnswer || "No answer"}
+                  <span className={questionItem.correct ? "text-green-600" : "text-red-600"}>
+                    {Array.isArray(questionItem.userAnswer) 
+                      ? questionItem.userAnswer.join(", ") 
+                      : questionItem.userAnswer || "No answer"}
                   </span>
                 </p>
-                {!item.correct && (
+                {!questionItem.correct && (
                   <motion.p 
                     className="mt-1"
                     initial={{ opacity: 0, height: 0 }}
@@ -94,21 +94,21 @@ export const DetailedQuestionsList = ({ questions }: DetailedQuestionsListProps)
                   >
                     <span className="text-muted-foreground">Correct answer: </span>
                     <span className="text-green-600">
-                      {Array.isArray(item.correctAnswer) 
-                        ? item.correctAnswer.join(", ") 
-                        : item.correctAnswer}
+                      {Array.isArray(questionItem.correctAnswer) 
+                        ? questionItem.correctAnswer.join(", ") 
+                        : questionItem.correctAnswer}
                     </span>
                   </motion.p>
                 )}
               </div>
-              {item.skill && (
+              {questionItem.skill && (
                 <motion.span 
                   className="inline-block mt-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 + 0.3 }}
                 >
-                  {item.skill}
+                  {questionItem.skill}
                 </motion.span>
               )}
             </div>
