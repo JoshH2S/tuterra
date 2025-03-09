@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ChevronLeft, ChevronRight, Flag, Clock, Timer } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Flag } from "lucide-react";
 import { AssessmentProgressTracker } from "@/components/skill-assessment/AssessmentProgress";
 import { Json } from "@/integrations/supabase/types";
 
@@ -45,6 +45,7 @@ export default function TakeSkillAssessment() {
   const [totalTime, setTotalTime] = useState<number>(3600); // 1 hour default
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAssessment = async () => {
@@ -84,13 +85,18 @@ export default function TakeSkillAssessment() {
         setTotalTime(calculatedTime);
         
         // Track assessment view
-        await supabase.from('user_feature_interactions').insert({
-          user_id: user.id,
-          feature: 'skill-assessment-view',
-          action: 'view',
-          metadata: { assessment_id: id },
-          timestamp: new Date().toISOString()
-        });
+        try {
+          await supabase.from('user_feature_interactions').insert({
+            user_id: user.id,
+            feature: 'skill-assessment-view',
+            action: 'view',
+            metadata: { assessment_id: id },
+            timestamp: new Date().toISOString()
+          });
+        } catch (trackError) {
+          console.error("Error tracking assessment view:", trackError);
+          // Don't throw here, just log the error
+        }
       } catch (error) {
         console.error("Error fetching assessment:", error);
         toast({
@@ -147,6 +153,7 @@ export default function TakeSkillAssessment() {
     if (!assessment || !user) return;
     
     setIsSubmitting(true);
+    setError(null);
     
     try {
       // Calculate score
@@ -201,7 +208,7 @@ export default function TakeSkillAssessment() {
       });
       
       // Save results
-      const { data, error } = await supabase
+      const { data, error: saveError } = await supabase
         .from("skill_assessment_results")
         .insert({
           assessment_id: assessment.id,
@@ -212,25 +219,30 @@ export default function TakeSkillAssessment() {
           time_spent: totalTime - timeRemaining,
           skill_scores: skillScores,
           level: assessment.level || "intermediate",
-          tier: assessment.tier || "free"
+          tier: assessment.tier || userTier
         })
         .select()
         .single();
       
-      if (error) throw error;
+      if (saveError) throw saveError;
       
       // Track completion
-      await supabase.from('user_feature_interactions').insert({
-        user_id: user.id,
-        feature: 'skill-assessment-completion',
-        action: 'complete',
-        metadata: { 
-          assessment_id: assessment.id,
-          score,
-          time_spent: totalTime - timeRemaining
-        },
-        timestamp: new Date().toISOString()
-      });
+      try {
+        await supabase.from('user_feature_interactions').insert({
+          user_id: user.id,
+          feature: 'skill-assessment-completion',
+          action: 'complete',
+          metadata: { 
+            assessment_id: assessment.id,
+            score,
+            time_spent: totalTime - timeRemaining
+          },
+          timestamp: new Date().toISOString()
+        });
+      } catch (trackError) {
+        console.error("Error tracking assessment completion:", trackError);
+        // Don't throw here to avoid disrupting the main flow
+      }
       
       toast({
         title: "Assessment completed",
@@ -241,6 +253,7 @@ export default function TakeSkillAssessment() {
       navigate(`/skill-assessment-results/${data.id}`);
     } catch (error) {
       console.error("Error submitting assessment:", error);
+      setError("Failed to submit your answers. Please try again.");
       toast({
         title: "Error",
         description: "Failed to submit your answers. Please try again.",
@@ -313,7 +326,6 @@ export default function TakeSkillAssessment() {
         <h1 className="text-2xl font-bold">{assessment.title}</h1>
         <div className="flex items-center gap-4">
           <div className="flex items-center text-muted-foreground">
-            <Timer className="w-4 h-4 mr-1" />
             <span className="font-medium">{formatTime(timeRemaining)}</span>
           </div>
           {assessment.level && (
@@ -323,6 +335,13 @@ export default function TakeSkillAssessment() {
           )}
         </div>
       </div>
+
+      {error && (
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
+          <p className="font-medium">{error}</p>
+          <p className="text-sm">Please try again or contact support if the problem persists.</p>
+        </div>
+      )}
 
       <div className="md:grid md:grid-cols-4 gap-6">
         {/* Left sidebar with progress */}
@@ -335,6 +354,7 @@ export default function TakeSkillAssessment() {
                 totalQuestions={assessment.questions?.length}
                 timeRemaining={timeRemaining}
                 totalTime={totalTime}
+                hideTimer={true}
               />
             </CardContent>
           </Card>

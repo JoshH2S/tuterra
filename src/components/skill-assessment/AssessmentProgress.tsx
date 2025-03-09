@@ -1,7 +1,7 @@
 
 import { useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
-import { Clock, CheckCircle2, HelpCircle, AlertCircle } from "lucide-react";
+import { CheckCircle2, HelpCircle, AlertCircle } from "lucide-react";
 
 interface ProgressSectionProps {
   id: string;
@@ -17,6 +17,7 @@ interface AssessmentProgressProps {
   timeRemaining?: number;
   totalTime?: number;
   showScores?: boolean;
+  hideTimer?: boolean;
 }
 
 export const AssessmentProgressTracker = ({
@@ -26,6 +27,7 @@ export const AssessmentProgressTracker = ({
   timeRemaining,
   totalTime,
   showScores = false,
+  hideTimer = false,
 }: AssessmentProgressProps) => {
   // Calculate overall progress
   const overallProgress = useMemo(() => {
@@ -109,19 +111,11 @@ export const AssessmentProgressTracker = ({
             <CheckCircle2 className="h-4 w-4 text-green-500" />
             <span>{currentQuestion} of {totalQuestions} questions</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            {timeRemaining !== undefined && (
-              <>
-                <Clock className="h-4 w-4" />
-                <span>{formatTime(timeRemaining)}</span>
-              </>
-            )}
-          </div>
         </div>
       )}
 
-      {/* Time remaining */}
-      {!showScores && timeRemaining !== undefined && totalTime !== undefined && (
+      {/* Time remaining - only show if hideTimer is false */}
+      {!showScores && !hideTimer && timeRemaining !== undefined && totalTime !== undefined && (
         <div className="space-y-1">
           <div className="flex justify-between items-center text-xs text-muted-foreground">
             <span>Time Remaining</span>
