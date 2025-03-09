@@ -2,10 +2,29 @@
 import { useState } from 'react';
 import { generateAnswerExplanation } from '@/services/quiz/explanationService';
 import { QuizQuestion } from '@/hooks/quiz/quizTypes';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useExplanationGeneration() {
+  const { user } = useAuth();
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const trackExplanationGeneration = async (questionId: string, isCorrect: boolean) => {
+    if (!user) return;
+    
+    try {
+      await supabase.from('user_feature_interactions').insert({
+        user_id: user.id,
+        feature: 'explanation-generation',
+        action: isCorrect ? 'correct-answer' : 'incorrect-answer',
+        metadata: { question_id: questionId },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error tracking explanation generation:', error);
+    }
+  };
 
   const generateExplanation = async (
     question: QuizQuestion,
@@ -20,6 +39,9 @@ export function useExplanationGeneration() {
     setIsGenerating(true);
 
     try {
+      // Track the explanation generation
+      await trackExplanationGeneration(question.id, isCorrect);
+      
       const explanation = await generateAnswerExplanation(
         question,
         userAnswer,

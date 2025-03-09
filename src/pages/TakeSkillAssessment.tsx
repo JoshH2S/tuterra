@@ -8,7 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ChevronLeft, ChevronRight, Flag, Clock } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Flag, Clock, Timer } from "lucide-react";
+import { AssessmentProgressTracker } from "@/components/skill-assessment/AssessmentProgress";
 import { Json } from "@/integrations/supabase/types";
 
 // Define proper types for our data
@@ -26,6 +27,8 @@ type SkillAssessment = {
     skill?: string;
   }>;
   time_limit?: number;
+  level?: string;
+  tier?: string;
 };
 
 export default function TakeSkillAssessment() {
@@ -39,13 +42,25 @@ export default function TakeSkillAssessment() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
   const [timeRemaining, setTimeRemaining] = useState<number>(3600); // 1 hour default
+  const [totalTime, setTotalTime] = useState<number>(3600); // 1 hour default
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userTier, setUserTier] = useState<string>("free");
 
   useEffect(() => {
     const fetchAssessment = async () => {
       if (!id || !user) return;
 
       try {
+        // Get user's tier
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_tier')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        setUserTier(profile?.subscription_tier || 'free');
+        
+        // Get assessment
         const { data, error } = await supabase
           .from("skill_assessments")
           .select("*")
@@ -66,6 +81,16 @@ export default function TakeSkillAssessment() {
         const questionCount = typedAssessment.questions?.length || 0;
         const calculatedTime = Math.max(30 * 60, Math.min(120 * 60, questionCount * 120));
         setTimeRemaining(calculatedTime);
+        setTotalTime(calculatedTime);
+        
+        // Track assessment view
+        await supabase.from('user_feature_interactions').insert({
+          user_id: user.id,
+          feature: 'skill-assessment-view',
+          action: 'view',
+          metadata: { assessment_id: id },
+          timestamp: new Date().toISOString()
+        });
       } catch (error) {
         console.error("Error fetching assessment:", error);
         toast({
@@ -154,6 +179,27 @@ export default function TakeSkillAssessment() {
       
       const score = Math.round((correctCount / questions.length) * 100);
       
+      // Calculate skill scores
+      const skillScores: Record<string, { correct: number, total: number, score: number }> = {};
+      
+      detailedResults.forEach(result => {
+        const skill = result.skill;
+        if (!skillScores[skill]) {
+          skillScores[skill] = { correct: 0, total: 0, score: 0 };
+        }
+        
+        skillScores[skill].total += 1;
+        if (result.correct) {
+          skillScores[skill].correct += 1;
+        }
+      });
+      
+      // Calculate percentages
+      Object.keys(skillScores).forEach(skill => {
+        const { correct, total } = skillScores[skill];
+        skillScores[skill].score = Math.round((correct / total) * 100);
+      });
+      
       // Save results
       const { data, error } = await supabase
         .from("skill_assessment_results")
@@ -163,12 +209,28 @@ export default function TakeSkillAssessment() {
           score,
           answers: answers,
           detailed_results: detailedResults,
-          time_spent: assessment.time_limit ? assessment.time_limit - timeRemaining : null
+          time_spent: totalTime - timeRemaining,
+          skill_scores: skillScores,
+          level: assessment.level || "intermediate",
+          tier: assessment.tier || "free"
         })
         .select()
         .single();
       
       if (error) throw error;
+      
+      // Track completion
+      await supabase.from('user_feature_interactions').insert({
+        user_id: user.id,
+        feature: 'skill-assessment-completion',
+        action: 'complete',
+        metadata: { 
+          assessment_id: assessment.id,
+          score,
+          time_spent: totalTime - timeRemaining
+        },
+        timestamp: new Date().toISOString()
+      });
       
       toast({
         title: "Assessment completed",
@@ -193,6 +255,28 @@ export default function TakeSkillAssessment() {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Prepare sections for progress tracker
+  const getSections = () => {
+    if (!assessment?.questions) return [];
+    
+    // Group questions by skill
+    const skillGroups: Record<string, number> = {};
+    assessment.questions.forEach(q => {
+      const skill = q.skill || "General";
+      if (!skillGroups[skill]) {
+        skillGroups[skill] = 0;
+      }
+      skillGroups[skill]++;
+    });
+    
+    // Create sections with weights based on question count
+    return Object.entries(skillGroups).map(([skill, count]) => ({
+      id: skill,
+      label: skill,
+      weight: count / assessment.questions.length
+    }));
   };
 
   if (loading) {
@@ -225,132 +309,167 @@ export default function TakeSkillAssessment() {
 
   return (
     <div className="container py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">{assessment.title}</h1>
-        <div className="flex items-center text-muted-foreground">
-          <Clock className="w-4 h-4 mr-1" />
-          <span>{formatTime(timeRemaining)}</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center text-muted-foreground">
+            <Timer className="w-4 h-4 mr-1" />
+            <span className="font-medium">{formatTime(timeRemaining)}</span>
+          </div>
+          {assessment.level && (
+            <div className="px-2 py-1 bg-muted rounded text-xs font-medium capitalize">
+              {assessment.level} level
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="w-full bg-muted rounded-full h-2">
-        <div 
-          className="bg-primary h-2 rounded-full" 
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      <div className="md:grid md:grid-cols-4 gap-6">
+        {/* Left sidebar with progress */}
+        <div className="hidden md:block">
+          <Card>
+            <CardContent className="p-4">
+              <AssessmentProgressTracker 
+                sections={getSections()}
+                currentQuestion={currentQuestionIndex + 1}
+                totalQuestions={assessment.questions?.length}
+                timeRemaining={timeRemaining}
+                totalTime={totalTime}
+              />
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Main content */}
+        <div className="md:col-span-3 space-y-6">
+          {/* Mobile progress bar */}
+          <div className="md:hidden">
+            <div className="w-full bg-muted rounded-full h-2">
+              <div 
+                className="bg-primary h-2 rounded-full" 
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+              <span>Question {currentQuestionIndex + 1} of {assessment.questions?.length}</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+          </div>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span>Question {currentQuestionIndex + 1} of {assessment.questions?.length}</span>
-            {currentQuestion?.skill && (
-              <span className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
-                {currentQuestion.skill}
-              </span>
-            )}
-          </CardTitle>
-          <CardDescription>
-            Select the best answer for each question
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {currentQuestion && (
-            <>
-              <div className="text-lg font-medium mb-4">
-                {currentQuestion.question}
-              </div>
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="md:hidden">Question {currentQuestionIndex + 1}</span>
+                <span className="hidden md:inline">Question {currentQuestionIndex + 1} of {assessment.questions?.length}</span>
+                {currentQuestion?.skill && (
+                  <span className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
+                    {currentQuestion.skill}
+                  </span>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Select the best answer for this question
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {currentQuestion && (
+                <>
+                  <div className="text-lg font-medium mb-4">
+                    {currentQuestion.question}
+                  </div>
 
-              {currentQuestion.type === 'multiple_choice' ? (
-                <RadioGroup
-                  value={answers[currentQuestionIndex] as string || ""}
-                  onValueChange={(value) => handleAnswerChange(value)}
-                  className="space-y-3"
-                >
-                  {Object.entries(currentQuestion.options).map(([key, value]) => (
-                    <div key={key} className="flex items-center space-x-2 border p-3 rounded-md">
-                      <RadioGroupItem value={key} id={`option-${key}`} />
-                      <label 
-                        htmlFor={`option-${key}`}
-                        className="flex-1 cursor-pointer"
-                      >
-                        {value}
-                      </label>
+                  {currentQuestion.type === 'multiple_choice' ? (
+                    <RadioGroup
+                      value={answers[currentQuestionIndex] as string || ""}
+                      onValueChange={(value) => handleAnswerChange(value)}
+                      className="space-y-3"
+                    >
+                      {Object.entries(currentQuestion.options).map(([key, value]) => (
+                        <div key={key} className="flex items-center space-x-2 border p-3 rounded-md">
+                          <RadioGroupItem value={key} id={`option-${key}`} />
+                          <label 
+                            htmlFor={`option-${key}`}
+                            className="flex-1 cursor-pointer"
+                          >
+                            {value}
+                          </label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  ) : currentQuestion.type === 'multiple_answer' ? (
+                    <div className="space-y-3">
+                      {Object.entries(currentQuestion.options).map(([key, value]) => {
+                        const currentAnswers = (answers[currentQuestionIndex] as string[]) || [];
+                        const isChecked = currentAnswers.includes(key);
+                        
+                        return (
+                          <div key={key} className="flex items-start space-x-2 border p-3 rounded-md">
+                            <Checkbox 
+                              id={`option-${key}`}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  handleAnswerChange([...currentAnswers, key]);
+                                } else {
+                                  handleAnswerChange(currentAnswers.filter(item => item !== key));
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`option-${key}`}
+                              className="flex-1 cursor-pointer"
+                            >
+                              {value}
+                            </label>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </RadioGroup>
-              ) : currentQuestion.type === 'multiple_answer' ? (
-                <div className="space-y-3">
-                  {Object.entries(currentQuestion.options).map(([key, value]) => {
-                    const currentAnswers = (answers[currentQuestionIndex] as string[]) || [];
-                    const isChecked = currentAnswers.includes(key);
-                    
-                    return (
-                      <div key={key} className="flex items-start space-x-2 border p-3 rounded-md">
-                        <Checkbox 
-                          id={`option-${key}`}
-                          checked={isChecked}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleAnswerChange([...currentAnswers, key]);
-                            } else {
-                              handleAnswerChange(currentAnswers.filter(item => item !== key));
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={`option-${key}`}
-                          className="flex-1 cursor-pointer"
-                        >
-                          {value}
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p>Question type not supported</p>
-                </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p>Question type not supported</p>
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      <div className="flex justify-between mt-4">
-        <Button
-          variant="outline"
-          onClick={goToPreviousQuestion}
-          disabled={currentQuestionIndex === 0}
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Previous
-        </Button>
+          <div className="flex justify-between mt-4">
+            <Button
+              variant="outline"
+              onClick={goToPreviousQuestion}
+              disabled={currentQuestionIndex === 0}
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Previous
+            </Button>
 
-        {isLastQuestion ? (
-          <Button 
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
+            {isLastQuestion ? (
+              <Button 
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Flag className="mr-2 h-4 w-4" />
+                    Finish Assessment
+                  </>
+                )}
+              </Button>
             ) : (
-              <>
-                <Flag className="mr-2 h-4 w-4" />
-                Finish Assessment
-              </>
+              <Button onClick={goToNextQuestion}>
+                Next
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
             )}
-          </Button>
-        ) : (
-          <Button onClick={goToNextQuestion}>
-            Next
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );
