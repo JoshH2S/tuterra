@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ChevronLeft, ChevronRight, Flag } from "lucide-react";
 import { AssessmentProgressTracker } from "@/components/skill-assessment/AssessmentProgress";
 import { Json } from "@/integrations/supabase/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Define proper types for our data
 type SkillAssessment = {
@@ -31,6 +32,16 @@ type SkillAssessment = {
   tier?: string;
 };
 
+// Type guards for answers validation
+const isValidAnswer = (answer: unknown): answer is string | string[] => {
+  return typeof answer === 'string' || 
+    (Array.isArray(answer) && answer.every(item => typeof item === 'string'));
+};
+
+const validateAnswers = (answers: Record<number, unknown>): boolean => {
+  return Object.values(answers).every(answer => isValidAnswer(answer));
+};
+
 export default function TakeSkillAssessment() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -46,6 +57,7 @@ export default function TakeSkillAssessment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
   const [error, setError] = useState<string | null>(null);
+  const [submissionProgress, setSubmissionProgress] = useState(0);
 
   useEffect(() => {
     const fetchAssessment = async () => {
@@ -150,12 +162,34 @@ export default function TakeSkillAssessment() {
   };
 
   const handleSubmit = async () => {
-    if (!assessment || !user) return;
+    if (!assessment || !user) {
+      setError("Assessment or user information is missing. Please refresh and try again.");
+      return;
+    }
     
     setIsSubmitting(true);
     setError(null);
+    setSubmissionProgress(10);
     
     try {
+      // Validate answers
+      if (!validateAnswers(answers)) {
+        throw new Error("Some answers have invalid format. Please check your responses.");
+      }
+      
+      // Check for unanswered questions
+      const unansweredQuestions = assessment.questions
+        .map((_, index) => index)
+        .filter(index => answers[index] === undefined);
+        
+      if (unansweredQuestions.length > 0) {
+        setError(`Please answer all questions before submitting. ${unansweredQuestions.length} questions remaining.`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      setSubmissionProgress(30);
+      
       // Calculate score
       let correctCount = 0;
       const questions = assessment.questions || [];
@@ -185,6 +219,7 @@ export default function TakeSkillAssessment() {
       });
       
       const score = Math.round((correctCount / questions.length) * 100);
+      setSubmissionProgress(60);
       
       // Calculate skill scores
       const skillScores: Record<string, { correct: number, total: number, score: number }> = {};
@@ -207,6 +242,19 @@ export default function TakeSkillAssessment() {
         skillScores[skill].score = Math.round((correct / total) * 100);
       });
       
+      setSubmissionProgress(80);
+      
+      console.log("Preparing submission with data:", {
+        assessment_id: assessment.id,
+        user_id: user.id,
+        score,
+        answers,
+        detailed_results: detailedResults,
+        skill_scores: skillScores,
+        time_spent: totalTime - timeRemaining,
+        completed_at: new Date().toISOString()
+      });
+      
       // Save results
       const { data, error: saveError } = await supabase
         .from("skill_assessment_results")
@@ -214,17 +262,23 @@ export default function TakeSkillAssessment() {
           assessment_id: assessment.id,
           user_id: user.id,
           score,
-          answers: answers,
-          detailed_results: detailedResults,
+          answers: answers as Json,
+          detailed_results: detailedResults as Json,
           time_spent: totalTime - timeRemaining,
-          skill_scores: skillScores,
+          skill_scores: skillScores as Json,
           level: assessment.level || "intermediate",
-          tier: assessment.tier || userTier
+          tier: assessment.tier || userTier,
+          completed_at: new Date().toISOString()
         })
         .select()
         .single();
       
-      if (saveError) throw saveError;
+      if (saveError) {
+        console.error("Database error when saving assessment results:", saveError);
+        throw new Error(`Failed to save results: ${saveError.message}`);
+      }
+      
+      setSubmissionProgress(90);
       
       // Track completion
       try {
@@ -244,6 +298,8 @@ export default function TakeSkillAssessment() {
         // Don't throw here to avoid disrupting the main flow
       }
       
+      setSubmissionProgress(100);
+      
       toast({
         title: "Assessment completed",
         description: `Your score: ${score}%`,
@@ -252,8 +308,25 @@ export default function TakeSkillAssessment() {
       // Navigate to results page
       navigate(`/skill-assessment-results/${data.id}`);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       console.error("Error submitting assessment:", error);
-      setError("Failed to submit your answers. Please try again.");
+      setError(`Failed to submit your answers: ${errorMessage}. Please try again.`);
+      
+      // Store failed submission in local storage for potential recovery
+      try {
+        localStorage.setItem(
+          `failed_submission_${assessment.id}`,
+          JSON.stringify({
+            assessmentId: assessment.id,
+            answers,
+            timestamp: new Date().toISOString(),
+            error: errorMessage
+          })
+        );
+      } catch (storageError) {
+        console.error("Could not save failed submission to local storage:", storageError);
+      }
+      
       toast({
         title: "Error",
         description: "Failed to submit your answers. Please try again.",
@@ -337,10 +410,12 @@ export default function TakeSkillAssessment() {
       </div>
 
       {error && (
-        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
-          <p className="font-medium">{error}</p>
-          <p className="text-sm">Please try again or contact support if the problem persists.</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="md:grid md:grid-cols-4 gap-6">
@@ -473,7 +548,7 @@ export default function TakeSkillAssessment() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
+                    {submissionProgress > 0 ? `Submitting (${submissionProgress}%)` : 'Submitting...'}
                   </>
                 ) : (
                   <>
