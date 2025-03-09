@@ -1128,7 +1128,9 @@ export type Database = {
           created_at: string
           detailed_results: Json | null
           id: string
+          level: string | null
           score: number
+          tier: string | null
           time_spent: number | null
           user_id: string
         }
@@ -1139,7 +1141,9 @@ export type Database = {
           created_at?: string
           detailed_results?: Json | null
           id?: string
+          level?: string | null
           score: number
+          tier?: string | null
           time_spent?: number | null
           user_id: string
         }
@@ -1150,7 +1154,9 @@ export type Database = {
           created_at?: string
           detailed_results?: Json | null
           id?: string
+          level?: string | null
           score?: number
+          tier?: string | null
           time_spent?: number | null
           user_id?: string
         }

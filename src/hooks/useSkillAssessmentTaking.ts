@@ -245,7 +245,9 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined) => {
         detailed_results: detailedResults,
         skill_scores: skillScores,
         time_spent: totalTime - timeRemaining,
-        completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString(),
+        level: assessment.level || "intermediate",
+        tier: assessment.tier || userTier
       });
       
       // Save results
