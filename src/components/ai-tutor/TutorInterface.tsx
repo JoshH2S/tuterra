@@ -16,7 +16,13 @@ interface TutorInterfaceProps {
   onConversationStart?: () => void;
 }
 
-const DEFAULT_LEARNING_STEPS = [
+// Define Step type for type safety
+interface LearningStep {
+  title: string;
+  completed: boolean;
+}
+
+const DEFAULT_LEARNING_STEPS: LearningStep[] = [
   { title: "Understand key concepts", completed: false },
   { title: "Practice with examples", completed: false },
   { title: "Apply knowledge", completed: false },
@@ -32,7 +38,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
   const { user } = useAuth();
   const { subscription } = useSubscription();
   const [smartNotes, setSmartNotes] = useState<string[]>([]);
-  const [learningSteps, setLearningSteps] = useState(DEFAULT_LEARNING_STEPS);
+  const [learningSteps, setLearningSteps] = useState<LearningStep[]>(DEFAULT_LEARNING_STEPS);
   const [currentTopic, setCurrentTopic] = useState<string | null>(null);
 
   // Handle send message and conversation start
@@ -62,13 +68,22 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
           .single();
 
         if (data && !error) {
+          // Handle topic
           if (data.topic) setCurrentTopic(data.topic);
-          if (data.progress !== null) setActiveStep(data.progress);
-          if (data.learning_path && data.learning_path.length > 0) {
-            setLearningSteps(data.learning_path);
+          
+          // Handle progress
+          if (data.progress !== null && typeof data.progress === 'number') {
+            setActiveStep(data.progress);
           }
-          if (data.smart_notes && data.smart_notes.length > 0) {
-            setSmartNotes(data.smart_notes);
+          
+          // Handle learning_path - ensure it's an array before setting state
+          if (data.learning_path && Array.isArray(data.learning_path) && data.learning_path.length > 0) {
+            setLearningSteps(data.learning_path as LearningStep[]);
+          }
+          
+          // Handle smart_notes - ensure it's an array before setting state
+          if (data.smart_notes && Array.isArray(data.smart_notes) && data.smart_notes.length > 0) {
+            setSmartNotes(data.smart_notes as string[]);
           }
         }
       } catch (error) {

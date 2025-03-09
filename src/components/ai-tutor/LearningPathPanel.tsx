@@ -24,10 +24,14 @@ export const LearningPathPanel = ({
   activeStep,
   setActiveStep,
   subscriptionTier,
-  steps,
+  steps = [],  // Provide empty array default to avoid undefined errors
   onClose
 }: LearningPathPanelProps) => {
-  const progress = Math.round(((activeStep + 1) / steps.length) * 100);
+  // Ensure steps is an array and has items
+  const validSteps = Array.isArray(steps) ? steps : [];
+  const stepsLength = validSteps.length || 1; // Prevent division by zero
+  
+  const progress = Math.round(((activeStep + 1) / stepsLength) * 100);
   const isPaid = subscriptionTier !== "free";
 
   return (
@@ -49,7 +53,7 @@ export const LearningPathPanel = ({
       </div>
 
       <div className="space-y-3">
-        {steps.map((step, index) => {
+        {validSteps.map((step, index) => {
           const isActive = index === activeStep;
           const isCompleted = index < activeStep;
           const isLocked = !isPaid && index > activeStep + 1;
