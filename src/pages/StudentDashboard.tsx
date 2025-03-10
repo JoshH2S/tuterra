@@ -10,7 +10,6 @@ import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 import { DesktopDashboard } from "@/components/dashboard/DesktopDashboard";
-import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { TasksList } from "@/components/dashboard/TasksList";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -100,8 +99,6 @@ export default function StudentDashboard() {
           )}
 
           <div className="grid gap-6">
-            <ActivityTimeline sessions={sessions} courses={courses} maxItems={3} />
-            
             <TasksList 
               sessions={sessions} 
               courses={courses} 
