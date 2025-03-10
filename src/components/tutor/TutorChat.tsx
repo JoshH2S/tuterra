@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useTutorMessages } from "@/hooks/useTutorMessages";
 import { TutorChatMessages } from "./TutorChatMessages";
@@ -6,7 +7,7 @@ import { TutorChatHeader } from "./TutorChatHeader";
 import { processFileContent } from "@/utils/file-utils";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Subscription } from "@/hooks/useSubscription";
 
 interface TutorChatProps {
@@ -48,6 +49,7 @@ export const TutorChat = ({
         setIsTyping(true);
         const response = await sendMessage(message, uploadedFileId, subscription);
         
+        // Handle smart notes for premium users
         if (subscription.tier === "premium" && response?.smartNotes) {
           setSmartNotes([...smartNotes, response.smartNotes]);
         }
@@ -58,7 +60,7 @@ export const TutorChat = ({
       }
       
       setMessage("");
-      setUploadedFileId(null);
+      setUploadedFileId(null);  // Reset the file ID after sending
     }
   };
 
@@ -101,7 +103,7 @@ export const TutorChat = ({
         isTyping={isTyping}
       />
       
-      <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 safe-area-bottom' : ''}`}>
+      <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 pb-4 pt-3 safe-area-bottom' : ''}`}>
         <TutorChatInput
           message={message}
           isLoading={isLoading}
