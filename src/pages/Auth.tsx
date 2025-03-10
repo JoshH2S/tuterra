@@ -6,12 +6,21 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { EmailVerification } from "@/components/auth/EmailVerification";
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 
 interface AuthProps {
   mode?: "emailVerification" | "resetPassword";
 }
 
-const Auth = ({ mode }: AuthProps = {}) => {
+const Auth = ({ mode: propMode }: AuthProps = {}) => {
+  // Check for mode in URL query params as well
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const queryMode = queryParams.get("mode") as "emailVerification" | "resetPassword" | null;
+  
+  // Use prop mode if provided, otherwise check query param
+  const mode = propMode || queryMode || undefined;
+
   if (mode === "emailVerification") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
 export const SignInForm = () => {
   const [email, setEmail] = useState("");
@@ -78,6 +79,15 @@ export const SignInForm = () => {
               required
             />
           </div>
+        </div>
+
+        <div className="flex justify-end">
+          <Link 
+            to="/auth?mode=resetPassword" 
+            className="text-sm text-primary hover:underline"
+          >
+            Forgot password?
+          </Link>
         </div>
 
         <Button 
