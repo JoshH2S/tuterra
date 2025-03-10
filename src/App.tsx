@@ -1,26 +1,18 @@
 
-import { BrowserRouter as Router } from "react-router-dom";
-import AppRoutes from "./routes/AppRoutes";
-import { Toaster } from "./components/ui/toaster";
-import { Toaster as SonnerToaster } from "./components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PrivacyPolicyProvider } from "./hooks/usePrivacyPolicy";
-import "./App.css";
+import { BrowserRouter } from "react-router-dom";
+import { MainLayout } from "@/components/layout/MainLayout";
 
 const queryClient = new QueryClient();
 
-function App() {
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <PrivacyPolicyProvider>
-        <Router>
-          <AppRoutes />
-          <Toaster />
-          <SonnerToaster position="top-center" />
-        </Router>
-      </PrivacyPolicyProvider>
+      <BrowserRouter>
+        <MainLayout />
+      </BrowserRouter>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;
