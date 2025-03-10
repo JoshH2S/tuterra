@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { ProfileProgress } from "./ProfileProgress";
 import { ProfileStepContent } from "./ProfileStepContent";
 import { useProfileSetup } from "@/hooks/useProfileSetup";
+import { LegalLink } from "@/components/legal/LegalLink";
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -55,6 +56,15 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
           educationLevel={educationLevel}
           setEducationLevel={setEducationLevel}
         />
+        
+        {step === totalSteps && (
+          <div className="mt-4 text-sm text-center text-muted-foreground">
+            By completing your profile, you confirm you've read our{" "}
+            <LegalLink type="privacy" className="h-auto p-0 font-normal text-primary" />{" "}
+            and{" "}
+            <LegalLink type="terms" className="h-auto p-0 font-normal text-primary" />
+          </div>
+        )}
       </div>
       
       {/* Footer with navigation buttons and progress visualization */}
