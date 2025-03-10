@@ -71,6 +71,7 @@ export const useSignUpForm = () => {
             first_name: firstName,
             last_name: lastName,
             school: school,
+            user_type: "student", // Add user_type field with default value "student"
           },
         },
       });
