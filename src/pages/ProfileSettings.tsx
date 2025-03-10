@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { NewsTopicsDialog } from "@/components/profile/NewsTopicsDialog";
-import { Newspaper, FileText, Lock } from "lucide-react";
+import { Newspaper } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
-import { LegalLink } from "@/components/legal/LegalLink";
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
@@ -32,7 +31,7 @@ const ProfileSettings = () => {
   };
 
   return (
-    <div className="container max-w-2xl mx-auto space-y-4 mb-16">
+    <div className="container max-w-2xl mx-auto space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Profile Settings</CardTitle>
@@ -78,37 +77,6 @@ const ProfileSettings = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Legal</CardTitle>
-          <CardDescription>Review our policies and terms</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Review our privacy policy and terms of use to understand how we handle your data and the conditions of using EduPortal.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button 
-              variant="outline"
-              className="flex items-center gap-2"
-              onClick={() => document.dispatchEvent(new CustomEvent('open-privacy-policy'))}
-            >
-              <FileText className="h-4 w-4" />
-              <LegalLink type="privacy" className="p-0" />
-            </Button>
-            
-            <Button 
-              variant="outline"
-              className="flex items-center gap-2"
-              onClick={() => document.dispatchEvent(new CustomEvent('open-terms-of-use'))}
-            >
-              <FileText className="h-4 w-4" />
-              <LegalLink type="terms" className="p-0" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Security Settings</CardTitle>
           <CardDescription>Manage your password and account security</CardDescription>
         </CardHeader>
@@ -119,9 +87,7 @@ const ProfileSettings = () => {
           <Button 
             variant="outline"
             onClick={() => navigate("/update-password")}
-            className="flex items-center gap-2"
           >
-            <Lock className="h-4 w-4" />
             Change Password
           </Button>
         </CardContent>

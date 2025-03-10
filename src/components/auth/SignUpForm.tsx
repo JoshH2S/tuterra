@@ -1,12 +1,10 @@
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { PersonalInfoInputs } from "./PersonalInfoInputs";
 import { PasswordInputs } from "./PasswordInputs";
 import { SubmitButton } from "./SubmitButton";
 import { SignUpFormHeader } from "./SignUpFormHeader";
 import { useSignUpForm } from "@/hooks/useSignUpForm";
-import { LegalAgreementCheckbox } from "@/components/legal/LegalAgreementCheckbox";
 
 export const SignUpForm = () => {
   const {
@@ -29,15 +27,6 @@ export const SignUpForm = () => {
     validatePassword,
     handleSignUp
   } = useSignUpForm();
-  
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (agreedToTerms) {
-      handleSignUp(e);
-    }
-  };
 
   return (
     <motion.div
@@ -48,7 +37,7 @@ export const SignUpForm = () => {
     >
       <SignUpFormHeader />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSignUp} className="space-y-4">
         {/* Personal Information */}
         <div className="space-y-4">
           <PersonalInfoInputs
@@ -75,12 +64,7 @@ export const SignUpForm = () => {
           />
         </div>
 
-        <LegalAgreementCheckbox 
-          checked={agreedToTerms} 
-          onCheckedChange={setAgreedToTerms} 
-        />
-
-        <SubmitButton loading={loading} disabled={!agreedToTerms} />
+        <SubmitButton loading={loading} />
       </form>
     </motion.div>
   );

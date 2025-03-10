@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { LegalLink } from "@/components/legal/LegalLink";
 
 export const SignInForm = () => {
   const [email, setEmail] = useState("");
@@ -97,13 +96,6 @@ export const SignInForm = () => {
           )}
         </Button>
       </form>
-
-      <div className="text-center text-sm text-muted-foreground">
-        By signing in, you agree to our{" "}
-        <LegalLink type="privacy" className="text-primary" />{" "}
-        and{" "}
-        <LegalLink type="terms" className="text-primary" />
-      </div>
     </motion.div>
   );
-}
+};

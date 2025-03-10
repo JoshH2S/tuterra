@@ -7,7 +7,6 @@ import { MainSidebar } from "./MainSidebar";
 import { MobileNavigation } from "./mobile/MobileNavigation";
 import { MobileHeader } from "./mobile/MobileHeader";
 import { DesktopHeader } from "./desktop/DesktopHeader";
-import { Footer } from "./Footer";
 import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,7 +23,7 @@ export const MainLayout = () => {
       <Toaster />
       <Sonner />
       <SidebarProvider>
-        <div className="min-h-screen flex w-full flex-col">
+        <div className="min-h-screen flex w-full">
           <SkipToContent />
           <MainSidebar />
           <div className="flex-1 flex flex-col">
@@ -32,7 +31,6 @@ export const MainLayout = () => {
             <main id="main-content" className={`flex-1 ${isMobile ? 'px-4 py-4 pb-24' : 'px-8 py-8'} overflow-x-hidden`}>
               <AppRoutes />
             </main>
-            <Footer />
           </div>
           {isMobile && <MobileNavigation />}
         </div>
