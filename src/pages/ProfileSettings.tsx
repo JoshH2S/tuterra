@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { NewsTopicsDialog } from "@/components/profile/NewsTopicsDialog";
-import { Newspaper } from "lucide-react";
+import { Newspaper, FileText } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
+import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
@@ -90,6 +91,29 @@ const ProfileSettings = () => {
           >
             Change Password
           </Button>
+        </CardContent>
+      </Card>
+      
+      {/* Legal section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Legal and Policies</CardTitle>
+          <CardDescription>Review our legal documents and policies</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Read our policies to understand how we handle your data and the terms of using our service.
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <PrivacyPolicyLink />
+            </div>
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="text-primary hover:underline cursor-pointer">Terms of Service</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

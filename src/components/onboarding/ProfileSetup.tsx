@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { ProfileProgress } from "./ProfileProgress";
 import { ProfileStepContent } from "./ProfileStepContent";
 import { useProfileSetup } from "@/hooks/useProfileSetup";
+import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -59,17 +60,26 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
       
       {/* Footer with navigation buttons and progress visualization */}
       <div className="p-4 border-t bg-gray-50 sm:px-6">
-        <ProfileProgress 
-          progressPercentage={getProgressPercentage()}
-          progressMessage={getProgressMessage()}
-          step={step}
-          totalSteps={totalSteps}
-          isCurrentStepValid={isCurrentStepValid()}
-          isSubmitting={isSubmitting}
-          onBack={handleBack}
-          onNext={handleNext}
-          onComplete={handleComplete}
-        />
+        <div className="flex flex-col space-y-4">
+          <ProfileProgress 
+            progressPercentage={getProgressPercentage()}
+            progressMessage={getProgressMessage()}
+            step={step}
+            totalSteps={totalSteps}
+            isCurrentStepValid={isCurrentStepValid()}
+            isSubmitting={isSubmitting}
+            onBack={handleBack}
+            onNext={handleNext}
+            onComplete={handleComplete}
+          />
+          
+          {/* Privacy policy text */}
+          <div className="text-center">
+            <p className="text-xs text-gray-500">
+              <PrivacyPolicyLink className="text-xs text-primary hover:underline cursor-pointer" linkText="View our Privacy Policy" /> to learn how we handle your data
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
