@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -115,37 +116,5 @@
     textarea {
       @apply min-h-[44px] touch-manipulation;
     }
-  }
-}
-
-/* Mobile optimizations for chat */
-.momentum-scroll {
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  scroll-behavior: smooth;
-}
-
-/* Safe area insets for mobile devices */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 1rem);
-}
-
-/* Improved touch feedback */
-@media (max-width: 640px) {
-  .touch-feedback {
-    @apply active:opacity-70 transition-opacity duration-150;
-  }
-  
-  /* Prevent text selection during touch operations */
-  .prevent-select {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  
-  /* Enhance scroll containers for mobile */
-  .mobile-scroll-container {
-    @apply overflow-y-auto overscroll-y-contain;
-    min-height: 0;
-    height: 100%;
   }
 }

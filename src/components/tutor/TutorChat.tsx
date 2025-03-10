@@ -88,7 +88,7 @@ export const TutorChat = ({
 
   return (
     <motion.div 
-      className="flex flex-col h-full w-full overflow-hidden bg-background"
+      className="flex flex-col h-full border rounded-lg overflow-hidden bg-background shadow-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
@@ -97,31 +97,27 @@ export const TutorChat = ({
         isPremium={subscription.tier === "premium"}
       />
       
-      <div className="flex-1 overflow-hidden relative">
-        <TutorChatMessages 
-          messages={messages} 
-          subscription={subscription}
-          isTyping={isTyping}
-        />
-      </div>
+      <TutorChatMessages 
+        messages={messages} 
+        subscription={subscription}
+        isTyping={isTyping}
+      />
       
-      <div className="border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 w-full z-10 safe-area-bottom">
-        <div className="max-w-3xl mx-auto px-3 py-3">
-          <TutorChatInput
-            message={message}
-            isLoading={isLoading}
-            onMessageChange={setMessage}
-            onSubmit={handleSubmit}
-            onFileUpload={handleFileUpload}
-            subscription={subscription}
-          />
-          
-          {subscription.tier === "free" && (
-            <div className="mt-2 text-center text-xs text-muted-foreground">
-              <p>Upgrade to Pro or Premium for advanced features</p>
-            </div>
-          )}
-        </div>
+      <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 pb-4 pt-3 safe-area-bottom' : ''}`}>
+        <TutorChatInput
+          message={message}
+          isLoading={isLoading}
+          onMessageChange={setMessage}
+          onSubmit={handleSubmit}
+          onFileUpload={handleFileUpload}
+          subscription={subscription}
+        />
+        
+        {subscription.tier === "free" && (
+          <div className="mt-2 text-center text-xs text-muted-foreground">
+            <p>Upgrade to Pro or Premium for advanced features</p>
+          </div>
+        )}
       </div>
     </motion.div>
   );
