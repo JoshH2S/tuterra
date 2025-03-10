@@ -1,11 +1,16 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, AtSign, Lock, Building, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { User, AtSign, Lock, Building, Loader2, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordRequirements } from "./PasswordRequirements";
+import { PasswordStrengthMeter } from "./PasswordStrengthMeter";
+import { PasswordSuggestions } from "./PasswordSuggestions";
+import { PasswordCollapsible } from "./PasswordCollapsible";
+import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
 
 export const SignUpForm = () => {
   const [email, setEmail] = useState("");
@@ -16,17 +21,43 @@ export const SignUpForm = () => {
   const [school, setSchool] = useState("");
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (password) {
+      setPasswordStrength(calculatePasswordStrength(password));
+      
+      // Clear password error if all requirements are met
+      const { allMet } = validatePasswordRequirements(password);
+      if (allMet && passwordError === "Password doesn't meet requirements") {
+        setPasswordError("");
+      }
+    } else {
+      setPasswordStrength(0);
+    }
+  }, [password, passwordError]);
+
   const validatePassword = () => {
+    // Only validate if password field has been touched
+    if (!passwordTouched) return true;
+    
+    // Check password requirements
+    const { allMet } = validatePasswordRequirements(password);
+    if (!allMet) {
+      setPasswordError("Password doesn't meet requirements");
+      return false;
+    }
+    
+    // Check if passwords match
     if (password !== confirmPassword) {
       setPasswordError("Passwords do not match");
       return false;
     }
-    if (password.length < 8) {
-      setPasswordError("Password must be at least 8 characters long");
-      return false;
-    }
+    
     setPasswordError("");
     return true;
   };
@@ -34,6 +65,7 @@ export const SignUpForm = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate passwords before submission
     if (!validatePassword()) {
       return;
     }
@@ -122,30 +154,84 @@ export const SignUpForm = () => {
             />
           </div>
 
+          {/* Password Section with Enhanced Features */}
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="pl-10"
+              className="pl-10 pr-10"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (!passwordTouched) setPasswordTouched(true);
+              }}
+              onBlur={validatePassword}
               required
             />
+            <button 
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+              <span className="sr-only">
+                {showPassword ? "Hide password" : "Show password"}
+              </span>
+            </button>
           </div>
+
+          {/* Password strength and requirements (only show when password field is not empty) */}
+          {password && (
+            <>
+              <PasswordRequirements password={password} />
+              <PasswordStrengthMeter password={password} strength={passwordStrength} />
+            </>
+          )}
 
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm password"
-              className="pl-10"
+              className="pl-10 pr-10"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              onBlur={validatePassword}
               required
             />
+            <button 
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+              <span className="sr-only">
+                {showConfirmPassword ? "Hide password" : "Show password"}
+              </span>
+            </button>
           </div>
 
+          {/* Password suggestions collapsible */}
+          <PasswordCollapsible trigger="Need a strong password?">
+            <PasswordSuggestions onSelect={(suggestion) => {
+              setPassword(suggestion);
+              setConfirmPassword(suggestion);
+              setPasswordTouched(true);
+            }} />
+          </PasswordCollapsible>
+
+          {/* Password error feedback */}
           {passwordError && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
