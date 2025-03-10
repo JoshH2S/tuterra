@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -60,10 +61,10 @@ export const useQuizGeneration = () => {
         return;
       }
 
-      // Create the quiz with title, teacher_id, and duration
+      // Create the quiz with title, user_id, and duration
       const quizData = {
         title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
-        teacher_id: session.user.id,
+        user_id: session.user.id,
         duration_minutes: duration
       };
 
