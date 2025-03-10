@@ -4,14 +4,15 @@ import { Loader2 } from "lucide-react";
 
 interface SubmitButtonProps {
   loading: boolean;
+  disabled?: boolean; // Added disabled prop as optional
 }
 
-export const SubmitButton = ({ loading }: SubmitButtonProps) => {
+export const SubmitButton = ({ loading, disabled = false }: SubmitButtonProps) => {
   return (
     <Button 
       type="submit" 
       className="w-full" 
-      disabled={loading}
+      disabled={loading || disabled}
       size="lg"
     >
       {loading ? (
