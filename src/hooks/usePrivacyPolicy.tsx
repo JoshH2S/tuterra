@@ -1,30 +1,23 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 import { PrivacyPolicyModal } from "@/components/legal/PrivacyPolicyModal";
-import { TermsOfServiceModal } from "@/components/legal/TermsOfServiceModal";
 
 interface PrivacyPolicyContextType {
   openPrivacyPolicy: () => void;
-  openTermsOfService: () => void;
 }
 
 const PrivacyPolicyContext = createContext<PrivacyPolicyContextType | undefined>(undefined);
 
 export const PrivacyPolicyProvider = ({ children }: { children: ReactNode }) => {
-  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
-  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
-  const openPrivacyPolicy = () => setIsPrivacyOpen(true);
-  const closePrivacyPolicy = () => setIsPrivacyOpen(false);
-  
-  const openTermsOfService = () => setIsTermsOpen(true);
-  const closeTermsOfService = () => setIsTermsOpen(false);
+  const openPrivacyPolicy = () => setIsOpen(true);
+  const closePrivacyPolicy = () => setIsOpen(false);
 
   return (
-    <PrivacyPolicyContext.Provider value={{ openPrivacyPolicy, openTermsOfService }}>
+    <PrivacyPolicyContext.Provider value={{ openPrivacyPolicy }}>
       {children}
-      <PrivacyPolicyModal open={isPrivacyOpen} onClose={closePrivacyPolicy} />
-      <TermsOfServiceModal open={isTermsOpen} onClose={closeTermsOfService} />
+      <PrivacyPolicyModal open={isOpen} onClose={closePrivacyPolicy} />
     </PrivacyPolicyContext.Provider>
   );
 };
