@@ -48,7 +48,7 @@ export const useTemplateCrud = () => {
         .insert({
           title,
           content,
-          teacher_id: user.id,
+          user_id: user.id,
         })
         .select()
         .single();

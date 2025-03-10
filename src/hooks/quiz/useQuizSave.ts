@@ -29,10 +29,10 @@ export const useQuizSave = () => {
         return { success: false, quizId: null };
       }
 
-      // Create the quiz with title, teacher_id, and duration
+      // Create the quiz with title, user_id, and duration
       const quizData = {
         title: title, // Use the provided title or default
-        teacher_id: session.user.id,
+        user_id: session.user.id,
         duration_minutes: duration,
         published: false // Add explicit published flag
       };

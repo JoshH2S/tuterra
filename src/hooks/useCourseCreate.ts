@@ -15,7 +15,7 @@ export const useCourseCreate = () => {
         .from('courses')
         .insert([{ 
           title,
-          teacher_id: user.id
+          user_id: user.id
         }]);
 
       if (courseError) throw courseError;
