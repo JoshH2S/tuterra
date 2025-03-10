@@ -10,6 +10,8 @@ import { SubscriptionBadge } from "./SubscriptionBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SmartNotesPanel } from "./SmartNotesPanel";
+import { LayoutPanelLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TutorInterfaceProps {
   onConversationStart?: () => void;
@@ -33,7 +35,8 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
   const [activeStep, setActiveStep] = useState(0);
   const isMobile = useIsMobile();
   const isTouch = useTouchDevice();
-  const [showSidebar, setShowSidebar] = useState(!isMobile);
+  // Always start with sidebar collapsed
+  const [showSidebar, setShowSidebar] = useState(false);
   const { user } = useAuth();
   const { subscription } = useSubscription();
   const [smartNotes, setSmartNotes] = useState<string[]>([]);
@@ -127,12 +130,32 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         totalSteps={learningSteps.length}
         title={currentTopic || "AI Study Assistant"}
         toggleSidebar={toggleSidebar}
-        showSidebarToggle={true}
+        showSidebarToggle={false} // Hide the default toggle in header
       >
         <SubscriptionBadge tier={subscription.tier} />
       </TutorHeader>
 
       <div className="flex flex-col md:flex-row relative h-[calc(100dvh-16rem)] md:h-[600px] md:max-h-[80vh]">
+        {/* Toggle button for the sidebar - visible when sidebar is closed */}
+        {!showSidebar && (
+          <motion.div
+            initial={{ opacity: 0, x: -5 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="absolute left-4 top-4 z-30"
+          >
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 w-9 rounded-full p-0 flex items-center justify-center shadow-md border-border/80 bg-background/90 backdrop-blur-sm"
+              onClick={toggleSidebar}
+              aria-label="Open learning path"
+            >
+              <LayoutPanelLeft size={16} className="text-muted-foreground" />
+            </Button>
+          </motion.div>
+        )}
+        
         {/* Learning path sidebar with proper mobile layout */}
         <AnimatePresence mode="wait">
           {showSidebar && (
@@ -148,7 +171,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
                 setActiveStep={handleStepClick}
                 subscriptionTier={subscription.tier}
                 steps={learningSteps}
-                onClose={isMobile ? () => setShowSidebar(false) : undefined}
+                onClose={() => setShowSidebar(false)}
               />
             </motion.div>
           )}
