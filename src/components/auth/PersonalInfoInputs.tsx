@@ -1,5 +1,5 @@
 
-import { User, AtSign, Building } from "lucide-react";
+import { User, AtSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface PersonalInfoInputsProps {
@@ -9,8 +9,6 @@ interface PersonalInfoInputsProps {
   setLastName: (value: string) => void;
   email: string;
   setEmail: (value: string) => void;
-  school: string;
-  setSchool: (value: string) => void;
 }
 
 export const PersonalInfoInputs = ({
@@ -20,8 +18,6 @@ export const PersonalInfoInputs = ({
   setLastName,
   email,
   setEmail,
-  school,
-  setSchool,
 }: PersonalInfoInputsProps) => {
   return (
     <>
@@ -56,17 +52,6 @@ export const PersonalInfoInputs = ({
           className="pl-10"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="relative">
-        <Building className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="School"
-          className="pl-10"
-          value={school}
-          onChange={(e) => setSchool(e.target.value)}
           required
         />
       </div>

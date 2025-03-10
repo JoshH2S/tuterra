@@ -10,7 +10,6 @@ export const useSignUpForm = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [school, setSchool] = useState("");
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
@@ -70,7 +69,6 @@ export const useSignUpForm = () => {
           data: {
             first_name: firstName,
             last_name: lastName,
-            school: school,
             user_type: "student", // Add user_type field with default value "student"
           },
         },
@@ -104,8 +102,6 @@ export const useSignUpForm = () => {
     setFirstName,
     lastName,
     setLastName,
-    school,
-    setSchool,
     loading,
     passwordError,
     setPasswordError,

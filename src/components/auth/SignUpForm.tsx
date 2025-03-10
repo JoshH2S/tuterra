@@ -18,8 +18,6 @@ export const SignUpForm = () => {
     setFirstName,
     lastName,
     setLastName,
-    school,
-    setSchool,
     loading,
     passwordError,
     setPasswordError,
@@ -49,8 +47,6 @@ export const SignUpForm = () => {
             setLastName={setLastName}
             email={email}
             setEmail={setEmail}
-            school={school}
-            setSchool={setSchool}
           />
 
           {/* Password Section */}
