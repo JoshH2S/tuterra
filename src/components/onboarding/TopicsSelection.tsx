@@ -16,7 +16,15 @@ type NewsTopic =
   | 'industry_specific'
   | 'cybersecurity_it';
 
-const NEWS_TOPICS = [
+interface NewsTopicItem {
+  value: NewsTopic;
+  label: string;
+  description: string;
+  popular?: boolean;
+  trending?: boolean;
+}
+
+const NEWS_TOPICS: NewsTopicItem[] = [
   { 
     value: 'business_economics', 
     label: 'Business & Economics',
@@ -71,7 +79,7 @@ const NEWS_TOPICS = [
     trending: true,
     description: 'Network security, information technology' 
   },
-] as const;
+];
 
 interface TopicsSelectionProps {
   selectedTopics: string[];
