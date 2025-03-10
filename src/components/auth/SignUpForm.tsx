@@ -8,8 +8,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PasswordRequirements } from "./PasswordRequirements";
 import { PasswordStrengthMeter } from "./PasswordStrengthMeter";
-import { PasswordSuggestions } from "./PasswordSuggestions";
-import { PasswordCollapsible } from "./PasswordCollapsible";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
 
 export const SignUpForm = () => {
@@ -155,35 +153,40 @@ export const SignUpForm = () => {
           </div>
 
           {/* Password Section with Enhanced Features */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className="pl-10 pr-10"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (!passwordTouched) setPasswordTouched(true);
-              }}
-              onBlur={validatePassword}
-              required
-            />
-            <button 
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-              <span className="sr-only">
-                {showPassword ? "Hide password" : "Show password"}
-              </span>
-            </button>
+          <div className="space-y-1">
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="pl-10 pr-10"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (!passwordTouched) setPasswordTouched(true);
+                }}
+                onBlur={validatePassword}
+                required
+              />
+              <button 
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+                <span className="sr-only">
+                  {showPassword ? "Hide password" : "Show password"}
+                </span>
+              </button>
+            </div>
+            <p className="text-xs italic text-muted-foreground px-1">
+              Password must be at least 8 characters with at least one letter, one number, and one special character.
+            </p>
           </div>
 
           {/* Password strength and requirements (only show when password field is not empty) */}
@@ -221,15 +224,6 @@ export const SignUpForm = () => {
               </span>
             </button>
           </div>
-
-          {/* Password suggestions collapsible */}
-          <PasswordCollapsible trigger="Need a strong password?">
-            <PasswordSuggestions onSelect={(suggestion) => {
-              setPassword(suggestion);
-              setConfirmPassword(suggestion);
-              setPasswordTouched(true);
-            }} />
-          </PasswordCollapsible>
 
           {/* Password error feedback */}
           {passwordError && (
