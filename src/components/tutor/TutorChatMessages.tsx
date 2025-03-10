@@ -5,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Subscription } from "@/hooks/useSubscription";
 import { motion } from "framer-motion";
 import { TypingIndicator } from "./TypingIndicator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TutorChatMessagesProps {
   messages: Array<{
@@ -42,7 +43,7 @@ export const TutorChatMessages = ({
     if (messages.length > 0) {
       scrollToBottom();
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   // Add effect for message container to make it work better on mobile
   useEffect(() => {
@@ -64,7 +65,7 @@ export const TutorChatMessages = ({
   return (
     <div 
       ref={messagesContainerRef}
-      className={`flex-1 overflow-y-auto p-4 space-y-6 ${isMobile ? 'p-3' : ''}`}
+      className="flex-1 overflow-y-auto p-4 space-y-6 flex flex-col h-full"
     >
       {messages.length === 0 ? (
         <div className="flex items-center justify-center h-full">
@@ -85,7 +86,7 @@ export const TutorChatMessages = ({
         </div>
       ) : (
         <>
-          <div className="space-y-6">
+          <div className="space-y-6 flex-grow">
             {messages.map((msg, index) => (
               <TutorMessage
                 key={msg.id}

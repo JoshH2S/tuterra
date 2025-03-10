@@ -124,7 +124,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
   }, [user]);
 
   return (
-    <div className="rounded-lg overflow-hidden border border-border bg-background">
+    <div className="rounded-lg overflow-hidden border border-border bg-background h-[calc(100dvh-2rem)] md:h-[calc(100dvh-4rem)]">
       <TutorHeader 
         activeStep={activeStep}
         totalSteps={learningSteps.length}
@@ -135,7 +135,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         <SubscriptionBadge tier={subscription.tier} />
       </TutorHeader>
 
-      <div className="flex flex-col md:flex-row relative h-[calc(100dvh-16rem)] md:h-[600px] md:max-h-[80vh]">
+      <div className="flex flex-col md:flex-row relative h-[calc(100dvh-8rem)] md:h-[calc(100dvh-8rem)]">
         {/* Toggle button for the sidebar - visible when sidebar is closed */}
         {!showSidebar && (
           <motion.div
@@ -189,7 +189,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         )}
 
         {/* Main content area with responsive layout for subscription tiers */}
-        <div className="flex-grow grid grid-cols-12 gap-0 md:gap-4 p-0 md:p-4 h-full overflow-hidden">
+        <div className="flex-grow grid grid-cols-12 gap-0 h-full overflow-hidden">
           {/* Larger chat area for free tier, smaller for paid tiers */}
           <div className={`${subscription.tier === 'free' ? 'col-span-12' : 'col-span-12 lg:col-span-8'} h-full`}>
             <TutorChat 
