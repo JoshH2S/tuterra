@@ -9,6 +9,7 @@ import { useState } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
 import { StudySessionDialog } from "@/components/dashboard/StudySessionDialog";
+import { CreateStudySessionData } from "@/types/study-sessions";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -17,7 +18,7 @@ export default function StudentDashboard() {
   const isMobile = useIsMobile();
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
 
-  const handleCreateSession = async (sessionData: Omit<StudySession, 'id' | 'student_id'>) => {
+  const handleCreateSession = async (sessionData: CreateStudySessionData) => {
     await createSession(sessionData);
     setSessionDialogOpen(false);
   };

@@ -25,6 +25,7 @@ export const createStudySession = async (userId: string, sessionData: CreateStud
     ...(sessionData.course_id ? { course_id: sessionData.course_id } : {})
   };
 
+  // Create study session in database
   const { data, error } = await supabase
     .from('study_sessions')
     .insert([newSessionData])
@@ -32,6 +33,28 @@ export const createStudySession = async (userId: string, sessionData: CreateStud
     .single();
 
   if (error) throw error;
+  
+  // If the user opted for notifications, call the notification scheduler
+  if (newSessionData.notify_user === true) {
+    try {
+      await supabase.functions.invoke('schedule-session-reminder', {
+        body: { 
+          session_id: data.id,
+          student_id: userId,
+          title: data.title,
+          start_time: data.start_time
+        }
+      });
+    } catch (notificationError) {
+      console.error('Failed to schedule notification:', notificationError);
+      // Don't block the session creation if notification scheduling fails
+      toast({
+        title: "Session created",
+        description: "But we couldn't schedule your notification. You may not receive a reminder.",
+        variant: "default",
+      });
+    }
+  }
   
   return {
     ...data,
@@ -55,6 +78,34 @@ export const updateStudySession = async (userId: string, id: string, updates: Pa
 
   if (error) throw error;
   
+  // If notification preference is updated, handle accordingly
+  if (updates.notify_user !== undefined) {
+    if (updates.notify_user === true) {
+      // Schedule a notification
+      try {
+        await supabase.functions.invoke('schedule-session-reminder', {
+          body: { 
+            session_id: id,
+            student_id: userId,
+            title: data.title,
+            start_time: data.start_time
+          }
+        });
+      } catch (notificationError) {
+        console.error('Failed to schedule notification:', notificationError);
+      }
+    } else {
+      // Cancel any existing notification
+      try {
+        await supabase.functions.invoke('cancel-session-reminder', {
+          body: { session_id: id }
+        });
+      } catch (notificationError) {
+        console.error('Failed to cancel notification:', notificationError);
+      }
+    }
+  }
+  
   return {
     ...data,
     status: data.status as 'scheduled' | 'completed' | 'missed'
@@ -62,6 +113,16 @@ export const updateStudySession = async (userId: string, id: string, updates: Pa
 };
 
 export const deleteStudySession = async (userId: string, id: string) => {
+  // First try to cancel any notifications
+  try {
+    await supabase.functions.invoke('cancel-session-reminder', {
+      body: { session_id: id }
+    });
+  } catch (notificationError) {
+    console.error('Failed to cancel notification:', notificationError);
+    // Continue with deletion even if notification cancellation fails
+  }
+
   const { error } = await supabase
     .from('study_sessions')
     .delete()

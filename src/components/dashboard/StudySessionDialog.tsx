@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { StudySession } from "@/hooks/useStudySessions";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { CreateStudySessionData } from "@/types/study-sessions";
 import { StudentCourse } from "@/types/student";
 
 interface StudySessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateSession: (sessionData: Omit<StudySession, 'id' | 'student_id'>) => Promise<void>;
+  onCreateSession: (sessionData: CreateStudySessionData) => Promise<void>;
   courses: StudentCourse[];
 }
 
@@ -21,13 +23,19 @@ export function StudySessionDialog({
   onCreateSession, 
   courses 
 }: StudySessionDialogProps) {
-  const [sessionData, setSessionData] = useState<Partial<StudySession>>({});
+  const [sessionData, setSessionData] = useState<Partial<CreateStudySessionData>>({
+    notify_user: false,
+    status: 'scheduled'
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (sessionData.title && sessionData.course_id && sessionData.start_time && sessionData.end_time) {
-      onCreateSession(sessionData as Omit<StudySession, 'id' | 'student_id'>);
-      setSessionData({}); // Reset form after submission
+      onCreateSession(sessionData as CreateStudySessionData);
+      setSessionData({ 
+        notify_user: false,
+        status: 'scheduled'
+      }); // Reset form after submission
     }
   };
 
@@ -66,6 +74,17 @@ export function StudySessionDialog({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="topics">Topics to Study</Label>
+            <Textarea 
+              id="topics"
+              value={sessionData.topics || ''}
+              onChange={(e) => setSessionData({...sessionData, topics: e.target.value})}
+              placeholder="Enter specific topics you plan to study"
+              className="min-h-[60px]"
+            />
+          </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -89,14 +108,26 @@ export function StudySessionDialog({
               />
             </div>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch 
+              id="notify"
+              checked={sessionData.notify_user}
+              onCheckedChange={(checked) => setSessionData({...sessionData, notify_user: checked})}
+            />
+            <Label htmlFor="notify" className="cursor-pointer">
+              Notify me 1 hour before (email reminder)
+            </Label>
+          </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Input 
+            <Label htmlFor="description">Additional Notes (Optional)</Label>
+            <Textarea 
               id="description"
               value={sessionData.description || ''}
               onChange={(e) => setSessionData({...sessionData, description: e.target.value})}
-              placeholder="Add details about this session"
+              placeholder="Add any additional details about this session"
+              className="min-h-[80px]"
             />
           </div>
           
