@@ -11,12 +11,11 @@ export const useCourseCreate = () => {
         throw new Error('User not authenticated');
       }
 
-      // Use teacher_id which matches the database schema instead of user_id
       const { error: courseError } = await supabase
         .from('courses')
         .insert({ 
           title,
-          teacher_id: user.id
+          user_id: user.id
         });
 
       if (courseError) throw courseError;

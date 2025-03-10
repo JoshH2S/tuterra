@@ -218,9 +218,9 @@ export type Database = {
           description: string | null
           id: string
           metadata: Json | null
-          teacher_id: string
           title: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           content: Json
@@ -228,9 +228,9 @@ export type Database = {
           description?: string | null
           id?: string
           metadata?: Json | null
-          teacher_id: string
           title: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           content?: Json
@@ -238,14 +238,14 @@ export type Database = {
           description?: string | null
           id?: string
           metadata?: Json | null
-          teacher_id?: string
           title?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "course_templates_teacher_id_fkey"
-            columns: ["teacher_id"]
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -257,25 +257,25 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
-          teacher_id: string
           title: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
           description?: string | null
           id?: string
-          teacher_id: string
           title: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
           description?: string | null
           id?: string
-          teacher_id?: string
           title?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -537,9 +537,9 @@ export type Database = {
           file_type: string
           id: string
           metadata: Json | null
-          teacher_id: string
           title: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -549,9 +549,9 @@ export type Database = {
           file_type: string
           id?: string
           metadata?: Json | null
-          teacher_id: string
           title: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -561,14 +561,14 @@ export type Database = {
           file_type?: string
           id?: string
           metadata?: Json | null
-          teacher_id?: string
           title?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "media_library_teacher_id_fkey"
-            columns: ["teacher_id"]
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1027,9 +1027,9 @@ export type Database = {
           duration_minutes: number | null
           id: string
           published: boolean | null
-          teacher_id: string
           title: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           allow_retakes?: boolean | null
@@ -1038,9 +1038,9 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           published?: boolean | null
-          teacher_id: string
           title: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           allow_retakes?: boolean | null
@@ -1049,14 +1049,14 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           published?: boolean | null
-          teacher_id?: string
           title?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "quizzes_teacher_id_fkey"
-            columns: ["teacher_id"]
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

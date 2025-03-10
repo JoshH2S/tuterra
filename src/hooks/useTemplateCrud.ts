@@ -43,11 +43,10 @@ export const useTemplateCrud = () => {
     }
 
     try {
-      // Use teacher_id to match the database schema
       const templateData = {
         title,
         content,
-        teacher_id: user.id
+        user_id: user.id
       };
 
       const { data, error } = await supabase

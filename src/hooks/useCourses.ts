@@ -17,11 +17,10 @@ export const useCourses = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Modified to use teacher_id to match the database schema
       const { data, error } = await supabase
         .from('courses')
         .select('*')
-        .eq('teacher_id', user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
