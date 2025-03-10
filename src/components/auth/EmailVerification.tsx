@@ -1,12 +1,27 @@
 
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Mail, Clock, HelpCircle } from "lucide-react";
+import { WelcomePopup } from "../onboarding/WelcomePopup";
 
 export const EmailVerification = () => {
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  
   // This would be replaced with the actual verification link from URL params in a real implementation
   const verificationLink = "https://eduportal.com/verify?token=example";
+
+  const handleConfirmAccount = () => {
+    // In a real implementation, this would verify the token with Supabase
+    // For demo purposes, we'll just simulate success and show the welcome popup
+    setVerificationSuccess(true);
+    setShowWelcomePopup(true);
+    
+    // In a real implementation, this would redirect to the dashboard
+    // window.location.href = verificationLink;
+  };
 
   return (
     <motion.div
@@ -77,7 +92,7 @@ export const EmailVerification = () => {
                 <Button 
                   size="lg" 
                   className="px-8 py-6 text-lg font-medium shadow-md"
-                  onClick={() => window.location.href = verificationLink}
+                  onClick={handleConfirmAccount}
                 >
                   <Mail className="mr-2 h-5 w-5" />
                   Confirm Your Account
@@ -136,6 +151,12 @@ export const EmailVerification = () => {
       <div className="mt-6 text-center text-xs text-gray-500 px-4">
         <p>Having trouble viewing this page? Please try on a larger screen or contact support.</p>
       </div>
+
+      {/* Welcome Popup */}
+      <WelcomePopup 
+        isOpen={showWelcomePopup} 
+        onClose={() => setShowWelcomePopup(false)} 
+      />
     </motion.div>
   );
 };
