@@ -45,15 +45,12 @@ export const TutorChatInput = ({
     if (!textarea) return;
 
     const adjustHeight = () => {
-      textarea.style.height = '0';
-      const scrollHeight = Math.min(textarea.scrollHeight, 120);
-      textarea.style.height = `${scrollHeight}px`;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     };
 
     textarea.addEventListener('input', adjustHeight);
-    
-    // Call once to initialize
-    requestAnimationFrame(adjustHeight);
+    adjustHeight(); // Initial adjustment
 
     return () => textarea.removeEventListener('input', adjustHeight);
   }, [message]);
@@ -81,14 +78,13 @@ export const TutorChatInput = ({
   );
 
   return (
-    <form onSubmit={onSubmit} className="space-y-2 w-full">
-      <div className="flex items-end gap-2 w-full">
+    <form onSubmit={onSubmit} className="space-y-2">
+      <div className="flex items-end gap-2">
         {(isPremium || isPro) && (
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.2 }}
-            className="flex-shrink-0"
           >
             <FileUpload
               onFileSelect={onFileUpload}
@@ -106,11 +102,11 @@ export const TutorChatInput = ({
             placeholder={isPremium ? "Ask anything with enhanced AI..." : "Ask me anything..."}
             className={cn(
               "resize-none min-h-[44px] pr-12 transition-all",
-              isMobile ? "text-sm" : "",
+              isMobile ? "py-2 text-sm" : "py-2.5",
               isPremium 
                 ? "focus-visible:ring-amber-300" 
                 : "",
-              "rounded-full px-4 py-3 flex items-center"
+              "rounded-full px-4 flex items-center"
             )}
             disabled={isLoading}
             onKeyDown={(e) => {
@@ -122,11 +118,7 @@ export const TutorChatInput = ({
                 }
               }
             }}
-            style={{ 
-              paddingTop: '10px', 
-              paddingBottom: '10px',
-              lineHeight: '1.5'
-            }}
+            style={{ paddingTop: '10px', paddingBottom: '10px' }}
           />
           
           {(isPremium || isPro) && (

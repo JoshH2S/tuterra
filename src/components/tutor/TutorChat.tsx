@@ -88,7 +88,7 @@ export const TutorChat = ({
 
   return (
     <motion.div 
-      className="flex flex-col h-full overflow-hidden"
+      className="flex flex-col h-full border rounded-lg overflow-hidden bg-background shadow-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
@@ -103,7 +103,7 @@ export const TutorChat = ({
         isTyping={isTyping}
       />
       
-      <div className={`bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 border-t ${isMobile ? 'sticky bottom-0 pb-4 pt-3 safe-area-bottom' : ''}`}>
+      <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 pb-4 pt-3 safe-area-bottom' : ''}`}>
         <TutorChatInput
           message={message}
           isLoading={isLoading}
