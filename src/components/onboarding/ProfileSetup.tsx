@@ -4,7 +4,6 @@ import { Progress } from "@/components/ui/progress";
 import { ProfileProgress } from "./ProfileProgress";
 import { ProfileStepContent } from "./ProfileStepContent";
 import { useProfileSetup } from "@/hooks/useProfileSetup";
-import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -71,13 +70,6 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
           onNext={handleNext}
           onComplete={handleComplete}
         />
-        
-        {/* Privacy policy link */}
-        <div className="text-center mt-3">
-          <p className="text-xs text-gray-500">
-            <PrivacyPolicyLink className="text-xs" /> - View our Privacy Policy to learn how we handle your data
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ProfileSetup } from "./ProfileSetup";
 import { ChevronRight, ArrowRight, Sparkles } from "lucide-react";
-import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
-import { TermsOfServiceLink } from "@/components/legal/TermsOfServiceLink";
 
 interface WelcomePopupProps {
   isOpen: boolean;
@@ -116,15 +114,15 @@ export const WelcomePopup = ({ isOpen, onClose }: WelcomePopupProps) => {
                 </Button>
               </motion.div>
               
-              {/* Mobile notes and legal links */}
-              <div className="mt-8 text-center">
-                <p className="text-xs text-gray-500 mb-3">
-                  Swipe through the steps to complete your profile setup
-                </p>
-                <p className="text-xs text-gray-500">
-                  By continuing, you agree to our <PrivacyPolicyLink className="text-xs" /> and <TermsOfServiceLink className="text-xs" />
-                </p>
-              </div>
+              {/* Mobile notes */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1, duration: 0.5 }}
+                className="text-xs text-gray-500 mt-8 text-center"
+              >
+                Swipe through the steps to complete your profile setup
+              </motion.p>
             </motion.div>
           ) : (
             <motion.div

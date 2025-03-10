@@ -6,7 +6,6 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { EmailVerification } from "@/components/auth/EmailVerification";
 import { motion } from "framer-motion";
-import { Footer } from "@/components/layout/Footer";
 
 interface AuthProps {
   mode?: "emailVerification" | "resetPassword";
@@ -15,18 +14,15 @@ interface AuthProps {
 const Auth = ({ mode }: AuthProps = {}) => {
   if (mode === "emailVerification") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <EmailVerification />
-        <div className="mt-8">
-          <Footer />
-        </div>
       </div>
     );
   }
 
   if (mode === "resetPassword") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center">Reset Password</CardTitle>
@@ -35,9 +31,6 @@ const Auth = ({ mode }: AuthProps = {}) => {
             <ResetPasswordForm />
           </CardContent>
         </Card>
-        <div className="mt-8">
-          <Footer />
-        </div>
       </div>
     );
   }
@@ -80,9 +73,6 @@ const Auth = ({ mode }: AuthProps = {}) => {
           </Tabs>
         </CardContent>
       </Card>
-      <div className="mt-8">
-        <Footer />
-      </div>
     </motion.div>
   );
 };
