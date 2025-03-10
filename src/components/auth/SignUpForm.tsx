@@ -7,7 +7,7 @@ import { SubmitButton } from "./SubmitButton";
 import { SignUpFormHeader } from "./SignUpFormHeader";
 import { useSignUpForm } from "@/hooks/useSignUpForm";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
+import { PrivacyPolicyLink, TermsOfServiceLink } from "@/components/legal/PrivacyPolicyLink";
 import { Label } from "@/components/ui/label";
 
 export const SignUpForm = () => {
@@ -97,7 +97,7 @@ export const SignUpForm = () => {
               htmlFor="terms"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              I agree to the <PrivacyPolicyLink /> and <span className="text-primary hover:underline cursor-pointer">Terms of Service</span>
+              I agree to the <PrivacyPolicyLink /> and <TermsOfServiceLink />
             </Label>
             {showTermsError && (
               <p className="text-sm text-destructive">
@@ -110,7 +110,7 @@ export const SignUpForm = () => {
         <SubmitButton loading={loading} />
         
         <p className="text-xs text-center text-muted-foreground pt-2">
-          By signing up, you agree to our <PrivacyPolicyLink className="text-xs text-primary hover:underline cursor-pointer" /> and Terms of Service
+          By signing up, you agree to our <PrivacyPolicyLink className="text-xs text-primary hover:underline cursor-pointer" /> and <TermsOfServiceLink className="text-xs text-primary hover:underline cursor-pointer" />
         </p>
       </form>
     </motion.div>

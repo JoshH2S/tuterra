@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { ProfileProgress } from "./ProfileProgress";
 import { ProfileStepContent } from "./ProfileStepContent";
 import { useProfileSetup } from "@/hooks/useProfileSetup";
-import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
+import { PrivacyPolicyLink, TermsOfServiceLink } from "@/components/legal/PrivacyPolicyLink";
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -76,7 +76,7 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
           {/* Privacy policy text */}
           <div className="text-center">
             <p className="text-xs text-gray-500">
-              <PrivacyPolicyLink className="text-xs text-primary hover:underline cursor-pointer" linkText="View our Privacy Policy" /> to learn how we handle your data
+              <PrivacyPolicyLink className="text-xs text-primary hover:underline cursor-pointer" linkText="View our Privacy Policy" /> and <TermsOfServiceLink className="text-xs text-primary hover:underline cursor-pointer" linkText="Terms of Service" /> to learn how we handle your data
             </p>
           </div>
         </div>

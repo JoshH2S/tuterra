@@ -8,7 +8,7 @@ import { ProfileForm } from "@/components/profile/ProfileForm";
 import { NewsTopicsDialog } from "@/components/profile/NewsTopicsDialog";
 import { Newspaper, FileText } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
-import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
+import { PrivacyPolicyLink, TermsOfServiceLink } from "@/components/legal/PrivacyPolicyLink";
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
@@ -111,7 +111,7 @@ const ProfileSettings = () => {
             </div>
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="text-primary hover:underline cursor-pointer">Terms of Service</span>
+              <TermsOfServiceLink />
             </div>
           </div>
         </CardContent>
