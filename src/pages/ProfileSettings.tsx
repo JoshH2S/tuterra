@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { NewsTopicsDialog } from "@/components/profile/NewsTopicsDialog";
-import { Newspaper } from "lucide-react";
+import { Newspaper, Shield, FileText } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
+import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
+import { TermsOfServiceLink } from "@/components/legal/TermsOfServiceLink";
+import { Footer } from "@/components/layout/Footer";
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
@@ -31,7 +34,7 @@ const ProfileSettings = () => {
   };
 
   return (
-    <div className="container max-w-2xl mx-auto space-y-4">
+    <div className="container max-w-2xl mx-auto space-y-4 pb-20">
       <Card>
         <CardHeader>
           <CardTitle>Profile Settings</CardTitle>
@@ -92,11 +95,32 @@ const ProfileSettings = () => {
           </Button>
         </CardContent>
       </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Legal</CardTitle>
+          <CardDescription>View our legal policies and terms</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Shield className="h-4 w-4 text-muted-foreground" />
+              <PrivacyPolicyLink />
+            </div>
+            <div className="flex items-center space-x-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <TermsOfServiceLink />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <NewsTopicsDialog
         open={showTopicsDialog}
         onClose={() => setShowTopicsDialog(false)}
       />
+      
+      <Footer />
     </div>
   );
 };

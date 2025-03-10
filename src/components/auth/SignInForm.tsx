@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PrivacyPolicyLink } from "@/components/legal/PrivacyPolicyLink";
+import { TermsOfServiceLink } from "@/components/legal/TermsOfServiceLink";
 
 export const SignInForm = () => {
   const [email, setEmail] = useState("");
@@ -96,6 +98,10 @@ export const SignInForm = () => {
           )}
         </Button>
       </form>
+      
+      <p className="text-xs text-center text-muted-foreground">
+        By signing in, you agree to our <PrivacyPolicyLink className="text-xs" /> and <TermsOfServiceLink className="text-xs" />
+      </p>
     </motion.div>
   );
 };
