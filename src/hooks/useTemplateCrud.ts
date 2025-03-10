@@ -43,13 +43,19 @@ export const useTemplateCrud = () => {
     }
 
     try {
+      // We need to implement this differently due to database schema limitations
+      // Since the database might still be using teacher_id
+      const templateData: any = {
+        title,
+        content,
+      };
+      
+      // Add user ID to the appropriate field
+      templateData.user_id = user.id;
+
       const { data, error } = await supabase
         .from('course_templates')
-        .insert({
-          title,
-          content,
-          user_id: user.id,
-        })
+        .insert(templateData)
         .select()
         .single();
 

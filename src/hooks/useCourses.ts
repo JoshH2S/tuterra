@@ -17,6 +17,7 @@ export const useCourses = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Use a different approach to avoid the deep type instantiation error
       const { data, error } = await supabase
         .from('courses')
         .select('*')

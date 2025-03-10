@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
+import { motion } from "framer-motion";
 
 interface AuthProps {
   mode?: "emailVerification" | "resetPassword";
@@ -41,21 +42,31 @@ const Auth = ({ mode }: AuthProps = {}) => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-[50px] w-[200px]">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+    >
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="mb-[50px] w-[200px]"
+      >
         <img 
           src="/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png" 
           alt="EduPortal Logo"
           className="w-full h-auto"
         />
-      </div>
-      <Card className="w-full max-w-md">
+      </motion.div>
+      <Card className="w-full max-w-md shadow-lg border-0">
         <CardHeader>
           <CardTitle className="text-center">Welcome to EduPortal</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
@@ -68,7 +79,7 @@ const Auth = ({ mode }: AuthProps = {}) => {
           </Tabs>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 };
 

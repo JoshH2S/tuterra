@@ -13,10 +13,10 @@ export const useCourseCreate = () => {
 
       const { error: courseError } = await supabase
         .from('courses')
-        .insert([{ 
+        .insert({ 
           title,
           user_id: user.id
-        }]);
+        });
 
       if (courseError) throw courseError;
       
