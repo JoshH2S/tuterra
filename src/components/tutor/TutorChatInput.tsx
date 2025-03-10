@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { PaperclipIcon, SendIcon, Sparkles, Smile } from "lucide-react";
+import { PaperclipIcon, SendIcon, Smile, Sparkles } from "lucide-react";
 import FileUpload from "@/components/FileUpload";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Subscription } from "@/hooks/useSubscription";
@@ -85,6 +85,7 @@ export const TutorChatInput = ({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.2 }}
+            className="flex-shrink-0"
           >
             <FileUpload
               onFileSelect={onFileUpload}
@@ -101,12 +102,10 @@ export const TutorChatInput = ({
             onChange={(e) => onMessageChange(e.target.value)}
             placeholder={isPremium ? "Ask anything with enhanced AI..." : "Ask me anything..."}
             className={cn(
-              "resize-none min-h-[44px] pr-12 transition-all",
-              isMobile ? "py-2 text-sm" : "py-2.5",
-              isPremium 
-                ? "focus-visible:ring-amber-300" 
-                : "",
-              "rounded-full px-4 flex items-center"
+              "resize-none min-h-[44px] pr-24 transition-all",
+              isMobile ? "text-sm" : "",
+              isPremium ? "focus-visible:ring-amber-300" : "",
+              "rounded-full px-4 py-3 flex items-center"
             )}
             disabled={isLoading}
             onKeyDown={(e) => {
@@ -121,30 +120,33 @@ export const TutorChatInput = ({
             style={{ paddingTop: '10px', paddingBottom: '10px' }}
           />
           
-          {(isPremium || isPro) && (
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="absolute right-12 bottom-1.5 text-muted-foreground hover:text-foreground"
-              disabled={isLoading}
-            >
-              <Smile className="h-5 w-5" />
-            </Button>
-          )}
-          
-          <Button 
-            type="submit" 
-            size="icon"
-            disabled={isLoading || !message.trim()}
-            className={cn(
-              "absolute right-1 bottom-1.5 rounded-full h-8 w-8",
-              isPremium ? "bg-amber-500 hover:bg-amber-600" : ""
+          <div className="absolute right-1 bottom-1 flex items-center space-x-1">
+            {(isPremium || isPro) && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="rounded-full h-8 w-8 text-muted-foreground hover:text-foreground flex items-center justify-center"
+                disabled={isLoading}
+                aria-label="Add emoji"
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
             )}
-            aria-label="Send message"
-          >
-            <SendIcon className="h-4 w-4" />
-          </Button>
+            
+            <Button 
+              type="submit" 
+              size="icon"
+              disabled={isLoading || !message.trim()}
+              className={cn(
+                "rounded-full h-8 w-8 flex items-center justify-center",
+                isPremium ? "bg-amber-500 hover:bg-amber-600" : ""
+              )}
+              aria-label="Send message"
+            >
+              <SendIcon className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </form>
