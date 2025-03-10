@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,6 @@ export const SignUpForm = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [school, setSchool] = useState("");
-  const [userType, setUserType] = useState<"teacher" | "student">("teacher");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -40,7 +38,6 @@ export const SignUpForm = () => {
           data: {
             first_name: firstName,
             last_name: lastName,
-            user_type: userType,
             school: school,
           },
         },
@@ -65,23 +62,6 @@ export const SignUpForm = () => {
 
   return (
     <form onSubmit={handleSignUp} className="space-y-4">
-      <div className="space-y-2">
-        <Label>I am a:</Label>
-        <RadioGroup
-          defaultValue="teacher"
-          onValueChange={(value) => setUserType(value as "teacher" | "student")}
-          className="flex space-x-4"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="teacher" id="teacher" />
-            <Label htmlFor="teacher">Teacher</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="student" id="student" />
-            <Label htmlFor="student">Student</Label>
-          </div>
-        </RadioGroup>
-      </div>
       <div className="grid grid-cols-2 gap-4">
         <Input
           placeholder="First Name"
