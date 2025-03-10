@@ -17,11 +17,11 @@ export const useCourses = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Use a different approach to avoid the deep type instantiation error
+      // Modified to use teacher_id to match the database schema
       const { data, error } = await supabase
         .from('courses')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('teacher_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

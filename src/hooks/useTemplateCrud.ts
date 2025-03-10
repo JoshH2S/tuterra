@@ -43,15 +43,12 @@ export const useTemplateCrud = () => {
     }
 
     try {
-      // We need to implement this differently due to database schema limitations
-      // Since the database might still be using teacher_id
-      const templateData: any = {
+      // Use teacher_id to match the database schema
+      const templateData = {
         title,
         content,
+        teacher_id: user.id
       };
-      
-      // Add user ID to the appropriate field
-      templateData.user_id = user.id;
 
       const { data, error } = await supabase
         .from('course_templates')
