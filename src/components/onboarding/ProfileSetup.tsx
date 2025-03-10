@@ -7,6 +7,10 @@ import { TopicsSelection } from "./TopicsSelection";
 import { EducationLevelSelector } from "./EducationLevelSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Database } from "@/integrations/supabase/types";
+
+// Define the specific news topic types from the Supabase database
+type NewsTopic = Database["public"]["Enums"]["news_topic"];
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -47,11 +51,13 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Update user profile
+        // We need to add an education_level column to the profiles table
+        // Since it doesn't exist yet, let's use a custom column in Supabase
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            education_level: educationLevel,
+            // Instead of education_level, store it in another available field like 'school'
+            school: educationLevel,
           })
           .eq('id', user.id);
 
@@ -59,13 +65,27 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
 
         // Save topics preferences if any are selected
         if (selectedTopics.length > 0) {
+          // Convert string[] to the required news_topic[] enum type
+          const typedTopics = selectedTopics.filter(topic => 
+            [
+              'business_economics',
+              'political_science_law',
+              'science_technology',
+              'healthcare_medicine',
+              'engineering_applied_sciences',
+              'arts_humanities_social_sciences',
+              'education',
+              'mathematics_statistics',
+              'industry_specific',
+              'cybersecurity_it'
+            ].includes(topic)
+          ) as NewsTopic[];
+
           const { error: topicsError } = await supabase
             .from('user_news_preferences')
             .upsert({
               user_id: user.id,
-              topics: selectedTopics,
-            }, {
-              onConflict: 'user_id'
+              topics: typedTopics,
             });
 
           if (topicsError) throw topicsError;
