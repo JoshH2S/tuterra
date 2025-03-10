@@ -46,7 +46,7 @@ export const TutorChatInput = ({
 
     const adjustHeight = () => {
       textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
     };
 
     textarea.addEventListener('input', adjustHeight);
@@ -78,7 +78,7 @@ export const TutorChatInput = ({
   );
 
   return (
-    <form onSubmit={onSubmit} className="space-y-2">
+    <form onSubmit={onSubmit} className="w-full">
       <div className="flex items-end gap-2">
         {(isPremium || isPro) && (
           <motion.div 

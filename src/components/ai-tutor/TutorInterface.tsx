@@ -10,6 +10,7 @@ import { SubscriptionBadge } from "./SubscriptionBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SmartNotesPanel } from "./SmartNotesPanel";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface TutorInterfaceProps {
   onConversationStart?: () => void;
@@ -33,12 +34,13 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
   const [activeStep, setActiveStep] = useState(0);
   const isMobile = useIsMobile();
   const isTouch = useTouchDevice();
-  const [showSidebar, setShowSidebar] = useState(!isMobile);
+  const [showSidebar, setShowSidebar] = useState(false);
   const { user } = useAuth();
   const { subscription } = useSubscription();
   const [smartNotes, setSmartNotes] = useState<string[]>([]);
   const [learningSteps, setLearningSteps] = useState<LearningStep[]>(DEFAULT_LEARNING_STEPS);
   const [currentTopic, setCurrentTopic] = useState<string | null>(null);
+  const [showNotesPanel, setShowNotesPanel] = useState(false);
 
   // Handle send message and conversation start
   const handleSendMessage = () => {
@@ -50,6 +52,11 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
   // Toggle sidebar visibility
   const toggleSidebar = () => {
     setShowSidebar(prev => !prev);
+  };
+
+  // Toggle notes panel visibility
+  const toggleNotesPanel = () => {
+    setShowNotesPanel(prev => !prev);
   };
 
   // Close sidebar when clicking a step on mobile
@@ -121,7 +128,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
   }, [user]);
 
   return (
-    <div className="rounded-lg overflow-hidden border border-border bg-background">
+    <div className="h-full w-full overflow-hidden flex flex-col">
       <TutorHeader 
         activeStep={activeStep}
         totalSteps={learningSteps.length}
@@ -132,58 +139,78 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         <SubscriptionBadge tier={subscription.tier} />
       </TutorHeader>
 
-      <div className="flex flex-col md:flex-row relative h-[calc(100dvh-16rem)] md:h-[600px] md:max-h-[80vh]">
-        {/* Learning path sidebar with proper mobile layout */}
-        <AnimatePresence mode="wait">
-          {showSidebar && (
-            <motion.div 
-              className={`${isMobile ? 'absolute z-20 h-full w-[85%] shadow-xl' : 'md:w-64 border-r'} bg-background`}
-              initial={{ x: isMobile ? '-100%' : 0, opacity: isMobile ? 0 : 1 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: isMobile ? '-100%' : 0, opacity: isMobile ? 0 : 1 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
-            >
+      <div className="flex-1 relative overflow-hidden">
+        {/* Main chat area */}
+        <div className="h-full">
+          <TutorChat 
+            onSendMessage={handleSendMessage} 
+            subscription={subscription}
+            smartNotes={smartNotes}
+            setSmartNotes={setSmartNotes}
+          />
+        </div>
+
+        {/* Learning path sidebar using Sheet component for mobile */}
+        {isMobile ? (
+          <Sheet open={showSidebar} onOpenChange={setShowSidebar}>
+            <SheetContent side="left" className="p-0 w-[85%] sm:max-w-md">
               <LearningPathPanel 
                 activeStep={activeStep} 
                 setActiveStep={handleStepClick}
                 subscriptionTier={subscription.tier}
                 steps={learningSteps}
-                onClose={isMobile ? () => setShowSidebar(false) : undefined}
+                onClose={() => setShowSidebar(false)}
               />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Overlay to close sidebar on mobile */}
-        {isMobile && showSidebar && (
-          <motion.div 
-            className="absolute inset-0 bg-black/40 z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowSidebar(false)}
-          />
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <AnimatePresence>
+            {showSidebar && (
+              <motion.div 
+                className="absolute top-0 left-0 h-full w-64 border-r bg-background z-10"
+                initial={{ x: '-100%', opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: '-100%', opacity: 0 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+              >
+                <LearningPathPanel 
+                  activeStep={activeStep} 
+                  setActiveStep={handleStepClick}
+                  subscriptionTier={subscription.tier}
+                  steps={learningSteps}
+                  onClose={() => setShowSidebar(false)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
 
-        {/* Main content area with responsive layout for subscription tiers */}
-        <div className="flex-grow grid grid-cols-12 gap-0 md:gap-4 p-0 md:p-4 h-full overflow-hidden">
-          {/* Larger chat area for free tier, smaller for paid tiers */}
-          <div className={`${subscription.tier === 'free' ? 'col-span-12' : 'col-span-12 lg:col-span-8'} h-full`}>
-            <TutorChat 
-              onSendMessage={handleSendMessage} 
-              subscription={subscription}
-              smartNotes={smartNotes}
-              setSmartNotes={setSmartNotes}
-            />
-          </div>
-
-          {/* Smart Notes Panel - only for premium tier */}
-          {subscription.tier === 'premium' && (
-            <div className="hidden lg:block lg:col-span-4 h-full">
-              <SmartNotesPanel notes={smartNotes} />
-            </div>
-          )}
-        </div>
+        {/* Smart Notes Panel for premium users - show as Sheet on mobile */}
+        {subscription.tier === 'premium' && (
+          <>
+            {isMobile ? (
+              <Sheet open={showNotesPanel} onOpenChange={setShowNotesPanel}>
+                <SheetContent side="right" className="p-0 w-[85%] sm:max-w-md">
+                  <SmartNotesPanel notes={smartNotes} />
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <AnimatePresence>
+                {showNotesPanel && (
+                  <motion.div 
+                    className="absolute top-0 right-0 h-full w-64 border-l bg-background z-10"
+                    initial={{ x: '100%', opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: '100%', opacity: 0 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
+                  >
+                    <SmartNotesPanel notes={smartNotes} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
