@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { BookOpen, Brain, Bot, Users, Sparkles, Info } from "lucide-react";
 import { HeroSection } from "@/components/blocks/hero-section-dark";
@@ -89,17 +88,6 @@ const Index = () => {
         />
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="absolute inset-0 bg-gradient-to-tr from-blue-300/20 via-blue-500/10 to-transparent dark:from-blue-300/5 dark:via-blue-500/10 rounded-3xl backdrop-blur-sm"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: { opacity: 1, transition: { duration: 0.7 } }
-            }}
-          />
-          
           <div className="relative">
             <div className="text-center mb-10 md:mb-16">
               <div className="flex items-center justify-center gap-2">
