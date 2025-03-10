@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -145,9 +144,8 @@
   
   /* Enhance scroll containers for mobile */
   .mobile-scroll-container {
-    @apply overflow-y-auto overscroll-behavior-y-contain;
+    @apply overflow-y-auto overscroll-y-contain;
     min-height: 0;
     height: 100%;
   }
 }
-
