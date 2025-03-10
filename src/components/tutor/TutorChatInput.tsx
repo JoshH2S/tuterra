@@ -7,7 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Subscription } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 interface TutorChatInputProps {
   message: string;
@@ -38,6 +38,10 @@ export const TutorChatInput = ({
   const isPremium = subscription.tier === "premium";
   const isPro = subscription.tier === "pro";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [inputHeight, setInputHeight] = useState<number>(44); // Default minimum height
+  
+  // Debug mode to help with alignment troubleshooting
+  const [debugMode, setDebugMode] = useState(false);
 
   // Auto-resize the textarea
   useEffect(() => {
@@ -46,20 +50,35 @@ export const TutorChatInput = ({
 
     const adjustHeight = () => {
       textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+      const newHeight = Math.min(textarea.scrollHeight, 200);
+      textarea.style.height = `${newHeight}px`;
+      setInputHeight(newHeight);
+      
+      // Debug logging for alignment troubleshooting
+      if (debugMode) {
+        console.log('Textarea metrics:', {
+          scrollHeight: textarea.scrollHeight,
+          clientHeight: textarea.clientHeight,
+          offsetHeight: textarea.offsetHeight,
+          lineHeight: window.getComputedStyle(textarea).lineHeight,
+          padding: window.getComputedStyle(textarea).padding,
+          border: window.getComputedStyle(textarea).borderWidth
+        });
+      }
     };
 
     textarea.addEventListener('input', adjustHeight);
-    adjustHeight(); // Initial adjustment
+    // Initial adjustment when component mounts or message changes
+    adjustHeight();
 
     return () => textarea.removeEventListener('input', adjustHeight);
-  }, [message]);
+  }, [message, debugMode]);
 
   const uploadButton = (
     <Button 
       variant="ghost" 
       size="icon"
-      className="flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+      className="flex-shrink-0 rounded-full h-9 w-9 text-muted-foreground hover:text-foreground flex items-center justify-center"
       aria-label="Upload file"
       type="button"
       disabled={isLoading}
@@ -73,7 +92,7 @@ export const TutorChatInput = ({
         }
       }}
     >
-      <PaperclipIcon className="h-5 w-5" />
+      <PaperclipIcon className="h-[18px] w-[18px]" />
     </Button>
   );
 
@@ -102,11 +121,18 @@ export const TutorChatInput = ({
             onChange={(e) => onMessageChange(e.target.value)}
             placeholder={isPremium ? "Ask anything with enhanced AI..." : "Ask me anything..."}
             className={cn(
-              "resize-none min-h-[44px] pr-24 transition-all",
+              "resize-none min-h-[44px] rounded-full",
+              "px-4 pr-[90px] py-0", // Remove vertical padding to better control centering
+              "flex items-center leading-normal",
               isMobile ? "text-sm" : "",
-              isPremium ? "focus-visible:ring-amber-300" : "",
-              "rounded-full px-4 py-3 flex items-center"
+              isPremium ? "focus-visible:ring-amber-300" : ""
             )}
+            style={{
+              // Use inline styles to dynamically set height and padding
+              height: `${inputHeight}px`,
+              paddingTop: '12px',   // Explicit padding to center text vertically
+              paddingBottom: '12px'
+            }}
             disabled={isLoading}
             onKeyDown={(e) => {
               // Submit form on Enter (but not with Shift+Enter)
@@ -117,10 +143,9 @@ export const TutorChatInput = ({
                 }
               }
             }}
-            style={{ paddingTop: '10px', paddingBottom: '10px' }}
           />
           
-          <div className="absolute right-1 bottom-1 flex items-center space-x-1">
+          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 pr-1">
             {(isPremium || isPro) && (
               <Button
                 type="button"
@@ -130,7 +155,7 @@ export const TutorChatInput = ({
                 disabled={isLoading}
                 aria-label="Add emoji"
               >
-                <Smile className="h-5 w-5" />
+                <Smile className="h-[18px] w-[18px]" />
               </Button>
             )}
             
@@ -149,6 +174,19 @@ export const TutorChatInput = ({
           </div>
         </div>
       </div>
+      
+      {/* 
+      For development use only - uncomment to enable debug button
+      <div className="text-xs text-right">
+        <button 
+          type="button" 
+          onClick={() => setDebugMode(!debugMode)}
+          className="text-muted-foreground"
+        >
+          {debugMode ? "Disable" : "Enable"} debug
+        </button>
+      </div>
+      */}
     </form>
   );
 };
