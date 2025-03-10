@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, AtSign, Lock, Building, Loader2, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
@@ -185,7 +184,7 @@ export const SignUpForm = () => {
               </button>
             </div>
             <p className="text-xs italic text-muted-foreground px-1">
-              Password must be at least 8 characters with at least one letter, one number, and one special character.
+              Password must be at least 8 characters with at least one uppercase letter, one lowercase letter, one number, and one special character.
             </p>
           </div>
 

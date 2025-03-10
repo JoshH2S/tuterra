@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
+import { EmailVerification } from "@/components/auth/EmailVerification";
 import { motion } from "framer-motion";
 
 interface AuthProps {
@@ -14,14 +15,7 @@ const Auth = ({ mode }: AuthProps = {}) => {
   if (mode === "emailVerification") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center">Email Verification</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-center">Please check your email for the verification link.</p>
-          </CardContent>
-        </Card>
+        <EmailVerification />
       </div>
     );
   }
