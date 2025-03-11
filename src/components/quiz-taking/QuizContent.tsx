@@ -20,6 +20,8 @@ interface QuizContentProps {
     duration_minutes: number;
   };
   questions: QuizQuestion[];
+  timeRemaining: number | null;
+  setTimeRemaining: React.Dispatch<React.SetStateAction<number | null>>;
   onQuizSubmitted: () => void;
   onExitQuiz: () => void;
 }
@@ -28,13 +30,14 @@ const QuizContent: React.FC<QuizContentProps> = ({
   quizId, 
   quiz, 
   questions, 
+  timeRemaining,
+  setTimeRemaining,
   onQuizSubmitted,
   onExitQuiz
 }) => {
   const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
-  const [timeRemaining, setTimeRemaining] = useState<number>(quiz.duration_minutes * 60);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [timerActive, setTimerActive] = useState(true);
   const [showFeedback, setShowFeedback] = useState(false);
