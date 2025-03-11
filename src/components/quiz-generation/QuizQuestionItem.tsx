@@ -12,9 +12,10 @@ import { ExternalLink } from "lucide-react";
 interface QuizQuestionItemProps {
   question: Question | CaseStudyQuestion;
   index: number;
+  showAnswers?: boolean;
 }
 
-export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => {
+export const QuizQuestionItem = ({ question, index, showAnswers = false }: QuizQuestionItemProps) => {
   // Ensure we have valid options object
   const options = question.options || { A: '', B: '', C: '', D: '' };
   
@@ -72,18 +73,46 @@ export const QuizQuestionItem = ({ question, index }: QuizQuestionItemProps) => 
           
           <div className="mt-3 space-y-2">
             {Object.entries(options).map(([letter, text]) => (
-              <div key={letter} className="flex items-start gap-2 p-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <span className="text-sm font-medium min-w-[20px]">{letter}.</span>
-                <p className="text-sm">{text || 'No option text'}</p>
+              <div 
+                key={letter} 
+                className={`flex items-start gap-2 p-1.5 rounded-md ${
+                  showAnswers && letter === question.correctAnswer
+                    ? 'bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/30'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                }`}
+              >
+                <span className={`text-sm font-medium min-w-[20px] ${
+                  showAnswers && letter === question.correctAnswer
+                    ? 'text-green-600 dark:text-green-400'
+                    : ''
+                }`}>
+                  {letter}.
+                </span>
+                <p className={`text-sm ${
+                  showAnswers && letter === question.correctAnswer
+                    ? 'text-green-600 dark:text-green-400 font-medium'
+                    : ''
+                }`}>
+                  {text || 'No option text'}
+                </p>
+                {showAnswers && letter === question.correctAnswer && (
+                  <span className="ml-auto text-xs text-green-600 dark:text-green-400 font-medium">
+                    Correct
+                  </span>
+                )}
               </div>
             ))}
           </div>
           
-          <p className="text-sm text-muted-foreground mt-3 font-medium">
-            Answer: {question.correctAnswer || 'Not specified'}
-          </p>
+          {showAnswers ? (
+            <p className="text-sm text-muted-foreground mt-3 font-medium">
+              Answer: {question.correctAnswer || 'Not specified'}
+            </p>
+          ) : null}
           
-          <QuestionExplanation explanation={question.explanation} />
+          {showAnswers && question.explanation && (
+            <QuestionExplanation explanation={question.explanation} />
+          )}
           
           <div className="flex items-center flex-wrap gap-2 mt-3 text-sm text-muted-foreground">
             <span>Topic: {question.topic || 'General'}</span>
