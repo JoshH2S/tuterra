@@ -4,7 +4,7 @@ import { Course } from "@/types/course";
 export interface ProcessedQuiz {
   id: string;
   title: string;
-  teacher: string;
+  creator: string; // Changed from teacher
   duration: string;
   previousScore: number;
   attemptNumber: number;
@@ -27,7 +27,8 @@ export interface Quiz {
   course_id: string;
   duration_minutes: number;
   allow_retakes: boolean;
-  profiles: {
+  user_id?: string; // Added user_id to replace teacher_id
+  profiles?: {
     first_name: string;
     last_name: string;
   };

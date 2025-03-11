@@ -32,7 +32,7 @@ export const useQuizSave = () => {
       // Create the quiz with title, user_id, and duration
       const quizData: any = {
         title: title, // Use the provided title or default
-        user_id: session.user.id,
+        user_id: session.user.id, // Changed from teacher_id to user_id
         duration_minutes: duration,
         published: false // Add explicit published flag
       };

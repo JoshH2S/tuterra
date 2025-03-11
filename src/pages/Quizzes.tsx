@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -26,7 +25,6 @@ export default function Quizzes() {
   const { courses } = useCourses();
   const isMobile = useIsMobile();
 
-  // Function to fetch quizzes
   const fetchQuizzes = async () => {
     try {
       setLoading(true);
@@ -37,7 +35,7 @@ export default function Quizzes() {
         .from('quizzes')
         .select(`
           *,
-          profiles:teacher_id (
+          profiles:user_id (
             first_name,
             last_name
           ),
@@ -54,12 +52,10 @@ export default function Quizzes() {
 
       const quizzesByCourseTmp: QuizzesByCourse = {};
       data.forEach((quiz: any) => {
-        // Sort responses by attempt number in descending order to get the latest one
         const sortedResponses = quiz.quiz_responses.sort((a: any, b: any) => 
           b.attempt_number - a.attempt_number
         );
         
-        // Get only the latest response (first one after sorting)
         const latestResponse = sortedResponses.length > 0 ? sortedResponses[0] : undefined;
         
         const processedQuiz: Quiz = {
@@ -86,11 +82,9 @@ export default function Quizzes() {
     }
   };
 
-  // Fetch quizzes when the component mounts or when the location changes
-  // This ensures that we get fresh data when navigating from quiz creation
   useEffect(() => {
     fetchQuizzes();
-  }, [location.key]); // Re-fetch when the location key changes (navigation events)
+  }, [location.key]);
 
   useEffect(() => {
     if (courses.length > 0 && Object.keys(quizzesByCourse).length > 0) {
@@ -100,7 +94,7 @@ export default function Quizzes() {
         const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => ({
           id: quiz.id,
           title: quiz.title,
-          teacher: `${quiz.profiles.first_name} ${quiz.profiles.last_name}`,
+          creator: quiz.profiles ? `${quiz.profiles.first_name} ${quiz.profiles.last_name}` : 'Anonymous',
           duration: quiz.duration_minutes > 0 ? `${quiz.duration_minutes} minutes` : 'No time limit',
           previousScore: quiz.latest_response ? Math.round((quiz.latest_response.score / quiz.latest_response.total_questions) * 100) : 0,
           attemptNumber: quiz.latest_response ? quiz.latest_response.attempt_number : 0,
@@ -120,7 +114,6 @@ export default function Quizzes() {
   }, [courses, quizzesByCourse]);
 
   const handleViewResults = (quizId: string) => {
-    // Find the quiz to get its response ID
     for (const courseId in quizzesByCourse) {
       const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
       if (quiz && quiz.latest_response) {
@@ -135,7 +128,6 @@ export default function Quizzes() {
   };
 
   const handleRetakeQuiz = (quizId: string) => {
-    // Find the quiz
     for (const courseId in quizzesByCourse) {
       const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
       if (quiz) {
@@ -156,10 +148,8 @@ export default function Quizzes() {
     navigate('/quiz-generation');
   };
 
-  // Filter courses and quizzes based on search and filters
   const filteredCourses = processedCourses
     .map(course => {
-      // Filter quizzes by search term and status
       const filteredQuizzes = course.quizzes.filter(quiz => {
         const matchesSearch = searchTerm === "" || 
           quiz.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -178,7 +168,6 @@ export default function Quizzes() {
       };
     })
     .filter(course => {
-      // Only include the course if it has quizzes matching the filters
       return course.quizzes.length > 0 && 
         (selectedCourse === "all" || course.id === selectedCourse);
     });
@@ -196,7 +185,6 @@ export default function Quizzes() {
     );
   }
 
-  // Check if we should show empty state
   const showEmptyState = totalQuizCount === 0;
 
   return (
@@ -210,15 +198,13 @@ export default function Quizzes() {
         setSelectedCourse={setSelectedCourse}
         setSelectedStatus={setSelectedStatus}
         handleCreateQuiz={handleCreateQuiz}
-        refreshQuizzes={fetchQuizzes} // Pass the refresh function
+        refreshQuizzes={fetchQuizzes}
       />
 
-      {/* Empty State */}
       {showEmptyState && (
         <QuizzesEmptyState onCreateQuiz={handleCreateQuiz} />
       )}
 
-      {/* Course Sections */}
       {!showEmptyState && (
         <div className="space-y-8">
           {filteredCourses.map((course) => (
@@ -233,7 +219,6 @@ export default function Quizzes() {
         </div>
       )}
 
-      {/* Add disclaimer at the bottom of the page */}
       <div className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-800">
         <QuizDisclaimer />
       </div>
