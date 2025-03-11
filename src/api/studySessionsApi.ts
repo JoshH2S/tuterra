@@ -37,8 +37,9 @@ export const createStudySession = async (userId: string, sessionData: CreateStud
   // If the user opted for notifications, call the notification scheduler
   if (newSessionData.notify_user === true) {
     try {
-      await supabase.functions.invoke('schedule-session-reminder', {
+      await supabase.functions.invoke('session-reminders', {
         body: { 
+          action: 'schedule',
           session_id: data.id,
           student_id: userId,
           title: data.title,
@@ -83,8 +84,9 @@ export const updateStudySession = async (userId: string, id: string, updates: Pa
     if (updates.notify_user === true) {
       // Schedule a notification
       try {
-        await supabase.functions.invoke('schedule-session-reminder', {
+        await supabase.functions.invoke('session-reminders', {
           body: { 
+            action: 'schedule',
             session_id: id,
             student_id: userId,
             title: data.title,
@@ -97,8 +99,11 @@ export const updateStudySession = async (userId: string, id: string, updates: Pa
     } else {
       // Cancel any existing notification
       try {
-        await supabase.functions.invoke('cancel-session-reminder', {
-          body: { session_id: id }
+        await supabase.functions.invoke('session-reminders', {
+          body: { 
+            action: 'cancel',
+            session_id: id
+          }
         });
       } catch (notificationError) {
         console.error('Failed to cancel notification:', notificationError);
@@ -115,8 +120,11 @@ export const updateStudySession = async (userId: string, id: string, updates: Pa
 export const deleteStudySession = async (userId: string, id: string) => {
   // First try to cancel any notifications
   try {
-    await supabase.functions.invoke('cancel-session-reminder', {
-      body: { session_id: id }
+    await supabase.functions.invoke('session-reminders', {
+      body: { 
+        action: 'cancel',
+        session_id: id
+      }
     });
   } catch (notificationError) {
     console.error('Failed to cancel notification:', notificationError);
