@@ -26,8 +26,10 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     isCurrentStepValid,
     handleComplete
   } = useProfileSetup(() => {
-    onComplete(); // Call the original onComplete callback
-    navigate("/dashboard"); // Navigate to dashboard after completion
+    // First call onComplete to execute any parent component logic
+    onComplete();
+    // Then forcefully navigate to dashboard
+    navigate("/dashboard", { replace: true });
   });
 
   return (

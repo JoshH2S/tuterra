@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -112,6 +113,14 @@ export const useProfileSetup = (onComplete: () => void) => {
           description: "Your preferences have been saved.",
         });
 
+        // Ensure we have a valid session before navigating
+        const { data: { session }} = await supabase.auth.getSession();
+        if (!session) {
+          // If no session exists, refresh it to ensure navigation works properly
+          await supabase.auth.refreshSession();
+        }
+
+        // Call the completion callback after everything is successfully saved
         onComplete();
       }
     } catch (error) {
