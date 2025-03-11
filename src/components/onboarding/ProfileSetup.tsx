@@ -4,12 +4,14 @@ import { Progress } from "@/components/ui/progress";
 import { ProfileProgress } from "./ProfileProgress";
 import { ProfileStepContent } from "./ProfileStepContent";
 import { useProfileSetup } from "@/hooks/useProfileSetup";
+import { useNavigate } from "react-router-dom";
 
 interface ProfileSetupProps {
   onComplete: () => void;
 }
 
 export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
+  const navigate = useNavigate();
   const {
     step,
     totalSteps,
@@ -24,7 +26,11 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     getProgressMessage,
     isCurrentStepValid,
     handleComplete
-  } = useProfileSetup(onComplete);
+  } = useProfileSetup(() => {
+    // Navigate to dashboard after completing the profile setup
+    navigate("/dashboard");
+    onComplete();
+  });
 
   return (
     <div className="h-full flex flex-col">
