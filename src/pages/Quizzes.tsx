@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -91,17 +92,23 @@ export default function Quizzes() {
       const processed = courses.map(course => {
         const courseQuizzes = quizzesByCourse[course.id] || [];
         
-        const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => ({
-          id: quiz.id,
-          title: quiz.title,
-          creator: quiz.profiles ? `${quiz.profiles.first_name} ${quiz.profiles.last_name}` : 'Anonymous',
-          duration: quiz.duration_minutes > 0 ? `${quiz.duration_minutes} minutes` : 'No time limit',
-          previousScore: quiz.latest_response ? Math.round((quiz.latest_response.score / quiz.latest_response.total_questions) * 100) : 0,
-          attemptNumber: quiz.latest_response ? quiz.latest_response.attempt_number : 0,
-          totalQuestions: quiz.latest_response ? quiz.latest_response.total_questions : 10,
-          status: quiz.latest_response ? 'completed' : 'not_attempted',
-          allowRetake: quiz.allow_retakes
-        }));
+        const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => {
+          // Calculate score from only the latest response
+          const scorePercentage = quiz.latest_response ? 
+            Math.round((quiz.latest_response.score / quiz.latest_response.total_questions) * 100) : 0;
+            
+          return {
+            id: quiz.id,
+            title: quiz.title,
+            creator: quiz.profiles ? `${quiz.profiles.first_name} ${quiz.profiles.last_name}` : 'Anonymous',
+            duration: quiz.duration_minutes > 0 ? `${quiz.duration_minutes} minutes` : 'No time limit',
+            previousScore: scorePercentage,
+            attemptNumber: quiz.latest_response ? quiz.latest_response.attempt_number : 0,
+            totalQuestions: quiz.latest_response ? quiz.latest_response.total_questions : 10,
+            status: quiz.latest_response ? 'completed' : 'not_attempted',
+            allowRetake: quiz.allow_retakes
+          };
+        });
         
         return {
           ...course,

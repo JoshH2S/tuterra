@@ -14,7 +14,7 @@ interface QuizCardProps {
   quiz: {
     id: string;
     title: string;
-    creator: string; // Changed from teacher
+    creator: string;
     duration: string;
     previousScore: number;
     attemptNumber: number;
@@ -69,7 +69,7 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
             <User className="w-4 h-4 mr-2" />
-            Creator: {quiz.creator} {/* Changed from Teacher */}
+            Creator: {quiz.creator}
           </div>
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
             <Clock className="w-4 h-4 mr-2" />
