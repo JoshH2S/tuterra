@@ -5,7 +5,6 @@ import { Toaster } from "sonner";
 import { Footer } from "./Footer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileHeader } from "./mobile/MobileHeader";
-import { CourseTip } from "@/components/onboarding/CourseTip";
 
 export const MainLayout = () => {
   const isMobile = useIsMobile();
@@ -21,7 +20,6 @@ export const MainLayout = () => {
         <Footer />
       </div>
       <Toaster />
-      <CourseTip />
     </div>
   );
 };
