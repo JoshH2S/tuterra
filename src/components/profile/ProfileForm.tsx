@@ -58,7 +58,7 @@ export const ProfileForm = ({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="school">{formatEducationLevel(formData.school)}</Label>
+        <Label htmlFor="school">Education Level</Label>
         <Input
           id="school"
           value={formData.school}
