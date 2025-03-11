@@ -29,7 +29,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, loading]);
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen">
