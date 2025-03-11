@@ -65,8 +65,7 @@ const QuizGeneration = () => {
       case 1:
         return !!selectedCourseId && !!title;
       case 2:
-        // File upload is now optional
-        return true;
+        return !!selectedFile;
       case 3:
         return topics.every(topic => !!topic.description);
       case 4:
@@ -133,7 +132,6 @@ const QuizGeneration = () => {
                   selectedFile={selectedFile}
                   handleFileSelect={handleFileSelect}
                   contentLength={contentLength}
-                  isOptional={true}
                 />
               </StepContainer>
             )}
@@ -184,12 +182,14 @@ const QuizGeneration = () => {
             duration={duration}
           />
           
+          {/* Add disclaimer at the bottom of the page */}
           <div className="mt-8">
             <QuizDisclaimer />
           </div>
         </div>
       </main>
       
+      {/* Generate Quiz Confirmation Dialog */}
       <GenerateQuizDialog
         open={showGenerateDialog}
         onOpenChange={setShowGenerateDialog}

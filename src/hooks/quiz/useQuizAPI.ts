@@ -20,8 +20,6 @@ export const useQuizAPI = () => {
       .eq('id', session.user.id)
       .single();
 
-    console.log("Generating quiz with content length:", content.length, "and topics:", topics);
-
     const response = await fetch(
       'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-quiz',
       {
@@ -36,16 +34,12 @@ export const useQuizAPI = () => {
           difficulty,
           teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
           school: teacherData?.school,
-          // Indicate if we're generating without content
-          contentProvided: content.length > 0
         }),
       }
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("Quiz generation failed:", errorData);
-      throw new Error('Failed to generate quiz: ' + (errorData.error || response.statusText));
+      throw new Error('Failed to generate quiz');
     }
 
     const data = await response.json();

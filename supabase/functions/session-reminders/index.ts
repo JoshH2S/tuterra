@@ -1,6 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
+import { createClient } from '@supabase/supabase-js';
 
 interface ReminderPayload {
   action: 'schedule' | 'cancel';
@@ -17,17 +17,6 @@ serve(async (req) => {
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
-
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   // Get session data from request
   const { action, session_id, student_id, title, start_time } = await req.json() as ReminderPayload;
 
@@ -36,7 +25,7 @@ serve(async (req) => {
       if (!student_id || !title || !start_time) {
         return new Response(
           JSON.stringify({ error: 'Missing required parameters for scheduling' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
         );
       }
 
@@ -51,7 +40,7 @@ serve(async (req) => {
         console.error('Error fetching user email:', userError);
         return new Response(
           JSON.stringify({ error: 'Could not find user email' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 404, headers: { 'Content-Type': 'application/json' } }
         );
       }
 
@@ -79,13 +68,13 @@ serve(async (req) => {
         console.error('Error scheduling reminder:', reminderError);
         return new Response(
           JSON.stringify({ error: 'Failed to schedule reminder' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
       }
 
       return new Response(
         JSON.stringify({ success: true, data: reminderData }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     } 
     else if (action === 'cancel') {
@@ -99,26 +88,26 @@ serve(async (req) => {
         console.error('Error cancelling reminder:', deleteError);
         return new Response(
           JSON.stringify({ error: 'Failed to cancel reminder' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
       }
 
       return new Response(
         JSON.stringify({ success: true }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     } 
     else {
       return new Response(
         JSON.stringify({ error: 'Invalid action' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
     console.error('Error processing request:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 });
