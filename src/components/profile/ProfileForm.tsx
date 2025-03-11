@@ -24,6 +24,19 @@ export const ProfileForm = ({
   onSubmit,
   onCancel,
 }: ProfileFormProps) => {
+  // Function to capitalize first letter
+  const capitalizeFirstLetter = (string: string) => {
+    return string ? string.charAt(0).toUpperCase() + string.slice(1).toLowerCase() : '';
+  };
+
+  // Convert education level to display format (e.g., "high_school" -> "High School")
+  const formatEducationLevel = (level: string) => {
+    return level
+      .split('_')
+      .map(word => capitalizeFirstLetter(word))
+      .join(' ');
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -45,12 +58,12 @@ export const ProfileForm = ({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="school">School</Label>
+        <Label htmlFor="school">{formatEducationLevel(formData.school)}</Label>
         <Input
           id="school"
           value={formData.school}
           onChange={(e) => onFormDataChange('school', e.target.value)}
-          placeholder="Enter your school"
+          placeholder={`Enter your ${formData.school.toLowerCase().replace('_', ' ')}`}
         />
       </div>
       <div className="flex justify-end space-x-4">
