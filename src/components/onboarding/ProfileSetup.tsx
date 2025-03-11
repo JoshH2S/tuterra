@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 import { ProfileProgress } from "./ProfileProgress";
 import { ProfileStepContent } from "./ProfileStepContent";
 import { useProfileSetup } from "@/hooks/useProfileSetup";
@@ -10,6 +10,7 @@ interface ProfileSetupProps {
 }
 
 export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
+  const navigate = useNavigate();
   const {
     step,
     totalSteps,
@@ -24,7 +25,10 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     getProgressMessage,
     isCurrentStepValid,
     handleComplete
-  } = useProfileSetup(onComplete);
+  } = useProfileSetup(() => {
+    onComplete(); // Call the original onComplete callback
+    navigate("/dashboard"); // Navigate to dashboard after completion
+  });
 
   return (
     <div className="h-full flex flex-col">
