@@ -33,16 +33,15 @@ export default function Quizzes() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Modified query that doesn't rely on the teacher_id relationship
       const { data, error } = await supabase
         .from('quizzes')
         .select(`
           *,
-          profiles:user_id (
+          profiles:teacher_id (
             first_name,
             last_name
           ),
-          quiz_responses (
+          quiz_responses!quiz_responses_quiz_id_fkey (
             id,
             score,
             total_questions,
@@ -51,20 +50,12 @@ export default function Quizzes() {
         `)
         .eq('published', true);
 
-      console.log("Quizzes data:", data);
-      console.log("Quizzes error:", error);
-
       if (error) throw error;
 
       const quizzesByCourseTmp: QuizzesByCourse = {};
       data.forEach((quiz: any) => {
-        // Filter responses to include only those for the current user
-        const userResponses = quiz.quiz_responses.filter((response: any) => 
-          response.student_id === user.id
-        );
-        
         // Sort responses by attempt number in descending order to get the latest one
-        const sortedResponses = userResponses.sort((a: any, b: any) => 
+        const sortedResponses = quiz.quiz_responses.sort((a: any, b: any) => 
           b.attempt_number - a.attempt_number
         );
         
@@ -73,7 +64,6 @@ export default function Quizzes() {
         
         const processedQuiz: Quiz = {
           ...quiz,
-          profiles: quiz.profiles || { first_name: "Unknown", last_name: "Teacher" },
           latest_response: latestResponse,
         };
 
@@ -83,7 +73,6 @@ export default function Quizzes() {
         quizzesByCourseTmp[quiz.course_id].push(processedQuiz);
       });
       
-      console.log("Processed quizzes by course:", quizzesByCourseTmp);
       setQuizzesByCourse(quizzesByCourseTmp);
     } catch (error) {
       console.error('Error fetching quizzes:', error);
@@ -110,14 +99,14 @@ export default function Quizzes() {
         
         const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => ({
           id: quiz.id,
-          title: quiz.title || "Untitled Quiz",
-          teacher: quiz.profiles ? `${quiz.profiles.first_name} ${quiz.profiles.last_name}` : "Unknown Teacher",
+          title: quiz.title,
+          teacher: `${quiz.profiles.first_name} ${quiz.profiles.last_name}`,
           duration: quiz.duration_minutes > 0 ? `${quiz.duration_minutes} minutes` : 'No time limit',
           previousScore: quiz.latest_response ? Math.round((quiz.latest_response.score / quiz.latest_response.total_questions) * 100) : 0,
           attemptNumber: quiz.latest_response ? quiz.latest_response.attempt_number : 0,
           totalQuestions: quiz.latest_response ? quiz.latest_response.total_questions : 10,
           status: quiz.latest_response ? 'completed' : 'not_attempted',
-          allowRetake: quiz.allow_retakes !== false // Default to true if not explicitly set to false
+          allowRetake: quiz.allow_retakes
         }));
         
         return {
@@ -264,41 +253,4 @@ export default function Quizzes() {
       )}
     </div>
   );
-
-  function handleViewResults(quizId: string) {
-    // Find the quiz to get its response ID
-    for (const courseId in quizzesByCourse) {
-      const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
-      if (quiz && quiz.latest_response) {
-        navigate(`/quiz-results/${quiz.latest_response.id}`);
-        return;
-      }
-    }
-  }
-
-  function handleStartQuiz(quizId: string) {
-    navigate(`/take-quiz/${quizId}`);
-  }
-
-  function handleRetakeQuiz(quizId: string) {
-    // Find the quiz
-    for (const courseId in quizzesByCourse) {
-      const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
-      if (quiz) {
-        setConfirmRetakeQuiz(quiz);
-        return;
-      }
-    }
-  }
-
-  function handleRetakeConfirm() {
-    if (confirmRetakeQuiz) {
-      navigate(`/take-quiz/${confirmRetakeQuiz.id}`);
-      setConfirmRetakeQuiz(null);
-    }
-  }
-
-  function handleCreateQuiz() {
-    navigate('/quiz-generation');
-  }
 }
