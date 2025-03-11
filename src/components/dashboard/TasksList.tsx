@@ -76,6 +76,14 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
     setExpandedTaskId(prev => prev === taskId ? null : taskId);
   };
 
+  const handleCreateSessionClick = () => {
+    if (onCreateSession) {
+      onCreateSession();
+    } else {
+      console.warn("No onCreateSession handler provided to TasksList");
+    }
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardHeader>
@@ -86,7 +94,7 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
           </div>
           <Button 
             size="sm" 
-            onClick={onCreateSession}
+            onClick={handleCreateSessionClick}
             className="touch-manipulation" // Improve touch target
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -102,7 +110,7 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={onCreateSession}
+              onClick={handleCreateSessionClick}
               className="touch-manipulation min-h-[44px]"
             >
               Schedule a study session
