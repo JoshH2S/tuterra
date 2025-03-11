@@ -9,13 +9,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { Clock, CalendarDays, GraduationCap } from "lucide-react";
+import { CreateStudySessionData } from "@/types/study-sessions";
 import type { StudySession } from "@/hooks/useStudySessions";
 import type { StudentCourse } from "@/types/student";
 
 interface StudyCalendarProps {
   sessions: StudySession[];
   courses: StudentCourse[];
-  onCreateSession: (session: Omit<StudySession, 'id' | 'student_id'>) => Promise<void>;
+  onCreateSession: (session: CreateStudySessionData) => Promise<void>;
 }
 
 export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalendarProps) {
@@ -43,7 +44,9 @@ export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalen
     endDate.setHours(parseInt(endHour), parseInt(endMinute));
 
     await onCreateSession({
-      ...newSession,
+      title: newSession.title,
+      description: newSession.description || null,
+      course_id: newSession.course_id || null,
       start_time: startDate.toISOString(),
       end_time: endDate.toISOString(),
       status: 'scheduled',

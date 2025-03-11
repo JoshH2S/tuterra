@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { StudySession } from "@/hooks/useStudySessions";
+import { CreateStudySessionData } from "@/types/study-sessions";
 import { StudentCourse } from "@/types/student";
 
 interface StudySessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateSession: (sessionData: Omit<StudySession, 'id' | 'student_id'>) => Promise<void>;
+  onCreateSession: (sessionData: CreateStudySessionData) => Promise<void>;
   courses: StudentCourse[];
 }
 
@@ -21,12 +21,19 @@ export function StudySessionDialog({
   onCreateSession, 
   courses 
 }: StudySessionDialogProps) {
-  const [sessionData, setSessionData] = useState<Partial<StudySession>>({});
+  const [sessionData, setSessionData] = useState<Partial<CreateStudySessionData>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (sessionData.title && sessionData.course_id && sessionData.start_time && sessionData.end_time) {
-      onCreateSession(sessionData as Omit<StudySession, 'id' | 'student_id'>);
+      onCreateSession({
+        title: sessionData.title,
+        description: sessionData.description || null,
+        course_id: sessionData.course_id,
+        start_time: sessionData.start_time,
+        end_time: sessionData.end_time,
+        status: 'scheduled'
+      });
       setSessionData({}); // Reset form after submission
     }
   };
