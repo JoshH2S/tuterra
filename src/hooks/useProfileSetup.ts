@@ -113,10 +113,7 @@ export const useProfileSetup = (onComplete: () => void) => {
           description: "Your preferences have been saved.",
         });
 
-        // Call the onComplete callback once everything is done
-        if (onComplete) {
-          onComplete();
-        }
+        onComplete();
       }
     } catch (error) {
       console.error('Error saving profile:', error);
