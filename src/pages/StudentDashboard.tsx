@@ -10,6 +10,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
 import { StudySessionDialog } from "@/components/dashboard/StudySessionDialog";
 import { CreateStudySessionData } from "@/types/study-sessions";
+import { toast } from "@/hooks/use-toast";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -19,11 +20,25 @@ export default function StudentDashboard() {
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
 
   const handleCreateSession = async (sessionData: CreateStudySessionData) => {
-    await createSession(sessionData);
-    setSessionDialogOpen(false);
+    try {
+      await createSession(sessionData);
+      setSessionDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Study session scheduled successfully!"
+      });
+    } catch (error) {
+      console.error("Error creating session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create study session. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const openSessionDialog = () => {
+    console.log("Opening session dialog");
     setSessionDialogOpen(true);
   };
 

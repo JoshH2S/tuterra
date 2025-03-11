@@ -1,14 +1,8 @@
 
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1';
+import { createClient } from '@supabase/supabase-js';
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface ReminderRequest {
+interface ReminderPayload {
   action: 'schedule' | 'cancel';
   session_id: string;
   student_id?: string;
@@ -17,141 +11,103 @@ interface ReminderRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Create a Supabase client with the admin key
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Get session data from request
+  const { action, session_id, student_id, title, start_time } = await req.json() as ReminderPayload;
 
   try {
-    const { action, session_id, student_id, title, start_time } = await req.json() as ReminderRequest;
-    
-    // Create a Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Handle different actions
-    if (action === 'cancel') {
-      // Cancel reminder
-      const { error } = await supabase
-        .from('session_reminders')
-        .update({ status: 'cancelled' })
-        .eq('session_id', session_id)
-        .eq('status', 'scheduled');
-      
-      if (error) {
-        throw new Error(`Failed to cancel reminder: ${error.message}`);
-      }
-      
-      console.log(`Reminder cancelled for session ${session_id}`);
-      
-      return new Response(
-        JSON.stringify({ success: true, message: 'Reminder cancelled successfully' }),
-        { 
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          status: 200 
-        }
-      );
-    } 
-    else if (action === 'schedule') {
-      // Validate required fields for scheduling
+    if (action === 'schedule') {
       if (!student_id || !title || !start_time) {
-        throw new Error('Missing required parameters for scheduling a reminder');
+        return new Response(
+          JSON.stringify({ error: 'Missing required parameters for scheduling' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-      
-      // Get the session start time
-      const startTime = new Date(start_time);
-      
-      // Calculate reminder time (1 hour before)
-      const reminderTime = new Date(startTime.getTime() - 60 * 60 * 1000);
-      
-      // Check if we need to send the reminder immediately (if session is within 1 hour)
-      const now = new Date();
-      const sendImmediately = reminderTime <= now && startTime > now;
-      
-      // Get user email
+
+      // Get the user's email
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('email')
         .eq('id', student_id)
         .single();
-      
-      if (userError) {
-        throw new Error(`Failed to get user email: ${userError.message}`);
+
+      if (userError || !userData?.email) {
+        console.error('Error fetching user email:', userError);
+        return new Response(
+          JSON.stringify({ error: 'Could not find user email' }),
+          { status: 404, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-      
-      // Schedule the reminder
-      if (sendImmediately) {
-        // Send reminder immediately if the session is starting in less than an hour
-        await sendReminderEmail(userData.email, title, startTime);
-        console.log(`Immediate reminder sent for session ${session_id}`);
-      } else if (reminderTime > now) {
-        // Store the reminder in the database for future processing
-        const { error: reminderError } = await supabase
-          .from('session_reminders')
-          .insert({
-            session_id,
-            student_id,
-            reminder_time: reminderTime.toISOString(),
-            email: userData.email,
-            session_title: title,
-            session_start_time: start_time,
-            status: 'scheduled'
-          });
-        
-        if (reminderError) {
-          throw new Error(`Failed to schedule reminder: ${reminderError.message}`);
-        }
-        
-        console.log(`Reminder scheduled for ${reminderTime.toISOString()} for session ${session_id}`);
+
+      // Calculate reminder time (1 hour before session)
+      const sessionStartTime = new Date(start_time);
+      const reminderTime = new Date(sessionStartTime);
+      reminderTime.setHours(reminderTime.getHours() - 1);
+
+      // Store the reminder in the database
+      const { data: reminderData, error: reminderError } = await supabase
+        .from('session_reminders')
+        .insert({
+          session_id,
+          student_id,
+          reminder_time: reminderTime.toISOString(),
+          email: userData.email,
+          title,
+          session_time: start_time,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (reminderError) {
+        console.error('Error scheduling reminder:', reminderError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to schedule reminder' }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
       }
-      
+
       return new Response(
-        JSON.stringify({ success: true, message: 'Reminder scheduled successfully' }),
-        { 
-          headers: { 'Content-Type': 'application/json', ...corsHeaders },
-          status: 200 
-        }
+        JSON.stringify({ success: true, data: reminderData }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    } 
+    else if (action === 'cancel') {
+      // Cancel any existing reminders for this session
+      const { error: deleteError } = await supabase
+        .from('session_reminders')
+        .delete()
+        .eq('session_id', session_id);
+
+      if (deleteError) {
+        console.error('Error cancelling reminder:', deleteError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to cancel reminder' }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     } 
     else {
-      throw new Error(`Invalid action: ${action}`);
+      return new Response(
+        JSON.stringify({ error: 'Invalid action' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
   } catch (error) {
-    console.error('Error handling session reminder:', error);
-    
+    console.error('Error processing request:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-        status: 500 
-      }
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 });
-
-// Helper function to send email
-async function sendReminderEmail(email: string, sessionTitle: string, startTime: Date) {
-  try {
-    // Format the start time
-    const formattedTime = startTime.toLocaleString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-    
-    // Here we would call an email service API
-    // For example, with Resend, SendGrid, or other services
-    console.log(`Sending reminder email to ${email} for session "${sessionTitle}" at ${formattedTime}`);
-    
-    // Placeholder for actual email sending logic
-    // This would be implemented with your chosen email service
-    return true;
-  } catch (error) {
-    console.error('Failed to send reminder email:', error);
-    return false;
-  }
-}
