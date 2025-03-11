@@ -11,6 +11,7 @@ export interface ProcessedQuiz {
   totalQuestions: number;
   status: 'not_attempted' | 'in_progress' | 'completed';
   allowRetake: boolean;
+  type?: string;
 }
 
 export interface ProcessedCourse extends Course {
@@ -28,6 +29,7 @@ export interface Quiz {
   duration_minutes: number;
   allow_retakes: boolean;
   user_id?: string;
+  type?: string;
   profiles?: {
     first_name: string;
     last_name: string;
@@ -39,5 +41,5 @@ export interface Quiz {
     attempt_number: number;
     student_id: string;
   };
-  question_count?: number; // Added to fix the build error
+  question_count?: number;
 }
