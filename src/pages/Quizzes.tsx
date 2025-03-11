@@ -36,7 +36,13 @@ export default function Quizzes() {
       const { data, error } = await supabase
         .from('quizzes')
         .select(`
-          *,
+          id,
+          title,
+          course_id,
+          duration_minutes,
+          allow_retakes,
+          published,
+          teacher_id,
           profiles:teacher_id (
             first_name,
             last_name
@@ -47,10 +53,12 @@ export default function Quizzes() {
             total_questions,
             attempt_number
           )
-        `)
-        .eq('published', true);
+        `);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching quizzes:', error);
+        throw error;
+      }
 
       const quizzesByCourseTmp: QuizzesByCourse = {};
       data.forEach((quiz: any) => {
@@ -100,7 +108,7 @@ export default function Quizzes() {
         const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => ({
           id: quiz.id,
           title: quiz.title,
-          teacher: `${quiz.profiles.first_name} ${quiz.profiles.last_name}`,
+          teacher: quiz.profiles ? `${quiz.profiles.first_name} ${quiz.profiles.last_name}` : 'Unknown',
           duration: quiz.duration_minutes > 0 ? `${quiz.duration_minutes} minutes` : 'No time limit',
           previousScore: quiz.latest_response ? Math.round((quiz.latest_response.score / quiz.latest_response.total_questions) * 100) : 0,
           attemptNumber: quiz.latest_response ? quiz.latest_response.attempt_number : 0,
@@ -209,13 +217,13 @@ export default function Quizzes() {
         setSearchTerm={setSearchTerm}
         setSelectedCourse={setSelectedCourse}
         setSelectedStatus={setSelectedStatus}
-        handleCreateQuiz={handleCreateQuiz}
+        handleCreateQuiz={() => navigate('/quiz-generation')}
         refreshQuizzes={fetchQuizzes} // Pass the refresh function
       />
 
       {/* Empty State */}
       {showEmptyState && (
-        <QuizzesEmptyState onCreateQuiz={handleCreateQuiz} />
+        <QuizzesEmptyState onCreateQuiz={() => navigate('/quiz-generation')} />
       )}
 
       {/* Course Sections */}
@@ -225,9 +233,27 @@ export default function Quizzes() {
             <CourseQuizSection
               key={course.id}
               course={course}
-              onViewResults={handleViewResults}
-              onStartQuiz={handleStartQuiz}
-              onRetakeQuiz={handleRetakeQuiz}
+              onViewResults={(quizId) => {
+                // Find the quiz to get its response ID
+                for (const courseId in quizzesByCourse) {
+                  const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
+                  if (quiz && quiz.latest_response) {
+                    navigate(`/quiz-results/${quiz.latest_response.id}`);
+                    return;
+                  }
+                }
+              }}
+              onStartQuiz={(quizId) => navigate(`/take-quiz/${quizId}`)}
+              onRetakeQuiz={(quizId) => {
+                // Find the quiz
+                for (const courseId in quizzesByCourse) {
+                  const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
+                  if (quiz) {
+                    setConfirmRetakeQuiz(quiz);
+                    return;
+                  }
+                }
+              }}
             />
           ))}
         </div>
@@ -244,7 +270,12 @@ export default function Quizzes() {
           onOpenChange={(open) => {
             if (!open) setConfirmRetakeQuiz(null);
           }}
-          onConfirm={handleRetakeConfirm}
+          onConfirm={() => {
+            if (confirmRetakeQuiz) {
+              navigate(`/take-quiz/${confirmRetakeQuiz.id}`);
+              setConfirmRetakeQuiz(null);
+            }
+          }}
           quizTitle={confirmRetakeQuiz.title}
           previousScore={confirmRetakeQuiz.latest_response ? 
             confirmRetakeQuiz.latest_response.score : 

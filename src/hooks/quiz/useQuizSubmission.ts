@@ -21,15 +21,6 @@ export const useQuizSubmission = () => {
     duration: number,
     courseId?: string
   ) => {
-    if (!fileContent) {
-      toast({
-        title: "Error",
-        description: "Please select a file first",
-        variant: "destructive",
-      });
-      return { questions: null, quizId: null };
-    }
-
     if (topics.some(topic => !topic.description)) {
       toast({
         title: "Error",
@@ -44,9 +35,10 @@ export const useQuizSubmission = () => {
     setQuizId(null);
 
     try {
-      const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
+      // Use empty string if no file was selected
+      const content = fileContent ? fileContent.slice(0, MAX_CONTENT_LENGTH) : "";
       
-      const generatedQuestions = await generateQuiz(trimmedContent, topics, difficulty);
+      const generatedQuestions = await generateQuiz(content, topics, difficulty);
       setQuizQuestions(generatedQuestions);
       
       // Use the provided title or generate a default one
