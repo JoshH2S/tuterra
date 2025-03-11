@@ -1,7 +1,7 @@
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { NameFields } from "./NameFields";
+import { EducationField } from "./EducationField";
+import { FormActions } from "./FormActions";
 
 interface ProfileFormData {
   firstName: string;
@@ -24,63 +24,27 @@ export const ProfileForm = ({
   onSubmit,
   onCancel,
 }: ProfileFormProps) => {
-  // Function to capitalize first letter
-  const capitalizeFirstLetter = (string: string) => {
-    return string ? string.charAt(0).toUpperCase() + string.slice(1).toLowerCase() : '';
-  };
-
-  // Convert education level to display format (e.g., "high_school" -> "High School")
-  const formatEducationLevel = (level: string) => {
-    return level
-      .split('_')
-      .map(word => capitalizeFirstLetter(word))
-      .join(' ');
+  // Function to handle field changes
+  const handleFieldChange = (field: keyof ProfileFormData) => (value: string) => {
+    onFormDataChange(field, value);
   };
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="firstName">First Name</Label>
-        <Input
-          id="firstName"
-          value={formData.firstName}
-          onChange={(e) => onFormDataChange('firstName', e.target.value)}
-          placeholder="Enter your first name"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="lastName">Last Name</Label>
-        <Input
-          id="lastName"
-          value={formData.lastName}
-          onChange={(e) => onFormDataChange('lastName', e.target.value)}
-          placeholder="Enter your last name"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="school">Education Level</Label>
-        <Input
-          id="school"
-          value={formData.school}
-          onChange={(e) => onFormDataChange('school', e.target.value)}
-          placeholder={`Enter your ${formData.school.toLowerCase().replace('_', ' ')}`}
-        />
-      </div>
-      <div className="flex justify-end space-x-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? "Updating..." : "Save Changes"}
-        </Button>
-      </div>
+      <NameFields 
+        firstName={formData.firstName}
+        lastName={formData.lastName}
+        onFirstNameChange={handleFieldChange('firstName')}
+        onLastNameChange={handleFieldChange('lastName')}
+      />
+      <EducationField 
+        school={formData.school}
+        onEducationChange={handleFieldChange('school')}
+      />
+      <FormActions 
+        loading={loading} 
+        onCancel={onCancel} 
+      />
     </form>
   );
 };
