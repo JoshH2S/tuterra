@@ -71,6 +71,9 @@ const QuizContent: React.FC<QuizContentProps> = ({
     setShowFeedback(false);
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
+    } else if (isLastQuestion) {
+      // If on the last question and user clicks Next after seeing feedback, submit the quiz
+      submitQuiz();
     }
   };
 
@@ -145,7 +148,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
             <button 
               onClick={handleNextQuestion} 
               className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md shadow"
-              disabled={isLastQuestion && !selectedAnswers[currentQuestionIndex]}
             >
               {isLastQuestion ? 'Submit Quiz' : 'Next Question'}
             </button>
