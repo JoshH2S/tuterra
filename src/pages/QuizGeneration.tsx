@@ -16,6 +16,7 @@ import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
 import { useCourseTemplates } from "@/hooks/useCourseTemplates";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
 import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
+import { QuizOutput } from "@/components/quiz-generation/QuizOutput";
 
 const QuizGeneration = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -37,6 +38,7 @@ const QuizGeneration = () => {
     handleFileSelect,
     addTopic,
     updateTopic,
+    removeTopic,
     handleSubmit,
     setDuration,
     setSelectedCourseId,
@@ -65,7 +67,7 @@ const QuizGeneration = () => {
       case 1:
         return !!selectedCourseId && !!title;
       case 2:
-        return !!selectedFile;
+        return true; // File is optional
       case 3:
         return topics.every(topic => !!topic.description);
       case 4:
@@ -132,6 +134,7 @@ const QuizGeneration = () => {
                   selectedFile={selectedFile}
                   handleFileSelect={handleFileSelect}
                   contentLength={contentLength}
+                  isOptional={true}
                 />
               </StepContainer>
             )}
@@ -142,6 +145,7 @@ const QuizGeneration = () => {
                   topics={topics}
                   updateTopic={updateTopic}
                   addTopic={addTopic}
+                  removeTopic={removeTopic}
                 />
               </StepContainer>
             )}
@@ -157,6 +161,16 @@ const QuizGeneration = () => {
                   handleSubmit={handleSubmit}
                   isProcessing={isProcessing}
                 />
+                
+                {/* Add the quiz output display when questions are generated */}
+                {quizQuestions.length > 0 && (
+                  <div className="mt-6">
+                    <QuizOutput 
+                      questions={quizQuestions} 
+                      quizId={quizId}
+                    />
+                  </div>
+                )}
               </StepContainer>
             )}
           </AnimatePresence>

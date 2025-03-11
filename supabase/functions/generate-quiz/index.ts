@@ -16,18 +16,23 @@ serve(async (req) => {
   }
 
   try {
-    const { content, topics, difficulty, teacherName, school } = await req.json();
+    const { content, topics, difficulty, teacherName, school, noContent } = await req.json();
 
-    if (!content || !topics) {
-      throw new Error('Missing required parameters: content and topics');
+    if (!topics) {
+      throw new Error('Missing required parameter: topics');
     }
 
-    const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
+    const trimmedContent = content ? content.slice(0, MAX_CONTENT_LENGTH) : "";
     console.log('Processing request with content length:', trimmedContent.length);
     console.log('Number of topics:', topics.length);
+    console.log('No content flag:', noContent);
 
     const teacherContext = { name: teacherName, school: school };
-    const prompt = generateRegularQuizPrompt(topics, difficulty, trimmedContent, teacherContext);
+    
+    // Use different prompt generation based on whether content is provided
+    const prompt = noContent || !trimmedContent 
+      ? generateTopicOnlyQuizPrompt(topics, difficulty, teacherContext)
+      : generateRegularQuizPrompt(topics, difficulty, trimmedContent, teacherContext);
 
     console.log('Sending request to OpenAI API');
     
@@ -113,7 +118,7 @@ serve(async (req) => {
   }
 });
 
-// Helper function to generate the regular quiz prompt
+// Helper function to generate the regular quiz prompt (with content)
 function generateRegularQuizPrompt(
   topics: Array<{ description: string, numQuestions: number }>,
   difficulty: string,
@@ -145,6 +150,61 @@ function generateRegularQuizPrompt(
        - Have one unambiguous correct answer
        - Include plausible distractors
        - Test understanding, not memorization
+
+    TECHNICAL REQUIREMENTS:
+    Return a JSON array where each question has:
+    {
+      "question": "clear, specific question text",
+      "options": {
+        "A": "option text",
+        "B": "option text",
+        "C": "option text",
+        "D": "option text"
+      },
+      "correctAnswer": "A|B|C|D",
+      "topic": "specific topic",
+      "points": number (1-5),
+      "explanation": "detailed explanation",
+      "difficulty": "${difficulty}",
+      "conceptTested": "specific concept",
+      "learningObjective": "what this tests"
+    }
+
+    Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions.
+    ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
+    ${teacherContext?.school ? `for ${teacherContext.school}` : ''}
+  `;
+}
+
+// Helper function to generate a topic-only quiz prompt (without content)
+function generateTopicOnlyQuizPrompt(
+  topics: Array<{ description: string, numQuestions: number }>,
+  difficulty: string,
+  teacherContext?: { name?: string; school?: string }
+) {
+  return `
+    As an expert educational content creator, generate a comprehensive quiz based on these topics:
+    ${topics.map(t => `- ${t.description} (${t.numQuestions} questions)`).join("\n")}
+    
+    QUESTION DESIGN:
+    1. Create questions that:
+       - Test conceptual understanding of each topic
+       - Apply knowledge to scenarios and real-world examples
+       - Build from simpler to complex concepts
+       - Match ${difficulty} education level
+
+    2. Include a mix of:
+       - Concept application
+       - Problem-solving
+       - Analytical thinking
+       - Term/concept relationships
+
+    3. Ensure questions:
+       - Are clearly worded
+       - Have one unambiguous correct answer
+       - Include plausible distractors
+       - Test understanding, not memorization
+       - Cover core knowledge from the specified topics
 
     TECHNICAL REQUIREMENTS:
     Return a JSON array where each question has:

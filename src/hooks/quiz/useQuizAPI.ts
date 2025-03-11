@@ -34,6 +34,7 @@ export const useQuizAPI = () => {
           difficulty,
           teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
           school: teacherData?.school,
+          noContent: !content || content.trim() === "",
         }),
       }
     );
