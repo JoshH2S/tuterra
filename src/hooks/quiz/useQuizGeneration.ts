@@ -37,9 +37,13 @@ export const useQuizGeneration = () => {
   } = useQuizSettings();
 
   const submitQuiz = async () => {
-    if (!selectedFile) return { questions: null, quizId: null };
+    // If there's a file, read it. Otherwise, pass null to indicate no file.
+    let fileContent = null;
     
-    const fileContent = await selectedFile.text();
+    if (selectedFile) {
+      fileContent = await selectedFile.text();
+    }
+    
     return handleSubmit(fileContent, topics, difficulty, title, duration, selectedCourseId);
   };
 
@@ -57,7 +61,7 @@ export const useQuizGeneration = () => {
     // Quiz submission
     isProcessing,
     quizQuestions,
-    quizId, // Ensure quizId is exposed here
+    quizId,
     handleSubmit: submitQuiz,
     
     // Quiz settings

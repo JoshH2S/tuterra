@@ -14,22 +14,13 @@ export const useQuizSubmission = () => {
   const { saveQuizToDatabase } = useQuizSave();
 
   const handleSubmit = async (
-    fileContent: string,
+    fileContent: string | null,
     topics: Topic[],
     difficulty: QuestionDifficulty,
     title: string,
     duration: number,
     courseId?: string
   ) => {
-    if (!fileContent) {
-      toast({
-        title: "Error",
-        description: "Please select a file first",
-        variant: "destructive",
-      });
-      return { questions: null, quizId: null };
-    }
-
     if (topics.some(topic => !topic.description)) {
       toast({
         title: "Error",
@@ -44,9 +35,10 @@ export const useQuizSubmission = () => {
     setQuizId(null);
 
     try {
-      const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
+      // Allow for null file content, which is now valid
+      const contentToUse = fileContent ? fileContent.slice(0, MAX_CONTENT_LENGTH) : "";
       
-      const generatedQuestions = await generateQuiz(trimmedContent, topics, difficulty);
+      const generatedQuestions = await generateQuiz(contentToUse, topics, difficulty);
       setQuizQuestions(generatedQuestions);
       
       // Use the provided title or generate a default one

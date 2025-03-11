@@ -16,18 +16,25 @@ serve(async (req) => {
   }
 
   try {
-    const { content, topics, difficulty, teacherName, school } = await req.json();
+    const { content, topics, difficulty, teacherName, school, contentProvided } = await req.json();
 
-    if (!content || !topics) {
-      throw new Error('Missing required parameters: content and topics');
+    if (!topics) {
+      throw new Error('Missing required parameter: topics');
     }
 
-    const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
+    // Content is now optional
+    const trimmedContent = content ? content.slice(0, MAX_CONTENT_LENGTH) : "";
+    
     console.log('Processing request with content length:', trimmedContent.length);
     console.log('Number of topics:', topics.length);
+    console.log('Content provided:', contentProvided ? 'Yes' : 'No');
 
     const teacherContext = { name: teacherName, school: school };
-    const prompt = generateRegularQuizPrompt(topics, difficulty, trimmedContent, teacherContext);
+    
+    // Use different prompt generation based on whether content was provided
+    const prompt = contentProvided ? 
+      generateRegularQuizPrompt(topics, difficulty, trimmedContent, teacherContext) : 
+      generateTopicOnlyQuizPrompt(topics, difficulty, teacherContext);
 
     console.log('Sending request to OpenAI API');
     
@@ -113,7 +120,7 @@ serve(async (req) => {
   }
 });
 
-// Helper function to generate the regular quiz prompt
+// Helper function to generate the regular quiz prompt with content
 function generateRegularQuizPrompt(
   topics: Array<{ description: string, numQuestions: number }>,
   difficulty: string,
@@ -166,6 +173,64 @@ function generateRegularQuizPrompt(
     }
 
     Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions.
+    ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
+    ${teacherContext?.school ? `for ${teacherContext.school}` : ''}
+  `;
+}
+
+// New function to generate quiz based only on topics without content
+function generateTopicOnlyQuizPrompt(
+  topics: Array<{ description: string, numQuestions: number }>,
+  difficulty: string,
+  teacherContext?: { name?: string; school?: string }
+) {
+  return `
+    As an expert educational content creator, generate a comprehensive quiz on the following topics:
+    ${topics.map(t => t.description).join(", ")}
+    
+    Use your knowledge and expertise to create questions that:
+    
+    QUESTION DESIGN:
+    1. Match the education level: ${difficulty}
+    2. Test conceptual understanding of each topic
+    3. Apply knowledge to realistic scenarios
+    4. Cover the key concepts within each topic area
+    5. Follow standard curriculum expectations for these topics
+
+    Your questions should include a mix of:
+    - Terminology and definitions
+    - Concept application
+    - Problem-solving
+    - Analytical thinking
+    - Theoretical frameworks
+    - Practical applications
+
+    Ensure questions:
+    - Are clearly worded
+    - Have one unambiguous correct answer
+    - Include plausible distractors
+    - Test understanding, not just recall
+
+    TECHNICAL REQUIREMENTS:
+    Return a JSON array where each question has:
+    {
+      "question": "clear, specific question text",
+      "options": {
+        "A": "option text",
+        "B": "option text",
+        "C": "option text",
+        "D": "option text"
+      },
+      "correctAnswer": "A|B|C|D",
+      "topic": "specific topic",
+      "points": number (1-5),
+      "explanation": "detailed explanation",
+      "difficulty": "${difficulty}",
+      "conceptTested": "specific concept",
+      "learningObjective": "what this tests"
+    }
+
+    Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions distributed across the topics.
     ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
     ${teacherContext?.school ? `for ${teacherContext.school}` : ''}
   `;
