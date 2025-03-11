@@ -32,6 +32,9 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
   // Only show score if there's a valid attempt
   const hasAttempted = quiz.status === 'completed' && quiz.attemptNumber > 0;
   
+  // Ensure the score is a valid percentage between 0-100
+  const normalizedScore = hasAttempted ? Math.min(Math.max(0, quiz.previousScore), 100) : 0;
+  
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -93,16 +96,14 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
                 Latest Score (Attempt #{quiz.attemptNumber})
               </span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {quiz.previousScore}%
+                {normalizedScore}%
               </span>
             </div>
-            <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${quiz.previousScore}%` }}
-                className="h-full bg-primary"
-              />
-            </div>
+            <Progress 
+              value={normalizedScore} 
+              className="h-2 bg-gray-100 dark:bg-gray-700"
+              indicatorClassName="bg-primary"
+            />
           </div>
         )}
 

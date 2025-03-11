@@ -37,6 +37,7 @@ export interface Quiz {
     score: number;
     total_questions: number;
     attempt_number: number;
-    student_id: string;  // Changed from user_id to student_id
+    student_id: string;
   };
+  question_count?: number; // Added to fix the build error
 }
