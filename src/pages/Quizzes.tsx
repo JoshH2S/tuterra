@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -121,10 +122,13 @@ export default function Quizzes() {
             quiz
           });
 
-          // Calculate score only from the latest response
-          const scorePercentage = latestResponse ? 
-            Math.round((latestResponse.score / latestResponse.total_questions) * 100) : 
-            0;
+          // Match the score calculation from the quiz results page
+          // In quiz results, the score is displayed directly from the response score field
+          let scorePercentage = 0;
+          if (latestResponse && latestResponse.total_questions > 0) {
+            // Use the score directly as stored in the response
+            scorePercentage = latestResponse.score;
+          }
             
           return {
             id: quiz.id,
