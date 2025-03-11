@@ -27,7 +27,7 @@ export function MobileHeader() {
         </Sheet>
 
         <div className="flex flex-1 items-center justify-between space-x-2">
-          <div className="font-semibold text-lg">EduLearn</div>
+          <div className="font-semibold text-lg">EduPortal</div>
           
           <div className="flex items-center space-x-2">
             <motion.button
