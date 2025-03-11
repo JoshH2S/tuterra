@@ -27,10 +27,12 @@ export interface Quiz {
   course_id: string;
   duration_minutes: number;
   allow_retakes: boolean;
-  profiles: {
+  profiles?: {
     first_name: string;
     last_name: string;
   };
+  user_id?: string;
+  published?: boolean;
   latest_response?: {
     id: string;
     score: number;

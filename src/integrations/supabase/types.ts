@@ -1063,6 +1063,53 @@ export type Database = {
           },
         ]
       }
+      session_reminders: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          reminder_time: string
+          session_id: string
+          session_start_time: string
+          session_title: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          reminder_time: string
+          session_id: string
+          session_start_time: string
+          session_title: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          reminder_time?: string
+          session_id?: string
+          session_start_time?: string
+          session_title?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_reminders_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "study_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shared_resources: {
         Row: {
           course_id: string | null
@@ -1427,10 +1474,12 @@ export type Database = {
           description: string | null
           end_time: string
           id: string
+          notify_user: boolean | null
           start_time: string
           status: string
           student_id: string
           title: string
+          topics: string | null
         }
         Insert: {
           course_id?: string | null
@@ -1438,10 +1487,12 @@ export type Database = {
           description?: string | null
           end_time: string
           id?: string
+          notify_user?: boolean | null
           start_time: string
           status?: string
           student_id: string
           title: string
+          topics?: string | null
         }
         Update: {
           course_id?: string | null
@@ -1449,10 +1500,12 @@ export type Database = {
           description?: string | null
           end_time?: string
           id?: string
+          notify_user?: boolean | null
           start_time?: string
           status?: string
           student_id?: string
           title?: string
+          topics?: string | null
         }
         Relationships: []
       }
