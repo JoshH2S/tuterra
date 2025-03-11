@@ -18,6 +18,9 @@ export function QuizTitleInput({ title, onChange }: QuizTitleInputProps) {
         onChange={(e) => onChange(e.target.value)}
         className="w-full"
       />
+      <p className="text-sm text-muted-foreground">
+        This title will appear in the quizzes section
+      </p>
     </div>
   );
 }

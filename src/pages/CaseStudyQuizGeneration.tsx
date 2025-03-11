@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Book, 
@@ -21,7 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
 import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
-import { QuizTitleInput } from "@/components/quiz-generation/QuizTitleInput";
 
 const CaseStudyQuizGeneration = () => {
   const [step, setStep] = useState(1);
@@ -102,6 +102,7 @@ const CaseStudyQuizGeneration = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Floating Header with Progress */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4">
           <div className="h-16 flex items-center justify-between">
@@ -139,6 +140,9 @@ const CaseStudyQuizGeneration = () => {
                       onChange={(e) => setTitle(e.target.value)}
                       className="w-full"
                     />
+                    <p className="text-sm text-muted-foreground">
+                      This title will appear in the quizzes section
+                    </p>
                   </div>
                   <CourseSetupStep
                     selectedCourseId={selectedCourseId}
@@ -182,6 +186,7 @@ const CaseStudyQuizGeneration = () => {
             )}
           </AnimatePresence>
 
+          {/* Navigation */}
           <NavigationFooter
             currentStep={step}
             totalSteps={4}
@@ -192,12 +197,14 @@ const CaseStudyQuizGeneration = () => {
             onGenerate={step === 4 ? handleGenerateClick : undefined}
           />
           
+          {/* Add disclaimer at the bottom of the page */}
           <div className="mt-8">
             <QuizDisclaimer />
           </div>
         </div>
       </main>
       
+      {/* Generate Quiz Confirmation Dialog */}
       <GenerateQuizDialog
         open={showGenerateDialog}
         onOpenChange={setShowGenerateDialog}

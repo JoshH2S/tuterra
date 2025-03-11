@@ -18,19 +18,9 @@ export const useQuizTopicsManagement = () => {
     setTopics(newTopics);
   };
 
-  const removeTopic = (index: number) => {
-    // Don't remove if it's the last topic
-    if (topics.length <= 1) return;
-    
-    const newTopics = [...topics];
-    newTopics.splice(index, 1);
-    setTopics(newTopics);
-  };
-
   return {
     topics,
     addTopic,
     updateTopic,
-    removeTopic,
   };
 };

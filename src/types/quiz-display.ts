@@ -27,9 +27,7 @@ export interface Quiz {
   course_id: string;
   duration_minutes: number;
   allow_retakes: boolean;
-  published: boolean;
-  teacher_id: string;
-  profiles?: {
+  profiles: {
     first_name: string;
     last_name: string;
   };

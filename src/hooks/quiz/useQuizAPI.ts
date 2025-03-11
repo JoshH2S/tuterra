@@ -14,7 +14,6 @@ export const useQuizAPI = () => {
       throw new Error('No session found');
     }
 
-    // Get teacher profile data in a separate query
     const { data: teacherData } = await supabase
       .from('profiles')
       .select('first_name, last_name, school')

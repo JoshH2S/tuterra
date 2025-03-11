@@ -9,14 +9,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Trophy, TrendingUp } from "lucide-react";
 import { StudentCourse } from "@/types/student";
 import { TasksList } from "@/components/dashboard/TasksList";
-import { CreateStudySessionData } from "@/types/study-sessions";
 
 interface MobileDashboardProps {
   performance: ReturnType<typeof useStudentDashboard>["performance"];
   insights: ReturnType<typeof useStudentAnalytics>["insights"];
   sessions: StudySession[];
   courses: StudentCourse[];
-  onCreateSession: (sessionData: CreateStudySessionData) => Promise<void>;
+  onCreateSession: (sessionData: Omit<StudySession, 'id' | 'student_id'>) => Promise<void>;
   openSessionDialog: () => void;
 }
 
