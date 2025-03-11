@@ -1,13 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 export const CourseTip = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [hasBeenShown, setHasBeenShown] = useState(false);
 
   useEffect(() => {
     // Show the tooltip after a short delay when the component mounts
@@ -15,7 +13,6 @@ export const CourseTip = () => {
       const tipShown = localStorage.getItem("course_tip_shown");
       if (!tipShown) {
         setIsVisible(true);
-        setHasBeenShown(true);
         localStorage.setItem("course_tip_shown", "true");
       }
     }, 1000);
@@ -30,13 +27,14 @@ export const CourseTip = () => {
   if (!isVisible) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="fixed left-[220px] top-[180px] z-50 pointer-events-none"
-    >
-      <div className="relative">
+    <div className="fixed left-[220px] top-[180px] z-[100] pointer-events-none">
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        transition={{ duration: 0.3 }}
+        className="relative"
+      >
         <div className="absolute right-full top-1/2 transform -translate-y-1/2 mr-3">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -64,7 +62,7 @@ export const CourseTip = () => {
             Create Your First Course
           </Button>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };
