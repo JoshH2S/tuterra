@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -239,7 +238,7 @@ export default function Quizzes() {
           onConfirm={handleRetakeConfirm}
           quizTitle={confirmRetakeQuiz.title}
           previousScore={confirmRetakeQuiz.latest_response ? 
-            confirmRetakeQuiz.latest_response.score : 
+            Math.round((confirmRetakeQuiz.latest_response.score / confirmRetakeQuiz.latest_response.total_questions) * 100) : 
             undefined}
         />
       )}

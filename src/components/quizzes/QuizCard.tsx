@@ -89,13 +89,14 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
                 Previous Score
               </span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {quiz.previousScore}%
+                {/* Ensure score is displayed as a percentage between 0-100% */}
+                {Math.min(Math.round(quiz.previousScore), 100)}%
               </span>
             </div>
             <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${quiz.previousScore}%` }}
+                animate={{ width: `${Math.min(quiz.previousScore, 100)}%` }}
                 className="h-full bg-primary"
               />
             </div>
