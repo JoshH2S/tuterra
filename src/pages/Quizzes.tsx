@@ -43,7 +43,8 @@ export default function Quizzes() {
             id,
             score,
             total_questions,
-            attempt_number
+            attempt_number,
+            user_id
           )
         `)
         .eq('published', true);
@@ -52,7 +53,11 @@ export default function Quizzes() {
 
       const quizzesByCourseTmp: QuizzesByCourse = {};
       data.forEach((quiz: any) => {
-        const sortedResponses = quiz.quiz_responses.sort((a: any, b: any) => 
+        const userResponses = quiz.quiz_responses.filter(
+          (response: any) => response.user_id === user.id
+        );
+
+        const sortedResponses = userResponses.sort((a: any, b: any) => 
           b.attempt_number - a.attempt_number
         );
         
@@ -92,9 +97,10 @@ export default function Quizzes() {
         const courseQuizzes = quizzesByCourse[course.id] || [];
         
         const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => {
-          // Calculate score from only the latest response
-          const scorePercentage = quiz.latest_response ? 
-            Math.round((quiz.latest_response.score / quiz.latest_response.total_questions) * 100) : 0;
+          const latestResponse = quiz.latest_response;
+          const scorePercentage = latestResponse ? 
+            Math.round((latestResponse.score / latestResponse.total_questions) * 100) : 
+            0;
             
           return {
             id: quiz.id,
@@ -102,9 +108,9 @@ export default function Quizzes() {
             creator: quiz.profiles ? `${quiz.profiles.first_name} ${quiz.profiles.last_name}` : 'Anonymous',
             duration: quiz.duration_minutes > 0 ? `${quiz.duration_minutes} minutes` : 'No time limit',
             previousScore: scorePercentage,
-            attemptNumber: quiz.latest_response ? quiz.latest_response.attempt_number : 0,
-            totalQuestions: quiz.latest_response ? quiz.latest_response.total_questions : 10,
-            status: quiz.latest_response ? 'completed' : 'not_attempted',
+            attemptNumber: latestResponse?.attempt_number || 0,
+            totalQuestions: latestResponse?.total_questions || 10,
+            status: latestResponse ? 'completed' : 'not_attempted',
             allowRetake: quiz.allow_retakes
           };
         });

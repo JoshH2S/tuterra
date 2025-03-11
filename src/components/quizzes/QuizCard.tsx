@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Clock, FileText, MoreVertical, User } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 interface QuizCardProps {
   quiz: {
@@ -89,14 +90,13 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
                 Previous Score
               </span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {/* Ensure score is displayed as a percentage between 0-100% */}
-                {Math.min(Math.round(quiz.previousScore), 100)}%
+                {quiz.previousScore}%
               </span>
             </div>
             <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${Math.min(quiz.previousScore, 100)}%` }}
+                animate={{ width: `${quiz.previousScore}%` }}
                 className="h-full bg-primary"
               />
             </div>
