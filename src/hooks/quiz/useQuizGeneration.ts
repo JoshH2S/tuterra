@@ -15,8 +15,7 @@ export const useQuizGeneration = () => {
   const { 
     topics, 
     addTopic, 
-    updateTopic,
-    removeTopic 
+    updateTopic 
   } = useQuizTopicsManagement();
   
   const { 
@@ -38,11 +37,9 @@ export const useQuizGeneration = () => {
   } = useQuizSettings();
 
   const submitQuiz = async () => {
-    if (!selectedFile && topics.some(topic => !topic.description)) {
-      return { questions: null, quizId: null };
-    }
+    if (!selectedFile) return { questions: null, quizId: null };
     
-    const fileContent = selectedFile ? await selectedFile.text() : "";
+    const fileContent = await selectedFile.text();
     return handleSubmit(fileContent, topics, difficulty, title, duration, selectedCourseId);
   };
 
@@ -56,12 +53,11 @@ export const useQuizGeneration = () => {
     topics,
     addTopic,
     updateTopic,
-    removeTopic,
     
     // Quiz submission
     isProcessing,
     quizQuestions,
-    quizId,
+    quizId, // Ensure quizId is exposed here
     handleSubmit: submitQuiz,
     
     // Quiz settings
