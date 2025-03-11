@@ -37,6 +37,6 @@ export interface Quiz {
     score: number;
     total_questions: number;
     attempt_number: number;
-    user_id: string;
+    student_id: string;  // Changed from user_id to student_id
   };
 }

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -31,6 +32,9 @@ export default function Quizzes() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Fix: Log the query for debugging
+      console.log("Fetching quizzes for user:", user.id);
+
       const { data, error } = await supabase
         .from('quizzes')
         .select(`
@@ -44,19 +48,28 @@ export default function Quizzes() {
             score,
             total_questions,
             attempt_number,
-            user_id
+            student_id
           )
         `)
         .eq('published', true);
 
       if (error) throw error;
 
+      // Log the received data for debugging
+      console.log("Received quiz data:", data);
+
       const quizzesByCourseTmp: QuizzesByCourse = {};
       data.forEach((quiz: any) => {
+        // Filter responses to only include current user's attempts
+        // Fix: Changed user_id to student_id to match database column
         const userResponses = quiz.quiz_responses.filter(
-          (response: any) => response.user_id === user.id
+          (response: any) => response.student_id === user.id
         );
 
+        // Log the filtered responses for debugging
+        console.log(`Quiz ${quiz.id} - User responses:`, userResponses);
+
+        // Sort filtered responses by attempt number
         const sortedResponses = userResponses.sort((a: any, b: any) => 
           b.attempt_number - a.attempt_number
         );
@@ -73,6 +86,9 @@ export default function Quizzes() {
         }
         quizzesByCourseTmp[quiz.course_id].push(processedQuiz);
       });
+      
+      // Log the processed quizzes by course
+      console.log("Processed quizzes by course:", quizzesByCourseTmp);
       
       setQuizzesByCourse(quizzesByCourseTmp);
     } catch (error) {
