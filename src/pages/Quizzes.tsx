@@ -1,222 +1,49 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCourses } from "@/hooks/useCourses";
+import { useQuizzesFetch } from "@/hooks/useQuizzesFetch";
+import { useQuizzesProcessor } from "@/hooks/useQuizzesProcessor";
+import { useQuizzesFilter } from "@/hooks/useQuizzesFilter";
+import { useQuizActions } from "@/hooks/useQuizActions";
 import { QuizFilters } from "@/components/quizzes/QuizFilters";
 import { CourseQuizSection } from "@/components/quizzes/CourseQuizSection";
 import { QuizzesEmptyState } from "@/components/quizzes/QuizzesEmptyState";
 import { RetakeConfirmDialog } from "@/components/quiz-taking/RetakeConfirmDialog";
-import { Quiz, QuizzesByCourse, ProcessedCourse, ProcessedQuiz } from "@/types/quiz-display";
-import { Plus } from "lucide-react";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
 
 export default function Quizzes() {
-  const [quizzesByCourse, setQuizzesByCourse] = useState<QuizzesByCourse>({});
-  const [processedCourses, setProcessedCourses] = useState<ProcessedCourse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [confirmRetakeQuiz, setConfirmRetakeQuiz] = useState<Quiz | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const navigate = useNavigate();
   const location = useLocation();
   const { courses } = useCourses();
   const isMobile = useIsMobile();
-
-  const fetchQuizzes = async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Log the query for debugging
-      console.log("Fetching quizzes for user:", user.id);
-
-      const { data, error } = await supabase
-        .from('quizzes')
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name
-          ),
-          quiz_responses!quiz_responses_quiz_id_fkey (
-            id,
-            score,
-            total_questions,
-            attempt_number,
-            student_id
-          )
-        `)
-        .eq('published', true);
-
-      if (error) throw error;
-
-      // Log the received data for debugging
-      console.log("Raw quiz data:", data);
-
-      const quizzesByCourseTmp: QuizzesByCourse = {};
-      data.forEach((quiz: any) => {
-        // Filter responses to only include current user's attempts
-        const userResponses = quiz.quiz_responses.filter(
-          (response: any) => response.student_id === user.id
-        );
-
-        console.log(`Quiz ${quiz.id} user responses:`, userResponses);
-
-        // Sort responses by attempt number in descending order (newest first)
-        const sortedResponses = userResponses.sort((a: any, b: any) => 
-          b.attempt_number - a.attempt_number
-        );
-        
-        console.log(`Quiz ${quiz.id} sorted responses:`, sortedResponses);
-        
-        // Take only the latest attempt
-        const latestResponse = sortedResponses.length > 0 ? sortedResponses[0] : undefined;
-        
-        const processedQuiz: Quiz = {
-          ...quiz,
-          latest_response: latestResponse,
-        };
-
-        if (!quizzesByCourseTmp[quiz.course_id]) {
-          quizzesByCourseTmp[quiz.course_id] = [];
-        }
-        quizzesByCourseTmp[quiz.course_id].push(processedQuiz);
-      });
-      
-      // Log the processed quizzes by course
-      console.log("Processed quizzes by course:", quizzesByCourseTmp);
-      
-      setQuizzesByCourse(quizzesByCourseTmp);
-    } catch (error) {
-      console.error('Error fetching quizzes:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load quizzes",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  const { quizzesByCourse, loading, fetchQuizzes } = useQuizzesFetch();
+  const { processedCourses } = useQuizzesProcessor(courses, quizzesByCourse);
+  const {
+    searchTerm,
+    setSearchTerm,
+    selectedCourse,
+    setSelectedCourse,
+    selectedStatus,
+    setSelectedStatus,
+    filteredCourses,
+    totalQuizCount
+  } = useQuizzesFilter(processedCourses);
+  
+  const {
+    confirmRetakeQuiz,
+    setConfirmRetakeQuiz,
+    handleViewResults,
+    handleStartQuiz,
+    handleRetakeQuiz,
+    handleRetakeConfirm,
+    handleCreateQuiz
+  } = useQuizActions();
 
   useEffect(() => {
     fetchQuizzes();
   }, [location.key]);
-
-  useEffect(() => {
-    if (courses.length > 0 && Object.keys(quizzesByCourse).length > 0) {
-      const processed = courses.map(course => {
-        const courseQuizzes = quizzesByCourse[course.id] || [];
-        
-        const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => {
-          // Get the latest response (already filtered and sorted)
-          const latestResponse = quiz.latest_response;
-          
-          console.log(`Processing quiz ${quiz.id}:`, {
-            latestResponse,
-            quiz
-          });
-
-          // Match the score calculation from the quiz results page
-          // In quiz results, the score is displayed directly from the response score field
-          let scorePercentage = 0;
-          if (latestResponse && latestResponse.total_questions > 0) {
-            // Use the score directly as stored in the response
-            scorePercentage = latestResponse.score;
-          }
-            
-          return {
-            id: quiz.id,
-            title: quiz.title,
-            creator: quiz.profiles ? `${quiz.profiles.first_name} ${quiz.profiles.last_name}` : 'Anonymous',
-            duration: quiz.duration_minutes > 0 ? `${quiz.duration_minutes} minutes` : 'No time limit',
-            previousScore: scorePercentage,
-            attemptNumber: latestResponse?.attempt_number || 0,
-            totalQuestions: latestResponse?.total_questions || quiz.question_count || 10,
-            status: latestResponse ? 'completed' : 'not_attempted',
-            allowRetake: quiz.allow_retakes
-          };
-        });
-        
-        return {
-          ...course,
-          quizzes: processedQuizzes
-        };
-      });
-      
-      console.log('Final processed courses:', processed);
-      setProcessedCourses(processed.filter(course => course.quizzes.length > 0));
-    }
-  }, [courses, quizzesByCourse]);
-
-  const handleViewResults = (quizId: string) => {
-    for (const courseId in quizzesByCourse) {
-      const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
-      if (quiz && quiz.latest_response) {
-        navigate(`/quiz-results/${quiz.latest_response.id}`);
-        return;
-      }
-    }
-  };
-
-  const handleStartQuiz = (quizId: string) => {
-    navigate(`/take-quiz/${quizId}`);
-  };
-
-  const handleRetakeQuiz = (quizId: string) => {
-    for (const courseId in quizzesByCourse) {
-      const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
-      if (quiz) {
-        setConfirmRetakeQuiz(quiz);
-        return;
-      }
-    }
-  };
-
-  const handleRetakeConfirm = () => {
-    if (confirmRetakeQuiz) {
-      navigate(`/take-quiz/${confirmRetakeQuiz.id}`);
-      setConfirmRetakeQuiz(null);
-    }
-  };
-
-  const handleCreateQuiz = () => {
-    navigate('/quiz-generation');
-  };
-
-  const filteredCourses = processedCourses
-    .map(course => {
-      const filteredQuizzes = course.quizzes.filter(quiz => {
-        const matchesSearch = searchTerm === "" || 
-          quiz.title.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const matchesStatus = selectedStatus === "all" || 
-          (selectedStatus === "not_attempted" && quiz.status === "not_attempted") ||
-          (selectedStatus === "in_progress" && quiz.status === "in_progress") ||
-          (selectedStatus === "completed" && quiz.status === "completed");
-        
-        return matchesSearch && matchesStatus;
-      });
-      
-      return {
-        ...course,
-        quizzes: filteredQuizzes
-      };
-    })
-    .filter(course => {
-      return course.quizzes.length > 0 && 
-        (selectedCourse === "all" || course.id === selectedCourse);
-    });
-
-  const totalQuizCount = processedCourses.reduce(
-    (total, course) => total + course.quizzes.length, 
-    0
-  );
 
   if (loading) {
     return (
@@ -252,9 +79,9 @@ export default function Quizzes() {
             <CourseQuizSection
               key={course.id}
               course={course}
-              onViewResults={handleViewResults}
+              onViewResults={(quizId) => handleViewResults(quizId, quizzesByCourse)}
               onStartQuiz={handleStartQuiz}
-              onRetakeQuiz={handleRetakeQuiz}
+              onRetakeQuiz={(quizId) => handleRetakeQuiz(quizId, quizzesByCourse)}
             />
           ))}
         </div>
@@ -273,7 +100,7 @@ export default function Quizzes() {
           onConfirm={handleRetakeConfirm}
           quizTitle={confirmRetakeQuiz.title}
           previousScore={confirmRetakeQuiz.latest_response ? 
-            Math.round((confirmRetakeQuiz.latest_response.score / confirmRetakeQuiz.latest_response.total_questions) * 100) : 
+            confirmRetakeQuiz.latest_response.score : 
             undefined}
         />
       )}
