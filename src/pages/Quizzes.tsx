@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -32,7 +31,7 @@ export default function Quizzes() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fix: Log the query for debugging
+      // Log the query for debugging
       console.log("Fetching quizzes for user:", user.id);
 
       const { data, error } = await supabase
@@ -56,24 +55,25 @@ export default function Quizzes() {
       if (error) throw error;
 
       // Log the received data for debugging
-      console.log("Received quiz data:", data);
+      console.log("Raw quiz data:", data);
 
       const quizzesByCourseTmp: QuizzesByCourse = {};
       data.forEach((quiz: any) => {
         // Filter responses to only include current user's attempts
-        // Fix: Changed user_id to student_id to match database column
         const userResponses = quiz.quiz_responses.filter(
           (response: any) => response.student_id === user.id
         );
 
-        // Log the filtered responses for debugging
-        console.log(`Quiz ${quiz.id} - User responses:`, userResponses);
+        console.log(`Quiz ${quiz.id} user responses:`, userResponses);
 
-        // Sort filtered responses by attempt number
+        // Sort responses by attempt number in descending order (newest first)
         const sortedResponses = userResponses.sort((a: any, b: any) => 
           b.attempt_number - a.attempt_number
         );
         
+        console.log(`Quiz ${quiz.id} sorted responses:`, sortedResponses);
+        
+        // Take only the latest attempt
         const latestResponse = sortedResponses.length > 0 ? sortedResponses[0] : undefined;
         
         const processedQuiz: Quiz = {
@@ -113,7 +113,15 @@ export default function Quizzes() {
         const courseQuizzes = quizzesByCourse[course.id] || [];
         
         const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => {
+          // Get the latest response (already filtered and sorted)
           const latestResponse = quiz.latest_response;
+          
+          console.log(`Processing quiz ${quiz.id}:`, {
+            latestResponse,
+            quiz
+          });
+
+          // Calculate score only from the latest response
           const scorePercentage = latestResponse ? 
             Math.round((latestResponse.score / latestResponse.total_questions) * 100) : 
             0;
@@ -125,7 +133,7 @@ export default function Quizzes() {
             duration: quiz.duration_minutes > 0 ? `${quiz.duration_minutes} minutes` : 'No time limit',
             previousScore: scorePercentage,
             attemptNumber: latestResponse?.attempt_number || 0,
-            totalQuestions: latestResponse?.total_questions || 10,
+            totalQuestions: latestResponse?.total_questions || quiz.question_count || 10,
             status: latestResponse ? 'completed' : 'not_attempted',
             allowRetake: quiz.allow_retakes
           };
@@ -137,6 +145,7 @@ export default function Quizzes() {
         };
       });
       
+      console.log('Final processed courses:', processed);
       setProcessedCourses(processed.filter(course => course.quizzes.length > 0));
     }
   }, [courses, quizzesByCourse]);

@@ -29,6 +29,9 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: QuizCardProps) {
+  // Only show score if there's a valid attempt
+  const hasAttempted = quiz.status === 'completed' && quiz.attemptNumber > 0;
+  
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -82,12 +85,12 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
           </div>
         </div>
 
-        {/* Previous Score */}
-        {quiz.previousScore > 0 && (
+        {/* Previous Score - only show if there's a valid attempt */}
+        {hasAttempted && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Previous Score
+                Latest Score (Attempt #{quiz.attemptNumber})
               </span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">
                 {quiz.previousScore}%
@@ -100,9 +103,6 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
                 className="h-full bg-primary"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Attempt #{quiz.attemptNumber}
-            </p>
           </div>
         )}
 
