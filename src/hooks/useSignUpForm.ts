@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
@@ -62,23 +62,35 @@ export const useSignUpForm = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             first_name: firstName,
             last_name: lastName,
-            user_type: "student", // Add user_type field with default value "student"
+            user_type: "student",
           },
+          // Skip email confirmation
+          emailRedirectTo: undefined
         },
       });
 
       if (error) throw error;
       
+      // Set session immediately after signup
+      if (data?.user) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session?.access_token || '',
+          refresh_token: data.session?.refresh_token || '',
+        });
+
+        if (sessionError) throw sessionError;
+      }
+
       toast({
-        title: "Success!",
-        description: "Check your email for the confirmation link.",
+        title: "Account created successfully!",
+        description: "Welcome to EduPortal.",
       });
     } catch (error: any) {
       toast({

@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
@@ -7,18 +6,20 @@ import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { EmailVerification } from "@/components/auth/EmailVerification";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
+import { useState } from "react";
+import { WelcomePopup } from "@/components/onboarding/WelcomePopup";
 
 interface AuthProps {
   mode?: "emailVerification" | "resetPassword";
 }
 
 const Auth = ({ mode: propMode }: AuthProps = {}) => {
-  // Check for mode in URL query params as well
+  const [showWelcome, setShowWelcome] = useState(false);
+
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const queryMode = queryParams.get("mode") as "emailVerification" | "resetPassword" | null;
   
-  // Use prop mode if provided, otherwise check query param
   const mode = propMode || queryMode || undefined;
 
   if (mode === "emailVerification") {
@@ -77,11 +78,16 @@ const Auth = ({ mode: propMode }: AuthProps = {}) => {
               <SignInForm />
             </TabsContent>
             <TabsContent value="signup">
-              <SignUpForm />
+              <SignUpForm onSignUpSuccess={() => setShowWelcome(true)} />
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      <WelcomePopup 
+        isOpen={showWelcome} 
+        onClose={() => setShowWelcome(false)}
+      />
     </motion.div>
   );
 };

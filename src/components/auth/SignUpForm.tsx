@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { PersonalInfoInputs } from "./PersonalInfoInputs";
@@ -12,7 +11,11 @@ import { TermsOfUse } from "@/components/legal/TermsOfUse";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Shield } from "lucide-react";
 
-export const SignUpForm = () => {
+interface SignUpFormProps {
+  onSignUpSuccess?: () => void;
+}
+
+export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
   const {
     email,
     setEmail,
@@ -34,17 +37,13 @@ export const SignUpForm = () => {
     handleSignUp
   } = useSignUpForm();
 
-  // Add state for terms acceptance and policy dialogs
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
 
-  // Wrap the original handleSignUp to prevent submission if terms not accepted
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (agreedToTerms) {
-      handleSignUp(e);
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    await handleSignUp(e);
+    onSignUpSuccess?.();
   };
 
   return (
@@ -57,7 +56,6 @@ export const SignUpForm = () => {
       <SignUpFormHeader />
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Personal Information */}
         <div className="space-y-4">
           <PersonalInfoInputs
             firstName={firstName}
@@ -68,7 +66,6 @@ export const SignUpForm = () => {
             setEmail={setEmail}
           />
 
-          {/* Password Section */}
           <PasswordInputs
             password={password}
             setPassword={setPassword}
@@ -83,7 +80,6 @@ export const SignUpForm = () => {
           />
         </div>
 
-        {/* Terms and Privacy Policy Agreement */}
         <div className="flex items-start space-x-2 mt-4">
           <Checkbox
             id="terms"
@@ -122,7 +118,6 @@ export const SignUpForm = () => {
         <SubmitButton loading={loading} disabled={!agreedToTerms} />
       </form>
 
-      {/* Privacy Policy Dialog */}
       <Dialog open={showPrivacyPolicy} onOpenChange={setShowPrivacyPolicy}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
           <DialogTitle>Privacy Policy</DialogTitle>
@@ -130,7 +125,6 @@ export const SignUpForm = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Terms of Use Dialog */}
       <Dialog open={showTerms} onOpenChange={setShowTerms}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
           <DialogTitle>Terms of Use</DialogTitle>
