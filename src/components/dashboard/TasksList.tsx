@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -31,11 +30,9 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
   const [tasks, setTasks] = useState<Task[]>([]);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
-  // Convert upcoming study sessions to tasks
   const sessionTasks: Task[] = sessions
     .filter(session => {
       const sessionDate = new Date(session.start_time);
-      // Only include sessions that are coming up (next 7 days) and not in the past
       return isAfter(sessionDate, new Date()) && 
              isBefore(sessionDate, addDays(new Date(), 7));
     })
@@ -55,7 +52,6 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
       };
     });
 
-  // Combine user tasks with session tasks
   const allTasks = [...tasks, ...sessionTasks].sort((a, b) => {
     if (a.dueDate && b.dueDate) {
       return a.dueDate.getTime() - b.dueDate.getTime();
@@ -63,7 +59,6 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
     return 0;
   });
 
-  // Modified this function to accept a boolean/string instead of an event
   const handleToggleComplete = (taskId: string, checked: boolean | string) => {
     setTasks(prevTasks => 
       prevTasks.map(task => 
@@ -87,7 +82,7 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
           <Button 
             size="sm" 
             onClick={onCreateSession}
-            className="touch-manipulation" // Improve touch target
+            className="touch-manipulation"
           >
             <Plus className="h-4 w-4 mr-2" />
             Schedule Study
@@ -98,15 +93,7 @@ export function TasksList({ sessions = [], courses = [], onCreateSession }: Task
       <CardContent>
         {allTasks.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground mb-2">No upcoming tasks</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onCreateSession}
-              className="touch-manipulation min-h-[44px]"
-            >
-              Schedule a study session
-            </Button>
+            <p className="text-muted-foreground">No upcoming tasks</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -140,7 +127,6 @@ function TaskItem({ task, courses, isExpanded, onToggle, onComplete }: TaskItemP
     ? courses.find(c => c.course_id === task.courseId)
     : undefined;
 
-  // Setup swipe handlers for mobile
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => onToggle(),
     onSwipedRight: () => onToggle(),
