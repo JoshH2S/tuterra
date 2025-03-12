@@ -1,4 +1,6 @@
 
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,8 +18,14 @@ import { SkipToContent } from "@/components/ui/skip-to-content";
 
 export const MainLayout = () => {
   useCustomFont();
-  useKeyboardNavigation(); // Add keyboard navigation support
+  useKeyboardNavigation();
   const isMobile = useIsMobile();
+  const location = useLocation();
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <TooltipProvider>
