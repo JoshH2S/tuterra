@@ -48,6 +48,7 @@ export function MobileNavigation() {
               key={item.path}
               to={item.path} 
               className="touch-manipulation no-context-menu"
+              onClick={() => setIsOpen(false)}
             >
               <motion.div
                 whileTap={{ scale: 0.9 }}
