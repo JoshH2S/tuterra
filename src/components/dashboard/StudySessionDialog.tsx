@@ -62,16 +62,26 @@ export function StudySessionDialog({
               onValueChange={(value) => setSessionData({...sessionData, course_id: value})}
             >
               <SelectTrigger id="course">
-                <SelectValue placeholder="Select course" />
+                <SelectValue placeholder="Select a course" />
               </SelectTrigger>
               <SelectContent>
-                {courses.map(course => (
+                {courses.map((course) => (
                   <SelectItem key={course.course_id} value={course.course_id}>
                     {course.course.title}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description (Optional)</Label>
+            <Input 
+              id="description"
+              value={sessionData.description || ''}
+              onChange={(e) => setSessionData({...sessionData, description: e.target.value})}
+              placeholder="Add details about this session"
+            />
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -95,16 +105,6 @@ export function StudySessionDialog({
                 required
               />
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Input 
-              id="description"
-              value={sessionData.description || ''}
-              onChange={(e) => setSessionData({...sessionData, description: e.target.value})}
-              placeholder="Add details about this session"
-            />
           </div>
           
           <div className="flex justify-end gap-3 pt-2">
