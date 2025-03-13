@@ -68,10 +68,18 @@ export const SidebarNavItem = ({
       {isActive && (
         <motion.div 
           layoutId="activeBackground"
-          className="absolute inset-0 w-[calc(100%-30px)] mx-auto bg-blue-50 dark:bg-blue-950/30 rounded-xl"
+          className="absolute inset-0 w-[calc(100%-40px)] mx-auto bg-blue-50 dark:bg-blue-950/30 rounded-xl"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
+      
+      {/* Add hover highlight with the same width as active state */}
+      <div 
+        className={cn(
+          "absolute inset-0 w-[calc(100%-40px)] mx-auto rounded-xl bg-transparent transition-colors duration-200",
+          !isActive && "group-hover:bg-gray-100/70 dark:group-hover:bg-gray-800/70"
+        )} 
+      />
     </Link>
   );
 
