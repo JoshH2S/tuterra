@@ -33,7 +33,7 @@ export const SidebarNavItem = ({
       to={to} 
       className={cn(
         "flex items-center group relative w-full py-2.5 px-3 rounded-xl transition-all duration-200",
-        "touch-manipulation hover:bg-gray-100 dark:hover:bg-gray-800",
+        "touch-manipulation hover:bg-transparent", // Remove default hover bg
         isActive && "text-primary font-medium"
       )}
     >
@@ -65,6 +65,7 @@ export const SidebarNavItem = ({
         </span>
       )}
       
+      {/* Active highlight with reduced width */}
       {isActive && (
         <motion.div 
           layoutId="activeBackground"
@@ -72,6 +73,14 @@ export const SidebarNavItem = ({
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
+      
+      {/* Hover highlight with the same reduced width */}
+      <div 
+        className={cn(
+          "absolute inset-0 w-[calc(100%-40px)] mx-auto rounded-xl bg-transparent transition-colors duration-200",
+          !isActive && "group-hover:bg-gray-100 dark:group-hover:bg-gray-800"
+        )} 
+      />
     </Link>
   );
 
