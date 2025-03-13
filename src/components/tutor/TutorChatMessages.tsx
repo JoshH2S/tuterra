@@ -64,7 +64,8 @@ export const TutorChatMessages = ({
   return (
     <div 
       ref={messagesContainerRef}
-      className={`flex-1 overflow-y-auto p-4 space-y-6 ${isMobile ? 'p-3' : ''}`}
+      className={`flex-1 overflow-y-auto py-4 px-3 md:px-4 space-y-6 overscroll-bounce`}
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {messages.length === 0 ? (
         <div className="flex items-center justify-center h-full">
@@ -85,7 +86,7 @@ export const TutorChatMessages = ({
         </div>
       ) : (
         <>
-          <div className="space-y-6">
+          <div className="space-y-6 pb-2">
             {messages.map((msg, index) => (
               <TutorMessage
                 key={msg.id}
@@ -100,7 +101,7 @@ export const TutorChatMessages = ({
           {isTyping && <TypingIndicator />}
         </>
       )}
-      <div ref={messagesEndRef} />
+      <div ref={messagesEndRef} className="h-1" />
     </div>
   );
 };

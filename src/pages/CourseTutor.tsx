@@ -14,13 +14,13 @@ const CourseTutor = () => {
   return (
     <>
       <Toaster />
-      <div className="container mx-auto py-4 px-2 sm:py-6 sm:px-4 md:py-8">
-        <div className="max-w-6xl mx-auto">
-          {showSpline ? (
-            <div className="mb-6">
-              <SplineSceneBasic />
-            </div>
-          ) : null}
+      <div className="h-screen w-full overflow-hidden">
+        {showSpline ? (
+          <div className="absolute top-0 left-0 w-full h-1/3 z-0">
+            <SplineSceneBasic />
+          </div>
+        ) : null}
+        <div className="relative h-full z-10">
           <TutorInterface onConversationStart={handleConversationStart} />
         </div>
       </div>
