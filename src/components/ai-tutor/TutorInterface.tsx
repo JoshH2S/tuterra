@@ -10,7 +10,7 @@ import { SubscriptionBadge } from "./SubscriptionBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SmartNotesPanel } from "./SmartNotesPanel";
-import { LayoutPanelLeft, ChevronRight } from "lucide-react";
+import { LayoutPanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TutorInterfaceProps {
@@ -163,19 +163,34 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         <AnimatePresence mode="wait">
           {showSidebar && (
             <motion.div 
-              className={`${isMobile ? 'absolute z-20 h-full w-[85%] shadow-xl' : 'md:w-64 border-r'} bg-background`}
+              className={`${isMobile ? 'absolute z-20 h-full w-[85%] shadow-xl' : 'md:w-64 border-r'} bg-background flex`}
               initial={{ x: isMobile ? '-100%' : 0, opacity: isMobile ? 0 : 1 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: isMobile ? '-100%' : 0, opacity: isMobile ? 0 : 1 }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
             >
-              <LearningPathPanel 
-                activeStep={activeStep} 
-                setActiveStep={handleStepClick}
-                subscriptionTier={subscription.tier}
-                steps={learningSteps}
-                onClose={() => setShowSidebar(false)}
-              />
+              <div className="flex-grow">
+                <LearningPathPanel 
+                  activeStep={activeStep} 
+                  setActiveStep={handleStepClick}
+                  subscriptionTier={subscription.tier}
+                  steps={learningSteps}
+                  onClose={() => setShowSidebar(false)}
+                />
+              </div>
+              
+              {/* Desktop-only collapse button */}
+              {!isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSidebar}
+                  className="h-9 w-5 self-center -mr-2.5 rounded-l-none rounded-r-full border-l-0 border border-border/40 bg-muted/30"
+                  aria-label="Collapse learning path"
+                >
+                  <ChevronLeft size={15} />
+                </Button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

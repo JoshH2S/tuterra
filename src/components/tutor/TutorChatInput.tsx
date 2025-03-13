@@ -101,12 +101,12 @@ export const TutorChatInput = ({
             onChange={(e) => onMessageChange(e.target.value)}
             placeholder={isPremium ? "Ask anything with enhanced AI..." : "Ask me anything..."}
             className={cn(
-              "resize-none min-h-[44px] pr-12 transition-all",
+              "resize-none min-h-[44px] px-5 pr-12 transition-all",
               isMobile ? "py-2 text-sm" : "py-2.5",
               isPremium 
                 ? "focus-visible:ring-amber-300" 
                 : "",
-              "rounded-full px-4 flex items-center"
+              "rounded-full"
             )}
             disabled={isLoading}
             onKeyDown={(e) => {
@@ -118,7 +118,6 @@ export const TutorChatInput = ({
                 }
               }
             }}
-            style={{ paddingTop: '10px', paddingBottom: '10px' }}
           />
           
           {(isPremium || isPro) && (
@@ -126,7 +125,7 @@ export const TutorChatInput = ({
               type="button"
               size="icon"
               variant="ghost"
-              className="absolute right-12 bottom-1.5 text-muted-foreground hover:text-foreground"
+              className="absolute right-12 bottom-2 text-muted-foreground hover:text-foreground"
               disabled={isLoading}
             >
               <Smile className="h-5 w-5" />
@@ -138,7 +137,7 @@ export const TutorChatInput = ({
             size="icon"
             disabled={isLoading || !message.trim()}
             className={cn(
-              "absolute right-1 bottom-1.5 rounded-full h-8 w-8",
+              "absolute right-2 bottom-2 rounded-full h-9 w-9 flex items-center justify-center",
               isPremium ? "bg-amber-500 hover:bg-amber-600" : ""
             )}
             aria-label="Send message"
