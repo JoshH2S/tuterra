@@ -179,13 +179,13 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
                 />
               </div>
               
-              {/* Desktop-only collapse button */}
+              {/* Desktop-only collapse button - Updated with primary color to match "Upgrade Now" button */}
               {!isMobile && (
                 <Button
-                  variant="ghost"
+                  variant="default"
                   size="icon"
                   onClick={toggleSidebar}
-                  className="h-9 w-5 self-center -mr-2.5 rounded-l-none rounded-r-full border-l-0 border border-border/40 bg-muted/30"
+                  className="h-9 w-5 self-center -mr-2.5 rounded-l-none rounded-r-full border-l-0 bg-primary hover:bg-primary/90 text-primary-foreground"
                   aria-label="Collapse learning path"
                 >
                   <ChevronLeft size={15} />
