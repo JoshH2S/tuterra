@@ -22,7 +22,9 @@ export function StudySessionDialog({
   courses 
 }: StudySessionDialogProps) {
   const [sessionData, setSessionData] = useState<Partial<CreateStudySessionData>>({});
-
+  
+  console.log("Courses in StudySessionDialog:", courses); // Debug logging
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (sessionData.title && sessionData.course_id && sessionData.start_time && sessionData.end_time) {
@@ -65,11 +67,17 @@ export function StudySessionDialog({
                 <SelectValue placeholder="Select course" />
               </SelectTrigger>
               <SelectContent>
-                {courses.map(course => (
-                  <SelectItem key={course.course_id} value={course.course_id}>
-                    {course.course.title}
+                {courses && courses.length > 0 ? (
+                  courses.map(course => (
+                    <SelectItem key={course.course_id} value={course.course_id}>
+                      {course.course.title}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-courses" disabled>
+                    No courses available
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>

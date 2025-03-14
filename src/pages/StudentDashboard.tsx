@@ -5,7 +5,7 @@ import { useStudySessions } from "@/hooks/useStudySessions";
 import { NewsFeed } from "@/components/dashboard/NewsFeed";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DesktopDashboard } from "@/components/dashboard/DesktopDashboard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
 import { StudySessionDialog } from "@/components/dashboard/StudySessionDialog";
@@ -17,6 +17,11 @@ export default function StudentDashboard() {
   const { sessions, createSession, isLoading: isLoadingSessions } = useStudySessions();
   const isMobile = useIsMobile();
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
+
+  // Debug logging to check courses data
+  useEffect(() => {
+    console.log("Courses in StudentDashboard:", courses);
+  }, [courses]);
 
   const handleCreateSession = async (sessionData: CreateStudySessionData) => {
     await createSession(sessionData);
