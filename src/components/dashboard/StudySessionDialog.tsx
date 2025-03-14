@@ -73,9 +73,13 @@ export function StudySessionDialog({
     }
   };
 
+  // Get today's date at the start of the day for date comparisons
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold mb-4">Schedule Study Session</h3>
         
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -138,7 +142,12 @@ export function StudySessionDialog({
                   selected={selectedDate}
                   onSelect={setSelectedDate}
                   initialFocus
-                  className="pointer-events-auto"
+                  className={cn("p-3 pointer-events-auto")}
+                  fromDate={today} // Disable dates before today
+                  disabled={(date) => date < today} // Ensure past dates are disabled
+                  captionLayout="dropdown-buttons" // Enable month/year dropdown navigation
+                  fromYear={today.getFullYear()} // Start year selection from current year
+                  toYear={today.getFullYear() + 5} // Allow selection up to 5 years in the future
                 />
               </PopoverContent>
             </Popover>
