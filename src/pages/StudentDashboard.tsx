@@ -1,4 +1,3 @@
-
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions } from "@/hooks/useStudySessions";
@@ -80,7 +79,6 @@ export default function StudentDashboard() {
         open={sessionDialogOpen}
         onOpenChange={setSessionDialogOpen}
         onCreateSession={handleCreateSession}
-        courses={courses}
       />
     </div>
   );

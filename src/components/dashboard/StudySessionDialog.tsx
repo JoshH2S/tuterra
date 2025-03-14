@@ -6,24 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreateStudySessionData } from "@/types/study-sessions";
-import { StudentCourse } from "@/types/student";
+import { useCourses } from "@/hooks/useCourses";
+import { toast } from "@/hooks/use-toast";
 
 interface StudySessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateSession: (sessionData: CreateStudySessionData) => Promise<void>;
-  courses: StudentCourse[];
 }
 
 export function StudySessionDialog({ 
   open, 
   onOpenChange, 
-  onCreateSession, 
-  courses 
+  onCreateSession
 }: StudySessionDialogProps) {
   const [sessionData, setSessionData] = useState<Partial<CreateStudySessionData>>({});
+  const { courses, isLoading } = useCourses();
   
-  console.log("Courses in StudySessionDialog:", courses); // Debug logging
+  console.log("Courses fetched in StudySessionDialog:", courses); // Debug logging
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +37,12 @@ export function StudySessionDialog({
         status: 'scheduled'
       });
       setSessionData({}); // Reset form after submission
+    } else {
+      toast({
+        title: "Incomplete form",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -62,6 +68,7 @@ export function StudySessionDialog({
             <Select 
               value={sessionData.course_id} 
               onValueChange={(value) => setSessionData({...sessionData, course_id: value})}
+              disabled={isLoading}
             >
               <SelectTrigger id="course">
                 <SelectValue placeholder="Select course" />
@@ -69,8 +76,8 @@ export function StudySessionDialog({
               <SelectContent>
                 {courses && courses.length > 0 ? (
                   courses.map(course => (
-                    <SelectItem key={course.course_id} value={course.course_id}>
-                      {course.course.title}
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
                     </SelectItem>
                   ))
                 ) : (
