@@ -1,3 +1,4 @@
+
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions } from "@/hooks/useStudySessions";
@@ -69,6 +70,7 @@ export default function StudentDashboard() {
           sessions={sessions}
           courses={courses}
           createSession={handleCreateSession}
+          openSessionDialog={openSessionDialog}
         >
           <NewsFeed courses={courses} />
         </DesktopDashboard>

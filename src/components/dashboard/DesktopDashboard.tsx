@@ -1,3 +1,4 @@
+
 import { StudentPerformance } from "@/types/student";
 import { StudySession } from "@/hooks/useStudySessions";
 import { TasksList } from "@/components/dashboard/TasksList";
@@ -6,6 +7,7 @@ import { StudentCourse } from "@/types/student";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { InsightsSection } from "@/components/dashboard/InsightsSection";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
+import { CreateStudySessionData } from "@/types/study-sessions";
 
 interface DesktopDashboardProps {
   performance: StudentPerformance[];
@@ -18,6 +20,7 @@ interface DesktopDashboardProps {
   courses: StudentCourse[];
   createSession: (sessionData: Omit<StudySession, 'id' | 'student_id'>) => Promise<void>;
   children?: React.ReactNode;
+  openSessionDialog: () => void;
 }
 
 export function DesktopDashboard({ 
@@ -26,7 +29,8 @@ export function DesktopDashboard({
   sessions, 
   courses,
   createSession,
-  children 
+  children,
+  openSessionDialog
 }: DesktopDashboardProps) {
   // Collect all strengths and areas for improvement across all courses
   const allStrengths = performance.flatMap(p => p.strengths || []);
@@ -49,10 +53,7 @@ export function DesktopDashboard({
         <TasksList 
           sessions={sessions} 
           courses={courses} 
-          onCreateSession={() => {
-            // This will need to trigger the same dialog as in StudyCalendar
-            // For now we'll leave this empty
-          }}
+          onCreateSession={openSessionDialog}
         />
       </section>
 

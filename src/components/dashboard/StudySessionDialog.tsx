@@ -8,6 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CreateStudySessionData } from "@/types/study-sessions";
 import { useCourses } from "@/hooks/useCourses";
 import { toast } from "@/hooks/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StudySessionDialogProps {
   open: boolean;
@@ -22,21 +27,43 @@ export function StudySessionDialog({
 }: StudySessionDialogProps) {
   const [sessionData, setSessionData] = useState<Partial<CreateStudySessionData>>({});
   const { courses, isLoading } = useCourses();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   console.log("Courses fetched in StudySessionDialog:", courses); // Debug logging
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedDate) {
+      toast({
+        title: "Date required",
+        description: "Please select a date for your study session",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (sessionData.title && sessionData.course_id && sessionData.start_time && sessionData.end_time) {
+      // Combine the date with the time
+      const [startHour, startMinute] = sessionData.start_time.split(':');
+      const [endHour, endMinute] = sessionData.end_time.split(':');
+      
+      const startDate = new Date(selectedDate);
+      startDate.setHours(parseInt(startHour), parseInt(startMinute));
+      
+      const endDate = new Date(selectedDate);
+      endDate.setHours(parseInt(endHour), parseInt(endMinute));
+      
       onCreateSession({
         title: sessionData.title,
         description: sessionData.description || null,
         course_id: sessionData.course_id,
-        start_time: sessionData.start_time,
-        end_time: sessionData.end_time,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
         status: 'scheduled'
       });
       setSessionData({}); // Reset form after submission
+      setSelectedDate(new Date()); // Reset date to current date
     } else {
       toast({
         title: "Incomplete form",
@@ -89,12 +116,40 @@ export function StudySessionDialog({
             </Select>
           </div>
           
+          {/* Date Picker */}
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="start_time">Start Time</Label>
               <Input 
                 id="start_time"
-                type="datetime-local"
+                type="time"
                 value={sessionData.start_time || ''}
                 onChange={(e) => setSessionData({...sessionData, start_time: e.target.value})}
                 required
@@ -104,7 +159,7 @@ export function StudySessionDialog({
               <Label htmlFor="end_time">End Time</Label>
               <Input 
                 id="end_time"
-                type="datetime-local"
+                type="time"
                 value={sessionData.end_time || ''}
                 onChange={(e) => setSessionData({...sessionData, end_time: e.target.value})}
                 required
