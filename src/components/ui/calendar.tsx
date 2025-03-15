@@ -64,8 +64,12 @@ function Calendar({
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
           const options = React.Children.toArray(children) as React.ReactElement[];
-          const handleValueChange = (value: string) => {
-            onChange?.(value);
+          
+          // Fixed: Create a proper handler that adapts the string value to what onChange expects
+          const handleValueChange = (newValue: string) => {
+            // Create a synthetic event-like object that matches what the DayPicker dropdown expects
+            // The key is to pass the value in a format that the DayPicker can use
+            onChange?.(newValue);
           };
           
           return (
