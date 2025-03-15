@@ -65,11 +65,14 @@ function Calendar({
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
           const options = React.Children.toArray(children) as React.ReactElement[];
           
-          // Fixed: Create a proper handler that adapts the string value to what onChange expects
+          // Create a proper handler that adapts the string value to match the expected type
           const handleValueChange = (newValue: string) => {
-            // Create a synthetic event-like object that matches what the DayPicker dropdown expects
-            // The key is to pass the value in a format that the DayPicker can use
-            onChange?.(newValue);
+            // The DayPicker component expects the onChange to be called with the value
+            // directly, not wrapped in an event. We need to check the type of onChange
+            if (onChange) {
+              // Here we call onChange with the newValue directly
+              onChange(newValue as any);
+            }
           };
           
           return (
