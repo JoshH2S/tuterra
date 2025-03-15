@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/utils/date-utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bot, User } from "lucide-react";
+import { cleanMarkdownFormatting } from "@/utils/markdown-cleaner";
 
 interface TutorMessageProps {
   content: string;
@@ -34,6 +35,9 @@ export const TutorMessage = ({
   const isAssistant = role === 'assistant';
   const isMobile = useIsMobile();
   const isPremium = subscription.tier === "premium";
+  
+  // Clean up Markdown formatting for assistant messages
+  const displayContent = isAssistant ? cleanMarkdownFormatting(content) : content;
   
   return (
     <motion.div 
@@ -69,10 +73,10 @@ export const TutorMessage = ({
               duration={subscription.tier === "premium" ? 1 : 1.5}
               className="whitespace-pre-wrap font-normal [--base-color:#1a1a1a] [--base-gradient-color:#757575] dark:[--base-color:#e0e0e0] dark:[--base-gradient-color:#ffffff]"
             >
-              {content}
+              {displayContent}
             </TextShimmer>
           ) : (
-            <p className="whitespace-pre-wrap">{content}</p>
+            <p className="whitespace-pre-wrap">{displayContent}</p>
           )}
         </div>
         

@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
@@ -82,6 +81,63 @@ async function searchRelevantContent(supabase: any, queryEmbedding: number[], li
   return chunks;
 }
 
+function extractTopic(message: string): string {
+  const topics = [
+    "Mathematics", "Physics", "Chemistry", "Biology", 
+    "Computer Science", "History", "Literature", "Geography",
+    "Economics", "Psychology", "Philosophy", "Engineering"
+  ];
+
+  for (const topic of topics) {
+    if (message.toLowerCase().includes(topic.toLowerCase())) {
+      return topic;
+    }
+  }
+
+  return "General Learning";
+}
+
+function generateLearningPath(message: string): any[] {
+  return [
+    { title: "Understand key concepts", completed: false },
+    { title: "Practice with examples", completed: false },
+    { title: "Apply knowledge", completed: false },
+    { title: "Review and reinforce", completed: false },
+    { title: "Test your understanding", completed: false }
+  ];
+}
+
+function cleanMarkdownFormatting(text: string): string {
+  if (!text) return "";
+  
+  let cleanText = text;
+  
+  cleanText = cleanText.replace(/```[\s\S]*?```/g, (match) => {
+    return match.replace(/```[\w]*\n?|\n?```/g, "").trim();
+  });
+  
+  cleanText = cleanText.replace(/^>\s+/gm, "");
+  cleanText = cleanText.replace(/^>\s*/gm, "");
+  
+  cleanText = cleanText.replace(/^\s*[-*+]\s+/gm, "• ");
+  cleanText = cleanText.replace(/^\s*(\d+)\.?\s+/gm, "$1. ");
+  
+  cleanText = cleanText.replace(/\*\*(.*?)\*\*/g, "$1");
+  cleanText = cleanText.replace(/__(.*?)__/g, "$1");
+  cleanText = cleanText.replace(/\*(.*?)\*/g, "$1");
+  cleanText = cleanText.replace(/_(.*?)_/g, "$1");
+  
+  cleanText = cleanText.replace(/^#{1,6}\s+(.*)$/gm, "$1");
+  
+  cleanText = cleanText.replace(/\.([A-Z])/g, ". $1");
+  
+  cleanText = cleanText.replace(/[ \t]+/g, " ");
+  
+  cleanText = cleanText.replace(/\n{3,}/g, "\n\n");
+  
+  return cleanText.trim();
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -98,7 +154,6 @@ serve(async (req) => {
       throw new Error('Message is required');
     }
 
-    // Default to free tier if no subscription is provided
     const userSubscription = subscription || {
       tier: 'free',
       features: {
@@ -111,13 +166,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
     
-    // Generate embedding for the user's question
     const queryEmbedding = await generateEmbedding(message);
     
-    // Search for relevant content chunks
     const relevantChunks = await searchRelevantContent(supabase, queryEmbedding);
     
-    // Prepare context from relevant chunks
     let context = "";
     if (relevantChunks && relevantChunks.length > 0) {
       context = "Based on the following relevant content:\n\n" + 
@@ -127,7 +179,6 @@ serve(async (req) => {
     let currentConversationId = conversationId;
     let conversationHistory = "";
 
-    // If there's no conversation ID, create a new conversation
     if (!currentConversationId) {
       const { data: conversation, error: convError } = await supabase
         .from('tutor_conversations')
@@ -143,7 +194,6 @@ serve(async (req) => {
       if (convError) throw convError;
       currentConversationId = conversation.id;
     } 
-    // If there is a conversation ID, get previous messages for context
     else {
       const { data: previousMessages, error: prevMessagesError } = await supabase
         .from('tutor_messages')
@@ -158,14 +208,12 @@ serve(async (req) => {
         ).join("\n\n");
       }
 
-      // Update conversation access time
       await supabase
         .from('tutor_conversations')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', currentConversationId);
     }
 
-    // Track subscription feature usage
     if (userSubscription.tier !== 'free') {
       try {
         await supabase
@@ -182,7 +230,6 @@ serve(async (req) => {
       }
     }
 
-    // Save the user's message
     const { error: userMessageError } = await supabase
       .from('tutor_messages')
       .insert([{
@@ -195,15 +242,12 @@ serve(async (req) => {
       throw userMessageError;
     }
 
-    // Determine which model to use based on subscription
     const model = getModelForTier(userSubscription.tier);
 
-    // Generate smart notes for premium users
     let smartNotes = null;
     if (userSubscription.tier === 'premium') {
       smartNotes = await generateSmartNotes(message, conversationHistory);
       
-      // Save smart notes to conversation if we got them
       if (smartNotes) {
         try {
           const { data: conversation, error } = await supabase
@@ -268,9 +312,10 @@ Be encouraging, clear, and helpful in your responses. When course materials are 
     }
 
     const aiResponse = await response.json();
-    const aiMessage = aiResponse.choices[0].message.content;
+    const aiMessageRaw = aiResponse.choices[0].message.content;
+    
+    const aiMessage = cleanMarkdownFormatting(aiMessageRaw);
 
-    // Save the AI response
     const { error: aiMessageError } = await supabase
       .from('tutor_messages')
       .insert([{
@@ -312,33 +357,3 @@ Be encouraging, clear, and helpful in your responses. When course materials are 
     );
   }
 });
-
-// Helper functions
-function extractTopic(message: string): string {
-  // Simple extraction of a potential topic from the message
-  const topics = [
-    "Mathematics", "Physics", "Chemistry", "Biology", 
-    "Computer Science", "History", "Literature", "Geography",
-    "Economics", "Psychology", "Philosophy", "Engineering"
-  ];
-
-  for (const topic of topics) {
-    if (message.toLowerCase().includes(topic.toLowerCase())) {
-      return topic;
-    }
-  }
-
-  // Default topic if none detected
-  return "General Learning";
-}
-
-function generateLearningPath(message: string): any[] {
-  // Generate a simple learning path
-  return [
-    { title: "Understand key concepts", completed: false },
-    { title: "Practice with examples", completed: false },
-    { title: "Apply knowledge", completed: false },
-    { title: "Review and reinforce", completed: false },
-    { title: "Test your understanding", completed: false }
-  ];
-}
