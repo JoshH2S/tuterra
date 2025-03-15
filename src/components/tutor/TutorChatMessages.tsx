@@ -53,7 +53,8 @@ export const TutorChatMessages = ({
       
       // Add special touch handling for mobile
       if (isMobile) {
-        container.style.WebkitOverflowScrolling = 'touch';
+        // Use type assertion to handle vendor-specific property
+        (container.style as any).WebkitOverflowScrolling = 'touch';
         
         // Enable momentum-based scrolling for iOS
         const handleTouchStart = () => {
@@ -87,7 +88,6 @@ export const TutorChatMessages = ({
         ref={messagesContainerRef}
         className="py-4 px-3 md:px-4 space-y-6 min-h-full"
         style={{ 
-          WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain'
         }}
       >
