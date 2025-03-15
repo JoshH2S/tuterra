@@ -33,14 +33,14 @@ export const useTutorMessages = () => {
 
       // Add user message to UI immediately for better UX
       const tempUserMessageId = `temp-${Date.now()}`;
-      setMessages(prev => [
-        ...prev,
-        {
-          id: tempUserMessageId,
-          content: message,
-          role: 'user'
-        }
-      ]);
+      const userMessage = {
+        id: tempUserMessageId,
+        content: message,
+        role: 'user',
+        timestamp: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
 
       const response = await supabase.functions.invoke('ai-tutor', {
         body: {
