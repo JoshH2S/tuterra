@@ -26,7 +26,7 @@ function Calendar({
         caption: "flex justify-center pt-3 relative items-center mb-6", // Increased top and bottom spacing
         caption_label: "text-sm font-medium",
         caption_dropdowns: "flex justify-center gap-2 mt-4", // Increased gap and vertical spacing
-        nav: "space-x-1 flex items-center",
+        nav: "hidden", // Hide the navigation buttons
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
           "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100"
