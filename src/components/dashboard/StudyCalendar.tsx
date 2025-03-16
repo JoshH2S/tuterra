@@ -145,13 +145,16 @@ export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalen
         </Dialog>
       </div>
 
+      {/* Modified grid layout to ensure better spacing for mobile */}
       <div className="grid md:grid-cols-2 gap-6">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={setDate}
-          className="rounded-md border"
-        />
+        <div className="rounded-md border p-4"> {/* Added padding and border */}
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            className="mx-auto w-full" {/* Made width full and centered */}
+          />
+        </div>
 
         <div className="space-y-4">
           <h3 className="text-lg font-medium">
