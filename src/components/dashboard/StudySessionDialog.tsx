@@ -79,10 +79,10 @@ export function StudySessionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-4">Schedule Study Session</h3>
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto py-6">
+        <h3 className="text-lg font-semibold mb-6">Schedule Study Session</h3>
         
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="title">Session Title</Label>
             <Input 
@@ -120,7 +120,7 @@ export function StudySessionDialog({
             </Select>
           </div>
           
-          {/* Date Picker */}
+          {/* Date Picker with improved layout */}
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
             <Popover>
@@ -142,12 +142,12 @@ export function StudySessionDialog({
                   selected={selectedDate}
                   onSelect={setSelectedDate}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                  fromDate={today} // Disable dates before today
-                  disabled={(date) => date < today} // Ensure past dates are disabled
-                  captionLayout="dropdown-buttons" // Enable month/year dropdown navigation
-                  fromYear={today.getFullYear()} // Start year selection from current year
-                  toYear={today.getFullYear() + 5} // Allow selection up to 5 years in the future
+                  className="p-3"
+                  fromDate={today} 
+                  disabled={(date) => date < today}
+                  captionLayout="dropdown-buttons"
+                  fromYear={today.getFullYear()}
+                  toYear={today.getFullYear() + 5}
                 />
               </PopoverContent>
             </Popover>
@@ -186,7 +186,7 @@ export function StudySessionDialog({
             />
           </div>
           
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

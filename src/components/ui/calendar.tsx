@@ -21,10 +21,10 @@ function Calendar({
       className={cn("p-3 pointer-events-auto", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center mb-4", // Added more margin bottom
+        month: "space-y-6", // Increased vertical spacing
+        caption: "flex justify-center pt-2 relative items-center mb-6", // Increased top and bottom spacing
         caption_label: "text-sm font-medium",
-        caption_dropdowns: "flex justify-center gap-1 mt-2", // Added top margin
+        caption_dropdowns: "flex justify-center gap-2 mt-3", // Increased gap and vertical spacing
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
@@ -52,10 +52,10 @@ function Calendar({
         day_range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
-        // New CSS classes for dropdown calendars
+        // Improved dropdown styling
         dropdown: "focus:outline-none focus:ring-0",
-        dropdown_month: "w-[85px]",
-        dropdown_year: "w-[65px]",
+        dropdown_month: "w-[90px]", // Made month dropdown wider
+        dropdown_year: "w-[70px]", // Made year dropdown wider
         dropdown_icon: "ml-auto h-4 w-4 opacity-50",
         ...classNames,
       }}
@@ -80,7 +80,7 @@ function Calendar({
               value={value?.toString()}
               onValueChange={handleValueChange}
             >
-              <SelectTrigger className={cn("h-8 px-2 text-xs", props.className)}>
+              <SelectTrigger className={cn("h-8 px-3 text-xs", props.className)}>
                 <SelectValue placeholder={value}>
                   {value}
                 </SelectValue>
