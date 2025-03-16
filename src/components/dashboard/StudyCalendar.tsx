@@ -147,12 +147,12 @@ export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalen
 
       {/* Modified grid layout to ensure better spacing for mobile */}
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="rounded-md border p-4"> {/* Added padding and border */}
+        <div className="rounded-md border p-4">
           <Calendar
             mode="single"
             selected={date}
             onSelect={setDate}
-            className="mx-auto w-full" {/* Made width full and centered */}
+            className="mx-auto w-full" /* Made width full and centered */
           />
         </div>
 
