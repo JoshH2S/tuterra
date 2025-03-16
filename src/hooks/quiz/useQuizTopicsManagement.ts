@@ -18,9 +18,19 @@ export const useQuizTopicsManagement = () => {
     setTopics(newTopics);
   };
 
+  const removeTopic = (index: number) => {
+    // Only allow removing if there's more than one topic
+    if (topics.length > 1) {
+      const newTopics = [...topics];
+      newTopics.splice(index, 1);
+      setTopics(newTopics);
+    }
+  };
+
   return {
     topics,
     addTopic,
     updateTopic,
+    removeTopic,
   };
 };

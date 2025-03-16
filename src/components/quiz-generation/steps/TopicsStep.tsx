@@ -11,19 +11,10 @@ interface TopicsStepProps {
   topics: Topic[];
   updateTopic: (index: number, field: keyof Topic, value: string | number) => void;
   addTopic: () => void;
+  removeTopic: (index: number) => void;
 }
 
-export const TopicsStep = ({ topics, updateTopic, addTopic }: TopicsStepProps) => {
-  const removeTopic = (index: number) => {
-    // Only allow removing if there's more than one topic
-    if (topics.length > 1) {
-      const newTopics = [...topics];
-      newTopics.splice(index, 1);
-      // We need to update the parent component's state
-      // This would need to be implemented in the parent useQuizGeneration hook
-    }
-  };
-
+export const TopicsStep = ({ topics, updateTopic, addTopic, removeTopic }: TopicsStepProps) => {
   return (
     <div className="space-y-6">
       <div className="mb-6">
