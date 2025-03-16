@@ -64,6 +64,7 @@ export function StudySessionDialog({
       });
       setSessionData({}); // Reset form after submission
       setSelectedDate(new Date()); // Reset date to current date
+      onOpenChange(false); // Close dialog after successful submission
     } else {
       toast({
         title: "Incomplete form",
@@ -79,7 +80,7 @@ export function StudySessionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto py-6">
+      <DialogContent className="sm:max-w-[425px] py-6">
         <h3 className="text-lg font-semibold mb-6">Schedule Study Session</h3>
         
         <form className="space-y-5" onSubmit={handleSubmit}>
@@ -126,6 +127,7 @@ export function StudySessionDialog({
             <Popover>
               <PopoverTrigger asChild>
                 <Button
+                  id="date"
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
@@ -136,13 +138,13 @@ export function StudySessionDialog({
                   {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8}>
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
                   initialFocus
-                  className="p-3"
+                  className="border-0"
                   fromDate={today} 
                   disabled={(date) => date < today}
                   captionLayout="dropdown-buttons"
