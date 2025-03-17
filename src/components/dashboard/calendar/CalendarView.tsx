@@ -14,7 +14,7 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
         mode="single"
         selected={selectedDate}
         onSelect={onDateSelect}
-        className="mx-auto w-full" /* Made width full and centered */
+        className="mx-auto w-full scale-75 origin-center transform" /* Added scaling to 75% */
       />
     </div>
   );

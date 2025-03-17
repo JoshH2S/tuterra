@@ -50,7 +50,7 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
             selected={selectedDate}
             onSelect={onDateSelect}
             initialFocus
-            className="border-0"
+            className="border-0 scale-75 origin-center transform w-[133%] h-[133%] -m-4" // Scale to 3/4 size and adjust width/height to maintain proper layout
             fromDate={today} 
             disabled={(date) => date < today}
             captionLayout="dropdown-buttons"
