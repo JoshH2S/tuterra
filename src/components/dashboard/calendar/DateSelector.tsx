@@ -37,13 +37,13 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
         </PopoverTrigger>
         <PopoverContent 
           className="w-auto p-0" 
-          align="start" 
+          align="center"
           side="bottom" 
-          sideOffset={8}
+          sideOffset={4}
           alignOffset={0}
           avoidCollisions={true}
-          collisionPadding={{ top: 20, bottom: 20, left: 20, right: 20 }}
-          sticky="always"
+          collisionPadding={30}
+          forceMount
         >
           <Calendar
             mode="single"
