@@ -14,7 +14,7 @@ import { CreateStudySessionData } from "@/types/study-sessions";
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
   const { insights } = useStudentAnalytics(courses, performance);
-  const { sessions, createSession, isLoading: isLoadingSessions } = useStudySessions();
+  const { sessions, createSession, updateSession, isLoading: isLoadingSessions } = useStudySessions();
   const isMobile = useIsMobile();
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
 
@@ -62,6 +62,7 @@ export default function StudentDashboard() {
           courses={courses}
           onCreateSession={handleCreateSession}
           openSessionDialog={openSessionDialog}
+          onUpdateSession={updateSession}
         />
       ) : (
         <DesktopDashboard
@@ -71,6 +72,7 @@ export default function StudentDashboard() {
           courses={courses}
           createSession={handleCreateSession}
           openSessionDialog={openSessionDialog}
+          updateSession={updateSession}
         >
           <NewsFeed courses={courses} />
         </DesktopDashboard>

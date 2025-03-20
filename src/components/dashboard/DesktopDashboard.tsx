@@ -1,79 +1,62 @@
 
-import { StudentPerformance } from "@/types/student";
+import { PerformanceOverview } from "./PerformanceOverview";
+import { StatsCards } from "./StatsCards";
+import { InsightsSection } from "./InsightsSection";
+import { TasksList } from "./TasksList";
+import { StudyCalendar } from "./StudyCalendar";
 import { StudySession } from "@/hooks/useStudySessions";
-import { TasksList } from "@/components/dashboard/TasksList";
-import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 import { StudentCourse } from "@/types/student";
-import { StatsCards } from "@/components/dashboard/StatsCards";
-import { InsightsSection } from "@/components/dashboard/InsightsSection";
-import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
-import { CreateStudySessionData } from "@/types/study-sessions";
+import { ReactNode } from "react";
 
 interface DesktopDashboardProps {
-  performance: StudentPerformance[];
-  insights: Array<{
-    type: 'warning' | 'achievement' | 'improvement';
-    message: string;
-    metric?: number;
-  }>;
+  performance: any[];
+  insights: any;
   sessions: StudySession[];
   courses: StudentCourse[];
-  createSession: (sessionData: Omit<StudySession, 'id' | 'student_id'>) => Promise<void>;
-  children?: React.ReactNode;
+  children?: ReactNode;
+  createSession: (data: any) => Promise<void>;
   openSessionDialog: () => void;
+  updateSession?: (id: string, updates: Partial<StudySession>) => Promise<void>;
 }
 
 export function DesktopDashboard({ 
   performance, 
   insights, 
   sessions, 
-  courses,
-  createSession,
+  courses, 
   children,
-  openSessionDialog
+  createSession,
+  openSessionDialog,
+  updateSession
 }: DesktopDashboardProps) {
-  // Collect all strengths and areas for improvement across all courses
-  const allStrengths = performance.flatMap(p => p.strengths || []);
-  const allAreasForImprovement = performance.flatMap(p => p.areas_for_improvement || []);
-  
-  // Remove duplicates
-  const uniqueStrengths = [...new Set(allStrengths)];
-  const uniqueAreasForImprovement = [...new Set(allAreasForImprovement)];
-
   return (
-    <div className="space-y-8">
-      {/* News Feed at the top */}
-      {children}
-
-      {/* Stats Cards */}
-      <StatsCards performance={performance} />
-
-      {/* Tasks Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TasksList 
-          sessions={sessions} 
-          courses={courses} 
-          onCreateSession={openSessionDialog}
-        />
-      </section>
-
-      {/* Insights Section */}
-      <InsightsSection insights={insights} />
-
-      {/* Performance Chart */}
-      <section className="grid grid-cols-1 gap-6">
-        <PerformanceChart performance={performance} />
-      </section>
-
-      {/* Strengths and Areas */}
-      {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
-        <section>
-          <StrengthsAndAreas 
-            strengths={uniqueStrengths} 
-            areasForImprovement={uniqueAreasForImprovement} 
+    <div className="space-y-6">
+      <StatsCards />
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-6 col-span-1 lg:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PerformanceOverview performance={performance} />
+            <TasksList 
+              sessions={sessions} 
+              courses={courses} 
+              onCreateSession={openSessionDialog}
+              onUpdateSession={updateSession}
+            />
+          </div>
+          
+          <StudyCalendar 
+            sessions={sessions} 
+            courses={courses} 
+            onCreateSession={createSession}
           />
-        </section>
-      )}
+        </div>
+        
+        <div className="space-y-6">
+          <InsightsSection insights={insights} />
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
