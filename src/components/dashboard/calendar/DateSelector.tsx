@@ -36,7 +36,7 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-auto p-0" 
+          className="w-auto p-0 scale-75 origin-center transform" 
           align="center"
           side="bottom" 
           sideOffset={4}

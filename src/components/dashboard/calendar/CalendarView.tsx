@@ -9,7 +9,7 @@ interface CalendarViewProps {
 
 export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) {
   return (
-    <div className="rounded-md border p-4">
+    <div className="rounded-md border p-2 scale-75 origin-center transform w-[133%] -ml-[16%] -mr-[16%]">
       <Calendar
         mode="single"
         selected={selectedDate}
