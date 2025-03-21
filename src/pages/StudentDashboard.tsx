@@ -28,6 +28,11 @@ export default function StudentDashboard() {
     setSessionDialogOpen(false);
   };
 
+  const handleUpdateSession = async (id: string, updates: Partial<StudySession>) => {
+    await updateSession(id, updates);
+    // Not returning anything explicitly ensures Promise<void>
+  };
+
   const openSessionDialog = () => {
     setSessionDialogOpen(true);
   };
@@ -62,7 +67,7 @@ export default function StudentDashboard() {
           courses={courses}
           onCreateSession={handleCreateSession}
           openSessionDialog={openSessionDialog}
-          onUpdateSession={updateSession}
+          onUpdateSession={handleUpdateSession}
         />
       ) : (
         <DesktopDashboard
@@ -72,7 +77,7 @@ export default function StudentDashboard() {
           courses={courses}
           createSession={handleCreateSession}
           openSessionDialog={openSessionDialog}
-          updateSession={updateSession}
+          updateSession={handleUpdateSession}
         >
           <NewsFeed courses={courses} />
         </DesktopDashboard>

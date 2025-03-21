@@ -37,7 +37,7 @@ export function MobileDashboard({
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
-          <StatsCards />
+          <StatsCards performance={performance} />
           
           <TasksList 
             sessions={sessions} 
