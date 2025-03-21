@@ -1,69 +1,73 @@
 
-interface ExplanationCacheKey {
-  questionId: string;
-  userAnswer: string;
+interface CacheItem<T> {
+  value: T;
+  expiry: number;
 }
 
-class ExplanationCache {
-  private cache: Map<string, string> = new Map();
-  private MAX_CACHE_SIZE = 100; // Limit cache size for memory efficiency
-  private cacheTTL = 1000 * 60 * 60 * 24; // 24 hours
-  private timestamps: Map<string, number> = new Map();
+type ExplanationCacheKey = {
+  questionId: string;
+  userAnswer: string;
+};
 
-  private generateKey(key: ExplanationCacheKey): string {
+/**
+ * A simple in-memory cache for explanations with TTL support
+ */
+class ExplanationCache {
+  private cache: Map<string, CacheItem<string>> = new Map();
+  private readonly defaultTTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+  /**
+   * Get value from cache
+   */
+  get(key: ExplanationCacheKey): string | null {
+    const cacheKey = this.generateCacheKey(key);
+    const item = this.cache.get(cacheKey);
+    
+    // Return null if item doesn't exist or has expired
+    if (!item) return null;
+    if (Date.now() > item.expiry) {
+      this.cache.delete(cacheKey);
+      return null;
+    }
+    
+    return item.value;
+  }
+
+  /**
+   * Set value in cache with optional TTL
+   */
+  set(key: ExplanationCacheKey, value: string, ttl: number = this.defaultTTL): void {
+    const cacheKey = this.generateCacheKey(key);
+    const expiry = Date.now() + ttl;
+    this.cache.set(cacheKey, { value, expiry });
+  }
+
+  /**
+   * Generate a consistent string key from the cache key object
+   */
+  private generateCacheKey(key: ExplanationCacheKey): string {
     return `${key.questionId}:${key.userAnswer}`;
   }
 
-  get(key: ExplanationCacheKey): string | undefined {
-    const cacheKey = this.generateKey(key);
-    const timestamp = this.timestamps.get(cacheKey);
-    
-    // Check if cache entry is expired
-    if (timestamp && Date.now() - timestamp > this.cacheTTL) {
-      this.cache.delete(cacheKey);
-      this.timestamps.delete(cacheKey);
-      return undefined;
-    }
-    
-    return this.cache.get(cacheKey);
-  }
-
-  set(key: ExplanationCacheKey, explanation: string): void {
-    const cacheKey = this.generateKey(key);
-    
-    // Ensure cache doesn't grow too large
-    if (this.cache.size >= this.MAX_CACHE_SIZE) {
-      // Remove oldest entry (first key)
-      const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
-      this.timestamps.delete(oldestKey);
-    }
-    
-    this.cache.set(cacheKey, explanation);
-    this.timestamps.set(cacheKey, Date.now());
-  }
-  
-  // Clear the cache when needed (e.g., on quiz reset)
-  clear(): void {
-    this.cache.clear();
-    this.timestamps.clear();
-  }
-  
-  // Get cache stats for monitoring
-  getStats(): { size: number, oldestEntry: number } {
-    let oldestTimestamp = Date.now();
-    
-    for (const timestamp of this.timestamps.values()) {
-      if (timestamp < oldestTimestamp) {
-        oldestTimestamp = timestamp;
+  /**
+   * Clear all expired items from the cache
+   */
+  clearExpired(): void {
+    const now = Date.now();
+    for (const [key, item] of this.cache.entries()) {
+      if (now > item.expiry) {
+        this.cache.delete(key);
       }
     }
-    
-    return {
-      size: this.cache.size,
-      oldestEntry: oldestTimestamp
-    };
+  }
+
+  /**
+   * Get the size of the cache
+   */
+  size(): number {
+    return this.cache.size;
   }
 }
 
+// Create and export a singleton instance
 export const explanationCache = new ExplanationCache();
