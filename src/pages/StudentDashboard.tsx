@@ -1,7 +1,7 @@
 
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
-import { useStudySessions } from "@/hooks/useStudySessions";
+import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
 import { NewsFeed } from "@/components/dashboard/NewsFeed";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DesktopDashboard } from "@/components/dashboard/DesktopDashboard";
