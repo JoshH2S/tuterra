@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { Task } from "./TaskItem";
@@ -12,7 +11,7 @@ export function useTasksFromSessions(
 ) {
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  useEffect(() => {
+  const processSessionsIntoTasks = useCallback((sessions: StudySession[], courses: StudentCourse[]) => {
     const sessionTasks = sessions
       .filter(session => {
         const sessionDate = new Date(session.start_time);
@@ -29,7 +28,7 @@ export function useTasksFromSessions(
           id: `session-${session.id}`,
           title: session.title,
           description: course ? `For ${course.course.title} at ${format(sessionDate, 'h:mm a')}` : 
-                      `At ${format(sessionDate, 'h:mm a')}`,
+                    `At ${format(sessionDate, 'h:mm a')}`,
           completed: session.status === 'completed',
           dueDate: sessionDate,
           courseId: session.course_id,
@@ -49,11 +48,17 @@ export function useTasksFromSessions(
       });
     }
 
+    return sessionTasks;
+  }, []);
+
+  useEffect(() => {
+    const sessionTasks = processSessionsIntoTasks(sessions, courses);
+    
     setTasks(prevTasks => {
       const customTasks = prevTasks.filter(task => !task.id.startsWith('session-'));
       return [...customTasks, ...sessionTasks];
     });
-  }, [sessions, courses]);
+  }, [sessions, courses, processSessionsIntoTasks]);
 
   return { tasks, setTasks };
 }

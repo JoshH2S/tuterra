@@ -1,8 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, CheckCircle2 } from "lucide-react";
+import { Plus, CheckCircle2, ArrowDown } from "lucide-react";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { toast } from "@/hooks/use-toast";
@@ -25,6 +25,8 @@ export function TasksList({
 }: TasksListProps) {
   const { tasks, setTasks } = useTasksFromSessions(sessions, courses);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [visibleTasks, setVisibleTasks] = useState<number>(5);
+  const PAGE_SIZE = 5;
 
   const handleToggleComplete = async (taskId: string, checked: boolean | string) => {
     if (taskId.startsWith('session-') && onUpdateSession) {
@@ -61,6 +63,24 @@ export function TasksList({
     setExpandedTaskId(prev => prev === taskId ? null : taskId);
   };
 
+  const loadMoreTasks = () => {
+    setVisibleTasks(prev => prev + PAGE_SIZE);
+  };
+
+  // Get incomplete tasks sorted by priority
+  const incompleteTasks = tasks
+    .filter(task => !task.completed)
+    .sort((a, b) => {
+      if (a.missed && !b.missed) return -1;
+      if (!a.missed && b.missed) return 1;
+      if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime();
+      return 0;
+    });
+
+  // Apply pagination to tasks
+  const paginatedTasks = incompleteTasks.slice(0, visibleTasks);
+  const hasMoreTasks = incompleteTasks.length > visibleTasks;
+
   return (
     <Card className="overflow-hidden">
       <CardHeader>
@@ -81,28 +101,31 @@ export function TasksList({
       </CardHeader>
       
       <CardContent>
-        {tasks.length === 0 ? (
+        {incompleteTasks.length === 0 ? (
           <TasksEmptyState />
         ) : (
           <div className="space-y-3">
-            {tasks
-              .filter(task => !task.completed)
-              .sort((a, b) => {
-                if (a.missed && !b.missed) return -1;
-                if (!a.missed && b.missed) return 1;
-                if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime();
-                return 0;
-              })
-              .map((task) => (
-                <TaskItem 
-                  key={task.id} 
-                  task={task} 
-                  courses={courses}
-                  isExpanded={expandedTaskId === task.id}
-                  onToggle={() => toggleExpandTask(task.id)}
-                  onComplete={(checked) => handleToggleComplete(task.id, checked)} 
-                />
-              ))}
+            {paginatedTasks.map((task) => (
+              <TaskItem 
+                key={task.id} 
+                task={task} 
+                courses={courses}
+                isExpanded={expandedTaskId === task.id}
+                onToggle={() => toggleExpandTask(task.id)}
+                onComplete={(checked) => handleToggleComplete(task.id, checked)} 
+              />
+            ))}
+            
+            {hasMoreTasks && (
+              <Button 
+                variant="ghost" 
+                className="w-full mt-2" 
+                onClick={loadMoreTasks}
+              >
+                <ArrowDown className="h-4 w-4 mr-2" />
+                Load More ({incompleteTasks.length - visibleTasks} remaining)
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
