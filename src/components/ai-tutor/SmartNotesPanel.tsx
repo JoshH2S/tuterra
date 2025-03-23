@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lightbulb } from "lucide-react";
 import { motion } from "framer-motion";
+import { cleanMarkdownFormatting } from "@/utils/markdown-cleaner";
 
 interface SmartNotesPanelProps {
   notes: string[];
@@ -44,7 +45,7 @@ export const SmartNotesPanel = ({ notes }: SmartNotesPanelProps) => {
               transition={{ delay: index * 0.1 }}
               className="bg-muted/50 p-3 rounded-lg text-sm border border-border/50"
             >
-              {note}
+              {cleanMarkdownFormatting(note)}
             </motion.div>
           ))}
         </div>

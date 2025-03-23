@@ -122,10 +122,10 @@ function cleanMarkdownFormatting(text: string): string {
   cleanText = cleanText.replace(/^\s*[-*+]\s+/gm, "• ");
   cleanText = cleanText.replace(/^\s*(\d+)\.?\s+/gm, "$1. ");
   
-  cleanText = cleanText.replace(/\*\*(.*?)\*\*/g, "$1");
-  cleanText = cleanText.replace(/__(.*?)__/g, "$1");
-  cleanText = cleanText.replace(/\*(.*?)\*/g, "$1");
-  cleanText = cleanText.replace(/_(.*?)_/g, "$1");
+  cleanText = cleanText.replace(/\*\*(.*?)\*\*/g, "$1"); // Bold
+  cleanText = cleanText.replace(/__(.*?)__/g, "$1"); // Bold alternative
+  cleanText = cleanText.replace(/\*(.*?)\*/g, "$1"); // Italic
+  cleanText = cleanText.replace(/_(.*?)_/g, "$1"); // Italic alternative
   
   cleanText = cleanText.replace(/^#{1,6}\s+(.*)$/gm, "$1");
   

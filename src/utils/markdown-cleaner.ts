@@ -9,10 +9,13 @@ export function cleanMarkdownFormatting(text: string): string {
   
   let cleanText = text;
   
-  // Remove code block formatting
+  // Remove code block formatting but preserve the code content
   cleanText = cleanText.replace(/```[\s\S]*?```/g, (match) => {
     return match.replace(/```[\w]*\n?|\n?```/g, "").trim();
   });
+  
+  // Remove inline code formatting but preserve code content
+  cleanText = cleanText.replace(/`([^`]+)`/g, "$1");
   
   // Remove blockquote markers
   cleanText = cleanText.replace(/^>\s+/gm, "");
@@ -39,6 +42,17 @@ export function cleanMarkdownFormatting(text: string): string {
   
   // Fix multiple consecutive line breaks
   cleanText = cleanText.replace(/\n{3,}/g, "\n\n");
+  
+  // Add smart formatting - ensure proper capitalization after periods
+  cleanText = cleanText.replace(/\.\s+([a-z])/g, (match, letter) => 
+    `. ${letter.toUpperCase()}`
+  );
+  
+  // Remove any link formatting but keep the text
+  cleanText = cleanText.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+  
+  // Preserve HTML entity for bullet points (if they were encoded)
+  cleanText = cleanText.replace(/&bull;/g, "•");
   
   return cleanText.trim();
 }
