@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { QuizResponse, AIFeedback } from "@/types/quiz-results";
+import { QuizResponse, AIFeedback, QuestionResponse } from "@/types/quiz-results";
 
 export function useQuizResults(id: string | undefined) {
   const [results, setResults] = useState<QuizResponse | null>(null);
@@ -63,7 +63,8 @@ export function useQuizResults(id: string | undefined) {
               correct_answer,
               explanation,
               topic,
-              difficulty
+              difficulty,
+              points
             )
           )
         `)
@@ -82,12 +83,33 @@ export function useQuizResults(id: string | undefined) {
       // Ensure ai_feedback is properly typed
       const processedAIFeedback = parseJsonField(data.ai_feedback);
       
+      // Process question responses to ensure they match the QuestionResponse type
+      const processedQuestionResponses: QuestionResponse[] = data.question_responses.map((response: any) => ({
+        question_id: response.question_id,
+        student_answer: response.student_answer,
+        is_correct: response.is_correct,
+        topic: response.topic,
+        question: response.question ? {
+          ...response.question,
+          // Ensure points is included (default to 1 if not present)
+          points: response.question.points || 1
+        } : null
+      }));
+      
       // Construct a complete result object with proper typing
       const completeResults: QuizResponse = {
-        ...data,
-        student_id: data.student_id, // Make sure student_id is included
+        id: data.id,
+        quiz_id: data.quiz_id,
+        student_id: data.student_id,
+        score: data.score,
+        correct_answers: data.correct_answers,
+        total_questions: data.total_questions,
+        completed_at: data.completed_at,
+        attempt_number: data.attempt_number,
         topic_performance: processedTopicPerformance,
-        ai_feedback: processedAIFeedback
+        ai_feedback: processedAIFeedback,
+        quiz: data.quiz,
+        question_responses: processedQuestionResponses
       };
       
       setResults(completeResults);
