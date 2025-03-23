@@ -6,10 +6,11 @@ import { InterviewQuestion } from "@/types/interview";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
 import { TextShimmer } from "@/components/ui/text-shimmer";
-import { Mic, MicOff, Loader2 } from "lucide-react";
+import { Mic, MicOff, Loader2, AudioWaveform } from "lucide-react";
 import { VoiceRecorder, blobToBase64 } from "@/utils/voice-recorder";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
 
 interface InterviewChatProps {
   currentQuestion: InterviewQuestion | null;
@@ -130,6 +131,41 @@ export const InterviewChat = ({
     }
   };
 
+  // Animation variants for the recording indicator
+  const pulseVariants = {
+    recording: {
+      scale: [1, 1.1, 1],
+      opacity: [0.7, 1, 0.7],
+      transition: {
+        duration: 1.5,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    },
+    idle: {
+      scale: 1,
+      opacity: 1
+    }
+  };
+
+  // Animation variants for the wave circles
+  const waveVariants = {
+    recording: (i: number) => ({
+      scale: [1, 1.5, 1],
+      opacity: [0, 0.3, 0],
+      transition: {
+        duration: 2,
+        repeat: Infinity,
+        delay: i * 0.2,
+        ease: "easeInOut"
+      }
+    }),
+    idle: {
+      scale: 0,
+      opacity: 0
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
       <Card className="flex-1 flex flex-col mb-4 shadow-md overflow-hidden">
@@ -171,23 +207,52 @@ export const InterviewChat = ({
                 disabled={isSubmitting || typingEffect || isRecording || isTranscribing}
               />
               <div className="absolute right-3 top-3">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant={isRecording ? "destructive" : "outline"}
-                  className="rounded-full"
-                  onClick={toggleRecording}
-                  disabled={isSubmitting || typingEffect || isTranscribing}
-                  aria-label={isRecording ? "Stop recording" : "Start recording"}
-                >
-                  {isRecording ? (
-                    <MicOff className="h-4 w-4" />
-                  ) : isTranscribing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Mic className="h-4 w-4" />
+                <div className="relative">
+                  {/* Animated circles around mic button when recording */}
+                  {isRecording && (
+                    <>
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={`wave-${i}`}
+                          custom={i}
+                          variants={waveVariants}
+                          initial="idle"
+                          animate="recording"
+                          className="absolute inset-0 rounded-full border border-primary"
+                          style={{ zIndex: -1 }}
+                        />
+                      ))}
+                    </>
                   )}
-                </Button>
+                  
+                  {/* Mic button with animation */}
+                  <motion.div
+                    variants={pulseVariants}
+                    initial="idle"
+                    animate={isRecording ? "recording" : "idle"}
+                  >
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={isRecording ? "destructive" : "outline"}
+                      className={cn(
+                        "rounded-full",
+                        isRecording && "bg-red-600 hover:bg-red-700 text-white"
+                      )}
+                      onClick={toggleRecording}
+                      disabled={isSubmitting || typingEffect || isTranscribing}
+                      aria-label={isRecording ? "Stop recording" : "Start recording"}
+                    >
+                      {isRecording ? (
+                        <AudioWaveform className="h-4 w-4 animate-pulse" />
+                      ) : isTranscribing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </motion.div>
+                </div>
               </div>
             </div>
             <div className="flex justify-between items-center">
