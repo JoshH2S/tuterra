@@ -32,11 +32,13 @@ export function useQuizResults(id: string | undefined) {
       setLoading(true);
       setError(null);
       
-      // Combined query - fetch all necessary data in one call with fewer fields
+      // Combined query - fetch all necessary data in one call with specific fields only
       const { data, error } = await supabase
         .from('quiz_responses')
         .select(`
           id,
+          quiz_id,
+          student_id,
           score,
           correct_answers,
           total_questions,
@@ -44,7 +46,6 @@ export function useQuizResults(id: string | undefined) {
           attempt_number,
           topic_performance,
           ai_feedback,
-          quiz_id,
           quiz:quiz_id (
             id,
             title,
@@ -84,6 +85,7 @@ export function useQuizResults(id: string | undefined) {
       // Construct a complete result object with proper typing
       const completeResults: QuizResponse = {
         ...data,
+        student_id: data.student_id, // Make sure student_id is included
         topic_performance: processedTopicPerformance,
         ai_feedback: processedAIFeedback
       };

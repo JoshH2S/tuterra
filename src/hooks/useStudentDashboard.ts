@@ -21,6 +21,7 @@ export const useStudentDashboard = () => {
           .from('student_courses')
           .select(`
             id,
+            student_id,
             course_id,
             enrolled_at,
             last_accessed,
@@ -37,6 +38,7 @@ export const useStudentDashboard = () => {
           .from('student_performance')
           .select(`
             id,
+            student_id,
             course_id,
             total_quizzes,
             completed_quizzes,
@@ -55,16 +57,17 @@ export const useStudentDashboard = () => {
       if (coursesResult.error) throw coursesResult.error;
       if (performanceResult.error) throw performanceResult.error;
 
-      // Type guard to ensure status is one of the allowed values
+      // Type guard to ensure status is one of the allowed values and student_id is included
       const typedCoursesData = coursesResult.data?.map(course => ({
         ...course,
+        student_id: course.student_id || user.id, // Ensure student_id is included
         status: course.status as StudentCourse['status']
       })) || [];
 
       // Transform and type the performance data
       const transformedPerformanceData: StudentPerformance[] = (performanceResult.data || []).map(p => ({
         id: p.id,
-        student_id: user.id, // No need to fetch this from db
+        student_id: p.student_id || user.id, // Ensure student_id is included
         course_id: p.course_id,
         total_quizzes: p.total_quizzes || 0,
         completed_quizzes: p.completed_quizzes || 0,
