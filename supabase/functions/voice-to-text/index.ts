@@ -42,7 +42,7 @@ serve(async (req) => {
   }
 
   try {
-    const { audio } = await req.json();
+    const { audio, language = "en", prompt = "" } = await req.json();
     
     if (!audio) {
       throw new Error("No audio data provided");
@@ -58,9 +58,17 @@ serve(async (req) => {
     const blob = new Blob([binaryAudio], { type: "audio/webm" });
     formData.append("file", blob, "audio.webm");
     formData.append("model", "whisper-1");
-    formData.append("language", "en");
+    formData.append("language", language);
+    
+    // Add optional prompt for context
+    if (prompt) {
+      formData.append("prompt", prompt);
+    }
+    
+    // Add optional response format (supports json or text)
+    formData.append("response_format", "json");
 
-    console.log("Sending audio to OpenAI...");
+    console.log(`Sending audio to OpenAI (language: ${language})...`);
 
     // Send to OpenAI
     const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {

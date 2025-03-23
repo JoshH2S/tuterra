@@ -28,14 +28,25 @@ export const InterviewChat = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const responseTextareaRef = useRef<HTMLTextAreaElement>(null);
   
-  // Use our custom hook for voice recording
-  const { isRecording, isTranscribing, toggleRecording } = useVoiceRecorder(
+  // Use our custom hook for voice recording with enhanced options
+  const { 
+    isRecording, 
+    isTranscribing, 
+    formattedTime,
+    toggleRecording 
+  } = useVoiceRecorder(
+    // Transcription callback
     (transcribedText) => {
       // Append the transcribed text to current response
       setResponse(prev => {
         const separator = prev.trim().length > 0 ? " " : "";
         return prev + separator + transcribedText;
       });
+    },
+    // Options
+    {
+      maxRecordingTime: 180000, // 3 minutes max
+      audioBitsPerSecond: 128000 // Higher quality audio
     }
   );
   
@@ -88,6 +99,7 @@ export const InterviewChat = ({
               isRecording={isRecording}
               isTranscribing={isTranscribing}
               onToggleRecording={toggleRecording}
+              recordingTime={formattedTime}
             />
             <div className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">

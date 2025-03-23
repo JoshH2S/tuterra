@@ -12,6 +12,7 @@ interface ResponseInputProps {
   isRecording: boolean;
   isTranscribing: boolean;
   onToggleRecording: () => void;
+  recordingTime?: string;
 }
 
 export const ResponseInput = ({
@@ -22,7 +23,8 @@ export const ResponseInput = ({
   typingEffect,
   isRecording,
   isTranscribing,
-  onToggleRecording
+  onToggleRecording,
+  recordingTime = "00:00"
 }: ResponseInputProps) => {
   const responseTextareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -37,7 +39,12 @@ export const ResponseInput = ({
         onKeyDown={onKeyDown}
         disabled={isSubmitting || typingEffect || isRecording || isTranscribing}
       />
-      <div className="absolute right-3 top-3">
+      <div className="absolute right-3 top-3 flex items-center gap-2">
+        {isRecording && (
+          <div className="text-xs font-mono bg-red-100 text-red-800 px-2 py-1 rounded-full">
+            {recordingTime}
+          </div>
+        )}
         <RecordingButton
           isRecording={isRecording}
           isTranscribing={isTranscribing}
