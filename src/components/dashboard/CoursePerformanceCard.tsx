@@ -211,7 +211,6 @@ export const CoursePerformanceCard: FC<CoursePerformanceCardProps> = ({ performa
                   },
                   animation: {
                     duration: 1000,
-                    // Fix: Use a specific easing function from Chart.js allowed values
                     easing: 'easeOutQuart',
                   },
                 }}
@@ -227,3 +226,4 @@ export const CoursePerformanceCard: FC<CoursePerformanceCardProps> = ({ performa
     </Card>
   );
 };
+
