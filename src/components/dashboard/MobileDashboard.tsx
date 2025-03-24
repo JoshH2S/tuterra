@@ -2,11 +2,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksList } from "./TasksList";
 import { StudyCalendar } from "./StudyCalendar";
-import { PerformanceOverview } from "./PerformanceOverview";
 import { StatsCards } from "./StatsCards";
 import { InsightsSection } from "./InsightsSection";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
+import { CoursePerformanceCard } from "./CoursePerformanceCard";
 
 interface MobileDashboardProps {
   performance: any[];
@@ -46,7 +46,7 @@ export function MobileDashboard({
             onUpdateSession={onUpdateSession}
           />
           
-          <PerformanceOverview performance={performance} />
+          <CoursePerformanceCard performance={performance} />
         </TabsContent>
         
         <TabsContent value="calendar" className="space-y-6">
