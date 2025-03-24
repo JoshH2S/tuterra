@@ -13,6 +13,7 @@ import { CreateStudySessionData } from "@/types/study-sessions";
 import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
 import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -50,8 +51,8 @@ export default function StudentDashboard() {
       <div className={`container mx-auto ${isMobile ? 'py-6 px-4' : 'py-12'}`}>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="md:col-span-2 h-64 bg-gray-200 rounded"></div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2 h-64 bg-gray-200 rounded"></div>
             <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
@@ -80,22 +81,47 @@ export default function StudentDashboard() {
         <div className="space-y-6">
           <NewsFeed courses={courses} />
           
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <PerformanceOverview performance={performance} />
-              {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
-                <StrengthsAndAreas 
-                  strengths={uniqueStrengths} 
-                  areasForImprovement={uniqueAreasForImprovement} 
-                />
-              )}
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Performance Overview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PerformanceOverview performance={performance} />
+                  </CardContent>
+                </Card>
+
+                {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Strengths & Areas for Improvement</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <StrengthsAndAreas 
+                        strengths={uniqueStrengths} 
+                        areasForImprovement={uniqueAreasForImprovement} 
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
-            <div className="space-y-6">
-              <StudyCalendar 
-                sessions={sessions}
-                courses={courses}
-                onCreateSession={handleCreateSession}
-              />
+            
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Study Schedule</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <StudyCalendar 
+                    sessions={sessions}
+                    courses={courses}
+                    onCreateSession={handleCreateSession}
+                  />
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

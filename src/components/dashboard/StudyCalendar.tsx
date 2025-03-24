@@ -19,7 +19,6 @@ export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalen
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Study Schedule</h2>
         <SessionForm 
           courses={courses} 
           selectedDate={date} 
