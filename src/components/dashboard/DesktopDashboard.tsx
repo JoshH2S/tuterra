@@ -1,4 +1,5 @@
 
+import { PerformanceOverview } from "./PerformanceOverview";
 import { StatsCards } from "./StatsCards";
 import { InsightsSection } from "./InsightsSection";
 import { TasksList } from "./TasksList";
@@ -6,7 +7,6 @@ import { StudyCalendar } from "./StudyCalendar";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { ReactNode } from "react";
-import { CoursePerformanceCard } from "./CoursePerformanceCard";
 
 interface DesktopDashboardProps {
   performance: any[];
@@ -36,7 +36,7 @@ export function DesktopDashboard({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-6 col-span-1 lg:col-span-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <CoursePerformanceCard performance={performance} />
+            <PerformanceOverview performance={performance} />
             <TasksList 
               sessions={sessions} 
               courses={courses} 
