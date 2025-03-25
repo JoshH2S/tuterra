@@ -172,7 +172,7 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
     },
     animation: {
       duration: 1500,
-      easing: 'easeOutQuart', // Using a specific easing function from Chart.js
+      easing: 'easeOutQuart', // This is a valid easing function in Chart.js
     },
   };
 
