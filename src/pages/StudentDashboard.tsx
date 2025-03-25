@@ -1,3 +1,4 @@
+
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
@@ -17,6 +18,7 @@ export default function StudentDashboard() {
   const isMobile = useIsMobile();
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
 
+  // Debug logging to check courses data
   useEffect(() => {
     console.log("Courses in StudentDashboard:", courses);
   }, [courses]);
@@ -28,6 +30,7 @@ export default function StudentDashboard() {
 
   const handleUpdateSession = async (id: string, updates: Partial<StudySession>) => {
     await updateSession(id, updates);
+    // Not returning anything explicitly ensures Promise<void>
   };
 
   const openSessionDialog = () => {
@@ -80,6 +83,7 @@ export default function StudentDashboard() {
         </DesktopDashboard>
       )}
 
+      {/* Study Session Dialog */}
       <StudySessionDialog
         open={sessionDialogOpen}
         onOpenChange={setSessionDialogOpen}
