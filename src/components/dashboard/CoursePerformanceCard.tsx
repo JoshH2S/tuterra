@@ -122,7 +122,7 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
     );
   }
 
-  // Define chart options
+  // Define chart options with proper typing for easing
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -172,7 +172,7 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
     },
     animation: {
       duration: 1500,
-      easing: 'easeOutQuart', // This is a valid easing function in Chart.js
+      easing: 'easeOutQuart' as const, // Using a type assertion to ensure it's a specific literal type
     },
   };
 
