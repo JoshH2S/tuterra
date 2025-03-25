@@ -9,7 +9,7 @@ export interface MediaItem {
   file_type: string;
   file_size: number;
   metadata?: Json | null;
-  teacher_id: string;
+  user_id: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -20,7 +20,7 @@ export interface CourseTemplate {
   description?: string;
   content: Json;  // Changed from Record<string, any> to Json
   metadata?: Json | null;
-  teacher_id: string;
+  user_id: string;
   created_at?: string;
   updated_at?: string;
 }

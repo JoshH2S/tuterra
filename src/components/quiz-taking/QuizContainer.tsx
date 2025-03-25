@@ -27,6 +27,7 @@ export const QuizContainer = () => {
   const [quizId, setQuizId] = useState<string>("");
   const [showStartDialog, setShowStartDialog] = useState(true);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   const { data: quiz, isLoading: isLoadingQuiz, error: quizError } = useQuery({
     queryKey: ['quiz', id],
@@ -103,6 +104,11 @@ export const QuizContainer = () => {
   const handleStartQuiz = () => {
     setShowStartDialog(false);
     setQuizStarted(true);
+    // Set the initial time remaining when the quiz starts
+    if (quiz && quiz.duration_minutes) {
+      console.log(`Setting timer to ${quiz.duration_minutes} minutes`);
+      setTimeRemaining(quiz.duration_minutes * 60);
+    }
   };
 
   if (quizError) {
@@ -139,6 +145,8 @@ export const QuizContainer = () => {
           quizId={quizId}
           quiz={quiz}
           questions={quizQuestions}
+          timeRemaining={timeRemaining}
+          setTimeRemaining={setTimeRemaining}
           onQuizSubmitted={() => setQuizSubmitted(true)}
           onExitQuiz={() => navigate('/quizzes')}
         />

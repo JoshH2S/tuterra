@@ -43,13 +43,15 @@ export const useTemplateCrud = () => {
     }
 
     try {
+      const templateData = {
+        title,
+        content,
+        user_id: user.id
+      };
+
       const { data, error } = await supabase
         .from('course_templates')
-        .insert({
-          title,
-          content,
-          teacher_id: user.id,
-        })
+        .insert(templateData)
         .select()
         .single();
 

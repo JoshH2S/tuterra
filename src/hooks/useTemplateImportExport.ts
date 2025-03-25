@@ -49,7 +49,7 @@ export const useTemplateImportExport = (onImportSuccess?: () => void) => {
           title: `${template.title} (Imported)`,
           content: template.content,
           description: template.description,
-          teacher_id: user.id,
+          user_id: user.id,
           metadata: template.metadata,
         });
 

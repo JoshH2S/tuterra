@@ -60,7 +60,7 @@ export const useMediaLibrary = () => {
           file_path: filePath,
           file_type: file.type,
           file_size: file.size,
-          teacher_id: user.id,
+          user_id: user.id,
           metadata: null
         });
 

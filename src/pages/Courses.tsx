@@ -66,8 +66,9 @@ const Courses = () => {
         description: `${data.title} has been created successfully.`,
       });
       setIsCreating(false);
-      refreshCourses();
+      await refreshCourses(); // Explicitly refresh courses after successful creation
     }
+    return success; // Return success state to handle modal submission state
   };
 
   const handleSearch = (query: string) => {

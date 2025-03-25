@@ -1,198 +1,84 @@
 
-import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ChevronLeft, ChevronRight, Flag, Clock } from "lucide-react";
-import { Json } from "@/integrations/supabase/types";
-
-// Define proper types for our data
-type SkillAssessment = {
-  id: string;
-  title: string;
-  industry: string;
-  role: string;
-  description: string;
-  questions: Array<{
-    question: string;
-    type: string;
-    options: Record<string, string>;
-    correctAnswer: string | string[];
-    skill?: string;
-  }>;
-  time_limit?: number;
-};
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { AssessmentProgressTracker } from "@/components/skill-assessment/AssessmentProgress";
+import { AssessmentHeader } from "@/components/skill-assessment/AssessmentHeader";
+import { QuestionDisplay } from "@/components/skill-assessment/QuestionDisplay";
+import { SubmissionControls } from "@/components/skill-assessment/SubmissionControls";
+import { useSkillAssessmentTaking } from "@/hooks/useSkillAssessmentTaking";
+import { MobileProgressBar } from "@/components/skill-assessment/MobileProgressBar";
+import { useSwipeable } from "react-swipeable";
+import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile, useTouchDevice } from "@/hooks/use-mobile";
 
 export default function TakeSkillAssessment() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const isTouch = useTouchDevice();
   
-  const [assessment, setAssessment] = useState<SkillAssessment | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
-  const [timeRemaining, setTimeRemaining] = useState<number>(3600); // 1 hour default
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    assessment,
+    loading,
+    currentQuestionIndex,
+    answers,
+    timeRemaining,
+    totalTime,
+    isSubmitting,
+    error,
+    submissionProgress,
+    sections,
+    progress,
+    isLastQuestion,
+    currentQuestion,
+    totalQuestions,
+    handleAnswerChange,
+    goToNextQuestion,
+    goToPreviousQuestion,
+    handleSubmit
+  } = useSkillAssessmentTaking(id);
 
-  useEffect(() => {
-    const fetchAssessment = async () => {
-      if (!id || !user) return;
+  // Enhanced swipe handlers for mobile - with improved options
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => !isLastQuestion && goToNextQuestion(),
+    onSwipedRight: () => currentQuestionIndex > 0 && goToPreviousQuestion(),
+    trackMouse: false,
+    preventScrollOnSwipe: true,
+    touchEventOptions: { passive: false },
+    delta: 50, // Minimum swipe distance required
+    swipeDuration: 500, // Maximum time in ms allowed for swipe
+  });
 
-      try {
-        const { data, error } = await supabase
-          .from("skill_assessments")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        if (error) throw error;
-        
-        // Cast the JSON questions to the correct type
-        const typedAssessment: SkillAssessment = {
-          ...data,
-          questions: data.questions as SkillAssessment['questions']
-        };
-        
-        setAssessment(typedAssessment);
-        
-        // Set timer based on question count (2 minutes per question, min 30 minutes, max 2 hours)
-        const questionCount = typedAssessment.questions?.length || 0;
-        const calculatedTime = Math.max(30 * 60, Math.min(120 * 60, questionCount * 120));
-        setTimeRemaining(calculatedTime);
-      } catch (error) {
-        console.error("Error fetching assessment:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load the assessment",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+  // Animation variants for question transitions
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? '30%' : '-30%',
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        x: { type: 'spring', stiffness: 300, damping: 30 },
+        opacity: { duration: 0.2 }
       }
-    };
-
-    fetchAssessment();
-  }, [id, user, toast]);
-
-  useEffect(() => {
-    // Timer countdown
-    if (timeRemaining <= 0 || !assessment) return;
-    
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [timeRemaining, assessment]);
-
-  const handleAnswerChange = (value: string | string[]) => {
-    setAnswers(prev => ({
-      ...prev,
-      [currentQuestionIndex]: value
-    }));
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? '30%' : '-30%',
+      opacity: 0,
+      transition: {
+        x: { type: 'spring', stiffness: 300, damping: 30 },
+        opacity: { duration: 0.2 }
+      }
+    })
   };
 
-  const goToNextQuestion = () => {
-    if (assessment && currentQuestionIndex < assessment.questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
-  };
-
-  const goToPreviousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!assessment || !user) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Calculate score
-      let correctCount = 0;
-      const questions = assessment.questions || [];
-      
-      const detailedResults = questions.map((question, index) => {
-        const userAnswer = answers[index];
-        let isCorrect = false;
-        
-        if (Array.isArray(userAnswer) && Array.isArray(question.correctAnswer)) {
-          // Sort both arrays to ensure order doesn't matter for comparison
-          const sortedUserAnswer = [...userAnswer].sort();
-          const sortedCorrectAnswer = [...question.correctAnswer].sort();
-          isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer);
-        } else if (!Array.isArray(userAnswer) && !Array.isArray(question.correctAnswer)) {
-          isCorrect = userAnswer === question.correctAnswer;
-        }
-        
-        if (isCorrect) correctCount++;
-        
-        return {
-          question: question.question,
-          correct: isCorrect,
-          userAnswer,
-          correctAnswer: question.correctAnswer,
-          skill: question.skill || "General"
-        };
-      });
-      
-      const score = Math.round((correctCount / questions.length) * 100);
-      
-      // Save results
-      const { data, error } = await supabase
-        .from("skill_assessment_results")
-        .insert({
-          assessment_id: assessment.id,
-          user_id: user.id,
-          score,
-          answers: answers,
-          detailed_results: detailedResults,
-          time_spent: assessment.time_limit ? assessment.time_limit - timeRemaining : null
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Assessment completed",
-        description: `Your score: ${score}%`,
-      });
-      
-      // Navigate to results page
-      navigate(`/skill-assessment-results/${data.id}`);
-    } catch (error) {
-      console.error("Error submitting assessment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit your answers. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  // Determine swipe direction
+  const getDirection = () => {
+    return 1; // Default to right-to-left for new questions
   };
 
   if (loading) {
@@ -219,138 +105,104 @@ export default function TakeSkillAssessment() {
     );
   }
 
-  const currentQuestion = assessment.questions?.[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === (assessment.questions?.length || 0) - 1;
-  const progress = (currentQuestionIndex + 1) / (assessment.questions?.length || 1) * 100;
-
   return (
-    <div className="container py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{assessment.title}</h1>
-        <div className="flex items-center text-muted-foreground">
-          <Clock className="w-4 h-4 mr-1" />
-          <span>{formatTime(timeRemaining)}</span>
-        </div>
-      </div>
+    <div className="container py-4 md:py-6 space-y-4 md:space-y-6 overflow-hidden">
+      <AssessmentHeader 
+        title={assessment.title}
+        timeRemaining={timeRemaining}
+        level={assessment.level}
+      />
 
-      <div className="w-full bg-muted rounded-full h-2">
-        <div 
-          className="bg-primary h-2 rounded-full" 
-          style={{ width: `${progress}%` }}
+      {/* Mobile progress bar - visible only on mobile */}
+      <div className={`${isMobile ? 'block' : 'hidden'} sticky top-0 z-10 bg-background pt-2 pb-3 -mx-4 px-4 border-b`}>
+        <MobileProgressBar 
+          progress={progress} 
+          currentQuestion={currentQuestionIndex + 1}
+          totalQuestions={totalQuestions}
         />
       </div>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span>Question {currentQuestionIndex + 1} of {assessment.questions?.length}</span>
-            {currentQuestion?.skill && (
-              <span className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
-                {currentQuestion.skill}
-              </span>
-            )}
-          </CardTitle>
-          <CardDescription>
-            Select the best answer for each question
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {currentQuestion && (
-            <>
-              <div className="text-lg font-medium mb-4">
-                {currentQuestion.question}
-              </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
 
-              {currentQuestion.type === 'multiple_choice' ? (
-                <RadioGroup
-                  value={answers[currentQuestionIndex] as string || ""}
-                  onValueChange={(value) => handleAnswerChange(value)}
-                  className="space-y-3"
-                >
-                  {Object.entries(currentQuestion.options).map(([key, value]) => (
-                    <div key={key} className="flex items-center space-x-2 border p-3 rounded-md">
-                      <RadioGroupItem value={key} id={`option-${key}`} />
-                      <label 
-                        htmlFor={`option-${key}`}
-                        className="flex-1 cursor-pointer"
-                      >
-                        {value}
-                      </label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              ) : currentQuestion.type === 'multiple_answer' ? (
-                <div className="space-y-3">
-                  {Object.entries(currentQuestion.options).map(([key, value]) => {
-                    const currentAnswers = (answers[currentQuestionIndex] as string[]) || [];
-                    const isChecked = currentAnswers.includes(key);
-                    
-                    return (
-                      <div key={key} className="flex items-start space-x-2 border p-3 rounded-md">
-                        <Checkbox 
-                          id={`option-${key}`}
-                          checked={isChecked}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleAnswerChange([...currentAnswers, key]);
-                            } else {
-                              handleAnswerChange(currentAnswers.filter(item => item !== key));
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={`option-${key}`}
-                          className="flex-1 cursor-pointer"
-                        >
-                          {value}
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p>Question type not supported</p>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-between mt-4">
-        <Button
-          variant="outline"
-          onClick={goToPreviousQuestion}
-          disabled={currentQuestionIndex === 0}
+      <div className="md:grid md:grid-cols-4 gap-6">
+        {/* Left sidebar with progress - desktop only */}
+        <div className="hidden md:block">
+          <Card className="sticky top-24">
+            <CardContent className="p-4">
+              <AssessmentProgressTracker 
+                sections={sections}
+                currentQuestion={currentQuestionIndex + 1}
+                totalQuestions={totalQuestions}
+                timeRemaining={timeRemaining}
+                totalTime={totalTime}
+                hideTimer={true}
+              />
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Main content */}
+        <div 
+          className="md:col-span-3 space-y-4 md:space-y-6 touch-manipulation relative"
+          {...(isTouch ? swipeHandlers : {})}
         >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Previous
-        </Button>
-
-        {isLastQuestion ? (
-          <Button 
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Flag className="mr-2 h-4 w-4" />
-                Finish Assessment
-              </>
+          <AnimatePresence initial={false} custom={getDirection()} mode="wait">
+            {currentQuestion && (
+              <motion.div
+                key={currentQuestionIndex}
+                custom={getDirection()}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                className="w-full"
+              >
+                <QuestionDisplay
+                  question={currentQuestion}
+                  questionIndex={currentQuestionIndex}
+                  totalQuestions={totalQuestions}
+                  currentAnswer={answers[currentQuestionIndex]}
+                  onAnswerChange={handleAnswerChange}
+                  progress={progress}
+                />
+              </motion.div>
             )}
-          </Button>
-        ) : (
-          <Button onClick={goToNextQuestion}>
-            Next
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        )}
+          </AnimatePresence>
+              
+          <div className="pb-20 md:pb-0">
+            <SubmissionControls
+              isLastQuestion={isLastQuestion}
+              currentQuestionIndex={currentQuestionIndex}
+              isSubmitting={isSubmitting}
+              submissionProgress={submissionProgress}
+              onPrevious={goToPreviousQuestion}
+              onNext={goToNextQuestion}
+              onSubmit={handleSubmit}
+            />
+          </div>
+
+          {/* Swipe hint for mobile users - shown only initially */}
+          {isMobile && isTouch && (
+            <motion.div 
+              className="fixed bottom-28 left-0 right-0 flex justify-center opacity-70 pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.7 }}
+              transition={{ delay: 1, duration: 0.5 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="bg-background/80 backdrop-blur-sm text-xs text-center rounded-full px-4 py-2 shadow-sm">
+                Swipe left/right to navigate questions
+              </div>
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );

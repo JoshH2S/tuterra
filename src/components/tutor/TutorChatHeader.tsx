@@ -1,49 +1,51 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Sparkles, Bot } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TutorChatHeaderProps {
-  materials: Array<{
-    id: string;
-    file_name: string;
-    storage_path: string;
-  }>;
-  selectedMaterial: string | null;
-  onMaterialSelect: (value: string) => void;
+  isPremium?: boolean;
 }
 
-export const TutorChatHeader = ({
-  materials,
-  selectedMaterial,
-  onMaterialSelect,
-}: TutorChatHeaderProps) => {
+export const TutorChatHeader = ({ isPremium = false }: TutorChatHeaderProps) => {
+  const isMobile = useIsMobile();
+  
   return (
-    <div className="p-4 border-b">
-      <h2 className="text-lg font-semibold">AI Study Assistant</h2>
-      <p className="text-sm text-gray-600 mb-4">
-        Ask me to create study guides, generate quizzes, build study schedules, or explain any topic you're struggling with.
-      </p>
+    <motion.div
+      className="py-3 px-4 border-b sticky top-0 z-10 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 flex items-center gap-3"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Avatar className={cn("h-9 w-9", isMobile && "h-8 w-8")}>
+        <AvatarFallback className={cn(
+          "text-primary-foreground",
+          isPremium ? "bg-amber-500" : "bg-primary"
+        )}>
+          <Bot className="h-5 w-5" />
+        </AvatarFallback>
+      </Avatar>
       
-      {materials.length > 0 && (
-        <Card className="bg-gray-50">
-          <CardContent className="pt-4">
-            <Select
-              value={selectedMaterial || ""}
-              onValueChange={onMaterialSelect}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a course material to reference" />
-              </SelectTrigger>
-              <SelectContent>
-                {materials.map((material) => (
-                  <SelectItem key={material.id} value={material.storage_path}>
-                    {material.file_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium text-foreground">
+            AI Study Assistant
+          </h3>
+          {isPremium && (
+            <div className="flex items-center gap-1 text-xs text-amber-500">
+              <Sparkles className="h-3 w-3" />
+              <span>Premium</span>
+            </div>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {isPremium 
+            ? "Using advanced AI model with enhanced features" 
+            : "Ask me anything about your studies"}
+        </p>
+      </div>
+    </motion.div>
   );
 };

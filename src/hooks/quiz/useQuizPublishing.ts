@@ -47,7 +47,7 @@ export const useQuizPublishing = () => {
       // Show success toast
       toast({
         title: "Success",
-        description: "Quiz published successfully! Students can now take this quiz.",
+        description: "Quiz published successfully! Users can now take this quiz.",
       });
 
       // Navigate to quizzes page after publishing and force a refresh

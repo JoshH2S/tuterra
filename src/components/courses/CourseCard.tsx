@@ -4,11 +4,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Course } from "@/types/course";
-import { Calendar, Users, BookOpen, MoreHorizontal } from "lucide-react";
+import { Calendar, Users, BookOpen, MoreHorizontal, FileEdit, Archive, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useResponsive } from "@/hooks/useResponsive";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CourseCardProps {
   course: Course;
@@ -73,9 +79,27 @@ export const CourseCard = ({ course }: CourseCardProps) => {
               View Course
             </Link>
           </Button>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <FileEdit className="w-4 h-4 mr-2" />
+                Edit Course
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Archive className="w-4 h-4 mr-2" />
+                Archive Course
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-red-600 dark:text-red-400">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Course
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </motion.div>

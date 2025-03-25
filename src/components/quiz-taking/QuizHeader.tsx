@@ -23,6 +23,7 @@ export const QuizHeader = ({ title, timeRemaining, onTimeUp }: QuizHeaderProps) 
       <QuizTimer 
         timeRemaining={timeRemaining} 
         onTimeUp={onTimeUp}
+        active={true}
       />
     </CardHeader>
   );

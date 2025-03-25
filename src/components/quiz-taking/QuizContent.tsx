@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
@@ -9,6 +10,7 @@ import { QuizExitDialog } from "./QuizExitDialog";
 import { QuizFooter } from "./QuizFooter";
 import { QuizContentWrapper } from "./QuizContentWrapper";
 import { useQuizSubmit } from "@/hooks/quiz/useQuizSubmit";
+import { useExplanationGeneration } from "@/hooks/quiz/useExplanationGeneration";
 
 interface QuizContentProps {
   quizId: string;
@@ -18,6 +20,8 @@ interface QuizContentProps {
     duration_minutes: number;
   };
   questions: QuizQuestion[];
+  timeRemaining: number | null;
+  setTimeRemaining: React.Dispatch<React.SetStateAction<number | null>>;
   onQuizSubmitted: () => void;
   onExitQuiz: () => void;
 }
@@ -26,15 +30,19 @@ const QuizContent: React.FC<QuizContentProps> = ({
   quizId, 
   quiz, 
   questions, 
+  timeRemaining,
+  setTimeRemaining,
   onQuizSubmitted,
   onExitQuiz
 }) => {
   const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
-  const [timeRemaining, setTimeRemaining] = useState<number>(quiz.duration_minutes * 60);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [timerActive, setTimerActive] = useState(true);
+  const [showFeedback, setShowFeedback] = useState(false);
+  
+  const { explanations, isGenerating, generateExplanation } = useExplanationGeneration();
   
   const { isSubmitting, handleSubmitQuiz } = useQuizSubmit(
     quizId,
@@ -42,23 +50,43 @@ const QuizContent: React.FC<QuizContentProps> = ({
     onQuizSubmitted
   );
   
-  const handleSelectAnswer = (answer: string) => {
+  const handleSelectAnswer = async (answer: string) => {
+    const currentQuestion = questions[currentQuestionIndex];
+    const isCorrect = answer === currentQuestion.correct_answer;
+    
+    // Store the answer
     setSelectedAnswers(prev => ({
       ...prev,
       [currentQuestionIndex]: answer
     }));
+    
+    // Generate explanation for this answer
+    generateExplanation(currentQuestion, answer, isCorrect);
+    
+    // Show feedback
+    setShowFeedback(true);
   };
 
   const handleNextQuestion = () => {
+    setShowFeedback(false);
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
+    } else if (isLastQuestion) {
+      // If on the last question and user clicks Next after seeing feedback, submit the quiz
+      submitQuiz();
     }
   };
 
   const handlePreviousQuestion = () => {
+    setShowFeedback(false);
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
     }
+  };
+  
+  const handleJumpToQuestion = (index: number) => {
+    setShowFeedback(false);
+    setCurrentQuestionIndex(index);
   };
   
   const handleExitClick = () => {
@@ -107,27 +135,43 @@ const QuizContent: React.FC<QuizContentProps> = ({
           onAnswerSelect={handleSelectAnswer}
           onNext={handleNextQuestion}
           onPrevious={handlePreviousQuestion}
-          showFeedback={false}
-          explanations={{}}
-          isGeneratingExplanation={false}
+          onJumpToQuestion={handleJumpToQuestion}
+          showFeedback={showFeedback}
+          explanations={explanations}
+          isGeneratingExplanation={isGenerating}
           timeRemaining={timeRemaining}
           answeredQuestions={Object.keys(selectedAnswers).map(key => parseInt(key))}
         />
         
-        <QuizNavigation
-          currentQuestion={currentQuestionIndex + 1}
-          totalQuestions={questions.length}
-          onNext={handleNextQuestion}
-          onPrevious={handlePreviousQuestion}
-        />
+        {showFeedback && (
+          <div className="mt-6 flex justify-end">
+            <button 
+              onClick={handleNextQuestion} 
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md shadow"
+            >
+              {isLastQuestion ? 'Submit Quiz' : 'Next Question'}
+            </button>
+          </div>
+        )}
         
-        <div className="mt-8 flex justify-end">
-          <QuizSubmitButton
-            isSubmitting={isSubmitting}
-            onSubmit={submitQuiz}
-            isLastQuestion={isLastQuestion}
-          />
-        </div>
+        {!showFeedback && (
+          <>
+            <QuizNavigation
+              currentQuestion={currentQuestionIndex + 1}
+              totalQuestions={questions.length}
+              onNext={handleNextQuestion}
+              onPrevious={handlePreviousQuestion}
+            />
+            
+            <div className="mt-8 flex justify-end">
+              <QuizSubmitButton
+                isSubmitting={isSubmitting}
+                onSubmit={submitQuiz}
+                isLastQuestion={isLastQuestion}
+              />
+            </div>
+          </>
+        )}
         
         <QuizFooter />
       </QuizContentWrapper>

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -36,6 +37,15 @@
     
     /* Focus outline colors for keyboard navigation */
     --focus-outline: 43 89% 38%; /* Use primary color */
+
+    /* Password strength and validation colors */
+    --success: 142 72% 29%;
+    --warning: 45 93% 47%;
+    --error: 0 84% 60%;
+    --strength-weak: 0 84% 60%;
+    --strength-fair: 45 93% 47%;
+    --strength-good: 142 72% 29%;
+    --strength-strong: 160 84% 39%;
   }
 
   .dark {
@@ -69,6 +79,15 @@
     
     /* Focus outline colors for keyboard navigation in dark mode */
     --focus-outline: 43 89% 60%; /* Brighter version of primary for dark mode */
+
+    /* Password strength and validation colors for dark mode */
+    --success: 142 72% 45%;
+    --warning: 45 93% 55%;
+    --error: 0 84% 70%;
+    --strength-weak: 0 84% 70%;
+    --strength-fair: 45 93% 55%;
+    --strength-good: 142 72% 45%;
+    --strength-strong: 160 84% 55%;
   }
 }
 

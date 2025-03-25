@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Courses from "@/pages/Courses";
@@ -23,11 +24,14 @@ import TakeSkillAssessment from "@/pages/TakeSkillAssessment";
 import SkillAssessmentResults from "@/pages/SkillAssessmentResults";
 import JobInterviewSimulator from "@/pages/JobInterviewSimulator";
 import DesktopOptimizationDemo from "@/pages/DesktopOptimizationDemo";
+import { useAuth } from "@/hooks/useAuth";
 
 export const AppRoutes = () => {
+  const { user } = useAuth();
+
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={user ? <Index /> : <Navigate to="/auth" replace />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/verify-email" element={<Auth mode="emailVerification" />} />
       <Route path="/reset-password" element={<Auth mode="resetPassword" />} />

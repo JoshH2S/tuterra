@@ -37,6 +37,7 @@ const QuizGeneration = () => {
     handleFileSelect,
     addTopic,
     updateTopic,
+    removeTopic,
     handleSubmit,
     setDuration,
     setSelectedCourseId,
@@ -142,6 +143,7 @@ const QuizGeneration = () => {
                   topics={topics}
                   updateTopic={updateTopic}
                   addTopic={addTopic}
+                  removeTopic={removeTopic}
                 />
               </StepContainer>
             )}
