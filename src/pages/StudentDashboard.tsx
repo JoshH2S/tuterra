@@ -10,6 +10,9 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
 import { StudySessionDialog } from "@/components/dashboard/StudySessionDialog";
 import { CreateStudySessionData } from "@/types/study-sessions";
+import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
+import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
+import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -17,6 +20,15 @@ export default function StudentDashboard() {
   const { sessions, createSession, updateSession, isLoading: isLoadingSessions } = useStudySessions();
   const isMobile = useIsMobile();
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
+
+  // Extract unique strengths and areas for improvement
+  const uniqueStrengths = [...new Set(
+    performance.flatMap(p => p.strengths || [])
+  )];
+  
+  const uniqueAreasForImprovement = [...new Set(
+    performance.flatMap(p => p.areas_for_improvement || [])
+  )];
 
   // Debug logging to check courses data
   useEffect(() => {
@@ -70,17 +82,28 @@ export default function StudentDashboard() {
           onUpdateSession={handleUpdateSession}
         />
       ) : (
-        <DesktopDashboard
-          performance={performance}
-          insights={insights}
-          sessions={sessions}
-          courses={courses}
-          createSession={handleCreateSession}
-          openSessionDialog={openSessionDialog}
-          updateSession={handleUpdateSession}
-        >
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+            <div className="space-y-6">
+              <PerformanceOverview performance={performance} />
+              {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
+                <StrengthsAndAreas 
+                  strengths={uniqueStrengths} 
+                  areasForImprovement={uniqueAreasForImprovement} 
+                />
+              )}
+            </div>
+            <div className="space-y-6">
+              <StudyCalendar 
+                sessions={sessions}
+                courses={courses}
+                onCreateSession={handleCreateSession}
+              />
+            </div>
+          </div>
+          
           <NewsFeed courses={courses} />
-        </DesktopDashboard>
+        </div>
       )}
 
       {/* Study Session Dialog */}
