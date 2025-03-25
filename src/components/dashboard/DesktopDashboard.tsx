@@ -6,7 +6,7 @@ import { StudyCalendar } from "./StudyCalendar";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { ReactNode } from "react";
-import { CoursePerformanceCard } from "./CoursePerformanceCard";
+import { PerformanceChart } from "./PerformanceChart";
 
 interface DesktopDashboardProps {
   performance: any[];
@@ -29,6 +29,11 @@ export function DesktopDashboard({
   openSessionDialog,
   updateSession
 }: DesktopDashboardProps) {
+  const allStrengths = performance.flatMap(p => p.strengths || []);
+  const allAreasForImprovement = performance.flatMap(p => p.areas_for_improvement || []);
+  const uniqueStrengths = [...new Set(allStrengths)];
+  const uniqueAreasForImprovement = [...new Set(allAreasForImprovement)];
+
   return (
     <div className="space-y-6">
       <StatsCards performance={performance} />
@@ -36,7 +41,7 @@ export function DesktopDashboard({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-6 col-span-1 lg:col-span-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <CoursePerformanceCard performance={performance} />
+            <PerformanceChart performance={performance} />
             <TasksList 
               sessions={sessions} 
               courses={courses} 

@@ -6,7 +6,7 @@ import { StatsCards } from "./StatsCards";
 import { InsightsSection } from "./InsightsSection";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
-import { CoursePerformanceCard } from "./CoursePerformanceCard";
+import { PerformanceOverview } from "./PerformanceOverview";
 
 interface MobileDashboardProps {
   performance: any[];
@@ -39,7 +39,7 @@ export function MobileDashboard({
         <TabsContent value="overview" className="space-y-6">
           <StatsCards performance={performance} />
           
-          <CoursePerformanceCard performance={performance} />
+          <PerformanceOverview performance={performance} />
           
           <TasksList 
             sessions={sessions} 
