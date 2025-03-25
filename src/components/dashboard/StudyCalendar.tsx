@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { CalendarView } from "./calendar/CalendarView";
 import { SessionsList } from "./calendar/SessionsList";
 import { SessionForm } from "./calendar/SessionForm";
@@ -17,21 +18,25 @@ export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalen
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Study Schedule</h2>
-        <SessionForm 
-          courses={courses} 
-          selectedDate={date} 
-          onCreateSession={onCreateSession} 
-        />
-      </div>
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Study Schedule</CardTitle>
+          <SessionForm 
+            courses={courses} 
+            selectedDate={date} 
+            onCreateSession={onCreateSession} 
+          />
+        </div>
+      </CardHeader>
 
-      {/* Modified grid layout to ensure better spacing for mobile */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <CalendarView selectedDate={date} onDateSelect={setDate} />
-        <SessionsList date={date} sessions={sessions} courses={courses} />
-      </div>
-    </div>
+      <CardContent>
+        {/* Modified grid layout to ensure better spacing for mobile */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <CalendarView selectedDate={date} onDateSelect={setDate} />
+          <SessionsList date={date} sessions={sessions} courses={courses} />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
