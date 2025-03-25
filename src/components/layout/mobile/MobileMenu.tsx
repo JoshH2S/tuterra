@@ -35,7 +35,7 @@ export function MobileMenu({ onClose }: MobileMenuProps) {
 
       {/* User Profile */}
       <div className="border-t p-4">
-        <MobileUserProfile onClose={onClose} />
+        <MobileUserProfile />
       </div>
     </div>
   );

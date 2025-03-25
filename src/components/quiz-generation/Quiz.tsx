@@ -8,14 +8,12 @@ interface QuizProps {
   questions: Question[];
   startIndex?: number;
   onSwipe?: (direction: 'left' | 'right') => void;
-  showAnswers?: boolean;
 }
 
 export const Quiz = ({ 
   questions, 
   startIndex = 0,
-  onSwipe,
-  showAnswers = false
+  onSwipe
 }: QuizProps) => {
   // Ensure questions is always a valid array
   const validQuestions = Array.isArray(questions) ? questions : [];
@@ -52,7 +50,6 @@ export const Quiz = ({
             <QuizQuestionItem 
               question={question}
               index={startIndex + index}
-              showAnswers={showAnswers}
             />
           </motion.div>
         ))}

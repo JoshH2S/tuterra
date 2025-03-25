@@ -36,7 +36,7 @@ export function QuizQuestionCard({
   timeRemaining,
   answeredQuestions
 }: QuizQuestionCardProps) {
-  const [expandedFeedback, setExpandedFeedback] = useState(true); // Default to expanded
+  const [expandedFeedback, setExpandedFeedback] = useState(false);
 
   if (!question) {
     return <QuestionLoading />;

@@ -20,7 +20,7 @@ export const useCourses = () => {
       const { data, error } = await supabase
         .from('courses')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('teacher_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

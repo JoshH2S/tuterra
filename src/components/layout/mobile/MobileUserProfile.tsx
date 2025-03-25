@@ -7,11 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-interface MobileUserProfileProps {
-  onClose?: () => void;
-}
-
-export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
+export function MobileUserProfile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -60,7 +56,6 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
   }, []);
 
   const handleLogout = async () => {
-    if (onClose) onClose();
     try {
       await supabase.auth.signOut();
       toast({
@@ -86,17 +81,12 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
     return "U";
   };
 
-  const handleProfileClick = () => {
-    if (onClose) onClose();
-    navigate("/profile-settings");
-  };
-
   return (
     <div className="flex items-center gap-4">
       <Button 
         variant="ghost" 
         className="p-0 h-auto flex items-center gap-3 flex-1 touch-manipulation"
-        onClick={handleProfileClick}
+        onClick={() => navigate("/profile-settings")}
       >
         <Avatar className="h-12 w-12">
           <AvatarImage 

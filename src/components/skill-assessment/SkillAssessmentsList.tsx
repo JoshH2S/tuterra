@@ -1,5 +1,7 @@
 
 import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Award } from "lucide-react";
@@ -17,15 +19,9 @@ type SkillAssessment = {
 
 interface SkillAssessmentsListProps {
   onViewAssessment: (id: string) => void;
-  searchQuery?: string;
-  renderItem?: (assessment: SkillAssessment) => React.ReactNode;
 }
 
-export function SkillAssessmentsList({ 
-  onViewAssessment, 
-  searchQuery = "",
-  renderItem 
-}: SkillAssessmentsListProps) {
+export function SkillAssessmentsList({ onViewAssessment }: SkillAssessmentsListProps) {
   const { user } = useAuth();
   const [assessments, setAssessments] = useState<SkillAssessment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,15 +49,6 @@ export function SkillAssessmentsList({
     fetchAssessments();
   }, [user]);
 
-  // Filter assessments by search query
-  const filteredAssessments = searchQuery
-    ? assessments.filter(assessment => 
-        assessment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        assessment.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        assessment.role.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : assessments;
-
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -70,43 +57,48 @@ export function SkillAssessmentsList({
     );
   }
 
-  if (filteredAssessments.length === 0) {
+  if (assessments.length === 0) {
     return (
       <div className="text-center py-12">
         <Award className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-4 text-lg font-medium">
-          {searchQuery ? "No matching assessments" : "No assessments found"}
-        </h3>
+        <h3 className="mt-4 text-lg font-medium">No assessments found</h3>
         <p className="mt-2 text-muted-foreground">
-          {searchQuery 
-            ? "Try adjusting your search terms" 
-            : "Create your first skill assessment to get started."}
+          Create your first skill assessment to get started.
         </p>
       </div>
     );
   }
 
-  // Use the custom render function if provided, otherwise use default rendering
-  if (renderItem) {
-    return (
-      <>
-        {filteredAssessments.map(assessment => renderItem(assessment))}
-      </>
-    );
-  }
-
-  // Default rendering (kept for backward compatibility)
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {filteredAssessments.map((assessment) => (
-        <div key={assessment.id} onClick={() => onViewAssessment(assessment.id)}>
-          {/* Default card rendering here */}
-          <div className="border rounded-lg p-4">
-            <h3>{assessment.title}</h3>
-            <p>{assessment.industry} - {assessment.role}</p>
-            <p>{assessment.questions?.length || 0} questions</p>
-          </div>
-        </div>
+      {assessments.map((assessment) => (
+        <Card key={assessment.id} className="overflow-hidden">
+          <CardContent className="p-0">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold mb-2">{assessment.title}</h3>
+              <div className="flex flex-wrap gap-1 mb-4">
+                <span className="bg-primary-foreground text-primary-foreground bg-opacity-10 px-2 py-1 rounded text-xs">
+                  {assessment.industry}
+                </span>
+                <span className="bg-primary-foreground text-primary-foreground bg-opacity-10 px-2 py-1 rounded text-xs">
+                  {assessment.role}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                {assessment.description || "Test your skills in this assessment"}
+              </p>
+              <p className="text-sm mb-4">
+                {assessment.questions?.length || 0} questions
+              </p>
+              <Button
+                onClick={() => onViewAssessment(assessment.id)}
+                className="w-full"
+              >
+                View Assessment
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

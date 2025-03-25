@@ -23,18 +23,11 @@ export const CreateCourseModal = ({ isOpen, onClose, onSubmit }: CreateCourseMod
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      await onSubmit({ code, title, description });
-      resetForm();
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSubmit({ code, title, description });
+    resetForm();
   };
 
   const resetForm = () => {
@@ -93,12 +86,10 @@ export const CreateCourseModal = ({ isOpen, onClose, onSubmit }: CreateCourseMod
           </div>
 
           <DialogFooter>
-            <Button variant="outline" type="button" onClick={handleClose} disabled={isSubmitting}>
+            <Button variant="outline" type="button" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Course"}
-            </Button>
+            <Button type="submit">Create Course</Button>
           </DialogFooter>
         </form>
       </DialogContent>

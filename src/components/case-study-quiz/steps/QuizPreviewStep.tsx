@@ -15,7 +15,6 @@ import { toast } from "@/hooks/use-toast";
 import { MouseEventHandler } from "react";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
 import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface QuizPreviewStepProps {
   title: string;
@@ -38,9 +37,6 @@ export const QuizPreviewStep = ({
 }: QuizPreviewStepProps) => {
   // Ensure we always have a valid array of questions
   const validQuestions = Array.isArray(questions) ? questions : [];
-  
-  // State for showing answers
-  const [showAnswers, setShowAnswers] = useState(false);
   
   // Use the quiz publishing hook
   const { handlePublish, isPublishing } = useQuizPublishing();
@@ -98,22 +94,9 @@ export const QuizPreviewStep = ({
                 />
               </div>
               
-              <div className="flex items-center space-x-2 py-2">
-                <Checkbox 
-                  id="show-answers" 
-                  checked={showAnswers}
-                  onCheckedChange={(checked) => setShowAnswers(!!checked)}
-                />
-                <Label 
-                  htmlFor="show-answers" 
-                  className="text-sm font-medium cursor-pointer"
-                >
-                  Show correct answers and explanations
-                </Label>
-              </div>
-              
               <h3 className="text-lg font-semibold mb-4">Quiz Preview</h3>
-              <Quiz questions={validQuestions} showAnswers={showAnswers} />
+              {/* The Quiz component doesn't accept quizId prop, so we don't pass it */}
+              <Quiz questions={validQuestions} />
               
               {/* Add publish button after quiz is displayed */}
               <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-3 items-center">

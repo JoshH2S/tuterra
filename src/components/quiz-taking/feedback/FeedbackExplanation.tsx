@@ -16,15 +16,15 @@ export function FeedbackExplanation({
   expanded,
   onToggle
 }: FeedbackExplanationProps) {
-  const [showFullExplanation, setShowFullExplanation] = useState(true); // Default to showing full explanation
+  const [showFullExplanation, setShowFullExplanation] = useState(expanded);
   
   // Reset state when expanded prop changes
   useEffect(() => {
     setShowFullExplanation(expanded);
   }, [expanded]);
   
-  // Check if explanation is long enough to need expansion/collapse control
-  const isLongExplanation = explanation ? explanation.length > 150 : false;
+  // Check if explanation is long enough to need expansion
+  const isLongExplanation = explanation ? explanation.length > 120 : false;
 
   // Handle toggle internally or pass to external handler
   const handleToggle = () => {
@@ -58,8 +58,8 @@ export function FeedbackExplanation({
 
   return (
     <div className={cn(
-      "transition-all duration-300 ease-in-out",
-      !showFullExplanation && isLongExplanation && "max-h-24 overflow-hidden"
+      "overflow-hidden transition-all duration-300 ease-in-out",
+      !showFullExplanation && isLongExplanation && "max-h-24"
     )}>
       <div className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
         <p className="font-semibold flex items-center gap-1 mb-1 text-blue-700 dark:text-blue-400">

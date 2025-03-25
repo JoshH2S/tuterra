@@ -1,7 +1,0 @@
-
-# Whether the function is a TypeScript compile target (internal)
-compiled_ts = false
-
-# Determines if the function is immutable or not. Immutable functions can be executed without
-# a JWT, but can't read from the database. By default, all functions are mutable.
-immutable = false

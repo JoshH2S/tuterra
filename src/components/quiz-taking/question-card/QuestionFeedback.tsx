@@ -20,19 +20,6 @@ export function QuestionFeedback({
   expandedFeedback,
   onToggleFeedback
 }: QuestionFeedbackProps) {
-  // Always start with expanded feedback to show full explanation
-  const [isExpanded, setIsExpanded] = useState(true);
-  
-  // Initialize with expanded state from props, but default to true
-  useEffect(() => {
-    setIsExpanded(expandedFeedback || true);
-  }, [expandedFeedback]);
-  
-  const handleToggleFeedback = () => {
-    setIsExpanded(!isExpanded);
-    onToggleFeedback();
-  };
-
   return (
     <QuizAnswerFeedback 
       question={question}
@@ -40,8 +27,8 @@ export function QuestionFeedback({
       isCorrect={selectedAnswer === question.correct_answer}
       explanation={explanations[question.id]}
       isLoading={isGeneratingExplanation}
-      expanded={isExpanded}
-      onToggle={handleToggleFeedback}
+      expanded={expandedFeedback}
+      onToggle={onToggleFeedback}
     />
   );
 }

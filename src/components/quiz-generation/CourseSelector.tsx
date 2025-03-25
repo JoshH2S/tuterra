@@ -31,7 +31,7 @@ export function CourseSelector({ selectedCourseId, setSelectedCourseId }: Course
         </SelectContent>
       </Select>
       <p className="text-sm text-muted-foreground">
-        Please create a course first to track quiz performance. Quizzes must be associated with a course for proper progress tracking.
+        Choose the course this quiz will be associated with
       </p>
     </div>
   );

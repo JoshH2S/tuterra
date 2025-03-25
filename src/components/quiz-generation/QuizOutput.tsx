@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QuizDurationInput } from "./QuizDurationInput";
 import { QuizActions } from "./QuizActions";
@@ -10,8 +9,6 @@ import { useQuizPublishing } from "@/hooks/quiz/useQuizPublishing";
 import { useState } from "react";
 import { useResponsive } from "@/hooks/useResponsive";
 import { toast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 interface QuizOutputProps {
   questions: Question[];
@@ -21,7 +18,6 @@ interface QuizOutputProps {
 export const QuizOutput = ({ questions, quizId }: QuizOutputProps) => {
   const [duration, setDuration] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
-  const [showAnswers, setShowAnswers] = useState<boolean>(false);
   
   const { isMobile } = useResponsive();
   const questionsPerPage = isMobile ? 2 : 3;
@@ -84,41 +80,24 @@ export const QuizOutput = ({ questions, quizId }: QuizOutputProps) => {
         />
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
-        <div className="space-y-6">
-          <QuizDurationInput 
-            duration={duration}
-            onChange={setDuration}
+        <QuizDurationInput 
+          duration={duration}
+          onChange={setDuration}
+        />
+        
+        <Quiz 
+          questions={currentQuestions} 
+          startIndex={startIdx}
+          onSwipe={isMobile ? handleSwipe : undefined}
+        />
+        
+        {totalPages > 1 && (
+          <QuizPagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onChangePage={handleChangePage}
           />
-          
-          <div className="flex items-center space-x-2 py-2">
-            <Checkbox 
-              id="show-answers" 
-              checked={showAnswers}
-              onCheckedChange={(checked) => setShowAnswers(!!checked)}
-            />
-            <Label 
-              htmlFor="show-answers" 
-              className="text-sm font-medium cursor-pointer"
-            >
-              Show correct answers and explanations
-            </Label>
-          </div>
-          
-          <Quiz 
-            questions={currentQuestions} 
-            startIndex={startIdx}
-            onSwipe={isMobile ? handleSwipe : undefined}
-            showAnswers={showAnswers}
-          />
-          
-          {totalPages > 1 && (
-            <QuizPagination 
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onChangePage={handleChangePage}
-            />
-          )}
-        </div>
+        )}
       </CardContent>
     </Card>
   );

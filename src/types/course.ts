@@ -3,7 +3,7 @@ export interface Course {
   id: string;
   title: string;
   description?: string;
-  user_id: string;
+  teacher_id: string;
   created_at?: string;
   updated_at?: string;
 }

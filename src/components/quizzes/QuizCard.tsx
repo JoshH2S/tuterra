@@ -9,13 +9,12 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Clock, FileText, MoreVertical, User } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 
 interface QuizCardProps {
   quiz: {
     id: string;
     title: string;
-    creator: string;
+    teacher: string;
     duration: string;
     previousScore: number;
     attemptNumber: number;
@@ -29,12 +28,6 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: QuizCardProps) {
-  // Only show score if there's a valid attempt
-  const hasAttempted = quiz.status === 'completed' && quiz.attemptNumber > 0;
-  
-  // Ensure the score is a valid percentage between 0-100
-  const normalizedScore = hasAttempted ? Math.min(Math.max(0, quiz.previousScore), 100) : 0;
-  
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -76,7 +69,7 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
             <User className="w-4 h-4 mr-2" />
-            Creator: {quiz.creator}
+            Teacher: {quiz.teacher}
           </div>
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
             <Clock className="w-4 h-4 mr-2" />
@@ -88,22 +81,27 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
           </div>
         </div>
 
-        {/* Previous Score - only show if there's a valid attempt */}
-        {hasAttempted && (
+        {/* Previous Score */}
+        {quiz.previousScore > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Latest Score (Attempt #{quiz.attemptNumber})
+                Previous Score
               </span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {normalizedScore}%
+                {quiz.previousScore}%
               </span>
             </div>
-            <Progress 
-              value={normalizedScore} 
-              className="h-2 bg-gray-100 dark:bg-gray-700"
-              indicatorClassName="bg-primary"
-            />
+            <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${quiz.previousScore}%` }}
+                className="h-full bg-primary"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Attempt #{quiz.attemptNumber}
+            </p>
           </div>
         )}
 

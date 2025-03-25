@@ -1,13 +1,10 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { AtSign, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
 
 export const SignInForm = () => {
   const [email, setEmail] = useState("");
@@ -41,71 +38,24 @@ export const SignInForm = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Enter your credentials to access your account
-        </p>
-      </div>
-
-      <form onSubmit={handleSignIn} className="space-y-4">
-        <div className="space-y-4">
-          <div className="relative">
-            <AtSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="email"
-              placeholder="Email address"
-              className="pl-10"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="password"
-              placeholder="Password"
-              className="pl-10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Link 
-            to="/auth?mode=resetPassword" 
-            className="text-sm text-primary hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </div>
-
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={loading}
-          size="lg"
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Signing in...</span>
-            </span>
-          ) : (
-            "Sign In"
-          )}
-        </Button>
-      </form>
-    </motion.div>
+    <form onSubmit={handleSignIn} className="space-y-4">
+      <Input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+      <Input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Loading..." : "Sign In"}
+      </Button>
+    </form>
   );
 };

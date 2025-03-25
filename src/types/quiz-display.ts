@@ -4,14 +4,13 @@ import { Course } from "@/types/course";
 export interface ProcessedQuiz {
   id: string;
   title: string;
-  creator: string;
+  teacher: string;
   duration: string;
   previousScore: number;
   attemptNumber: number;
   totalQuestions: number;
   status: 'not_attempted' | 'in_progress' | 'completed';
   allowRetake: boolean;
-  type?: string;
 }
 
 export interface ProcessedCourse extends Course {
@@ -28,9 +27,7 @@ export interface Quiz {
   course_id: string;
   duration_minutes: number;
   allow_retakes: boolean;
-  user_id?: string;
-  type?: string;
-  profiles?: {
+  profiles: {
     first_name: string;
     last_name: string;
   };
@@ -39,7 +36,5 @@ export interface Quiz {
     score: number;
     total_questions: number;
     attempt_number: number;
-    student_id: string;
   };
-  question_count?: number;
 }

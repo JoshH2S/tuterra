@@ -1,13 +1,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { InterviewQuestion } from "@/types/interview";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
-import { useVoiceRecorder } from "@/hooks/interview/useVoiceRecorder";
-import { QuestionDisplay } from "./QuestionDisplay";
-import { ResponseInput } from "./ResponseInput";
+import { AnimatePresence, motion } from "framer-motion";
+import { TextShimmer } from "@/components/ui/text-shimmer";
 
 interface InterviewChatProps {
   currentQuestion: InterviewQuestion | null;
@@ -27,28 +25,6 @@ export const InterviewChat = ({
   const [response, setResponse] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const responseTextareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  // Use our custom hook for voice recording with enhanced options
-  const { 
-    isRecording, 
-    isTranscribing, 
-    formattedTime,
-    toggleRecording 
-  } = useVoiceRecorder(
-    // Transcription callback
-    (transcribedText) => {
-      // Append the transcribed text to current response
-      setResponse(prev => {
-        const separator = prev.trim().length > 0 ? " " : "";
-        return prev + separator + transcribedText;
-      });
-    },
-    // Options
-    {
-      maxRecordingTime: 180000, // 3 minutes max
-      audioBitsPerSecond: 128000 // Higher quality audio
-    }
-  );
   
   useEffect(() => {
     // Reset response when the question changes
@@ -82,43 +58,49 @@ export const InterviewChat = ({
       <Card className="flex-1 flex flex-col mb-4 shadow-md overflow-hidden">
         <CardContent className="flex-1 p-6 pb-0">
           <AnimatePresence mode="wait">
-            <QuestionDisplay 
-              currentQuestion={currentQuestion} 
-              typingEffect={typingEffect} 
-            />
+            <motion.div
+              key={currentQuestion?.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="h-full flex items-center"
+            >
+              {currentQuestion && typingEffect ? (
+                <TextShimmer 
+                  className="text-lg font-medium"
+                  duration={2}
+                >
+                  {currentQuestion.question}
+                </TextShimmer>
+              ) : (
+                <div className="text-lg font-medium">
+                  {currentQuestion?.question}
+                </div>
+              )}
+            </motion.div>
           </AnimatePresence>
         </CardContent>
         <CardFooter className="p-6 border-t">
           <div className="w-full space-y-4">
-            <ResponseInput
-              response={response}
-              onResponseChange={setResponse}
+            <Textarea
+              ref={responseTextareaRef}
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+              placeholder="Type your answer here..."
+              className="w-full resize-none h-32 focus:ring-1 focus:ring-primary"
               onKeyDown={handleKeyDown}
-              isSubmitting={isSubmitting}
-              typingEffect={typingEffect}
-              isRecording={isRecording}
-              isTranscribing={isTranscribing}
-              onToggleRecording={toggleRecording}
-              recordingTime={formattedTime}
+              disabled={isSubmitting || typingEffect}
             />
             <div className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">
-                Press Ctrl+Enter to submit or use the microphone to speak
+                Press Ctrl+Enter to submit
               </p>
               <Button 
                 onClick={handleSubmit} 
-                disabled={!response.trim() || isSubmitting || typingEffect || isRecording || isTranscribing}
+                disabled={!response.trim() || isSubmitting || typingEffect}
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : isLastQuestion ? (
-                  "Complete Interview"
-                ) : (
-                  "Next Question"
-                )}
+                {isLastQuestion ? "Complete Interview" : "Next Question"}
               </Button>
             </div>
           </div>

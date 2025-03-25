@@ -29,17 +29,17 @@ export const useQuizSave = () => {
         return { success: false, quizId: null };
       }
 
-      // Create the quiz with title, user_id, and duration
-      const quizData: any = {
+      // Create the quiz with title, teacher_id, and duration
+      const quizData = {
         title: title, // Use the provided title or default
-        user_id: session.user.id, // Changed from teacher_id to user_id
+        teacher_id: session.user.id,
         duration_minutes: duration,
         published: false // Add explicit published flag
       };
 
       // Only add course_id if it exists
       if (courseId) {
-        quizData.course_id = courseId;
+        Object.assign(quizData, { course_id: courseId });
       }
 
       console.log("Inserting quiz with data:", quizData);

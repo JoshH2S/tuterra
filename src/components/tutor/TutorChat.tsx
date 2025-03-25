@@ -3,62 +3,22 @@ import { useState } from "react";
 import { useTutorMessages } from "@/hooks/useTutorMessages";
 import { TutorChatMessages } from "./TutorChatMessages";
 import { TutorChatInput } from "./TutorChatInput";
-import { TutorChatHeader } from "./TutorChatHeader";
 import { processFileContent } from "@/utils/file-utils";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { motion, AnimatePresence } from "framer-motion";
-import { Subscription } from "@/hooks/useSubscription";
 
-interface TutorChatProps {
-  onSendMessage?: () => void;
-  subscription?: Subscription;
-  smartNotes?: string[];
-  setSmartNotes?: (notes: string[]) => void;
-}
-
-export const TutorChat = ({ 
-  onSendMessage, 
-  subscription = { 
-    tier: "free", 
-    features: { 
-      smartNotes: false, 
-      advancedModel: false, 
-      learningPath: false, 
-      streaming: false 
-    } 
-  },
-  smartNotes = [],
-  setSmartNotes = () => {}
-}: TutorChatProps) => {
+export const TutorChat = () => {
   const [message, setMessage] = useState("");
   const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
   const { messages, isLoading, sendMessage } = useTutorMessages();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !isLoading) {
-      if (onSendMessage) {
-        onSendMessage();
-      }
-      
-      try {
-        setIsTyping(true);
-        const response = await sendMessage(message, uploadedFileId, subscription);
-        
-        // Handle smart notes for premium users
-        if (subscription.tier === "premium" && response?.smartNotes) {
-          setSmartNotes([...smartNotes, response.smartNotes]);
-        }
-      } catch (error) {
-        console.error("Error sending message:", error);
-      } finally {
-        setIsTyping(false);
-      }
-      
+    if (message.trim()) {
+      await sendMessage(message, uploadedFileId);
       setMessage("");
       setUploadedFileId(null);  // Reset the file ID after sending
     }
@@ -69,6 +29,8 @@ export const TutorChat = ({
       console.log('Starting file upload process...', file);
       const processedContent = await processFileContent(file);
       
+      console.log('File processed:', processedContent);
+      
       if (processedContent.fileId) {
         setUploadedFileId(processedContent.fileId);
         toast({
@@ -76,7 +38,7 @@ export const TutorChat = ({
           description: "You can now ask questions about the file content.",
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error uploading file:', error);
       toast({
         title: "Upload failed",
@@ -87,38 +49,25 @@ export const TutorChat = ({
   };
 
   return (
-    <motion.div 
-      className="flex flex-col h-full border rounded-lg overflow-hidden bg-background shadow-sm"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-    >
-      <TutorChatHeader 
-        isPremium={subscription.tier === "premium"}
-      />
-      
-      <TutorChatMessages 
-        messages={messages} 
-        subscription={subscription}
-        isTyping={isTyping}
-      />
-      
-      <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 pb-4 pt-3 safe-area-bottom' : ''}`}>
-        <TutorChatInput
-          message={message}
-          isLoading={isLoading}
-          onMessageChange={setMessage}
-          onSubmit={handleSubmit}
-          onFileUpload={handleFileUpload}
-          subscription={subscription}
-        />
-        
-        {subscription.tier === "free" && (
-          <div className="mt-2 text-center text-xs text-muted-foreground">
-            <p>Upgrade to Pro or Premium for advanced features</p>
-          </div>
-        )}
+    <Card className={`shadow-lg ${isMobile ? 'mx-0' : ''}`}>
+      <CardHeader className={isMobile ? 'p-3 space-y-1' : ''}>
+        <CardTitle className={isMobile ? 'text-lg' : ''}>Chat with your AI Study Assistant</CardTitle>
+        <CardDescription className={isMobile ? 'text-sm' : ''}>
+          Ask me anything about your studies. I can help you understand concepts, create study guides, or answer any academic questions.
+        </CardDescription>
+      </CardHeader>
+      <div className={`flex flex-col ${isMobile ? 'h-[500px]' : 'h-[600px]'}`}>
+        <TutorChatMessages messages={messages} />
+        <div className={`p-3 border-t ${isMobile ? 'pb-4' : ''}`}>
+          <TutorChatInput
+            message={message}
+            isLoading={isLoading}
+            onMessageChange={setMessage}
+            onSubmit={handleSubmit}
+            onFileUpload={handleFileUpload}
+          />
+        </div>
       </div>
-    </motion.div>
+    </Card>
   );
 };

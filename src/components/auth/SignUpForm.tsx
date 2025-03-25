@@ -1,136 +1,131 @@
-import { motion } from "framer-motion";
+
 import { useState } from "react";
-import { PersonalInfoInputs } from "./PersonalInfoInputs";
-import { PasswordInputs } from "./PasswordInputs";
-import { SubmitButton } from "./SubmitButton";
-import { SignUpFormHeader } from "./SignUpFormHeader";
-import { useSignUpForm } from "@/hooks/useSignUpForm";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
-import { TermsOfUse } from "@/components/legal/TermsOfUse";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-interface SignUpFormProps {
-  onSignUpSuccess?: () => void;
-}
+export const SignUpForm = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [school, setSchool] = useState("");
+  const [userType, setUserType] = useState<"teacher" | "student">("teacher");
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
-  const {
-    email,
-    setEmail,
-    password,
-    setPassword,
-    confirmPassword,
-    setConfirmPassword,
-    firstName,
-    setFirstName,
-    lastName,
-    setLastName,
-    loading,
-    passwordError,
-    setPasswordError,
-    passwordStrength,
-    passwordTouched,
-    setPasswordTouched,
-    validatePassword,
-    handleSignUp
-  } = useSignUpForm();
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            user_type: userType,
+            school: school,
+          },
+        },
+      });
 
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    await handleSignUp(e);
-    onSignUpSuccess?.();
+      if (error) throw error;
+      
+      toast({
+        title: "Success!",
+        description: "Check your email for the confirmation link.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      <SignUpFormHeader />
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-4">
-          <PersonalInfoInputs
-            firstName={firstName}
-            setFirstName={setFirstName}
-            lastName={lastName}
-            setLastName={setLastName}
-            email={email}
-            setEmail={setEmail}
-          />
-
-          <PasswordInputs
-            password={password}
-            setPassword={setPassword}
-            confirmPassword={confirmPassword}
-            setConfirmPassword={setConfirmPassword}
-            passwordError={passwordError}
-            setPasswordError={setPasswordError}
-            passwordStrength={passwordStrength}
-            passwordTouched={passwordTouched}
-            setPasswordTouched={setPasswordTouched}
-            validatePassword={validatePassword}
-          />
-        </div>
-
-        <div className="flex items-start space-x-2 mt-4">
-          <Checkbox
-            id="terms"
-            checked={agreedToTerms}
-            onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-          />
-          <div className="grid gap-1.5 leading-none">
-            <label
-              htmlFor="terms"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              I agree to the{" "}
-              <button
-                type="button"
-                className="text-primary hover:underline focus:outline-none focus:underline"
-                onClick={() => setShowTerms(true)}
-              >
-                Terms of Use
-              </button>{" "}
-              and{" "}
-              <button
-                type="button"
-                className="text-primary hover:underline focus:outline-none focus:underline"
-                onClick={() => setShowPrivacyPolicy(true)}
-              >
-                Privacy Policy
-              </button>
-            </label>
-            <p className="text-xs text-muted-foreground flex items-center">
-              <Shield className="h-3 w-3 mr-1" />
-              Your data is protected and secured
-            </p>
+    <form onSubmit={handleSignUp} className="space-y-4">
+      <div className="space-y-2">
+        <Label>I am a:</Label>
+        <RadioGroup
+          defaultValue="teacher"
+          onValueChange={(value) => setUserType(value as "teacher" | "student")}
+          className="flex space-x-4"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="teacher" id="teacher" />
+            <Label htmlFor="teacher">Teacher</Label>
           </div>
-        </div>
-
-        <SubmitButton loading={loading} disabled={!agreedToTerms} />
-      </form>
-
-      <Dialog open={showPrivacyPolicy} onOpenChange={setShowPrivacyPolicy}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
-          <DialogTitle>Privacy Policy</DialogTitle>
-          <PrivacyPolicy />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showTerms} onOpenChange={setShowTerms}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
-          <DialogTitle>Terms of Use</DialogTitle>
-          <TermsOfUse />
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="student" id="student" />
+            <Label htmlFor="student">Student</Label>
+          </div>
+        </RadioGroup>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          placeholder="First Name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          required
+        />
+        <Input
+          placeholder="Last Name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          required
+        />
+      </div>
+      <Input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+      <Input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      <Input
+        type="password"
+        placeholder="Re-type Password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        required
+      />
+      <Input
+        placeholder="School"
+        value={school}
+        onChange={(e) => setSchool(e.target.value)}
+        required
+      />
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Loading..." : "Sign Up"}
+      </Button>
+    </form>
   );
 };

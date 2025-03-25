@@ -15,8 +15,7 @@ export const useQuizGeneration = () => {
   const { 
     topics, 
     addTopic, 
-    updateTopic,
-    removeTopic
+    updateTopic 
   } = useQuizTopicsManagement();
   
   const { 
@@ -54,12 +53,11 @@ export const useQuizGeneration = () => {
     topics,
     addTopic,
     updateTopic,
-    removeTopic,
     
     // Quiz submission
     isProcessing,
     quizQuestions,
-    quizId,
+    quizId, // Ensure quizId is exposed here
     handleSubmit: submitQuiz,
     
     // Quiz settings

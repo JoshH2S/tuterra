@@ -1,7 +1,7 @@
 
-import { NameFields } from "./NameFields";
-import { EducationField } from "./EducationField";
-import { FormActions } from "./FormActions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ProfileFormData {
   firstName: string;
@@ -24,27 +24,50 @@ export const ProfileForm = ({
   onSubmit,
   onCancel,
 }: ProfileFormProps) => {
-  // Function to handle field changes
-  const handleFieldChange = (field: keyof ProfileFormData) => (value: string) => {
-    onFormDataChange(field, value);
-  };
-
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <NameFields 
-        firstName={formData.firstName}
-        lastName={formData.lastName}
-        onFirstNameChange={handleFieldChange('firstName')}
-        onLastNameChange={handleFieldChange('lastName')}
-      />
-      <EducationField 
-        school={formData.school}
-        onEducationChange={handleFieldChange('school')}
-      />
-      <FormActions 
-        loading={loading} 
-        onCancel={onCancel} 
-      />
+      <div className="space-y-2">
+        <Label htmlFor="firstName">First Name</Label>
+        <Input
+          id="firstName"
+          value={formData.firstName}
+          onChange={(e) => onFormDataChange('firstName', e.target.value)}
+          placeholder="Enter your first name"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="lastName">Last Name</Label>
+        <Input
+          id="lastName"
+          value={formData.lastName}
+          onChange={(e) => onFormDataChange('lastName', e.target.value)}
+          placeholder="Enter your last name"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="school">School</Label>
+        <Input
+          id="school"
+          value={formData.school}
+          onChange={(e) => onFormDataChange('school', e.target.value)}
+          placeholder="Enter your school"
+        />
+      </div>
+      <div className="flex justify-end space-x-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? "Updating..." : "Save Changes"}
+        </Button>
+      </div>
     </form>
   );
 };

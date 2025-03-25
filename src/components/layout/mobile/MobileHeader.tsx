@@ -6,24 +6,15 @@ import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { MobileSearch } from "./MobileSearch";
 import { MobileMenu } from "./MobileMenu";
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
 
 export function MobileHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
-  
-  // Close the menu when route changes
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4">
-        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" className="mr-2 px-0 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden">
               <Menu className="h-6 w-6" />
@@ -31,12 +22,12 @@ export function MobileHeader() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0">
-            <MobileMenu onClose={() => setIsMenuOpen(false)} />
+            <MobileMenu onClose={() => {}} />
           </SheetContent>
         </Sheet>
 
         <div className="flex flex-1 items-center justify-between space-x-2">
-          <div className="font-semibold text-lg">EduPortal</div>
+          <div className="font-semibold text-lg">EduLearn</div>
           
           <div className="flex items-center space-x-2">
             <motion.button

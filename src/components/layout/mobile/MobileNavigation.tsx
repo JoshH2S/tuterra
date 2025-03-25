@@ -25,13 +25,6 @@ export function MobileNavigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Scroll to top on route change for mobile
-  useEffect(() => {
-    if (isMobile) {
-      window.scrollTo(0, 0);
-    }
-  }, [location.pathname, isMobile]);
-
   if (!isMobile) return null;
 
   const navItems = [
@@ -39,10 +32,6 @@ export function MobileNavigation() {
     { icon: Bell, label: "Notifications", path: "/notifications" },
     { icon: User, label: "Profile", path: "/profile-settings" },
   ];
-
-  const handleNavItemClick = () => {
-    window.scrollTo(0, 0);
-  };
 
   return (
     <>
@@ -59,10 +48,6 @@ export function MobileNavigation() {
               key={item.path}
               to={item.path} 
               className="touch-manipulation no-context-menu"
-              onClick={() => {
-                setIsOpen(false);
-                handleNavItemClick();
-              }}
             >
               <motion.div
                 whileTap={{ scale: 0.9 }}

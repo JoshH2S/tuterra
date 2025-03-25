@@ -1,4 +1,5 @@
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Lightbulb, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
@@ -118,16 +119,22 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
   const hasMoreWeakTopics = weakTopics.length > initialTopicsToShow;
   
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex space-x-2">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          {activeTab === 'strengths' ? 
+            <Lightbulb className="h-5 w-5 mr-2 text-amber-500" /> : 
+            <AlertTriangle className="h-5 w-5 mr-2 text-blue-500" />
+          }
+          {activeTab === 'strengths' ? 'Your Strengths' : 'Areas to Improve'}
+        </CardTitle>
+        <div className="flex space-x-2 mt-2">
           <Button 
             variant={activeTab === 'strengths' ? "default" : "outline"} 
             size="sm"
             onClick={() => setActiveTab('strengths')}
             className={`${activeTab === 'strengths' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
           >
-            <Lightbulb className="h-4 w-4 mr-2" />
             Strengths
           </Button>
           <Button 
@@ -136,85 +143,85 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
             onClick={() => setActiveTab('areas')}
             className={`${activeTab === 'areas' ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
           >
-            <AlertTriangle className="h-4 w-4 mr-2" />
             Areas to Improve
           </Button>
         </div>
-      </div>
-
-      {activeTab === 'strengths' && (
-        <>
-          {hasStrengths && topicStrengths.length > 0 ? (
-            <div>
-              <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
-                {displayedTopicStrengths.map((topic, index) => (
-                  <li key={index}>{topic}</li>
-                ))}
-              </ul>
-              
-              {hasMoreTopics && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowAllTopics(!showAllTopics)} 
-                  className="mt-2 text-muted-foreground hover:text-primary flex items-center"
-                >
-                  {showAllTopics ? (
-                    <>Show Less <ChevronUp className="ml-1 h-4 w-4" /></>
-                  ) : (
-                    <>View All {topicStrengths.length} Topics <ChevronDown className="ml-1 h-4 w-4" /></>
-                  )}
-                </Button>
-              )}
-            </div>
-          ) : hasStrengths ? (
-            <p className="text-muted-foreground">
-              No topics with strong performance (90%+) yet.
-            </p>
-          ) : (
-            <p className="text-muted-foreground">
-              Complete more quizzes to identify your strengths.
-            </p>
-          )}
-        </>
-      )}
-      
-      {activeTab === 'areas' && (
-        <>
-          {hasAreas && weakTopics.length > 0 ? (
-            <div>
-              <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
-                {displayedWeakTopics.map((topic, index) => (
-                  <li key={index}>{topic}</li>
-                ))}
-              </ul>
-              
-              {hasMoreWeakTopics && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowAllWeakTopics(!showAllWeakTopics)} 
-                  className="mt-2 text-muted-foreground hover:text-primary flex items-center"
-                >
-                  {showAllWeakTopics ? (
-                    <>Show Less <ChevronUp className="ml-1 h-4 w-4" /></>
-                  ) : (
-                    <>View All {weakTopics.length} Topics <ChevronDown className="ml-1 h-4 w-4" /></>
-                  )}
-                </Button>
-              )}
-            </div>
-          ) : hasAreas ? (
-            <p className="text-muted-foreground">
-              No specific topics below 80% identified.
-            </p>
-          ) : (
-            <p className="text-muted-foreground">
-              No specific areas for improvement identified yet.
-            </p>
-          )}
-        </>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent>
+        {activeTab === 'strengths' && (
+          <>
+            {hasStrengths && topicStrengths.length > 0 ? (
+              <div>
+                <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
+                  {displayedTopicStrengths.map((topic, index) => (
+                    <li key={index}>{topic}</li>
+                  ))}
+                </ul>
+                
+                {hasMoreTopics && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAllTopics(!showAllTopics)} 
+                    className="mt-2 text-muted-foreground hover:text-primary flex items-center"
+                  >
+                    {showAllTopics ? (
+                      <>Show Less <ChevronUp className="ml-1 h-4 w-4" /></>
+                    ) : (
+                      <>View All {topicStrengths.length} Topics <ChevronDown className="ml-1 h-4 w-4" /></>
+                    )}
+                  </Button>
+                )}
+              </div>
+            ) : hasStrengths ? (
+              <p className="text-muted-foreground">
+                No topics with strong performance (90%+) yet.
+              </p>
+            ) : (
+              <p className="text-muted-foreground">
+                Complete more quizzes to identify your strengths.
+              </p>
+            )}
+          </>
+        )}
+        
+        {activeTab === 'areas' && (
+          <>
+            {hasAreas && weakTopics.length > 0 ? (
+              <div>
+                <ul className={`${isMobile ? 'text-sm' : ''} list-disc pl-5 space-y-2`}>
+                  {displayedWeakTopics.map((topic, index) => (
+                    <li key={index}>{topic}</li>
+                  ))}
+                </ul>
+                
+                {hasMoreWeakTopics && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAllWeakTopics(!showAllWeakTopics)} 
+                    className="mt-2 text-muted-foreground hover:text-primary flex items-center"
+                  >
+                    {showAllWeakTopics ? (
+                      <>Show Less <ChevronUp className="ml-1 h-4 w-4" /></>
+                    ) : (
+                      <>View All {weakTopics.length} Topics <ChevronDown className="ml-1 h-4 w-4" /></>
+                    )}
+                  </Button>
+                )}
+              </div>
+            ) : hasAreas ? (
+              <p className="text-muted-foreground">
+                No specific topics below 80% identified.
+              </p>
+            ) : (
+              <p className="text-muted-foreground">
+                No specific areas for improvement identified yet.
+              </p>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
