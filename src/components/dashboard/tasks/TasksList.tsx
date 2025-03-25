@@ -6,7 +6,7 @@ import { Plus, CheckCircle2, ArrowDown } from "lucide-react";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { toast } from "@/hooks/use-toast";
-import { TaskItem } from "./TaskItem";
+import { TaskItem, Task } from "./TaskItem";
 import { TasksEmptyState } from "./TasksEmptyState";
 import { useTasksFromSessions } from "./useTasksFromSessions";
 

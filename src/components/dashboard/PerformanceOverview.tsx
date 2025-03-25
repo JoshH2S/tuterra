@@ -28,78 +28,98 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
   }));
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Performance Overview</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card className="p-4 border-l-4 border-l-blue-500">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Overall Average</p>
-              <p className="text-2xl font-bold">{averageScore.toFixed(1)}%</p>
-            </div>
-          </Card>
-          <Card className="p-4 border-l-4 border-l-green-500">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Quizzes Completed</p>
-              <p className="text-2xl font-bold">{totalQuizzes}</p>
-            </div>
-          </Card>
-          <Card className="p-4 border-l-4 border-l-purple-500">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Completion Rate</p>
-              <p className="text-2xl font-bold">{totalCompletionRate.toFixed(1)}%</p>
-            </div>
-          </Card>
-        </div>
-          
-        {chartData.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <BarChartIcon className="mr-2 h-5 w-5 text-blue-500" />
-              Course Performance
-            </h3>
-            <div className="h-[250px] bg-card rounded-lg p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={chartData}
-                  margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
-                  barSize={36}
-                >
-                  <XAxis 
-                    dataKey="course" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis 
-                    domain={[0, 100]}
-                    label={{ 
-                      value: 'Score (%)', 
-                      angle: -90, 
-                      position: 'insideLeft',
-                      style: { textAnchor: 'middle' }
-                    }} 
-                  />
-                  <Tooltip 
-                    formatter={(value) => [`${value}%`, 'Average Score']}
-                    labelStyle={{ fontWeight: 'bold' }}
-                  />
-                  <Bar 
-                    dataKey="score" 
-                    fill="#3b82f6" 
-                    radius={[4, 4, 0, 0]}
-                    animationDuration={1000}
-                    name="Average Score"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+    <div className="grid gap-6">
+      <Card className="col-span-full">
+        <CardHeader>
+          <CardTitle>Performance Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3 mb-6">
+            <Card className="p-4 border-l-4 border-l-blue-500">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Overall Average</p>
+                <p className="text-2xl font-bold">{averageScore.toFixed(1)}%</p>
+              </div>
+            </Card>
+            <Card className="p-4 border-l-4 border-l-green-500">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Quizzes Completed</p>
+                <p className="text-2xl font-bold">{totalQuizzes}</p>
+              </div>
+            </Card>
+            <Card className="p-4 border-l-4 border-l-purple-500">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Completion Rate</p>
+                <p className="text-2xl font-bold">{totalCompletionRate.toFixed(1)}%</p>
+              </div>
+            </Card>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          
+          {chartData.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                <BarChartIcon className="mr-2 h-5 w-5 text-blue-500" />
+                Course Performance
+              </h3>
+              <div className="h-[250px] bg-card rounded-lg p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={chartData}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                    barSize={36}
+                  >
+                    <XAxis 
+                      dataKey="course" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={70}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis 
+                      domain={[0, 100]}
+                      label={{ 
+                        value: 'Score (%)', 
+                        angle: -90, 
+                        position: 'insideLeft',
+                        style: { textAnchor: 'middle' }
+                      }} 
+                    />
+                    <Tooltip 
+                      formatter={(value) => [`${value}%`, 'Average Score']}
+                      labelStyle={{ fontWeight: 'bold' }}
+                    />
+                    <Bar 
+                      dataKey="score" 
+                      fill="#3b82f6" 
+                      radius={[4, 4, 0, 0]}
+                      animationDuration={1000}
+                      name="Average Score"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {performance.map((p, index) => {
+        const completionRate = (p.completed_quizzes / p.total_quizzes) * 100;
+        let alert;
+
+        if (completionRate < 50) {
+          alert = (
+            <Alert key={index} className="bg-yellow-50 border-yellow-200">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-600">
+                Try to complete more quizzes to improve your understanding.
+              </AlertDescription>
+            </Alert>
+          );
+        }
+
+        return alert;
+      })}
+    </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
@@ -10,9 +9,6 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
 import { StudySessionDialog } from "@/components/dashboard/StudySessionDialog";
 import { CreateStudySessionData } from "@/types/study-sessions";
-import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
-import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
-import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -21,17 +17,9 @@ export default function StudentDashboard() {
   const isMobile = useIsMobile();
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
 
-  // Extract unique strengths and areas for improvement
-  const allStrengths = performance.flatMap(p => p.strengths || []);
-  const allAreasForImprovement = performance.flatMap(p => p.areas_for_improvement || []);
-  const uniqueStrengths = [...new Set(allStrengths)];
-  const uniqueAreasForImprovement = [...new Set(allAreasForImprovement)];
-
-  // Debug logging to check courses data
   useEffect(() => {
     console.log("Courses in StudentDashboard:", courses);
-    console.log("Is mobile view:", isMobile);
-  }, [courses, isMobile]);
+  }, [courses]);
 
   const handleCreateSession = async (sessionData: CreateStudySessionData) => {
     await createSession(sessionData);
@@ -40,7 +28,6 @@ export default function StudentDashboard() {
 
   const handleUpdateSession = async (id: string, updates: Partial<StudySession>) => {
     await updateSession(id, updates);
-    // Not returning anything explicitly ensures Promise<void>
   };
 
   const openSessionDialog = () => {
@@ -80,34 +67,19 @@ export default function StudentDashboard() {
           onUpdateSession={handleUpdateSession}
         />
       ) : (
-        <div className="space-y-6">
-          {/* Main 2-column grid layout */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Left Column */}
-            <div className="space-y-6">
-              <PerformanceOverview performance={performance} />
-              {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
-                <StrengthsAndAreas 
-                  strengths={uniqueStrengths} 
-                  areasForImprovement={uniqueAreasForImprovement} 
-                />
-              )}
-            </div>
-            
-            {/* Right Column */}
-            <div className="space-y-6">
-              <StudyCalendar 
-                sessions={sessions}
-                courses={courses}
-                onCreateSession={handleCreateSession}
-              />
-              <NewsFeed courses={courses} />
-            </div>
-          </div>
-        </div>
+        <DesktopDashboard
+          performance={performance}
+          insights={insights}
+          sessions={sessions}
+          courses={courses}
+          createSession={handleCreateSession}
+          openSessionDialog={openSessionDialog}
+          updateSession={handleUpdateSession}
+        >
+          <NewsFeed courses={courses} />
+        </DesktopDashboard>
       )}
 
-      {/* Study Session Dialog */}
       <StudySessionDialog
         open={sessionDialogOpen}
         onOpenChange={setSessionDialogOpen}

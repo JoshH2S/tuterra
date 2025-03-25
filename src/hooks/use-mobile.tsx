@@ -10,13 +10,11 @@ export const useIsMobile = (breakpoint = 768) => {
     if (typeof window === "undefined") return;
 
     const handleResize = () => {
-      const newIsMobile = window.innerWidth < breakpoint;
-      setIsMobile(newIsMobile);
-      console.log(`Window width: ${window.innerWidth}, isMobile: ${newIsMobile}`);
+      setIsMobile(window.innerWidth < breakpoint);
     };
 
     window.addEventListener("resize", handleResize);
-    handleResize(); // Initial check
+    handleResize();
 
     return () => {
       window.removeEventListener("resize", handleResize);
@@ -26,26 +24,20 @@ export const useIsMobile = (breakpoint = 768) => {
   return isMobile;
 };
 
-// Add the useTouchDevice hook that's being imported but was missing
 export const useTouchDevice = () => {
   const [isTouch, setIsTouch] = useState(false);
-
+  
   useEffect(() => {
-    // Check if the device supports touch events
-    const isTouchDevice = () => {
-      return (
-        'ontouchstart' in window ||
-        navigator.maxTouchPoints > 0 ||
-        // @ts-ignore - This property exists in some browsers
-        navigator.msMaxTouchPoints > 0
-      );
-    };
-
-    setIsTouch(isTouchDevice());
+    if (typeof window === "undefined") return;
     
-    // Log touch capability detection for debugging
-    console.log(`Touch device detected: ${isTouchDevice()}`);
+    // Check if device supports touch
+    const isTouchDevice = 
+      'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0 ||
+      (navigator as any).msMaxTouchPoints > 0;
+    
+    setIsTouch(isTouchDevice);
   }, []);
-
+  
   return isTouch;
 };
