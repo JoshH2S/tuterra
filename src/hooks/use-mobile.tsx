@@ -1,43 +1,26 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
-export const useIsMobile = (breakpoint = 768) => {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
-  );
+export function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < breakpoint);
+    const checkIsMobile = () => {
+      const mobileWidth = 768; // md breakpoint
+      const isMobileView = window.innerWidth < mobileWidth;
+      console.log('Window width:', window.innerWidth, 'Is mobile:', isMobileView);
+      setIsMobile(isMobileView);
     };
 
-    window.addEventListener("resize", handleResize);
-    handleResize();
+    // Initial check
+    checkIsMobile();
 
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [breakpoint]);
+    // Check on resize
+    window.addEventListener('resize', checkIsMobile);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   return isMobile;
-};
-
-export const useTouchDevice = () => {
-  const [isTouch, setIsTouch] = useState(false);
-  
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    // Check if device supports touch
-    const isTouchDevice = 
-      'ontouchstart' in window || 
-      navigator.maxTouchPoints > 0 ||
-      (navigator as any).msMaxTouchPoints > 0;
-    
-    setIsTouch(isTouchDevice);
-  }, []);
-  
-  return isTouch;
-};
+}
