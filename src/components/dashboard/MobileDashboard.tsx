@@ -7,7 +7,6 @@ import { StatsCards } from "./StatsCards";
 import { InsightsSection } from "./InsightsSection";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
-import { NewsFeed } from "./NewsFeed";
 
 interface MobileDashboardProps {
   performance: any[];
@@ -28,36 +27,40 @@ export function MobileDashboard({
   openSessionDialog,
   onUpdateSession
 }: MobileDashboardProps) {
-  console.log('Mobile Dashboard mounting', { performance, insights });
-
   return (
-    <div className="space-y-6 md:space-y-8">
-      <NewsFeed courses={courses} />
-      
-      <StatsCards performance={performance} />
-      
-      {insights.length > 0 && (
-        <InsightsSection insights={insights} />
-      )}
-      
-      <div className="grid gap-6">
-        <TasksList 
-          sessions={sessions} 
-          courses={courses} 
-          onCreateSession={openSessionDialog}
-          onUpdateSession={onUpdateSession}
-        />
+    <div className="space-y-6">
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid grid-cols-3 h-auto">
+          <TabsTrigger value="overview" className="py-2.5">Overview</TabsTrigger>
+          <TabsTrigger value="calendar" className="py-2.5">Calendar</TabsTrigger>
+          <TabsTrigger value="insights" className="py-2.5">Insights</TabsTrigger>
+        </TabsList>
         
-        <div className="space-y-6">
-          <PerformanceOverview performance={performance} />
+        <TabsContent value="overview" className="space-y-6">
+          <StatsCards performance={performance} />
           
+          <TasksList 
+            sessions={sessions} 
+            courses={courses} 
+            onCreateSession={openSessionDialog}
+            onUpdateSession={onUpdateSession}
+          />
+          
+          <PerformanceOverview performance={performance} />
+        </TabsContent>
+        
+        <TabsContent value="calendar" className="space-y-6">
           <StudyCalendar 
-            sessions={sessions}
-            courses={courses}
+            sessions={sessions} 
+            courses={courses} 
             onCreateSession={onCreateSession}
           />
-        </div>
-      </div>
+        </TabsContent>
+        
+        <TabsContent value="insights" className="space-y-6">
+          <InsightsSection insights={insights} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -21,8 +21,7 @@ export default function StudentDashboard() {
   // Debug logging to check courses data
   useEffect(() => {
     console.log("Courses in StudentDashboard:", courses);
-    console.log("Is Mobile View:", isMobile);
-  }, [courses, isMobile]);
+  }, [courses]);
 
   const handleCreateSession = async (sessionData: CreateStudySessionData) => {
     await createSession(sessionData);
