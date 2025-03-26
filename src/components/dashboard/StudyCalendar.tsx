@@ -6,6 +6,7 @@ import { SessionForm } from "./calendar/SessionForm";
 import { CreateStudySessionData } from "@/types/study-sessions";
 import type { StudySession } from "@/hooks/useStudySessions";
 import type { StudentCourse } from "@/types/student";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface StudyCalendarProps {
   sessions: StudySession[];
@@ -15,6 +16,7 @@ interface StudyCalendarProps {
 
 export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalendarProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const isMobile = useIsMobile();
 
   return (
     <div className="space-y-4">
@@ -27,8 +29,8 @@ export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalen
         />
       </div>
 
-      {/* Modified grid layout to ensure better spacing for mobile */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Responsive layout with a single column on mobile and two columns on larger screens */}
+      <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6">
         <CalendarView selectedDate={date} onDateSelect={setDate} />
         <SessionsList date={date} sessions={sessions} courses={courses} />
       </div>
