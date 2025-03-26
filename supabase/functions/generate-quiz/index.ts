@@ -50,7 +50,7 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert educator specializing in creating multiple-choice assessment questions. Return ONLY valid JSON arrays without any markdown formatting or additional text. Use proper JSON syntax with double quotes for all keys and string values.'
+            content: 'You are an expert educator specializing in creating multiple-choice assessment questions. Return ONLY valid JSON arrays without any markdown formatting or additional text. Use ONLY double quotes (not single quotes) for all keys and string values. Do not use triple quotes or escaped quotes.'
           },
           { role: 'user', content: prompt }
         ],
@@ -73,59 +73,17 @@ serve(async (req) => {
 
     let content_text = data.choices[0].message.content;
     
-    // Enhanced response cleaning
-    if (content_text.includes('```')) {
-      content_text = content_text.replace(/```json\n|\n```|```/g, '');
-    }
-
     console.log('Attempting to parse response');
     
     try {
-      // Comprehensive sanitization of the JSON text
-      content_text = content_text.trim();
-      
-      // Find the actual JSON array
-      if (!content_text.startsWith('[')) {
-        const startIdx = content_text.indexOf('[');
-        if (startIdx >= 0) {
-          content_text = content_text.substring(startIdx);
-        } else {
-          throw new Error('Response does not contain a JSON array');
-        }
-      }
-      
-      // Find the end of the JSON array if there's extra content
-      const endIdx = content_text.lastIndexOf(']');
-      if (endIdx >= 0 && endIdx < content_text.length - 1) {
-        content_text = content_text.substring(0, endIdx + 1);
-      }
-      
-      // Fix common JSON syntax errors
-      // Replace single quotes with double quotes, but be careful with apostrophes
-      content_text = content_text.replace(/'([^']*)'/g, (match, p1) => `"${p1}"`);
-      
-      // Fix keys with spaces (like "difficulty " -> "difficulty")
-      content_text = content_text.replace(/"(\w+)\s+":/g, '"$1":');
-      
-      // Remove any trailing commas in objects
-      content_text = content_text.replace(/,\s*}/g, '}');
-      content_text = content_text.replace(/,\s*\]/g, ']');
+      // Apply comprehensive JSON cleaning and correction
+      content_text = cleanupJSONContent(content_text);
       
       const quizQuestions = JSON.parse(content_text);
       console.log('Successfully parsed quiz questions');
 
       // Validate and normalize the questions to ensure all required fields exist
-      const validatedQuestions = quizQuestions.map(q => ({
-        question: q.question || "",
-        options: q.options || { A: "", B: "", C: "", D: "" },
-        correctAnswer: q.correctAnswer || "",
-        topic: q.topic || "",
-        points: q.points || 1,
-        explanation: q.explanation || "",
-        difficulty: difficulty,
-        conceptTested: q.conceptTested || "",
-        learningObjective: q.learningObjective || ""
-      }));
+      const validatedQuestions = validateAndNormalizeQuestions(quizQuestions, difficulty);
 
       // Calculate total points
       const totalPoints = validatedQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
@@ -163,6 +121,90 @@ serve(async (req) => {
     );
   }
 });
+
+// Clean up and fix common JSON issues in AI responses
+function cleanupJSONContent(content: string): string {
+  // Remove any markdown code blocks
+  let cleaned = content.replace(/```json\n|\n```|```/g, '');
+  
+  // Find the actual JSON array
+  if (!cleaned.trim().startsWith('[')) {
+    const startIdx = cleaned.indexOf('[');
+    if (startIdx >= 0) {
+      cleaned = cleaned.substring(startIdx);
+    }
+  }
+  
+  // Find the end of the array
+  const endIdx = cleaned.lastIndexOf(']');
+  if (endIdx >= 0 && endIdx < cleaned.length - 1) {
+    cleaned = cleaned.substring(0, endIdx + 1);
+  }
+  
+  // Remove comments
+  cleaned = cleaned.replace(/\/\/.*$/gm, '');
+  
+  // Fix double and triple quotes - major source of errors
+  cleaned = cleaned.replace(/"""/g, '"');
+  cleaned = cleaned.replace(/""/g, '"');
+  
+  // Replace single quotes with double quotes for both keys and string values
+  // But careful with content that might have apostrophes
+  cleaned = cleaned.replace(/'([^']*)'(?=\s*:)/g, '"$1"'); // For keys
+  cleaned = cleaned.replace(/:(\s*)'([^']*)'([,}\]])/g, ':$1"$2"$3'); // For values
+  
+  // Fix unquoted properties in JSON
+  cleaned = cleaned.replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:');
+  
+  // Fix missing quotes around string values
+  cleaned = cleaned.replace(/:(\s*)([A-Za-z][A-Za-z0-9\s]*[A-Za-z0-9])([,}\]])/g, ':"$2"$3');
+  
+  // Remove trailing commas in arrays and objects (common syntax error)
+  cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+  
+  return cleaned;
+}
+
+// Validate and normalize questions to ensure they have all required fields
+function validateAndNormalizeQuestions(questions: any[], difficulty: string): any[] {
+  if (!Array.isArray(questions)) {
+    throw new Error('Questions must be an array');
+  }
+  
+  return questions.map((q, index) => {
+    if (!q.question) {
+      throw new Error(`Question at index ${index} is missing question text`);
+    }
+    
+    if (!q.options || typeof q.options !== 'object') {
+      throw new Error(`Question at index ${index} has invalid options`);
+    }
+    
+    const normalizedOptions = {
+      A: q.options.A || '',
+      B: q.options.B || '',
+      C: q.options.C || '',
+      D: q.options.D || ''
+    };
+    
+    if (!q.correctAnswer) {
+      throw new Error(`Question at index ${index} is missing correctAnswer`);
+    }
+    
+    // Normalize and clean up string fields
+    return {
+      question: String(q.question).replace(/^["']|["']$/g, ''),
+      options: normalizedOptions,
+      correctAnswer: String(q.correctAnswer).replace(/^["']|["']$/g, ''),
+      topic: String(q.topic || '').replace(/^["']|["']$/g, ''),
+      points: Number(q.points) || 1,
+      explanation: String(q.explanation || '').replace(/^["']|["']$/g, ''),
+      difficulty: difficulty,
+      conceptTested: String(q.conceptTested || '').replace(/^["']|["']$/g, ''),
+      learningObjective: String(q.learningObjective || '').replace(/^["']|["']$/g, '')
+    };
+  });
+}
 
 // Helper function to generate the regular quiz prompt
 function generateRegularQuizPrompt(
@@ -216,9 +258,15 @@ function generateRegularQuizPrompt(
       "learningObjective": "what this tests"
     }
 
-    IMPORTANT: Your response MUST be a valid JSON array with no markdown formatting, comments, or extra text.
-    Use double quotes for all keys and string values, never single quotes.
-    Do not include any spaces in property names.
+    VERY IMPORTANT:
+    1. Use ONLY simple double quotes (") for all strings
+    2. Do NOT use single quotes (') anywhere in the JSON
+    3. Do NOT use escaped quotes or multiple quotes
+    4. Make sure all JSON is properly formatted with no syntax errors
+    5. Do not include ANY comments in the JSON
+    6. Do not include any markdown formatting
+    7. Return ONLY the valid JSON array with no additional text
+
     Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions.
     ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
     ${teacherContext?.school ? `for ${teacherContext.school}` : ''}

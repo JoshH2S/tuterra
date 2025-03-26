@@ -1,4 +1,3 @@
-
 import { useQuizFileUpload } from "./useQuizFileUpload";
 import { useQuizTopicsManagement } from "./useQuizTopicsManagement";
 import { useQuizSubmission } from "./useQuizSubmission";
@@ -47,10 +46,8 @@ export const useQuizGeneration = () => {
   });
 
   const processContent = async (content: string): Promise<string> => {
-    // Simulate content processing with a delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Apply character limit if needed
     if (content.length > CONTENT_LIMITS.MAX_CHARACTERS) {
       return content.slice(0, CONTENT_LIMITS.MAX_CHARACTERS);
     }
@@ -78,7 +75,6 @@ export const useQuizGeneration = () => {
     }
 
     try {
-      // Analysis stage
       setGenerationProgress({
         stage: 'analyzing',
         percent: 10,
@@ -88,14 +84,12 @@ export const useQuizGeneration = () => {
       const fileContent = await selectedFile.text();
       const processedContent = await processContent(fileContent);
       
-      // Update progress for generation stage
       setGenerationProgress({
         stage: 'generating',
         percent: 30,
         message: 'Creating quiz questions...'
       });
 
-      // Generate questions with periodic progress updates
       const progressUpdater = setInterval(() => {
         setGenerationProgress(prev => {
           if (prev.stage === 'generating' && prev.percent < 70) {
@@ -109,7 +103,6 @@ export const useQuizGeneration = () => {
         });
       }, 2000);
 
-      // Submit the quiz data
       try {
         const result = await submitQuizData(
           processedContent, 
@@ -123,17 +116,14 @@ export const useQuizGeneration = () => {
         clearInterval(progressUpdater);
 
         if (result.questions) {
-          // Saving stage
           setGenerationProgress({
             stage: 'saving',
             percent: 85,
             message: 'Finalizing your quiz...'
           });
 
-          // Simulate saving delay
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          // Complete
           setGenerationProgress({
             stage: 'idle',
             percent: 100,
@@ -147,13 +137,18 @@ export const useQuizGeneration = () => {
       } catch (error) {
         clearInterval(progressUpdater);
         
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : 'Unknown error occurred';
+        
         setGenerationProgress({
           stage: 'error',
           percent: 0,
           message: 'Quiz generation failed',
-          error: error instanceof Error ? error.message : 'Unknown error occurred'
+          error: errorMessage
         });
         
+        console.error('Quiz generation error:', error);
         throw error;
       }
     } catch (error) {
@@ -176,25 +171,34 @@ export const useQuizGeneration = () => {
     }
   };
 
+  const handleRetry = () => {
+    setGenerationProgress({
+      stage: 'idle',
+      percent: 0,
+      message: ''
+    });
+    
+    toast({
+      title: "Ready to retry",
+      description: "You can try generating the quiz again.",
+    });
+  };
+
   return {
-    // File handling
     selectedFile,
     contentLength,
     handleFileSelect,
     
-    // Topics management
     topics,
     addTopic,
     updateTopic,
     removeTopic,
     
-    // Quiz submission
     isProcessing,
     quizQuestions,
     quizId,
     handleSubmit,
     
-    // Quiz settings
     title,
     duration,
     selectedCourseId,
@@ -204,7 +208,7 @@ export const useQuizGeneration = () => {
     setSelectedCourseId,
     setDifficulty,
     
-    // Generation progress
-    generationProgress
+    generationProgress,
+    handleRetry
   };
 };
