@@ -5,16 +5,14 @@ import { SessionsList } from "./calendar/SessionsList";
 import { SessionForm } from "./calendar/SessionForm";
 import { CreateStudySessionData } from "@/types/study-sessions";
 import type { StudySession } from "@/hooks/useStudySessions";
-import type { StudentCourse } from "@/types/student";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface StudyCalendarProps {
   sessions: StudySession[];
-  courses: StudentCourse[];
   onCreateSession: (session: CreateStudySessionData) => Promise<void>;
 }
 
-export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalendarProps) {
+export function StudyCalendar({ sessions, onCreateSession }: StudyCalendarProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const isMobile = useIsMobile();
 
@@ -23,7 +21,6 @@ export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalen
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Study Schedule</h2>
         <SessionForm 
-          courses={courses} 
           selectedDate={date} 
           onCreateSession={onCreateSession} 
         />
@@ -32,7 +29,7 @@ export function StudyCalendar({ sessions, courses, onCreateSession }: StudyCalen
       {/* Responsive layout with a single column on mobile and two columns on larger screens */}
       <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6">
         <CalendarView selectedDate={date} onDateSelect={setDate} />
-        <SessionsList date={date} sessions={sessions} courses={courses} />
+        <SessionsList date={date} sessions={sessions} />
       </div>
     </div>
   );

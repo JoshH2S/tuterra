@@ -7,16 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateStudySessionData } from "@/types/study-sessions";
-import type { StudentCourse } from "@/types/student";
+import { useCourses } from "@/hooks/useCourses";
 
 interface SessionFormProps {
-  courses: StudentCourse[];
   selectedDate: Date | undefined;
   onCreateSession: (session: CreateStudySessionData) => Promise<void>;
 }
 
-export function SessionForm({ courses, selectedDate, onCreateSession }: SessionFormProps) {
+export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { courses, isLoading } = useCourses();
   const [newSession, setNewSession] = useState({
     title: "",
     description: "",
@@ -94,8 +94,8 @@ export function SessionForm({ courses, selectedDate, onCreateSession }: SessionF
               </SelectTrigger>
               <SelectContent>
                 {courses.map((course) => (
-                  <SelectItem key={course.course_id} value={course.course_id}>
-                    {course.course.title}
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.title}
                   </SelectItem>
                 ))}
               </SelectContent>

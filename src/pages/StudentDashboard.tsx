@@ -89,7 +89,6 @@ export default function StudentDashboard() {
 
             <StudyCalendar 
               sessions={sessions}
-              courses={courses}
               onCreateSession={handleCreateSession}
             />
           </div>

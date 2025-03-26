@@ -1,10 +1,10 @@
 
 import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import type { StudentCourse } from "@/types/student";
+import type { Course } from "@/types/course";
 
 interface CourseSelectorProps {
-  courses: any[];
+  courses: Course[];
   selectedCourseId: string | undefined;
   onCourseSelect: (courseId: string) => void;
   isLoading: boolean;
@@ -24,7 +24,7 @@ export function CourseSelector({
         onValueChange={onCourseSelect}
         disabled={isLoading}
       >
-        <SelectTrigger id="course">
+        <SelectTrigger id="course" className="w-full">
           <SelectValue placeholder="Select course" />
         </SelectTrigger>
         <SelectContent>
