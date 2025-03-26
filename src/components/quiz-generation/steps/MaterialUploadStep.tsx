@@ -1,12 +1,11 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { UploadCloud, File, X, AlertCircle, AlertTriangle } from "lucide-react";
+import { UploadCloud, File, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { CONTENT_LIMITS } from "@/types/quiz-generation";
 
 interface MaterialUploadStepProps {
   selectedFile: File | null;
@@ -55,15 +54,12 @@ export const MaterialUploadStep = ({
     handleFileSelect(null as unknown as File);
   };
 
-  const isContentWarning = contentLength > CONTENT_LIMITS.WARNING_THRESHOLD && contentLength <= CONTENT_LIMITS.MAX_CHARACTERS;
-  const contentPercentage = Math.min(Math.round((contentLength / CONTENT_LIMITS.MAX_CHARACTERS) * 100), 100);
-
   return (
     <div className="space-y-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2">Course Material</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Upload your course material to generate questions from (max {(CONTENT_LIMITS.MAX_CHARACTERS).toLocaleString()} characters)
+          Upload your course material to generate questions from
         </p>
       </div>
 
@@ -108,30 +104,9 @@ export const MaterialUploadStep = ({
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB · {selectedFile.type || 'Unknown type'}
                 </p>
                 {contentLength > 0 && (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600">
-                        Content length: {contentLength.toLocaleString()} characters
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {contentPercentage}%
-                      </p>
-                    </div>
-                    <Progress 
-                      value={contentPercentage} 
-                      className="h-1.5" 
-                      indicatorClassName={cn(
-                        isContentWarning ? "bg-amber-500" : "bg-primary"
-                      )} 
-                    />
-                    
-                    {isContentWarning && (
-                      <div className="flex items-center mt-2 text-amber-500 text-sm">
-                        <AlertTriangle className="h-4 w-4 mr-1" />
-                        <span>Large content may affect processing time</span>
-                      </div>
-                    )}
-                  </div>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Content length: {contentLength.toLocaleString()} characters
+                  </p>
                 )}
                 
                 {isProcessing && (

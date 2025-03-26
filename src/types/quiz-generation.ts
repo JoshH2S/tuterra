@@ -27,9 +27,4 @@ export interface QuizSettings {
   difficulty: QuestionDifficulty;
 }
 
-export const CONTENT_LIMITS = {
-  MAX_CHARACTERS: 75_000,
-  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB
-  OPTIMAL_CHUNK_SIZE: 8_000,
-  WARNING_THRESHOLD: 50_000
-};
+export const MAX_CONTENT_LENGTH = 50 * 1024 * 1024; // 50MB

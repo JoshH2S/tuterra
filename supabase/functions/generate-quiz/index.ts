@@ -3,19 +3,11 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const MAX_CONTENT_LENGTH = 75000;
+const MAX_CONTENT_LENGTH = 5000;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const GENERATION_CONFIG = {
-  model: 'gpt-4o-mini',  // Updated to use a more current model
-  temperature: 0.7,
-  max_tokens: 2000,
-  presence_penalty: 0.6,
-  frequency_penalty: 0.8
 };
 
 serve(async (req) => {
@@ -46,11 +38,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        ...GENERATION_CONFIG,
+        model: 'gpt-4o',
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert educator specializing in creating multiple-choice assessment questions. Return ONLY valid JSON arrays without any markdown formatting or additional text. Use ONLY double quotes (not single quotes) for all keys and string values. Do not use triple quotes or escaped quotes.'
+            content: 'You are an expert educator specializing in creating multiple-choice assessment questions. Return ONLY pure JSON arrays without any markdown formatting or additional text.'
           },
           { role: 'user', content: prompt }
         ],
@@ -73,26 +65,25 @@ serve(async (req) => {
 
     let content_text = data.choices[0].message.content;
     
+    // Clean up the response if it contains markdown formatting
+    if (content_text.includes('```')) {
+      content_text = content_text.replace(/```json\n|\n```|```/g, '');
+    }
+
     console.log('Attempting to parse response');
     
     try {
-      // Apply comprehensive JSON cleaning and correction
-      content_text = cleanupJSONContent(content_text);
-      
       const quizQuestions = JSON.parse(content_text);
       console.log('Successfully parsed quiz questions');
 
-      // Validate and normalize the questions to ensure all required fields exist
-      const validatedQuestions = validateAndNormalizeQuestions(quizQuestions, difficulty);
-
       // Calculate total points
-      const totalPoints = validatedQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
+      const totalPoints = quizQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
       
       // Estimate duration (avg 1 min per question)
-      const estimatedDuration = validatedQuestions.length * 1;
+      const estimatedDuration = quizQuestions.length * 1;
 
       return new Response(JSON.stringify({ 
-        quizQuestions: validatedQuestions,
+        quizQuestions,
         metadata: {
           topics: topics.map(t => t.description),
           difficulty,
@@ -121,90 +112,6 @@ serve(async (req) => {
     );
   }
 });
-
-// Clean up and fix common JSON issues in AI responses
-function cleanupJSONContent(content: string): string {
-  // Remove any markdown code blocks
-  let cleaned = content.replace(/```json\n|\n```|```/g, '');
-  
-  // Find the actual JSON array
-  if (!cleaned.trim().startsWith('[')) {
-    const startIdx = cleaned.indexOf('[');
-    if (startIdx >= 0) {
-      cleaned = cleaned.substring(startIdx);
-    }
-  }
-  
-  // Find the end of the array
-  const endIdx = cleaned.lastIndexOf(']');
-  if (endIdx >= 0 && endIdx < cleaned.length - 1) {
-    cleaned = cleaned.substring(0, endIdx + 1);
-  }
-  
-  // Remove comments
-  cleaned = cleaned.replace(/\/\/.*$/gm, '');
-  
-  // Fix double and triple quotes - major source of errors
-  cleaned = cleaned.replace(/"""/g, '"');
-  cleaned = cleaned.replace(/""/g, '"');
-  
-  // Replace single quotes with double quotes for both keys and string values
-  // But careful with content that might have apostrophes
-  cleaned = cleaned.replace(/'([^']*)'(?=\s*:)/g, '"$1"'); // For keys
-  cleaned = cleaned.replace(/:(\s*)'([^']*)'([,}\]])/g, ':$1"$2"$3'); // For values
-  
-  // Fix unquoted properties in JSON
-  cleaned = cleaned.replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:');
-  
-  // Fix missing quotes around string values
-  cleaned = cleaned.replace(/:(\s*)([A-Za-z][A-Za-z0-9\s]*[A-Za-z0-9])([,}\]])/g, ':"$2"$3');
-  
-  // Remove trailing commas in arrays and objects (common syntax error)
-  cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
-  
-  return cleaned;
-}
-
-// Validate and normalize questions to ensure they have all required fields
-function validateAndNormalizeQuestions(questions: any[], difficulty: string): any[] {
-  if (!Array.isArray(questions)) {
-    throw new Error('Questions must be an array');
-  }
-  
-  return questions.map((q, index) => {
-    if (!q.question) {
-      throw new Error(`Question at index ${index} is missing question text`);
-    }
-    
-    if (!q.options || typeof q.options !== 'object') {
-      throw new Error(`Question at index ${index} has invalid options`);
-    }
-    
-    const normalizedOptions = {
-      A: q.options.A || '',
-      B: q.options.B || '',
-      C: q.options.C || '',
-      D: q.options.D || ''
-    };
-    
-    if (!q.correctAnswer) {
-      throw new Error(`Question at index ${index} is missing correctAnswer`);
-    }
-    
-    // Normalize and clean up string fields
-    return {
-      question: String(q.question).replace(/^["']|["']$/g, ''),
-      options: normalizedOptions,
-      correctAnswer: String(q.correctAnswer).replace(/^["']|["']$/g, ''),
-      topic: String(q.topic || '').replace(/^["']|["']$/g, ''),
-      points: Number(q.points) || 1,
-      explanation: String(q.explanation || '').replace(/^["']|["']$/g, ''),
-      difficulty: difficulty,
-      conceptTested: String(q.conceptTested || '').replace(/^["']|["']$/g, ''),
-      learningObjective: String(q.learningObjective || '').replace(/^["']|["']$/g, '')
-    };
-  });
-}
 
 // Helper function to generate the regular quiz prompt
 function generateRegularQuizPrompt(
@@ -257,15 +164,6 @@ function generateRegularQuizPrompt(
       "conceptTested": "specific concept",
       "learningObjective": "what this tests"
     }
-
-    VERY IMPORTANT:
-    1. Use ONLY simple double quotes (") for all strings
-    2. Do NOT use single quotes (') anywhere in the JSON
-    3. Do NOT use escaped quotes or multiple quotes
-    4. Make sure all JSON is properly formatted with no syntax errors
-    5. Do not include ANY comments in the JSON
-    6. Do not include any markdown formatting
-    7. Return ONLY the valid JSON array with no additional text
 
     Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions.
     ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuizAPI } from "./useQuizAPI";
 import { useQuizSave } from "./useQuizSave";
 import { toast } from "@/components/ui/use-toast";
-import { Topic, Question, CONTENT_LIMITS } from "@/types/quiz-generation";
+import { Topic, Question, MAX_CONTENT_LENGTH } from "@/types/quiz-generation";
 import { QuestionDifficulty } from "@/types/quiz";
 import { useQuizSubmission } from "./useQuizSubmission";
 
