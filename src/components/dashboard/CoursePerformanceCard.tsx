@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -52,7 +51,6 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
   const isMobile = useIsMobile();
   const [chartData, setChartData] = useState<any>(null);
   
-  // Calculate stats from performance data
   const stats = useMemo(() => {
     if (!performance.length) return null;
     
@@ -71,18 +69,15 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
     };
   }, [performance]);
 
-  // Prepare chart data
   useEffect(() => {
     if (!performance.length) return;
 
     const labels = performance.map(item => {
-      // Use course title if available, otherwise use course_id
       return item.course_title || `Course ${item.course_id.substring(0, 4)}`;
     });
 
     const data = performance.map(item => item.average_score);
     
-    // Define colors based on score
     const backgroundColor = data.map(score => {
       if (score >= 85) return 'rgba(46, 204, 113, 0.6)';
       if (score >= 70) return 'rgba(52, 152, 219, 0.6)';
@@ -122,7 +117,6 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
     );
   }
 
-  // Define chart options
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -172,8 +166,7 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
     },
     animation: {
       duration: 1500,
-      // Fix: Use a valid easing function from Chart.js instead of a generic string
-      easing: 'easeOutQuart',
+      easing: 'easeOutQuart' as const,
     },
   };
 
