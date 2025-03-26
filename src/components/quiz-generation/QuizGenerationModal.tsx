@@ -17,7 +17,7 @@ interface QuizGenerationModalProps {
 export const QuizGenerationModal = ({ isOpen, progress }: QuizGenerationModalProps) => {
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-md" hideCloseButton={true}>
+      <DialogContent className="sm:max-w-md">
         <div className="space-y-6 py-6">
           <div className="flex flex-col items-center space-y-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
