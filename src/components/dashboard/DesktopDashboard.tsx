@@ -47,7 +47,6 @@ export function DesktopDashboard({
           
           <StudyCalendar 
             sessions={sessions} 
-            courses={courses} 
             onCreateSession={createSession}
           />
         </div>

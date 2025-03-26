@@ -52,7 +52,6 @@ export function MobileDashboard({
         <TabsContent value="calendar" className="space-y-6">
           <StudyCalendar 
             sessions={sessions} 
-            courses={courses} 
             onCreateSession={onCreateSession}
           />
         </TabsContent>
