@@ -11,7 +11,7 @@ const corsHeaders = {
 };
 
 const GENERATION_CONFIG = {
-  model: 'gpt-4o-mini',  // Using the latest supported model
+  model: 'gpt-4o-mini',  // Updated to use a more current model
   temperature: 0.7,
   max_tokens: 2000,
   presence_penalty: 0.6,
@@ -50,7 +50,7 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert educator specializing in creating multiple-choice assessment questions. Return ONLY pure JSON arrays without any markdown formatting or additional text.'
+            content: 'You are an expert educator specializing in creating multiple-choice assessment questions. Return ONLY valid JSON arrays without any markdown formatting or additional text.'
           },
           { role: 'user', content: prompt }
         ],
@@ -73,7 +73,7 @@ serve(async (req) => {
 
     let content_text = data.choices[0].message.content;
     
-    // Clean up the response if it contains markdown formatting
+    // Improved response cleaning
     if (content_text.includes('```')) {
       content_text = content_text.replace(/```json\n|\n```|```/g, '');
     }
@@ -81,17 +81,42 @@ serve(async (req) => {
     console.log('Attempting to parse response');
     
     try {
+      // Sanitize the response to ensure valid JSON
+      content_text = content_text.trim();
+      if (!content_text.startsWith('[')) {
+        // Find the first occurrence of '[' to start the JSON array
+        const startIdx = content_text.indexOf('[');
+        if (startIdx >= 0) {
+          content_text = content_text.substring(startIdx);
+        } else {
+          throw new Error('Response does not contain a JSON array');
+        }
+      }
+      
       const quizQuestions = JSON.parse(content_text);
       console.log('Successfully parsed quiz questions');
 
+      // Validate the questions have all required fields
+      const validatedQuestions = quizQuestions.map(q => ({
+        question: q.question || "",
+        options: q.options || { A: "", B: "", C: "", D: "" },
+        correctAnswer: q.correctAnswer || "",
+        topic: q.topic || "",
+        points: q.points || 1,
+        explanation: q.explanation || "",
+        difficulty: difficulty,
+        conceptTested: q.conceptTested || "",
+        learningObjective: q.learningObjective || ""
+      }));
+
       // Calculate total points
-      const totalPoints = quizQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
+      const totalPoints = validatedQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
       
       // Estimate duration (avg 1 min per question)
-      const estimatedDuration = quizQuestions.length * 1;
+      const estimatedDuration = validatedQuestions.length * 1;
 
       return new Response(JSON.stringify({ 
-        quizQuestions,
+        quizQuestions: validatedQuestions,
         metadata: {
           topics: topics.map(t => t.description),
           difficulty,
@@ -173,6 +198,7 @@ function generateRegularQuizPrompt(
       "learningObjective": "what this tests"
     }
 
+    IMPORTANT: Your response MUST be a valid JSON array with no markdown formatting, comments, or extra text.
     Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions.
     ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
     ${teacherContext?.school ? `for ${teacherContext.school}` : ''}
