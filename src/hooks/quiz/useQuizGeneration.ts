@@ -110,35 +110,52 @@ export const useQuizGeneration = () => {
       }, 2000);
 
       // Submit the quiz data
-      const result = await submitQuizData(
-        processedContent, 
-        topics, 
-        difficulty, 
-        title, 
-        duration, 
-        selectedCourseId
-      );
+      try {
+        const result = await submitQuizData(
+          processedContent, 
+          topics, 
+          difficulty, 
+          title, 
+          duration, 
+          selectedCourseId
+        );
+        
+        clearInterval(progressUpdater);
 
-      clearInterval(progressUpdater);
+        if (result.questions) {
+          // Saving stage
+          setGenerationProgress({
+            stage: 'saving',
+            percent: 85,
+            message: 'Finalizing your quiz...'
+          });
 
-      // Saving stage
-      setGenerationProgress({
-        stage: 'saving',
-        percent: 85,
-        message: 'Finalizing your quiz...'
-      });
+          // Simulate saving delay
+          await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Simulate saving delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+          // Complete
+          setGenerationProgress({
+            stage: 'idle',
+            percent: 100,
+            message: 'Quiz generated successfully!'
+          });
+        } else {
+          throw new Error('Failed to generate quiz questions');
+        }
 
-      // Complete
-      setGenerationProgress({
-        stage: 'idle',
-        percent: 100,
-        message: 'Quiz generated successfully!'
-      });
-
-      return result;
+        return result;
+      } catch (error) {
+        clearInterval(progressUpdater);
+        
+        setGenerationProgress({
+          stage: 'error',
+          percent: 0,
+          message: 'Quiz generation failed',
+          error: error instanceof Error ? error.message : 'Unknown error occurred'
+        });
+        
+        throw error;
+      }
     } catch (error) {
       console.error('Error processing quiz:', error);
       
@@ -149,9 +166,10 @@ export const useQuizGeneration = () => {
       });
       
       setGenerationProgress({
-        stage: 'idle',
+        stage: 'error',
         percent: 0,
-        message: ''
+        message: 'Quiz generation failed',
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       });
       
       return { questions: null, quizId: null };
