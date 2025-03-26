@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuizAPI } from "./useQuizAPI";
 import { useQuizSave } from "./useQuizSave";
 import { toast } from "@/components/ui/use-toast";
-import { Topic, Question, MAX_CONTENT_LENGTH } from "@/types/quiz-generation";
+import { Topic, Question, CONTENT_LIMITS } from "@/types/quiz-generation";
 import { QuestionDifficulty } from "@/types/quiz";
 
 export const useQuizSubmission = () => {
@@ -44,7 +44,7 @@ export const useQuizSubmission = () => {
     setQuizId(null);
 
     try {
-      const trimmedContent = fileContent.slice(0, MAX_CONTENT_LENGTH);
+      const trimmedContent = fileContent.slice(0, CONTENT_LIMITS.MAX_CHARACTERS);
       
       const generatedQuestions = await generateQuiz(trimmedContent, topics, difficulty);
       setQuizQuestions(generatedQuestions);

@@ -34,7 +34,7 @@ export const useQuizFile = () => {
         toast({
           title: "Large file detected",
           description: `Your file is ${content.length.toLocaleString()} characters, which may affect processing time.`,
-          variant: "warning"
+          variant: "default"
         });
       }
     } catch (error) {
