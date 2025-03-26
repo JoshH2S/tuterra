@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { MAX_CONTENT_LENGTH } from "@/types/quiz-generation";
+import { CONTENT_LIMITS } from "@/types/quiz-generation";
 import { processFileInChunks, getFileMetadata } from "@/utils/file-processing";
 
 interface FileProcessingState {
@@ -43,7 +43,7 @@ export const useQuizFileUpload = () => {
       const content = await processFileInChunks(file);
       
       // Track content length within limits
-      setContentLength(Math.min(content.length, MAX_CONTENT_LENGTH));
+      setContentLength(Math.min(content.length, CONTENT_LIMITS.MAX_CHARACTERS));
       
       setProcessingState({
         isProcessing: false,

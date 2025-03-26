@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -16,6 +15,7 @@ import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
 import { useCourseTemplates } from "@/hooks/useCourseTemplates";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
 import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
+import { QuizGenerationModal } from "@/components/quiz-generation/QuizGenerationModal";
 
 const QuizGeneration = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -33,6 +33,8 @@ const QuizGeneration = () => {
     duration,
     selectedCourseId,
     difficulty,
+    generationProgress,
+    handleRetry,
     setTitle,
     handleFileSelect,
     addTopic,
@@ -50,7 +52,6 @@ const QuizGeneration = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(prevStep => prevStep + 1);
     } else if (currentStep === totalSteps) {
-      // Show dialog before generating
       setShowGenerateDialog(true);
     }
   };
@@ -91,7 +92,6 @@ const QuizGeneration = () => {
     }
   };
 
-  // Function to execute after confirmation
   const handleConfirmGenerate = () => {
     handleSubmit();
   };
@@ -184,18 +184,16 @@ const QuizGeneration = () => {
             duration={duration}
           />
           
-          {/* Add disclaimer at the bottom of the page */}
           <div className="mt-8">
             <QuizDisclaimer />
           </div>
         </div>
       </main>
       
-      {/* Generate Quiz Confirmation Dialog */}
-      <GenerateQuizDialog
-        open={showGenerateDialog}
-        onOpenChange={setShowGenerateDialog}
-        onConfirm={handleConfirmGenerate}
+      <QuizGenerationModal
+        isOpen={isProcessing && generationProgress.stage !== 'idle'}
+        progress={generationProgress}
+        onRetry={handleRetry}
       />
     </div>
   );
