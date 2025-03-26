@@ -16,6 +16,7 @@ import { useQuizGeneration } from "@/hooks/quiz/useQuizGeneration";
 import { useCourseTemplates } from "@/hooks/useCourseTemplates";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
 import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
+import { QuizGenerationModal } from "@/components/quiz-generation/QuizGenerationModal";
 
 const QuizGeneration = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -33,6 +34,7 @@ const QuizGeneration = () => {
     duration,
     selectedCourseId,
     difficulty,
+    generationProgress,
     setTitle,
     handleFileSelect,
     addTopic,
@@ -196,6 +198,12 @@ const QuizGeneration = () => {
         open={showGenerateDialog}
         onOpenChange={setShowGenerateDialog}
         onConfirm={handleConfirmGenerate}
+      />
+
+      {/* Generation Progress Modal */}
+      <QuizGenerationModal
+        isOpen={isProcessing && generationProgress.stage !== 'idle'}
+        progress={generationProgress}
       />
     </div>
   );

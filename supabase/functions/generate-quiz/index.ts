@@ -3,11 +3,19 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const MAX_CONTENT_LENGTH = 5000;
+const MAX_CONTENT_LENGTH = 75000;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const GENERATION_CONFIG = {
+  model: 'gpt-4o-mini',  // Using the latest supported model
+  temperature: 0.7,
+  max_tokens: 2000,
+  presence_penalty: 0.6,
+  frequency_penalty: 0.8
 };
 
 serve(async (req) => {
@@ -38,7 +46,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        ...GENERATION_CONFIG,
         messages: [
           { 
             role: 'system', 
