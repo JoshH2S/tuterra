@@ -47,6 +47,8 @@ OUTPUT REQUIREMENTS:
 3. DO NOT use any single quotes ('), triple quotes ("""), or escaped quotes
 4. Ensure ALL required fields are included for EVERY question
 5. DO NOT include any comments in the JSON
+6. DO NOT include any empty or partial questions
+7. DO NOT include escape characters like \\ in your text
 
 QUESTION STRUCTURE:
 - "question": Clear, well-formed question (string)
@@ -126,8 +128,17 @@ Your response must be parseable by JSON.parse() with no modifications.`;
       const quizQuestions = JSON.parse(content_text);
       console.log('Successfully parsed quiz questions');
 
+      // Filter out any malformed or empty questions
+      const filteredQuestions = quizQuestions.filter(q => 
+        q && q.question && q.options && q.correctAnswer && q.topic
+      );
+      
+      if (filteredQuestions.length === 0) {
+        throw new Error('No valid questions were generated');
+      }
+
       // Validate and normalize the questions to ensure all required fields exist
-      const validatedQuestions = validateAndNormalizeQuestions(quizQuestions, difficulty);
+      const validatedQuestions = validateAndNormalizeQuestions(filteredQuestions, difficulty);
 
       // Calculate total points
       const totalPoints = validatedQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
@@ -149,6 +160,33 @@ Your response must be parseable by JSON.parse() with no modifications.`;
     } catch (parseError) {
       console.error('Error parsing quiz questions:', parseError);
       console.error('Raw content that failed to parse:', content_text);
+      
+      // Attempt recovery with more aggressive cleaning
+      try {
+        const recovery = attemptRecovery(content_text);
+        if (recovery.length > 0) {
+          // Calculate total points
+          const totalPoints = recovery.reduce((sum, q) => sum + (q.points || 1), 0);
+          
+          // Estimate duration (avg 1 min per question)
+          const estimatedDuration = recovery.length * 1;
+          
+          return new Response(JSON.stringify({ 
+            quizQuestions: recovery,
+            metadata: {
+              topics: topics.map(t => t.description),
+              difficulty,
+              totalPoints,
+              estimatedDuration
+            }
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      } catch (recoveryError) {
+        console.error('Recovery attempt failed:', recoveryError);
+      }
+      
       throw new Error(`Failed to parse quiz questions: ${parseError.message}`);
     }
   } catch (error) {
@@ -189,33 +227,120 @@ function cleanupJSONContent(content: string): string {
       cleaned = cleaned.substring(0, endIdx + 1);
     }
     
+    // Remove control characters and non-printable characters
+    cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    
     // Remove comments
     cleaned = cleaned.replace(/\/\/.*$/gm, '');
+    
+    // Replace problematic escape sequences
+    cleaned = cleaned.replace(/\\"/g, '"');
+    cleaned = cleaned.replace(/\\'/g, "'");
+    cleaned = cleaned.replace(/\\n/g, " ");
+    cleaned = cleaned.replace(/\\t/g, " ");
     
     // Fix double and triple quotes - major source of errors
     cleaned = cleaned.replace(/"""/g, '"');
     cleaned = cleaned.replace(/""/g, '"');
     
     // Replace single quotes with double quotes for both keys and string values
-    cleaned = cleaned.replace(/'([^']*)'/g, '"$1"'); // Replace all single quotes with double quotes
+    cleaned = cleaned.replace(/'([^']*)'/g, '"$1"');
     
     // Fix unquoted properties in JSON
     cleaned = cleaned.replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:');
     
-    // Fix quotes within text by escaping - handle control characters
-    cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // Remove control characters
+    // Remove spaces from property names
+    cleaned = cleaned.replace(/"([^"]+)"\s+:/g, '"$1":');
     
-    // Ensure proper quotes around string values
-    cleaned = cleaned.replace(/:(\s*)(true|false|null|\d+)([,}\]])/g, ':$1$2$3'); // Keep literals as is
-    cleaned = cleaned.replace(/:(\s*)([^"{}\[\],\s]+)([,}\]])/g, ':"$2"$3'); // Quote non-quoted strings
+    // Ensure strings are properly quoted
+    cleaned = cleaned.replace(/:(\s*)(true|false|null|\d+)([,}\]])/g, ':$1$2$3');
+    cleaned = cleaned.replace(/:(\s*)([^"{}\[\],\s]+)([,}\]])/g, ':"$2"$3');
     
-    // Remove trailing commas in arrays and objects (common syntax error)
+    // Remove trailing commas in arrays and objects
     cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+    
+    // Remove empty objects
+    cleaned = cleaned.replace(/,\s*{\s*}\s*/g, '');
+    cleaned = cleaned.replace(/\[\s*{\s*}\s*,\s*/g, '[');
+    cleaned = cleaned.replace(/\s*,\s*{\s*}\s*\]/g, ']');
     
     return cleaned;
   } catch (error) {
     console.error('Error cleaning JSON content:', error);
     throw error;
+  }
+}
+
+// Last resort recovery attempt for malformed JSON
+function attemptRecovery(content: string): any[] {
+  // Try to extract valid question objects from the string
+  const validObjects: any[] = [];
+  
+  try {
+    // Find anything that looks like a complete question object
+    const regex = /{[^{}]*"question"[^{}]*"options"[^{}]*"correctAnswer"[^{}]*}/g;
+    const matches = content.match(regex);
+    
+    if (matches && matches.length > 0) {
+      for (const match of matches) {
+        try {
+          // Clean up each potential object
+          const cleaned = match
+            .replace(/'/g, '"')
+            .replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:')
+            .replace(/:\s*"([^"]*)\\"/g, ':"$1"')
+            .replace(/,\s*}/g, '}');
+          
+          const obj = JSON.parse(cleaned);
+          if (obj.question && obj.options && obj.correctAnswer) {
+            validObjects.push(obj);
+          }
+        } catch (e) {
+          console.error('Failed to parse potential question:', match);
+        }
+      }
+    }
+    
+    // If we found any valid objects, return them
+    if (validObjects.length > 0) {
+      return validateAndNormalizeQuestions(validObjects, "intermediate");
+    }
+    
+    // If regex approach failed, try parsing each line as a potential object
+    const lines = content.split('\n');
+    let potentialObject = '';
+    let inObject = false;
+    
+    for (const line of lines) {
+      if (line.includes('{') && !inObject) {
+        inObject = true;
+        potentialObject = line;
+      } else if (inObject) {
+        potentialObject += line;
+        if (line.includes('}')) {
+          inObject = false;
+          try {
+            const cleaned = potentialObject
+              .replace(/'/g, '"')
+              .replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:')
+              .replace(/,\s*}/g, '}');
+            
+            const obj = JSON.parse(cleaned);
+            if (obj.question && obj.options && obj.correctAnswer) {
+              validObjects.push(obj);
+            }
+          } catch (e) {
+            // Skip invalid objects
+          }
+          potentialObject = '';
+        }
+      }
+    }
+    
+    return validateAndNormalizeQuestions(validObjects, "intermediate");
+  } catch (error) {
+    console.error('Recovery attempt failed completely:', error);
+    return [];
   }
 }
 
@@ -226,37 +351,67 @@ function validateAndNormalizeQuestions(questions: any[], difficulty: string): an
   }
   
   return questions.map((q, index) => {
-    if (!q.question) {
-      throw new Error(`Question at index ${index} is missing question text`);
+    try {
+      if (!q.question) {
+        throw new Error(`Question at index ${index} is missing question text`);
+      }
+      
+      if (!q.options || typeof q.options !== 'object') {
+        throw new Error(`Question at index ${index} has invalid options`);
+      }
+      
+      const normalizedOptions = {
+        A: q.options.A || '',
+        B: q.options.B || '',
+        C: q.options.C || '',
+        D: q.options.D || ''
+      };
+      
+      if (!q.correctAnswer) {
+        throw new Error(`Question at index ${index} is missing correctAnswer`);
+      }
+      
+      // Coerce string points to number
+      let points = q.points;
+      if (typeof points === 'string') {
+        points = parseInt(points, 10);
+        if (isNaN(points)) points = 1;
+      } else if (typeof points !== 'number') {
+        points = 1;
+      }
+      
+      // Normalize and clean up string fields
+      return {
+        question: String(q.question).replace(/^["']|["']$/g, ''),
+        options: normalizedOptions,
+        correctAnswer: String(q.correctAnswer).replace(/^["']|["']$/g, ''),
+        topic: String(q.topic || '').replace(/^["']|["']$/g, ''),
+        points: points,
+        explanation: String(q.explanation || '').replace(/^["']|["']$/g, ''),
+        difficulty: difficulty,
+        conceptTested: String(q.conceptTested || '').replace(/^["']|["']$/g, ''),
+        learningObjective: String(q.learningObjective || '').replace(/^["']|["']$/g, '')
+      };
+    } catch (error) {
+      console.error(`Error processing question at index ${index}:`, error);
+      // Return a default question if individual validation fails
+      return {
+        question: `[MALFORMED QUESTION ${index + 1}] Please try again`,
+        options: {
+          A: "Option A",
+          B: "Option B",
+          C: "Option C",
+          D: "Option D"
+        },
+        correctAnswer: "A",
+        topic: "Error Recovery",
+        points: 1,
+        explanation: "This is a replacement for a malformed question. Please regenerate the quiz.",
+        difficulty: difficulty,
+        conceptTested: "Error Handling",
+        learningObjective: "Understand error recovery mechanisms"
+      };
     }
-    
-    if (!q.options || typeof q.options !== 'object') {
-      throw new Error(`Question at index ${index} has invalid options`);
-    }
-    
-    const normalizedOptions = {
-      A: q.options.A || '',
-      B: q.options.B || '',
-      C: q.options.C || '',
-      D: q.options.D || ''
-    };
-    
-    if (!q.correctAnswer) {
-      throw new Error(`Question at index ${index} is missing correctAnswer`);
-    }
-    
-    // Normalize and clean up string fields
-    return {
-      question: String(q.question).replace(/^["']|["']$/g, ''),
-      options: normalizedOptions,
-      correctAnswer: String(q.correctAnswer).replace(/^["']|["']$/g, ''),
-      topic: String(q.topic || '').replace(/^["']|["']$/g, ''),
-      points: Number(q.points) || 1,
-      explanation: String(q.explanation || '').replace(/^["']|["']$/g, ''),
-      difficulty: difficulty,
-      conceptTested: String(q.conceptTested || '').replace(/^["']|["']$/g, ''),
-      learningObjective: String(q.learningObjective || '').replace(/^["']|["']$/g, '')
-    };
   });
 }
 

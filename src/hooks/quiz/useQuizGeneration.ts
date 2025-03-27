@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -113,7 +112,7 @@ export const useQuizGeneration = () => {
         setGenerationProgress({
           stage: 'error',
           percent: 100,
-          message: 'Failed to generate quiz'
+          message: `Failed to generate quiz: ${result.error.message || 'Unknown error'}`
         });
         return;
       }
