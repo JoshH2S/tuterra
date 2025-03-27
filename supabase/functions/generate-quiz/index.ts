@@ -11,11 +11,11 @@ const corsHeaders = {
 };
 
 const GENERATION_CONFIG = {
-  model: 'gpt-4o-mini',  // Using a more reliable model
-  temperature: 0.6,      // Lower temperature for more consistent output
+  model: 'gpt-4',  // Updated from 'gpt-4o-mini'
+  temperature: 0.3,  // Lowered for more consistent JSON output
   max_tokens: 2000,
-  presence_penalty: 0.6,
-  frequency_penalty: 0.8
+  presence_penalty: 0.0,  // Removed penalties that were causing formatting issues
+  frequency_penalty: 0.0
 };
 
 serve(async (req) => {
@@ -26,8 +26,13 @@ serve(async (req) => {
   try {
     const { content, topics, difficulty, teacherName, school } = await req.json();
 
-    if (!content || !topics) {
-      throw new Error('Missing required parameters: content and topics');
+    // Validate input
+    if (!content || typeof content !== 'string') {
+      throw new Error('Invalid content format');
+    }
+
+    if (!Array.isArray(topics) || topics.length === 0) {
+      throw new Error('Invalid topics format');
     }
 
     const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
@@ -49,6 +54,7 @@ OUTPUT REQUIREMENTS:
 5. DO NOT include any comments in the JSON
 6. DO NOT include any empty or partial questions
 7. DO NOT include escape characters like \\ in your text
+8. Points value MUST be a number, not a string
 
 QUESTION STRUCTURE:
 - "question": Clear, well-formed question (string)
@@ -114,6 +120,7 @@ Your response must be parseable by JSON.parse() with no modifications.`;
       throw new Error('Invalid response format from OpenAI API');
     }
 
+    console.log('Raw OpenAI response:', data.choices[0].message.content);
     let content_text = data.choices[0].message.content;
     
     console.log('Attempting to parse response');
@@ -125,7 +132,15 @@ Your response must be parseable by JSON.parse() with no modifications.`;
       // Log the cleaned content for debugging
       console.log('Cleaned JSON content:', content_text);
       
-      const quizQuestions = JSON.parse(content_text);
+      let quizQuestions;
+      try {
+        quizQuestions = JSON.parse(content_text);
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        console.error('Cleaned Content:', content_text);
+        throw new Error(`JSON parsing failed: ${parseError.message}`);
+      }
+      
       console.log('Successfully parsed quiz questions');
 
       // Filter out any malformed or empty questions
@@ -187,14 +202,24 @@ Your response must be parseable by JSON.parse() with no modifications.`;
         console.error('Recovery attempt failed:', recoveryError);
       }
       
-      throw new Error(`Failed to parse quiz questions: ${parseError.message}`);
+      // Provide detailed error information
+      return new Response(
+        JSON.stringify({ 
+          error: `Failed to parse quiz questions: ${parseError.message}`,
+          details: parseError.stack
+        }), 
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
   } catch (error) {
-    console.error('Error in generate-quiz function:', error);
+    console.error('Full error details:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message || 'An unexpected error occurred',
-        details: error.toString()
+        details: error.stack
       }), 
       {
         status: 500,
@@ -207,66 +232,38 @@ Your response must be parseable by JSON.parse() with no modifications.`;
 // Enhanced JSON cleanup function to handle various formatting issues
 function cleanupJSONContent(content: string): string {
   try {
-    // Find the actual JSON array
     let cleaned = content;
     
-    // Remove any markdown code blocks
+    // Remove markdown and find JSON array
     cleaned = cleaned.replace(/```json\n|\n```|```/g, '');
+    cleaned = cleaned.substring(cleaned.indexOf('['), cleaned.lastIndexOf(']') + 1);
     
-    // If content doesn't start with '[', try to find it
-    if (!cleaned.trim().startsWith('[')) {
-      const startIdx = cleaned.indexOf('[');
-      if (startIdx >= 0) {
-        cleaned = cleaned.substring(startIdx);
-      }
-    }
+    // Fix quotes - more careful replacement
+    cleaned = cleaned.replace(/=>"/g, ':"');  // Fix arrow syntax
+    cleaned = cleaned.replace(/(\w)"(\w)/g, '$1\\"$2');  // Escape internal quotes
+    cleaned = cleaned.replace(/([{,]\s*)(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '$1"$3":');  // Fix property names
     
-    // Find the end of the array
-    const endIdx = cleaned.lastIndexOf(']');
-    if (endIdx >= 0 && endIdx < cleaned.length - 1) {
-      cleaned = cleaned.substring(0, endIdx + 1);
-    }
-    
-    // Remove control characters and non-printable characters
+    // Remove problematic characters
     cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    cleaned = cleaned.replace(/\\n|\\r|\\t/g, ' ');
     
-    // Remove comments
-    cleaned = cleaned.replace(/\/\/.*$/gm, '');
+    // Fix common JSON errors
+    cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');  // Remove trailing commas
+    cleaned = cleaned.replace(/\s+/g, ' ');  // Normalize whitespace
+    cleaned = cleaned.replace(/"points"\s*:\s*"(\d+)"/g, '"points": $1');  // Convert string points to numbers
     
-    // Replace problematic escape sequences
-    cleaned = cleaned.replace(/\\"/g, '"');
-    cleaned = cleaned.replace(/\\'/g, "'");
-    cleaned = cleaned.replace(/\\n/g, " ");
-    cleaned = cleaned.replace(/\\t/g, " ");
-    
-    // Fix double and triple quotes - major source of errors
-    cleaned = cleaned.replace(/"""/g, '"');
-    cleaned = cleaned.replace(/""/g, '"');
-    
-    // Replace single quotes with double quotes for both keys and string values
-    cleaned = cleaned.replace(/'([^']*)'/g, '"$1"');
-    
-    // Fix unquoted properties in JSON
-    cleaned = cleaned.replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:');
-    
-    // Remove spaces from property names
-    cleaned = cleaned.replace(/"([^"]+)"\s+:/g, '"$1":');
-    
-    // Ensure strings are properly quoted
-    cleaned = cleaned.replace(/:(\s*)(true|false|null|\d+)([,}\]])/g, ':$1$2$3');
-    cleaned = cleaned.replace(/:(\s*)([^"{}\[\],\s]+)([,}\]])/g, ':"$2"$3');
-    
-    // Remove trailing commas in arrays and objects
-    cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
-    
-    // Remove empty objects
-    cleaned = cleaned.replace(/,\s*{\s*}\s*/g, '');
-    cleaned = cleaned.replace(/\[\s*{\s*}\s*,\s*/g, '[');
-    cleaned = cleaned.replace(/\s*,\s*{\s*}\s*\]/g, ']');
-    
-    return cleaned;
+    // Validate JSON structure
+    try {
+      JSON.parse(cleaned);
+      return cleaned;
+    } catch (parseError) {
+      // More aggressive cleaning if basic cleaning fails
+      cleaned = cleaned.replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:'); // Fix unquoted property names
+      cleaned = cleaned.replace(/:\\?['"]?([^"'{}[\],\s]+)['"]?([,}])/g, ':"$1"$2'); // Fix unquoted string values
+      return cleaned;
+    }
   } catch (error) {
-    console.error('Error cleaning JSON content:', error);
+    console.error('Error in cleanupJSONContent:', error);
     throw error;
   }
 }
