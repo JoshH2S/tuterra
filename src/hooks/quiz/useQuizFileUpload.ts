@@ -60,6 +60,31 @@ export const useQuizFileUpload = () => {
     }
   };
 
+  // Add the missing processFile method
+  const processFile = async () => {
+    if (!selectedFile) {
+      return null;
+    }
+    
+    try {
+      const content = await processFileInChunks(selectedFile);
+      
+      return {
+        content,
+        wasContentTrimmed: content.length > CONTENT_LIMITS.MAX_CHARACTERS,
+        originalLength: content.length
+      };
+    } catch (error) {
+      console.error("Error processing file:", error);
+      setProcessingState({
+        isProcessing: false,
+        progress: 0,
+        error: error instanceof Error ? error.message : "Failed to process file"
+      });
+      return null;
+    }
+  };
+
   return {
     selectedFile,
     contentLength,
@@ -67,6 +92,7 @@ export const useQuizFileUpload = () => {
     fileMetadata: selectedFile ? getFileMetadata(selectedFile) : null,
     isProcessing: processingState.isProcessing,
     processingProgress: processingState.progress,
-    processingError: processingState.error
+    processingError: processingState.error,
+    processFile // Export the new method
   };
 };

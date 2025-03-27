@@ -14,12 +14,16 @@ interface GenerateQuizDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  topicsCount?: number;
+  questionsCount?: number;
 }
 
 export function GenerateQuizDialog({
   open,
   onOpenChange,
   onConfirm,
+  topicsCount = 0,
+  questionsCount = 0,
 }: GenerateQuizDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,10 +34,18 @@ export function GenerateQuizDialog({
             Important Notice
           </DialogTitle>
           <DialogDescription className="pt-2">
-            Our platform utilizes AI technology to generate quiz questions and answers. 
-            While we aim to provide accurate and helpful content, AI systems can sometimes 
-            produce errors or inaccuracies. We encourage users to verify information 
-            independently and consult trusted sources where necessary.
+            {topicsCount > 0 && questionsCount > 0 ? (
+              <>
+                You are about to generate a quiz with {questionsCount} questions 
+                on {topicsCount} {topicsCount === 1 ? 'topic' : 'topics'}.
+              </>
+            ) : null}
+            <div className="mt-2">
+              Our platform utilizes AI technology to generate quiz questions and answers. 
+              While we aim to provide accurate and helpful content, AI systems can sometimes 
+              produce errors or inaccuracies. We encourage users to verify information 
+              independently and consult trusted sources where necessary.
+            </div>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">

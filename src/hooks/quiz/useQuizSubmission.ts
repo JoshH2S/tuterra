@@ -78,7 +78,14 @@ export const useQuizSubmission = () => {
       console.error('Error processing quiz:', err);
       
       const errorMessage = err instanceof Error ? err.message : "Failed to generate quiz";
-      const errorDetails = err instanceof Error && err.cause ? String(err.cause) : undefined;
+      let errorDetails: string | undefined = undefined;
+      
+      // Modified to avoid using the 'cause' property
+      if (err instanceof Error) {
+        // Check if error has additional details as a property
+        const anyErr = err as any;
+        errorDetails = anyErr.details || anyErr.errorDetails || JSON.stringify(err);
+      }
       
       const errorObj = { 
         message: errorMessage, 

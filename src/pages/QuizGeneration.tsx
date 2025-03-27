@@ -209,8 +209,8 @@ const QuizGeneration = () => {
       />
       
       <GenerateQuizDialog 
-        isOpen={showGenerateDialog}
-        onClose={() => setShowGenerateDialog(false)}
+        open={showGenerateDialog}
+        onOpenChange={setShowGenerateDialog}
         onConfirm={handleConfirmGenerate}
         topicsCount={topics.filter(t => !!t.description).length}
         questionsCount={topics.reduce((sum, t) => sum + t.numQuestions, 0)}
