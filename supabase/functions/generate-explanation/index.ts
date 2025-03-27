@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -66,7 +67,7 @@ serve(async (req) => {
     console.log("Generating explanation for:", { question, userAnswer, correctAnswer, isCorrect, topic, tier });
 
     // Determine model and tokens based on tier
-    const model = tier === 'premium' ? 'gpt-4o' : tier === 'pro' ? 'gpt-4o-mini' : 'gpt-3.5-turbo';
+    const model = tier === 'premium' ? 'gpt-3.5-turbo' : tier === 'pro' ? 'gpt-3.5-turbo' : 'gpt-3.5-turbo';  // Updated models for all tiers
     const maxTokens = tier === 'premium' ? 200 : tier === 'pro' ? 150 : 100;
 
     // Create a prompt based on the parameters and tier

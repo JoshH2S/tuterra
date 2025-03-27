@@ -11,7 +11,7 @@ const corsHeaders = {
 };
 
 const GENERATION_CONFIG = {
-  model: 'gpt-4',  // Updated from 'gpt-4o-mini'
+  model: 'gpt-3.5-turbo',  // Updated from 'gpt-4' to 'gpt-3.5-turbo'
   temperature: 0.3,  // Lowered for more consistent JSON output
   max_tokens: 2000,
   presence_penalty: 0.0,  // Removed penalties that were causing formatting issues

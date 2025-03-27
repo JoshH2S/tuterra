@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,11 +16,11 @@ export interface AssessmentParams {
 const determineModelType = (tier: string = 'free') => {
   switch (tier) {
     case 'premium':
-      return 'gpt-4o';
+      return 'gpt-3.5-turbo';
     case 'pro':
-      return 'gpt-4o';
+      return 'gpt-3.5-turbo';
     default:
-      return 'gpt-3.5-turbo-16k';
+      return 'gpt-3.5-turbo';
   }
 };
 
