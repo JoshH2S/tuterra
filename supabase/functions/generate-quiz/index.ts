@@ -10,40 +10,93 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const LIMITS = {
+  MAX_FILE_SIZE: 75000, // Keep original max file size
+  MAX_CHUNK_SIZE: 12000, // Size for each processing chunk
+  MAX_TOKENS_PER_REQUEST: 14000, // Safe limit for GPT-3.5-turbo
+};
+
 const GENERATION_CONFIG = {
-  model: 'gpt-3.5-turbo',  // Updated from 'gpt-4' to 'gpt-3.5-turbo'
+  model: 'gpt-3.5-turbo',
   temperature: 0.3,  // Lowered for more consistent JSON output
   max_tokens: 2000,
-  presence_penalty: 0.0,  // Removed penalties that were causing formatting issues
+  presence_penalty: 0.0,
   frequency_penalty: 0.0
 };
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+interface ContentChunk {
+  content: string;
+  topics: Array<{ description: string; numQuestions: number }>;
+  startIndex: number;
+}
+
+function splitContentIntoChunks(content: string, topics: any[]): ContentChunk[] {
+  const chunks: ContentChunk[] = [];
+  let currentIndex = 0;
+
+  while (currentIndex < content.length) {
+    // Calculate remaining questions based on content size
+    const remainingContent = content.length - currentIndex;
+    const questionsPerChunk = Math.ceil(
+      (remainingContent / content.length) * topics.reduce((sum, t) => sum + t.numQuestions, 0)
+    );
+
+    // Distribute questions across topics for this chunk
+    const chunkTopics = topics.map(topic => ({
+      description: topic.description,
+      numQuestions: Math.ceil((topic.numQuestions / topics.reduce((sum, t) => sum + t.numQuestions, 0)) * questionsPerChunk)
+    }));
+
+    // Get chunk content
+    let chunkContent = content.slice(currentIndex, currentIndex + LIMITS.MAX_CHUNK_SIZE);
+    // Ensure chunk ends at a sentence
+    const lastSentenceEnd = chunkContent.match(/[.!?][^.!?]*$/);
+    if (lastSentenceEnd) {
+      chunkContent = chunkContent.slice(0, lastSentenceEnd.index + 1);
+    }
+
+    chunks.push({
+      content: chunkContent,
+      topics: chunkTopics,
+      startIndex: currentIndex
+    });
+
+    currentIndex += chunkContent.length;
   }
 
-  try {
-    const { content, topics, difficulty, teacherName, school } = await req.json();
+  return chunks;
+}
 
-    // Validate input
-    if (!content || typeof content !== 'string') {
-      throw new Error('Invalid content format');
-    }
+function generatePromptForChunk(chunk: ContentChunk, difficulty: string) {
+  return `
+Generate ${chunk.topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions from:
 
-    if (!Array.isArray(topics) || topics.length === 0) {
-      throw new Error('Invalid topics format');
-    }
+${chunk.content}
 
-    const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
-    console.log('Processing request with content length:', trimmedContent.length);
-    console.log('Number of topics:', topics.length);
+Topics: ${chunk.topics.map(t => `${t.description} (${t.numQuestions} questions)`).join(', ')}
+Difficulty: ${difficulty}
 
-    const teacherContext = { name: teacherName, school: school };
-    const prompt = generateRegularQuizPrompt(topics, difficulty, trimmedContent, teacherContext);
+Return valid JSON array with required fields:
+{
+  "question": "text",
+  "options": {"A": "text", "B": "text", "C": "text", "D": "text"},
+  "correctAnswer": "A|B|C|D",
+  "topic": "topic name",
+  "points": number,
+  "explanation": "text",
+  "difficulty": "${difficulty}",
+  "conceptTested": "text",
+  "learningObjective": "text"
+}`;
+}
 
-    // System prompt specifically designed for reliable JSON output
-    const systemPrompt = `
+async function generateQuizFromChunks(chunks: ContentChunk[], difficulty: string, teacherContext?: { name?: string; school?: string }) {
+  const allQuestions = [];
+  let errorOccurred = false;
+  let errorDetails = null;
+
+  // System prompt specifically designed for reliable JSON output
+  const systemPrompt = `
 You are an expert quiz generator. Create well-structured multiple-choice questions from provided content.
 
 OUTPUT REQUIREMENTS:
@@ -67,155 +120,130 @@ QUESTION STRUCTURE:
 - "conceptTested": Main concept being tested (string)
 - "learningObjective": What this question assesses (string)
 
-Example of CORRECTLY formatted response:
-[
-  {
-    "question": "What is the capital of France?",
-    "options": {
-      "A": "Paris",
-      "B": "London",
-      "C": "Berlin",
-      "D": "Madrid"
-    },
-    "correctAnswer": "A",
-    "topic": "Geography",
-    "points": 1,
-    "explanation": "Paris is the capital city of France.",
-    "difficulty": "beginner",
-    "conceptTested": "European capitals",
-    "learningObjective": "Identify major European capital cities"
-  }
-]
-
 Your response must be parseable by JSON.parse() with no modifications.`;
 
-    console.log('Sending request to OpenAI API');
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...GENERATION_CONFIG,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
-    }
-
-    const data = await response.json();
-    console.log('Received response from OpenAI API');
-
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Unexpected API response structure:', data);
-      throw new Error('Invalid response format from OpenAI API');
-    }
-
-    console.log('Raw OpenAI response:', data.choices[0].message.content);
-    let content_text = data.choices[0].message.content;
-    
-    console.log('Attempting to parse response');
-    
+  for (const chunk of chunks) {
     try {
-      // Apply comprehensive JSON cleaning and correction
-      content_text = cleanupJSONContent(content_text);
+      console.log(`Processing chunk starting at index ${chunk.startIndex} with topics: ${chunk.topics.map(t => t.description).join(', ')}`);
       
-      // Log the cleaned content for debugging
-      console.log('Cleaned JSON content:', content_text);
-      
-      let quizQuestions;
-      try {
-        quizQuestions = JSON.parse(content_text);
-      } catch (parseError) {
-        console.error('JSON Parse Error:', parseError);
-        console.error('Cleaned Content:', content_text);
-        throw new Error(`JSON parsing failed: ${parseError.message}`);
-      }
-      
-      console.log('Successfully parsed quiz questions');
-
-      // Filter out any malformed or empty questions
-      const filteredQuestions = quizQuestions.filter(q => 
-        q && q.question && q.options && q.correctAnswer && q.topic
-      );
-      
-      if (filteredQuestions.length === 0) {
-        throw new Error('No valid questions were generated');
-      }
-
-      // Validate and normalize the questions to ensure all required fields exist
-      const validatedQuestions = validateAndNormalizeQuestions(filteredQuestions, difficulty);
-
-      // Calculate total points
-      const totalPoints = validatedQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
-      
-      // Estimate duration (avg 1 min per question)
-      const estimatedDuration = validatedQuestions.length * 1;
-
-      return new Response(JSON.stringify({ 
-        quizQuestions: validatedQuestions,
-        metadata: {
-          topics: topics.map(t => t.description),
-          difficulty,
-          totalPoints,
-          estimatedDuration
-        }
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...GENERATION_CONFIG,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: generatePromptForChunk(chunk, difficulty) }
+          ],
+        }),
       });
-    } catch (parseError) {
-      console.error('Error parsing quiz questions:', parseError);
-      console.error('Raw content that failed to parse:', content_text);
-      
-      // Attempt recovery with more aggressive cleaning
-      try {
-        const recovery = attemptRecovery(content_text);
-        if (recovery.length > 0) {
-          // Calculate total points
-          const totalPoints = recovery.reduce((sum, q) => sum + (q.points || 1), 0);
-          
-          // Estimate duration (avg 1 min per question)
-          const estimatedDuration = recovery.length * 1;
-          
-          return new Response(JSON.stringify({ 
-            quizQuestions: recovery,
-            metadata: {
-              topics: topics.map(t => t.description),
-              difficulty,
-              totalPoints,
-              estimatedDuration
-            }
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-      } catch (recoveryError) {
-        console.error('Recovery attempt failed:', recoveryError);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`Error generating questions for chunk at index ${chunk.startIndex}:`, errorData);
+        errorOccurred = true;
+        errorDetails = errorData;
+        continue; // Try the next chunk
       }
-      
-      // Provide detailed error information
-      return new Response(
-        JSON.stringify({ 
-          error: `Failed to parse quiz questions: ${parseError.message}`,
-          details: parseError.stack
-        }), 
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+
+      const data = await response.json();
+      console.log(`Successfully received response for chunk at index ${chunk.startIndex}`);
+
+      try {
+        // Apply comprehensive JSON cleaning and correction
+        const content_text = cleanupJSONContent(data.choices[0].message.content);
+        
+        // Parse the cleaned content
+        const chunkQuestions = JSON.parse(content_text);
+        
+        // Validate and add chunk questions to all questions
+        if (Array.isArray(chunkQuestions) && chunkQuestions.length > 0) {
+          allQuestions.push(...chunkQuestions);
         }
-      );
+      } catch (parseError) {
+        console.error(`JSON Parse Error for chunk at index ${chunk.startIndex}:`, parseError);
+        console.error('Raw content:', data.choices[0].message.content);
+        // Continue processing other chunks
+      }
+
+    } catch (error) {
+      console.error(`Error processing chunk at index ${chunk.startIndex}:`, error);
+      errorOccurred = true;
+      errorDetails = error;
+      // Continue processing other chunks
     }
+  }
+
+  // Return whatever questions we were able to generate, or throw error if none
+  if (allQuestions.length === 0 && errorOccurred) {
+    throw new Error(`Failed to generate any valid questions: ${JSON.stringify(errorDetails)}`);
+  }
+
+  return allQuestions;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { content, topics, difficulty, teacherName, school } = await req.json();
+
+    // Validate input
+    if (!content || typeof content !== 'string') {
+      throw new Error('Invalid content format');
+    }
+
+    if (!Array.isArray(topics) || topics.length === 0) {
+      throw new Error('Invalid topics format');
+    }
+
+    if (content.length > LIMITS.MAX_FILE_SIZE) {
+      throw new Error(`Content exceeds maximum length of ${LIMITS.MAX_FILE_SIZE} characters`);
+    }
+    
+    const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH);
+    console.log('Processing request with content length:', trimmedContent.length);
+    console.log('Number of topics:', topics.length);
+
+    // Split content into manageable chunks
+    const chunks = splitContentIntoChunks(trimmedContent, topics);
+    console.log(`Content split into ${chunks.length} chunks`);
+    
+    const teacherContext = { name: teacherName, school: school };
+    
+    // Generate questions from each chunk
+    const quizQuestions = await generateQuizFromChunks(chunks, difficulty, teacherContext);
+    console.log(`Generated a total of ${quizQuestions.length} questions`);
+
+    // Validate and normalize the questions to ensure all required fields exist
+    const validatedQuestions = validateAndNormalizeQuestions(quizQuestions, difficulty);
+    console.log(`Validated ${validatedQuestions.length} questions`);
+
+    // Calculate total points
+    const totalPoints = validatedQuestions.reduce((sum, q) => sum + (q.points || 1), 0);
+    
+    // Estimate duration (avg 1 min per question)
+    const estimatedDuration = validatedQuestions.length * 1;
+
+    return new Response(JSON.stringify({ 
+      quizQuestions: validatedQuestions,
+      metadata: {
+        topics: topics.map(t => t.description),
+        difficulty,
+        totalPoints,
+        estimatedDuration
+      }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('Full error details:', error);
+    console.error('Error processing quiz:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message || 'An unexpected error occurred',
@@ -265,79 +293,6 @@ function cleanupJSONContent(content: string): string {
   } catch (error) {
     console.error('Error in cleanupJSONContent:', error);
     throw error;
-  }
-}
-
-// Last resort recovery attempt for malformed JSON
-function attemptRecovery(content: string): any[] {
-  // Try to extract valid question objects from the string
-  const validObjects: any[] = [];
-  
-  try {
-    // Find anything that looks like a complete question object
-    const regex = /{[^{}]*"question"[^{}]*"options"[^{}]*"correctAnswer"[^{}]*}/g;
-    const matches = content.match(regex);
-    
-    if (matches && matches.length > 0) {
-      for (const match of matches) {
-        try {
-          // Clean up each potential object
-          const cleaned = match
-            .replace(/'/g, '"')
-            .replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:')
-            .replace(/:\s*"([^"]*)\\"/g, ':"$1"')
-            .replace(/,\s*}/g, '}');
-          
-          const obj = JSON.parse(cleaned);
-          if (obj.question && obj.options && obj.correctAnswer) {
-            validObjects.push(obj);
-          }
-        } catch (e) {
-          console.error('Failed to parse potential question:', match);
-        }
-      }
-    }
-    
-    // If we found any valid objects, return them
-    if (validObjects.length > 0) {
-      return validateAndNormalizeQuestions(validObjects, "intermediate");
-    }
-    
-    // If regex approach failed, try parsing each line as a potential object
-    const lines = content.split('\n');
-    let potentialObject = '';
-    let inObject = false;
-    
-    for (const line of lines) {
-      if (line.includes('{') && !inObject) {
-        inObject = true;
-        potentialObject = line;
-      } else if (inObject) {
-        potentialObject += line;
-        if (line.includes('}')) {
-          inObject = false;
-          try {
-            const cleaned = potentialObject
-              .replace(/'/g, '"')
-              .replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:')
-              .replace(/,\s*}/g, '}');
-            
-            const obj = JSON.parse(cleaned);
-            if (obj.question && obj.options && obj.correctAnswer) {
-              validObjects.push(obj);
-            }
-          } catch (e) {
-            // Skip invalid objects
-          }
-          potentialObject = '';
-        }
-      }
-    }
-    
-    return validateAndNormalizeQuestions(validObjects, "intermediate");
-  } catch (error) {
-    console.error('Recovery attempt failed completely:', error);
-    return [];
   }
 }
 
@@ -410,53 +365,4 @@ function validateAndNormalizeQuestions(questions: any[], difficulty: string): an
       };
     }
   });
-}
-
-// Helper function to generate the regular quiz prompt
-function generateRegularQuizPrompt(
-  topics: Array<{ description: string, numQuestions: number }>,
-  difficulty: string,
-  contentContext: string,
-  teacherContext?: { name?: string; school?: string }
-) {
-  // Calculate total questions to generate
-  const totalQuestions = topics.reduce((sum, t) => sum + t.numQuestions, 0);
-  
-  return `
-    Generate a quiz with ${totalQuestions} multiple-choice questions based on this content:
-    
-    ${contentContext}
-    
-    Focus on these topics: ${topics.map(t => t.description).join(", ")}
-
-    QUESTION DESIGN:
-    1. Create questions that:
-       - Test conceptual understanding at the ${difficulty} level
-       - Apply knowledge to scenarios
-       - Build from simpler to complex concepts
-       - Are clearly worded with one unambiguous correct answer
-
-    2. Include questions that test:
-       - Concept application
-       - Problem-solving
-       - Analytical thinking
-       - Term/concept relationships
-
-    3. For each question, provide:
-       - Clear, specific question text
-       - Four options (A, B, C, D) with only one correct answer
-       - Plausible distractors that test common misconceptions
-       - A brief explanation for the correct answer
-       - Topic identification
-       - Point value (1-5 based on difficulty)
-       - The concept being tested
-       - Learning objective it addresses
-
-    DISTRIBUTION:
-    Generate exactly this many questions per topic:
-    ${topics.map(t => `- ${t.description}: ${t.numQuestions} questions`).join('\n')}
-    
-    ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
-    ${teacherContext?.school ? `for ${teacherContext.school}` : ''}
-  `;
 }
