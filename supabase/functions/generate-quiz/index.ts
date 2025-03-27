@@ -11,8 +11,8 @@ const corsHeaders = {
 };
 
 const GENERATION_CONFIG = {
-  model: 'gpt-4o-mini',  // Updated to use a more current model
-  temperature: 0.7,
+  model: 'gpt-4o-mini',  // Using a more reliable model
+  temperature: 0.6,      // Lower temperature for more consistent output
   max_tokens: 2000,
   presence_penalty: 0.6,
   frequency_penalty: 0.8
@@ -37,6 +37,50 @@ serve(async (req) => {
     const teacherContext = { name: teacherName, school: school };
     const prompt = generateRegularQuizPrompt(topics, difficulty, trimmedContent, teacherContext);
 
+    // System prompt specifically designed for reliable JSON output
+    const systemPrompt = `
+You are an expert quiz generator. Create well-structured multiple-choice questions from provided content.
+
+OUTPUT REQUIREMENTS:
+1. Return VALID JSON ARRAY without any markdown formatting or commentary
+2. Use ONLY standard double quotes (") for ALL string values and keys
+3. DO NOT use any single quotes ('), triple quotes ("""), or escaped quotes
+4. Ensure ALL required fields are included for EVERY question
+5. DO NOT include any comments in the JSON
+
+QUESTION STRUCTURE:
+- "question": Clear, well-formed question (string)
+- "options": Object with exactly 4 options labeled A, B, C, D (all strings)
+- "correctAnswer": Letter of correct answer (string: "A", "B", "C", or "D")
+- "topic": Name of topic this question relates to (string)
+- "points": Point value (number, not string)
+- "explanation": Brief explanation of answer (string)
+- "difficulty": Level of difficulty (string)
+- "conceptTested": Main concept being tested (string)
+- "learningObjective": What this question assesses (string)
+
+Example of CORRECTLY formatted response:
+[
+  {
+    "question": "What is the capital of France?",
+    "options": {
+      "A": "Paris",
+      "B": "London",
+      "C": "Berlin",
+      "D": "Madrid"
+    },
+    "correctAnswer": "A",
+    "topic": "Geography",
+    "points": 1,
+    "explanation": "Paris is the capital city of France.",
+    "difficulty": "beginner",
+    "conceptTested": "European capitals",
+    "learningObjective": "Identify major European capital cities"
+  }
+]
+
+Your response must be parseable by JSON.parse() with no modifications.`;
+
     console.log('Sending request to OpenAI API');
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -48,10 +92,7 @@ serve(async (req) => {
       body: JSON.stringify({
         ...GENERATION_CONFIG,
         messages: [
-          { 
-            role: 'system', 
-            content: 'You are an expert educator specializing in creating multiple-choice assessment questions. Return ONLY valid JSON arrays without any markdown formatting or additional text. Use ONLY double quotes (not single quotes) for all keys and string values. Do not use triple quotes or escaped quotes.'
-          },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
       }),
@@ -78,6 +119,9 @@ serve(async (req) => {
     try {
       // Apply comprehensive JSON cleaning and correction
       content_text = cleanupJSONContent(content_text);
+      
+      // Log the cleaned content for debugging
+      console.log('Cleaned JSON content:', content_text);
       
       const quizQuestions = JSON.parse(content_text);
       console.log('Successfully parsed quiz questions');
@@ -122,47 +166,57 @@ serve(async (req) => {
   }
 });
 
-// Clean up and fix common JSON issues in AI responses
+// Enhanced JSON cleanup function to handle various formatting issues
 function cleanupJSONContent(content: string): string {
-  // Remove any markdown code blocks
-  let cleaned = content.replace(/```json\n|\n```|```/g, '');
-  
-  // Find the actual JSON array
-  if (!cleaned.trim().startsWith('[')) {
-    const startIdx = cleaned.indexOf('[');
-    if (startIdx >= 0) {
-      cleaned = cleaned.substring(startIdx);
+  try {
+    // Find the actual JSON array
+    let cleaned = content;
+    
+    // Remove any markdown code blocks
+    cleaned = cleaned.replace(/```json\n|\n```|```/g, '');
+    
+    // If content doesn't start with '[', try to find it
+    if (!cleaned.trim().startsWith('[')) {
+      const startIdx = cleaned.indexOf('[');
+      if (startIdx >= 0) {
+        cleaned = cleaned.substring(startIdx);
+      }
     }
+    
+    // Find the end of the array
+    const endIdx = cleaned.lastIndexOf(']');
+    if (endIdx >= 0 && endIdx < cleaned.length - 1) {
+      cleaned = cleaned.substring(0, endIdx + 1);
+    }
+    
+    // Remove comments
+    cleaned = cleaned.replace(/\/\/.*$/gm, '');
+    
+    // Fix double and triple quotes - major source of errors
+    cleaned = cleaned.replace(/"""/g, '"');
+    cleaned = cleaned.replace(/""/g, '"');
+    
+    // Replace single quotes with double quotes for both keys and string values
+    cleaned = cleaned.replace(/'([^']*)'/g, '"$1"'); // Replace all single quotes with double quotes
+    
+    // Fix unquoted properties in JSON
+    cleaned = cleaned.replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:');
+    
+    // Fix quotes within text by escaping - handle control characters
+    cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // Remove control characters
+    
+    // Ensure proper quotes around string values
+    cleaned = cleaned.replace(/:(\s*)(true|false|null|\d+)([,}\]])/g, ':$1$2$3'); // Keep literals as is
+    cleaned = cleaned.replace(/:(\s*)([^"{}\[\],\s]+)([,}\]])/g, ':"$2"$3'); // Quote non-quoted strings
+    
+    // Remove trailing commas in arrays and objects (common syntax error)
+    cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+    
+    return cleaned;
+  } catch (error) {
+    console.error('Error cleaning JSON content:', error);
+    throw error;
   }
-  
-  // Find the end of the array
-  const endIdx = cleaned.lastIndexOf(']');
-  if (endIdx >= 0 && endIdx < cleaned.length - 1) {
-    cleaned = cleaned.substring(0, endIdx + 1);
-  }
-  
-  // Remove comments
-  cleaned = cleaned.replace(/\/\/.*$/gm, '');
-  
-  // Fix double and triple quotes - major source of errors
-  cleaned = cleaned.replace(/"""/g, '"');
-  cleaned = cleaned.replace(/""/g, '"');
-  
-  // Replace single quotes with double quotes for both keys and string values
-  // But careful with content that might have apostrophes
-  cleaned = cleaned.replace(/'([^']*)'(?=\s*:)/g, '"$1"'); // For keys
-  cleaned = cleaned.replace(/:(\s*)'([^']*)'([,}\]])/g, ':$1"$2"$3'); // For values
-  
-  // Fix unquoted properties in JSON
-  cleaned = cleaned.replace(/([{,]\s*)(\w+)(\s*):/g, '$1"$2"$3:');
-  
-  // Fix missing quotes around string values
-  cleaned = cleaned.replace(/:(\s*)([A-Za-z][A-Za-z0-9\s]*[A-Za-z0-9])([,}\]])/g, ':"$2"$3');
-  
-  // Remove trailing commas in arrays and objects (common syntax error)
-  cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
-  
-  return cleaned;
 }
 
 // Validate and normalize questions to ensure they have all required fields
@@ -213,61 +267,43 @@ function generateRegularQuizPrompt(
   contentContext: string,
   teacherContext?: { name?: string; school?: string }
 ) {
+  // Calculate total questions to generate
+  const totalQuestions = topics.reduce((sum, t) => sum + t.numQuestions, 0);
+  
   return `
-    As an expert educational content creator, generate a comprehensive quiz based on this content:
+    Generate a quiz with ${totalQuestions} multiple-choice questions based on this content:
     
     ${contentContext}
     
-    Follow these specific guidelines for topics: ${topics.map(t => t.description).join(", ")}
+    Focus on these topics: ${topics.map(t => t.description).join(", ")}
 
     QUESTION DESIGN:
     1. Create questions that:
-       - Test conceptual understanding
+       - Test conceptual understanding at the ${difficulty} level
        - Apply knowledge to scenarios
        - Build from simpler to complex concepts
-       - Match ${difficulty} education level
+       - Are clearly worded with one unambiguous correct answer
 
-    2. Include a mix of:
+    2. Include questions that test:
        - Concept application
        - Problem-solving
        - Analytical thinking
        - Term/concept relationships
 
-    3. Ensure questions:
-       - Are clearly worded
-       - Have one unambiguous correct answer
-       - Include plausible distractors
-       - Test understanding, not memorization
+    3. For each question, provide:
+       - Clear, specific question text
+       - Four options (A, B, C, D) with only one correct answer
+       - Plausible distractors that test common misconceptions
+       - A brief explanation for the correct answer
+       - Topic identification
+       - Point value (1-5 based on difficulty)
+       - The concept being tested
+       - Learning objective it addresses
 
-    TECHNICAL REQUIREMENTS:
-    Return a JSON array where each question has:
-    {
-      "question": "clear, specific question text",
-      "options": {
-        "A": "option text",
-        "B": "option text",
-        "C": "option text",
-        "D": "option text"
-      },
-      "correctAnswer": "A|B|C|D",
-      "topic": "specific topic",
-      "points": number (1-5),
-      "explanation": "detailed explanation",
-      "difficulty": "${difficulty}",
-      "conceptTested": "specific concept",
-      "learningObjective": "what this tests"
-    }
-
-    VERY IMPORTANT:
-    1. Use ONLY simple double quotes (") for all strings
-    2. Do NOT use single quotes (') anywhere in the JSON
-    3. Do NOT use escaped quotes or multiple quotes
-    4. Make sure all JSON is properly formatted with no syntax errors
-    5. Do not include ANY comments in the JSON
-    6. Do not include any markdown formatting
-    7. Return ONLY the valid JSON array with no additional text
-
-    Generate exactly ${topics.reduce((sum, t) => sum + t.numQuestions, 0)} questions.
+    DISTRIBUTION:
+    Generate exactly this many questions per topic:
+    ${topics.map(t => `- ${t.description}: ${t.numQuestions} questions`).join('\n')}
+    
     ${teacherContext?.name ? `Created by ${teacherContext.name}` : ''}
     ${teacherContext?.school ? `for ${teacherContext.school}` : ''}
   `;

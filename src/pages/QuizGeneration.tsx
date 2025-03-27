@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -34,6 +35,7 @@ const QuizGeneration = () => {
     selectedCourseId,
     difficulty,
     generationProgress,
+    error,
     handleRetry,
     setTitle,
     handleFileSelect,
@@ -94,6 +96,12 @@ const QuizGeneration = () => {
 
   const handleConfirmGenerate = () => {
     handleSubmit();
+  };
+
+  const handleRetryGeneration = () => {
+    if (handleRetry) {
+      handleRetry();
+    }
   };
 
   return (
@@ -191,9 +199,21 @@ const QuizGeneration = () => {
       </main>
       
       <QuizGenerationModal
-        isOpen={isProcessing && generationProgress.stage !== 'idle'}
-        progress={generationProgress}
-        onRetry={handleRetry}
+        isOpen={isProcessing || (!!error && generationProgress.stage === 'error')}
+        progress={{
+          ...generationProgress,
+          error: error?.message,
+          details: error?.details
+        }}
+        onRetry={handleRetryGeneration}
+      />
+      
+      <GenerateQuizDialog 
+        isOpen={showGenerateDialog}
+        onClose={() => setShowGenerateDialog(false)}
+        onConfirm={handleConfirmGenerate}
+        topicsCount={topics.filter(t => !!t.description).length}
+        questionsCount={topics.reduce((sum, t) => sum + t.numQuestions, 0)}
       />
     </div>
   );

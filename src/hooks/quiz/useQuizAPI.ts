@@ -20,33 +20,48 @@ export const useQuizAPI = () => {
       .eq('id', session.user.id)
       .single();
 
-    const response = await fetch(
-      'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-quiz',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          content,
-          topics,
-          difficulty,
-          teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
-          school: teacherData?.school,
-        }),
+    try {
+      const response = await fetch(
+        'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-quiz',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            content,
+            topics,
+            difficulty,
+            teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
+            school: teacherData?.school,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to generate quiz:', errorData);
+        
+        const error = new Error('Failed to generate quiz: ' + (errorData.error || 'Unknown error')) as Error & { cause?: any };
+        error.cause = errorData.details || JSON.stringify(errorData);
+        throw error;
       }
-    );
 
-    if (!response.ok) {
-      throw new Error('Failed to generate quiz');
+      const data = await response.json();
+      
+      if (!data.quizQuestions || !Array.isArray(data.quizQuestions)) {
+        throw new Error('Invalid response format: questions not found in response');
+      }
+      
+      return data.quizQuestions.map((q: Question) => ({
+        ...q,
+        difficulty
+      }));
+    } catch (error) {
+      console.error('Error generating quiz:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.quizQuestions.map((q: Question) => ({
-      ...q,
-      difficulty
-    }));
   };
 
   return { generateQuiz };

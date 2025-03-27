@@ -6,10 +6,16 @@ import { toast } from "@/components/ui/use-toast";
 import { Topic, Question, CONTENT_LIMITS } from "@/types/quiz-generation";
 import { QuestionDifficulty } from "@/types/quiz";
 
+interface SubmissionError {
+  message: string;
+  details?: string;
+}
+
 export const useQuizSubmission = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [quizId, setQuizId] = useState<string | null>(null);
+  const [error, setError] = useState<SubmissionError | null>(null);
   const { generateQuiz } = useQuizAPI();
   const { saveQuizToDatabase } = useQuizSave();
 
@@ -27,7 +33,7 @@ export const useQuizSubmission = () => {
         description: "Please select a file first",
         variant: "destructive",
       });
-      return { questions: null, quizId: null };
+      return { questions: null, quizId: null, error: { message: "No file content provided" } };
     }
 
     if (topics.some(topic => !topic.description)) {
@@ -36,12 +42,13 @@ export const useQuizSubmission = () => {
         description: "Please fill out all topics",
         variant: "destructive",
       });
-      return { questions: null, quizId: null };
+      return { questions: null, quizId: null, error: { message: "Topics incomplete" } };
     }
 
     setIsProcessing(true);
     setQuizQuestions([]);
     setQuizId(null);
+    setError(null);
 
     try {
       const trimmedContent = fileContent.slice(0, CONTENT_LIMITS.MAX_CHARACTERS);
@@ -63,27 +70,53 @@ export const useQuizSubmission = () => {
           description: "Quiz generated and saved successfully!",
         });
         
-        return { questions: generatedQuestions, quizId };
+        return { questions: generatedQuestions, quizId, error: null };
       } else {
         throw new Error("Failed to save quiz to database");
       }
-    } catch (error) {
-      console.error('Error processing quiz:', error);
+    } catch (err) {
+      console.error('Error processing quiz:', err);
+      
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate quiz";
+      const errorDetails = err instanceof Error && err.cause ? String(err.cause) : undefined;
+      
+      const errorObj = { 
+        message: errorMessage, 
+        details: errorDetails 
+      };
+      
+      setError(errorObj);
+      
       toast({
         title: "Error",
         description: "Failed to generate quiz. Please try again.",
         variant: "destructive",
       });
-      return { questions: null, quizId: null };
+      
+      return { questions: null, quizId: null, error: errorObj };
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const retrySubmission = async (
+    fileContent: string,
+    topics: Topic[],
+    difficulty: QuestionDifficulty,
+    title: string,
+    duration: number,
+    courseId?: string
+  ) => {
+    setError(null);
+    return handleSubmit(fileContent, topics, difficulty, title, duration, courseId);
   };
 
   return {
     isProcessing,
     quizQuestions,
     quizId,
+    error,
     handleSubmit,
+    retrySubmission,
   };
 };
