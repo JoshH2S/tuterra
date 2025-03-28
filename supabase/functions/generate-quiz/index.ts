@@ -39,22 +39,49 @@ serve(async (req) => {
     console.log(`Processing request with content length: ${trimmedContent.length}`);
     console.log(`Number of topics: ${topics.length}`);
     
+    // Track originally requested question counts
+    const requestedQuestionsByTopic = topics.reduce((acc, topic) => {
+      acc[topic.description] = topic.numQuestions;
+      return acc;
+    }, {} as Record<string, number>);
+    
     // Split content into manageable chunks
     const chunks = splitContentIntoChunks(trimmedContent, topics);
     
     // Generate questions from chunks
-    const questions = await generateQuizFromChunks(chunks, difficulty, openAIApiKey);
+    const generatedQuestions = await generateQuizFromChunks(chunks, difficulty, openAIApiKey);
     
     // Validate and normalize questions
-    const validatedQuestions = validateAndNormalizeQuestions(questions, difficulty);
+    const validatedQuestions = validateAndNormalizeQuestions(generatedQuestions, difficulty);
+    
+    // Ensure we don't exceed the requested number of questions per topic
+    const finalQuestions: any[] = [];
+    const questionsByTopic: Record<string, any[]> = {};
+    
+    // Group questions by topic
+    validatedQuestions.forEach(q => {
+      if (!questionsByTopic[q.topic]) {
+        questionsByTopic[q.topic] = [];
+      }
+      questionsByTopic[q.topic].push(q);
+    });
+    
+    // Take exactly the requested number of questions for each topic
+    Object.entries(requestedQuestionsByTopic).forEach(([topic, requestedCount]) => {
+      const topicQuestions = questionsByTopic[topic] || [];
+      const questionsToInclude = topicQuestions.slice(0, requestedCount);
+      finalQuestions.push(...questionsToInclude);
+      
+      console.log(`Topic "${topic}": requested ${requestedCount}, generated ${topicQuestions.length}, included ${questionsToInclude.length}`);
+    });
     
     return new Response(JSON.stringify({
-      quizQuestions: validatedQuestions,
+      quizQuestions: finalQuestions,
       metadata: {
         topics: topics.map((t: Topic) => t.description),
         difficulty,
-        totalPoints: validatedQuestions.reduce((sum, q) => sum + q.points, 0),
-        estimatedDuration: Math.max(15, validatedQuestions.length)
+        totalPoints: finalQuestions.reduce((sum, q) => sum + q.points, 0),
+        estimatedDuration: Math.max(15, finalQuestions.length)
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

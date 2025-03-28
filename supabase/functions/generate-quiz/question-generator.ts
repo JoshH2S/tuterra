@@ -17,6 +17,9 @@ export async function generateQuizFromChunks(
 ): Promise<Question[]> {
   const allQuestions: Question[] = [];
   let processedChunks = 0;
+  
+  // Track questions generated per topic
+  const questionsPerTopic: Record<string, number> = {};
 
   for (const chunk of chunks) {
     try {
@@ -35,7 +38,7 @@ export async function generateQuizFromChunks(
           messages: [
             {
               role: 'system',
-              content: 'Generate multiple-choice questions in valid JSON format. Each question must belong to one of the specified topics and follow the exact format requested.'
+              content: 'Generate multiple-choice questions in valid JSON format. Each question must belong to one of the specified topics and follow the exact format requested. It is CRITICAL that you generate EXACTLY the number of questions requested for each topic - no more, no less.'
             },
             {
               role: 'user',
@@ -62,6 +65,7 @@ export async function generateQuizFromChunks(
         const topicCounts: Record<string, number> = {};
         questions.forEach((q: Question) => {
           topicCounts[q.topic] = (topicCounts[q.topic] || 0) + 1;
+          questionsPerTopic[q.topic] = (questionsPerTopic[q.topic] || 0) + 1;
         });
         
         console.log("Topic distribution in response:", topicCounts);
@@ -78,5 +82,7 @@ export async function generateQuizFromChunks(
   }
 
   console.log(`Generated a total of ${allQuestions.length} questions`);
+  console.log(`Final distribution of questions by topic:`, questionsPerTopic);
+  
   return allQuestions;
 }

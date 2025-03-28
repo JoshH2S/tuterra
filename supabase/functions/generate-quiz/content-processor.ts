@@ -15,35 +15,50 @@ export function splitContentIntoChunks(content: string, topics: Topic[]): Conten
   // Calculate total questions requested
   const totalQuestions = topics.reduce((sum, t) => sum + t.numQuestions, 0);
   console.log(`Total questions requested: ${totalQuestions}`);
-  console.log(`Content split into chunks`);
+  
+  // Track remaining questions for each topic
+  const remainingQuestionsByTopic = new Map<string, number>();
+  topics.forEach(topic => {
+    remainingQuestionsByTopic.set(topic.description, topic.numQuestions);
+  });
+  
+  console.log(`Topic distribution requested:`, Object.fromEntries(remainingQuestionsByTopic));
 
-  while (currentIndex < content.length) {
+  while (currentIndex < content.length && Array.from(remainingQuestionsByTopic.values()).some(count => count > 0)) {
     // Calculate remaining content percentage
     const remainingContent = content.length - currentIndex;
     const contentPercentage = remainingContent / content.length;
     
-    // Calculate questions for this chunk based on content percentage
-    const questionsForChunk = Math.max(1, Math.ceil(contentPercentage * totalQuestions));
+    // Calculate max questions for this chunk
+    const maxQuestionsForChunk = Math.max(1, Math.ceil(contentPercentage * totalQuestions));
     
-    // Distribute questions proportionally across topics
-    const chunkTopics = topics.map(topic => {
-      const topicPercentage = topic.numQuestions / totalQuestions;
-      const topicQuestions = Math.max(1, Math.round(questionsForChunk * topicPercentage));
-      return {
-        description: topic.description,
-        numQuestions: topicQuestions
-      };
+    // Distribute questions proportionally across topics that still need questions
+    const chunkTopics: Topic[] = [];
+    
+    // Only include topics that still have remaining questions
+    topics.forEach(topic => {
+      const remaining = remainingQuestionsByTopic.get(topic.description) || 0;
+      if (remaining > 0) {
+        // Calculate how many questions to assign to this topic in this chunk
+        const topicPercentage = remaining / Array.from(remainingQuestionsByTopic.values()).reduce((sum, count) => sum + count, 0);
+        let questionCount = Math.min(remaining, Math.max(1, Math.round(maxQuestionsForChunk * topicPercentage)));
+        
+        // Ensure we don't exceed remaining questions for this topic
+        questionCount = Math.min(questionCount, remaining);
+        
+        chunkTopics.push({
+          description: topic.description,
+          numQuestions: questionCount
+        });
+        
+        // Update remaining questions for this topic
+        remainingQuestionsByTopic.set(topic.description, remaining - questionCount);
+      }
     });
     
-    // Ensure we don't exceed the original requested number of questions
-    let assignedQuestions = chunkTopics.reduce((sum, t) => sum + t.numQuestions, 0);
-    if (assignedQuestions > questionsForChunk) {
-      // Adjust the largest topic down if we allocated too many questions
-      const largestTopic = chunkTopics.reduce(
-        (max, topic) => topic.numQuestions > max.numQuestions ? topic : max, 
-        chunkTopics[0]
-      );
-      largestTopic.numQuestions -= (assignedQuestions - questionsForChunk);
+    // If all topics are done, break
+    if (chunkTopics.length === 0) {
+      break;
     }
 
     // Get chunk content
@@ -65,8 +80,10 @@ export function splitContentIntoChunks(content: string, topics: Topic[]): Conten
     });
 
     currentIndex += chunkContent.length;
-    console.log(`Processing chunk starting at index ${currentIndex} with topics: ${chunkTopics.map(t => t.description).join(', ')}`);
+    console.log(`Processing chunk starting at index ${currentIndex} with topics:`, 
+      chunkTopics.map(t => `${t.description} (${t.numQuestions} questions)`).join(', '));
   }
 
+  console.log(`Content split into ${chunks.length} chunks`);
   return chunks;
 }

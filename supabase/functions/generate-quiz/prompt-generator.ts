@@ -21,7 +21,7 @@ export function generatePromptForChunk(chunk: ContentChunk, difficulty: string) 
   const totalQuestions = chunk.topics.reduce((sum, t) => sum + t.numQuestions, 0);
   
   return `
-Generate exactly ${totalQuestions} multiple-choice questions from the following content, 
+Generate EXACTLY ${totalQuestions} multiple-choice questions from the following content, 
 matching the ${difficulty} difficulty level:
 
 Content:
@@ -35,20 +35,20 @@ Difficulty Requirements for ${difficulty}:
 - Points Range: ${guidelines.points.min}-${guidelines.points.max} points per question
 - Questions should challenge ${difficulty.replace('_', ' ')} level students appropriately
 
-Topics distribution:
-${chunk.topics.map(t => `- ${t.description}: ${t.numQuestions} questions`).join('\n')}
+Topics distribution (it is CRITICAL that you follow these numbers EXACTLY):
+${chunk.topics.map(t => `- ${t.description}: EXACTLY ${t.numQuestions} questions - no more, no less`).join('\n')}
 
 Important instructions:
-1. Generate EXACTLY the number of questions requested for each topic.
-2. For topic "${chunk.topics[0].description}", create ${chunk.topics[0].numQuestions} questions.
-${chunk.topics.slice(1).map(t => `3. For topic "${t.description}", create ${t.numQuestions} questions.`).join('\n')}
+1. Generate EXACTLY the number of questions requested for each topic - no more, no less.
+2. For topic "${chunk.topics[0].description}", create EXACTLY ${chunk.topics[0].numQuestions} questions.
+${chunk.topics.slice(1).map((t, i) => `${i+3}. For topic "${t.description}", create EXACTLY ${t.numQuestions} questions.`).join('\n')}
 
 Return a valid JSON array with each question having these fields:
 {
   "question": "Question text matching ${difficulty} level",
   "options": {"A": "First option", "B": "Second option", "C": "Third option", "D": "Fourth option"},
   "correctAnswer": "A or B or C or D",
-  "topic": "The topic this question belongs to - must match one of the provided topics",
+  "topic": "The topic this question belongs to - must match one of the provided topics exactly",
   "points": a number between ${guidelines.points.min} and ${guidelines.points.max},
   "explanation": "Explanation appropriate for ${difficulty} level",
   "difficulty": "${difficulty}",
