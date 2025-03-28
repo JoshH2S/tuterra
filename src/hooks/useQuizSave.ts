@@ -34,14 +34,17 @@ export const useQuizSave = () => {
         title: title, // Use the provided title or default
         user_id: session.user.id, // Changed from teacher_id to user_id
         duration_minutes: duration,
-        published: true, // Changed from false to true for immediate publishing
+        published: true, // Quiz is published immediately
         type: 'standard', // Added quiz type designation
         created_at: new Date().toISOString()
       };
 
-      // Only add course_id if it exists
-      if (courseId) {
+      // Only add course_id if it exists and is not empty
+      if (courseId && courseId.trim() !== '') {
+        console.log(`Adding course ID ${courseId} to quiz`);
         quizData.course_id = courseId;
+      } else {
+        console.log("No course ID provided for quiz");
       }
 
       console.log("Inserting quiz with data:", quizData);

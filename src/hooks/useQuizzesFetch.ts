@@ -19,7 +19,38 @@ export const useQuizzesFetch = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Select only necessary fields instead of *
+      console.log("Fetching quizzes for user ID:", user.id);
+
+      // Get all courses the user is enrolled in
+      const { data: enrolledCourses, error: enrollmentError } = await supabase
+        .from('student_courses')
+        .select('course_id')
+        .eq('student_id', user.id);
+
+      if (enrollmentError) {
+        console.error("Error fetching enrolled courses:", enrollmentError);
+      }
+
+      // Get courses created by the user
+      const { data: createdCourses, error: createdCoursesError } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (createdCoursesError) {
+        console.error("Error fetching created courses:", createdCoursesError);
+      }
+
+      // Create a set of all course IDs the user can access
+      const enrolledCourseIds = enrolledCourses?.map(c => c.course_id) || [];
+      const createdCourseIds = createdCourses?.map(c => c.id) || [];
+      const allCourseIds = [...new Set([...enrolledCourseIds, ...createdCourseIds])];
+
+      console.log("User's courses:", allCourseIds);
+
+      // Fetch quizzes that are either:
+      // 1. Created by the user, OR
+      // 2. Associated with courses the user created or is enrolled in
       const { data, error } = await supabase
         .from('quizzes')
         .select(`
@@ -43,16 +74,24 @@ export const useQuizzesFetch = () => {
           )
         `)
         .eq('published', true)
+        .or(`user_id.eq.${user.id},${allCourseIds.length > 0 ? `course_id.in.(${allCourseIds.join(',')})` : 'course_id.is.null'}`)
         .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching quizzes:", error);
+        throw error;
+      }
 
+      // Log fetched quizzes for debugging
+      console.log("Fetched quizzes:", data.length);
+      
       // Check if there are more quizzes
       const { count, error: countError } = await supabase
         .from('quizzes')
         .select('id', { count: 'exact', head: true })
-        .eq('published', true);
+        .eq('published', true)
+        .or(`user_id.eq.${user.id},${allCourseIds.length > 0 ? `course_id.in.(${allCourseIds.join(',')})` : 'course_id.is.null'}`);
 
       if (countError) throw countError;
       
@@ -78,11 +117,13 @@ export const useQuizzesFetch = () => {
           latest_response: latestResponse,
         };
 
-        if (!quizzesByCourseTmp[quiz.course_id]) {
-          quizzesByCourseTmp[quiz.course_id] = [];
+        if (!quizzesByCourseTmp[quiz.course_id || 'no_course']) {
+          quizzesByCourseTmp[quiz.course_id || 'no_course'] = [];
         }
-        quizzesByCourseTmp[quiz.course_id].push(processedQuiz);
+        quizzesByCourseTmp[quiz.course_id || 'no_course'].push(processedQuiz);
       });
+      
+      console.log("Processed quizzes by course:", quizzesByCourseTmp);
       
       // If loading more, append to existing data; otherwise replace it
       if (newPage !== undefined && newPage > 0) {

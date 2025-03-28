@@ -53,14 +53,24 @@ export const useQuizSubmission = () => {
     try {
       const trimmedContent = fileContent.slice(0, CONTENT_LIMITS.MAX_CHARACTERS);
       
-      const generatedQuestions = await generateQuiz(trimmedContent, topics, difficulty);
+      // Pass the topics with numQuestions to make sure it respects the requested count
+      const filteredTopics = topics.filter(t => !!t.description);
+      console.log("Generating quiz with topics:", filteredTopics);
+      
+      const generatedQuestions = await generateQuiz(trimmedContent, filteredTopics, difficulty);
       setQuizQuestions(generatedQuestions);
       
       // Use the provided title or generate a default one
-      const quizTitle = title.trim() ? title : `Quiz on ${topics.map(t => t.description).join(", ")}`;
+      const quizTitle = title.trim() ? title : `Quiz on ${filteredTopics.map(t => t.description).join(", ")}`;
       
-      // Save the generated quiz to the database
-      const { success, quizId } = await saveQuizToDatabase(generatedQuestions, topics, duration, quizTitle, courseId);
+      // Explicitly pass the courseId if available - this was missing or inconsistently applied
+      const { success, quizId } = await saveQuizToDatabase(
+        generatedQuestions, 
+        filteredTopics, 
+        duration, 
+        quizTitle, 
+        courseId || undefined  // Make sure we pass undefined if courseId is empty string
+      );
       
       if (success && quizId) {
         setQuizId(quizId);
@@ -80,9 +90,7 @@ export const useQuizSubmission = () => {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate quiz";
       let errorDetails: string | undefined = undefined;
       
-      // Modified to avoid using the 'cause' property
       if (err instanceof Error) {
-        // Check if error has additional details as a property
         const anyErr = err as any;
         errorDetails = anyErr.details || anyErr.errorDetails || JSON.stringify(err);
       }
