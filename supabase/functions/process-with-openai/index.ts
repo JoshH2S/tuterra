@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -51,7 +50,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, temperature = 0.7, max_tokens = 800 } = await req.json();
+    const { prompt, temperature = 0.7, max_tokens = 800, difficulty = "university" } = await req.json();
 
     if (!prompt) {
       return new Response(
@@ -61,6 +60,29 @@ serve(async (req) => {
     }
 
     console.log("Sending request to OpenAI API with prompt:", prompt.substring(0, 100) + "...");
+    console.log("Difficulty level:", difficulty);
+
+    // Adjust system message based on difficulty
+    let systemMessage = 'You are a helpful educational assistant that provides clear, concise explanations about quiz answers.';
+    
+    switch(difficulty) {
+      case 'middle_school':
+        systemMessage += ' Use simple language appropriate for middle school students. Avoid complex terms and focus on basic concepts.';
+        break;
+      case 'high_school':
+        systemMessage += ' Use straightforward academic language suitable for high school students. Include some technical terms with explanations.';
+        break;
+      case 'university':
+        systemMessage += ' Use technical academic language appropriate for university students. Include relevant examples and detailed explanations.';
+        break;
+      case 'post_graduate':
+        systemMessage += ' Use sophisticated technical language appropriate for graduate-level students. Include complex analysis and advanced concepts.';
+        break;
+      default:
+        // Keep default message
+    }
+    
+    systemMessage += ' Focus on explaining why answers are correct or incorrect in a supportive, encouraging tone. Keep explanations to 3-4 sentences for mobile readability.';
 
     // Call OpenAI API
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -70,12 +92,9 @@ serve(async (req) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',  // Updated from 'gpt-4o-mini' to 'gpt-3.5-turbo'
+        model: 'gpt-3.5-turbo',
         messages: [
-          { 
-            role: 'system', 
-            content: 'You are a helpful educational assistant that provides clear, concise explanations about quiz answers. Focus on explaining why answers are correct or incorrect in a supportive, encouraging tone. Use simple language and provide relevant examples or facts when appropriate. Keep explanations to 3-4 sentences for mobile readability.'
-          },
+          { role: 'system', content: systemMessage },
           { role: 'user', content: prompt }
         ],
         temperature,

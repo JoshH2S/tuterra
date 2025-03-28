@@ -9,10 +9,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Difficulty type and guidelines
+type QuestionDifficulty = "middle_school" | "high_school" | "university" | "post_graduate";
+
+const DIFFICULTY_GUIDELINES = {
+  middle_school: {
+    complexity: "basic concepts and definitions",
+    language: "simple and clear language",
+    points: { min: 1, max: 2 }
+  },
+  high_school: {
+    complexity: "intermediate concepts and basic applications",
+    language: "straightforward academic language",
+    points: { min: 2, max: 3 }
+  },
+  university: {
+    complexity: "advanced concepts and practical applications",
+    language: "technical academic language",
+    points: { min: 3, max: 4 }
+  },
+  post_graduate: {
+    complexity: "expert-level concepts and complex analysis",
+    language: "sophisticated technical language",
+    points: { min: 4, max: 5 }
+  }
+};
+
 const LIMITS = {
-  MAX_FILE_SIZE: 75000, // Keep original max file size
-  MAX_CHUNK_SIZE: 12000, // Size for each processing chunk
-  MAX_TOKENS_PER_REQUEST: 14000, // Safe limit for GPT-3.5-turbo
+  MAX_FILE_SIZE: 75_000, // Keep original max file size
+  MAX_CHUNK_SIZE: 12_000, // Size for each processing chunk
+  MAX_TOKENS_PER_REQUEST: 14_000, // Safe limit for GPT-3.5-turbo
 };
 
 interface Topic {
@@ -133,6 +159,10 @@ function cleanupJSONContent(content: string): string {
 }
 
 function generatePromptForChunk(chunk: ContentChunk, difficulty: string) {
+  // Ensure difficulty is a valid QuestionDifficulty
+  const difficultyLevel = difficulty as QuestionDifficulty;
+  const guidelines = DIFFICULTY_GUIDELINES[difficultyLevel];
+  
   // Make sure to explicitly request the correct number of questions for each topic
   const topicsWithCounts = chunk.topics
     .map(t => `${t.description} (${t.numQuestions} questions)`)
@@ -142,13 +172,21 @@ function generatePromptForChunk(chunk: ContentChunk, difficulty: string) {
   
   return `
 Generate exactly ${totalQuestions} multiple-choice questions from the following content, 
-respecting the exact number of questions specified for each topic:
+matching the ${difficulty} difficulty level:
 
 Content:
 ${chunk.content}
 
 Topics and question counts: ${topicsWithCounts}
-Difficulty level: ${difficulty}
+
+Difficulty Requirements for ${difficulty}:
+- Complexity Level: ${guidelines.complexity}
+- Language Level: ${guidelines.language}
+- Points Range: ${guidelines.points.min}-${guidelines.points.max} points per question
+- Questions should challenge ${difficulty.replace('_', ' ')} level students appropriately
+
+Topics distribution:
+${chunk.topics.map(t => `- ${t.description}: ${t.numQuestions} questions`).join('\n')}
 
 Important instructions:
 1. Generate EXACTLY the number of questions requested for each topic.
@@ -157,13 +195,15 @@ ${chunk.topics.slice(1).map(t => `3. For topic "${t.description}", create ${t.nu
 
 Return a valid JSON array with each question having these fields:
 {
-  "question": "The question text",
+  "question": "Question text matching ${difficulty} level",
   "options": {"A": "First option", "B": "Second option", "C": "Third option", "D": "Fourth option"},
   "correctAnswer": "A or B or C or D",
   "topic": "The topic this question belongs to - must match one of the provided topics",
-  "points": a number between 1-5 based on difficulty,
-  "explanation": "Explanation of the correct answer",
-  "difficulty": "${difficulty}"
+  "points": a number between ${guidelines.points.min} and ${guidelines.points.max},
+  "explanation": "Explanation appropriate for ${difficulty} level",
+  "difficulty": "${difficulty}",
+  "conceptTested": "Specific concept being tested",
+  "learningObjective": "Clear learning objective"
 }
 
 Return ONLY the JSON array with no additional text.`;
@@ -237,14 +277,22 @@ async function generateQuizFromChunks(chunks: ContentChunk[], difficulty: string
 }
 
 function validateAndNormalizeQuestions(questions: any[], difficulty: string) {
+  // Ensure difficulty is a valid QuestionDifficulty
+  const difficultyLevel = difficulty as QuestionDifficulty;
+  const guidelines = DIFFICULTY_GUIDELINES[difficultyLevel];
+  
   const validatedQuestions = questions.map(q => {
     // Convert points to number if it's a string
-    const points = typeof q.points === 'string' ? parseInt(q.points, 10) : q.points;
+    let points = typeof q.points === 'string' ? parseInt(q.points, 10) : q.points;
+    
+    // Enforce points range according to difficulty level
+    points = Math.min(Math.max(points, guidelines.points.min), guidelines.points.max);
     
     return {
       ...q,
-      points: isNaN(points) ? 1 : points, // Default to 1 if invalid
-      difficulty: q.difficulty || difficulty
+      points: isNaN(points) ? guidelines.points.min : points, // Default to min if invalid
+      difficulty: difficultyLevel,
+      validated_at: new Date().toISOString()
     };
   });
   
@@ -260,6 +308,11 @@ serve(async (req) => {
 
   try {
     const { content, topics, difficulty } = await req.json();
+    
+    // Validate difficulty
+    if (!Object.keys(DIFFICULTY_GUIDELINES).includes(difficulty)) {
+      throw new Error('Invalid difficulty level');
+    }
     
     // Validate input
     if (!content || typeof content !== 'string') {
