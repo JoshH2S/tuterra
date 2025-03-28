@@ -56,7 +56,6 @@ export const useQuizzesFetch = () => {
         .select(`
           id,
           title,
-          description,
           course_id,
           published,
           duration_minutes,
