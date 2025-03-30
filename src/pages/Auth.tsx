@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
@@ -6,11 +7,14 @@ import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { EmailVerification } from "@/components/auth/EmailVerification";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WelcomePopup } from "@/components/onboarding/WelcomePopup";
+import { supabase } from "@/integrations/supabase/client";
+
 interface AuthProps {
   mode?: "emailVerification" | "resetPassword";
 }
+
 const Auth = ({
   mode: propMode
 }: AuthProps = {}) => {
@@ -19,11 +23,32 @@ const Auth = ({
   const queryParams = new URLSearchParams(location.search);
   const queryMode = queryParams.get("mode") as "emailVerification" | "resetPassword" | null;
   const mode = propMode || queryMode || undefined;
-  if (mode === "emailVerification") {
+  
+  // Save email for potential resend verification
+  useEffect(() => {
+    const saveEmailForVerification = async () => {
+      // When the signup form shows success, save the email to localStorage so 
+      // we can use it on the verification page if needed
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session && location.pathname.includes("auth") && !mode) {
+        // Check if there's an email in the URL (from a redirection)
+        const email = queryParams.get("email");
+        if (email) {
+          localStorage.setItem("pendingVerificationEmail", email);
+        }
+      }
+    };
+    
+    saveEmailForVerification();
+  }, [location, mode, queryParams]);
+  
+  if (mode === "emailVerification" || location.pathname.includes("verify-email")) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <EmailVerification />
       </div>;
   }
+  
   if (mode === "resetPassword") {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
@@ -36,6 +61,7 @@ const Auth = ({
         </Card>
       </div>;
   }
+  
   return <motion.div initial={{
     opacity: 0
   }} animate={{
@@ -57,7 +83,13 @@ const Auth = ({
               <SignInForm />
             </TabsContent>
             <TabsContent value="signup">
-              <SignUpForm onSignUpSuccess={() => setShowWelcome(true)} />
+              <SignUpForm onSignUpSuccess={() => {
+                // Using setTimeout so user can see the verification sent message first
+                setTimeout(() => {
+                  // We'll set the welcome popup to show after the user verifies their email
+                  // and gets redirected back to the app
+                }, 500);
+              }} />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -79,4 +111,5 @@ const Auth = ({
       <WelcomePopup isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
     </motion.div>;
 };
+
 export default Auth;

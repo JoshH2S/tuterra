@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
 
@@ -14,6 +14,8 @@ export const useSignUpForm = () => {
   const [passwordError, setPasswordError] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [formError, setFormError] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export const useSignUpForm = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
     
     // Validate passwords before submission
     if (!validatePassword()) {
@@ -71,28 +74,23 @@ export const useSignUpForm = () => {
             last_name: lastName,
             user_type: "student",
           },
-          // Skip email confirmation
-          emailRedirectTo: undefined
+          // Enable email confirmation
+          emailRedirectTo: window.location.origin + "/verify-email"
         },
       });
 
       if (error) throw error;
       
-      // Set session immediately after signup
       if (data?.user) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.session?.access_token || '',
-          refresh_token: data.session?.refresh_token || '',
+        setVerificationSent(true);
+        toast({
+          title: "Verification email sent!",
+          description: "Please check your inbox and verify your email.",
         });
-
-        if (sessionError) throw sessionError;
       }
-
-      toast({
-        title: "Account created successfully!",
-        description: "Welcome to EduPortal.",
-      });
     } catch (error: any) {
+      console.error("Signup error:", error);
+      setFormError(error.message);
       toast({
         title: "Error",
         description: error.message,
@@ -121,6 +119,8 @@ export const useSignUpForm = () => {
     passwordTouched,
     setPasswordTouched,
     validatePassword,
-    handleSignUp
+    handleSignUp,
+    verificationSent,
+    formError
   };
 };
