@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
+import { AdaptiveLoading } from "@/components/shared/LoadingStates";
+import { toast } from "@/hooks/use-toast";
 
 interface QuizScore {
   id: string;
@@ -29,12 +31,34 @@ export default function CourseGrades() {
     average_grade: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [courseName, setCourseName] = useState("");
 
   useEffect(() => {
     const fetchGrades = async () => {
       try {
+        setIsLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          toast({
+            title: "Authentication Error",
+            description: "Please log in to view course grades",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Fetch course name
+        const { data: courseData, error: courseError } = await supabase
+          .from('courses')
+          .select('title')
+          .eq('id', courseId)
+          .single();
+
+        if (courseError) {
+          console.error('Error fetching course:', courseError);
+        } else if (courseData) {
+          setCourseName(courseData.title);
+        }
 
         // Fetch individual quiz scores
         const { data: scores, error: scoresError } = await supabase
@@ -51,15 +75,17 @@ export default function CourseGrades() {
           .eq('course_id', courseId)
           .order('taken_at', { ascending: false });
 
-        if (scoresError) throw scoresError;
+        if (scoresError) {
+          throw scoresError;
+        }
 
-        // Calculate course average
+        // Calculate course average from actual quiz scores
         if (scores && scores.length > 0) {
           const totalScores = scores.reduce((acc, curr) => acc + ((curr.score / curr.max_score) * 100), 0);
           const averageGrade = totalScores / scores.length;
           
           setCourseGrade({
-            total_quizzes: scores.length,
+            total_quizzes: scores.length, // This correctly uses the actual number of completed quizzes
             average_grade: averageGrade
           });
         }
@@ -67,21 +93,29 @@ export default function CourseGrades() {
         setQuizScores(scores || []);
       } catch (error) {
         console.error('Error fetching grades:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load grade data",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchGrades();
+    if (courseId) {
+      fetchGrades();
+    }
   }, [courseId]);
 
   if (isLoading) {
-    return <div>Loading grades...</div>;
+    return <AdaptiveLoading />;
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <h1 className="text-3xl font-bold mb-6">Course Grades</h1>
+    <div className="container mx-auto py-8 space-y-6 px-4">
+      <h1 className="text-3xl font-bold mb-2">{courseName || "Course"} Grades</h1>
+      <p className="text-muted-foreground mb-6">View your quiz performance for this course</p>
 
       {courseGrade && (
         <Card className="bg-primary/5">
@@ -115,16 +149,16 @@ export default function CourseGrades() {
           </Card>
         ) : (
           quizScores.map((score) => (
-            <Card key={score.id}>
+            <Card key={score.id} className="hover:shadow-md transition-shadow">
               <CardContent className="py-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                   <div>
                     <h3 className="font-medium">{score.quiz.title}</h3>
                     <p className="text-sm text-muted-foreground">
                       Taken on {format(new Date(score.taken_at), 'PPP')}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left md:text-right">
                     <p className="text-2xl font-bold">
                       {((score.score / score.max_score) * 100).toFixed(1)}%
                     </p>
