@@ -12,7 +12,7 @@ export const Footer = () => {
     <footer className="border-t py-4 bg-background mt-auto">
       <div className="container flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} EduPortal. All rights reserved.
+          © {new Date().getFullYear()} Tuterra. All rights reserved.
         </div>
         <div className="flex gap-4 sm:gap-6">
           <button
