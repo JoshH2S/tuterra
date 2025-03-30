@@ -81,20 +81,20 @@ export const CourseCard = ({ course }: CourseCardProps) => {
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem className="flex items-center py-2 px-3 cursor-pointer touch-manipulation hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 rounded-md transition-colors">
                 <FileEdit className="w-4 h-4 mr-2" />
                 Edit Course
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className="flex items-center py-2 px-3 cursor-pointer touch-manipulation hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 rounded-md transition-colors">
                 <Archive className="w-4 h-4 mr-2" />
                 Archive Course
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600 dark:text-red-400">
+              <DropdownMenuItem className="flex items-center py-2 px-3 cursor-pointer touch-manipulation hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 rounded-md transition-colors text-red-600 dark:text-red-400">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Course
               </DropdownMenuItem>
