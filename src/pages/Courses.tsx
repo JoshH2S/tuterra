@@ -83,6 +83,14 @@ const Courses = () => {
     setFilterBy(value);
   };
 
+  const handleCourseDeleted = () => {
+    refreshCourses(); // Refresh the course list when a course is deleted
+  };
+
+  const handleCourseUpdated = () => {
+    refreshCourses(); // Refresh the course list when a course is updated
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <CoursesHeader 
@@ -101,7 +109,11 @@ const Courses = () => {
       {isLoading ? (
         <AdaptiveLoading />
       ) : filteredCourses.length > 0 ? (
-        <CoursesGrid courses={filteredCourses} />
+        <CoursesGrid 
+          courses={filteredCourses} 
+          onCourseDeleted={handleCourseDeleted} 
+          onCourseUpdated={handleCourseUpdated}
+        />
       ) : (
         <CoursesEmptyState onCreateClick={handleCreateClick} />
       )}
