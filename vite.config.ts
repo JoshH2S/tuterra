@@ -20,4 +20,31 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Configure minification options
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console logs in production
+        drop_debugger: true // Remove debugger statements
+      },
+      output: {
+        comments: false // Remove comments
+      }
+    },
+    // Split chunks for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          recharts: ['recharts'],
+          'react-router': ['react-router-dom'],
+          tiptap: ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-image', '@tiptap/extension-link'],
+          ui: ['@/components/ui'],
+        }
+      }
+    },
+    // Enable source maps for production (can be disabled to reduce file size further)
+    sourcemap: false,
+  },
 }));
