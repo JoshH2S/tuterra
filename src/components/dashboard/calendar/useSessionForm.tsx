@@ -10,12 +10,14 @@ interface UseSessionFormProps {
 }
 
 export function useSessionForm({ onCreateSession, onClose }: UseSessionFormProps) {
-  const [sessionData, setSessionData] = useState<Partial<CreateStudySessionData>>({});
+  const [sessionData, setSessionData] = useState<Partial<CreateStudySessionData>>({
+    notify_email: true // Default to sending email notifications
+  });
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const { courses, isLoading } = useCourses();
   
   const resetForm = () => {
-    setSessionData({});
+    setSessionData({ notify_email: true });
     setSelectedDate(new Date());
   };
 
@@ -48,6 +50,7 @@ export function useSessionForm({ onCreateSession, onClose }: UseSessionFormProps
         course_id: sessionData.course_id,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
+        notify_email: sessionData.notify_email || false,
         status: 'scheduled'
       });
       

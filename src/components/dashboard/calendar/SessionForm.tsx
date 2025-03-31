@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateStudySessionData } from "@/types/study-sessions";
@@ -23,6 +24,7 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
     course_id: "",
     start_time: "",
     end_time: "",
+    notify_email: true
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,6 +47,7 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
       start_time: startDate.toISOString(),
       end_time: endDate.toISOString(),
       status: 'scheduled',
+      notify_email: newSession.notify_email
     });
 
     setIsDialogOpen(false);
@@ -54,6 +57,7 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
       course_id: "",
       start_time: "",
       end_time: "",
+      notify_email: true
     });
   };
 
@@ -123,6 +127,18 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
               />
             </div>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="notify_email"
+              checked={newSession.notify_email}
+              onCheckedChange={(checked) => setNewSession(prev => ({ ...prev, notify_email: checked }))}
+            />
+            <Label htmlFor="notify_email" className="text-sm">
+              Send email reminder one hour before session
+            </Label>
+          </div>
+
           <Button type="submit" className="w-full">Schedule Session</Button>
         </form>
       </DialogContent>

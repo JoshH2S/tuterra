@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { DateSelector } from "./DateSelector";
 import { TimeRangePicker } from "./TimeRangePicker";
 import { CourseSelector } from "./CourseSelector";
+import { Switch } from "@/components/ui/switch";
 import type { CreateStudySessionData } from "@/types/study-sessions";
 
 interface SessionFormFieldsProps {
@@ -63,6 +64,17 @@ export function SessionFormFields({
           onChange={(e) => setSessionData({...sessionData, description: e.target.value})}
           placeholder="Add details about this session"
         />
+      </div>
+
+      <div className="flex items-center space-x-2 pt-2">
+        <Switch
+          id="notify_email"
+          checked={sessionData.notify_email || false}
+          onCheckedChange={(checked) => setSessionData({...sessionData, notify_email: checked})}
+        />
+        <Label htmlFor="notify_email" className="text-sm">
+          Send email reminder one hour before session
+        </Label>
       </div>
     </div>
   );
