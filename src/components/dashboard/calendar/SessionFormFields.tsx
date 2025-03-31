@@ -68,11 +68,11 @@ export function SessionFormFields({
 
       <div className="flex items-center space-x-2 pt-2">
         <Switch
-          id="notify_email"
-          checked={sessionData.notify_email || false}
-          onCheckedChange={(checked) => setSessionData({...sessionData, notify_email: checked})}
+          id="notify_user"
+          checked={sessionData.notify_user || false}
+          onCheckedChange={(checked) => setSessionData({...sessionData, notify_user: checked})}
         />
-        <Label htmlFor="notify_email" className="text-sm">
+        <Label htmlFor="notify_user" className="text-sm">
           Send email reminder one hour before session
         </Label>
       </div>

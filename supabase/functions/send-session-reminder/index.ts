@@ -1,211 +1,170 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
+// Import required dependencies
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "npm:resend@1.0.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-interface StudySession {
-  id: string;
-  title: string;
-  description: string | null;
-  start_time: string;
-  end_time: string;
-  course_id: string | null;
-  student_id: string;
-  status: 'scheduled' | 'completed' | 'missed';
-  notify_email: boolean;
-}
-
+// Initialize Supabase client
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Function to check for upcoming sessions and send notifications
-async function checkAndSendNotifications() {
-  // Get current time
-  const now = new Date();
-  
-  // Get time one hour from now
-  const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
-  
-  // Buffer window (5 minutes) to catch sessions in the next hour
-  const bufferEnd = new Date(now.getTime() + 65 * 60 * 1000);
+// Initialize Resend client
+const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
+const resend = new Resend(resendApiKey);
 
-  console.log(`Checking for sessions between ${oneHourFromNow.toISOString()} and ${bufferEnd.toISOString()}`);
+const sendSessionReminder = async () => {
+  console.log("Checking for study sessions that need reminders...");
+
+  const now = new Date();
+  // Calculate one hour from now
+  const oneHourFromNow = new Date(now);
+  oneHourFromNow.setHours(oneHourFromNow.getHours() + 1);
   
-  // Find sessions that start in approximately one hour and need notifications
+  // Add a 5-minute buffer to ensure we catch all relevant sessions
+  const startWindow = new Date(oneHourFromNow);
+  startWindow.setMinutes(startWindow.getMinutes() - 5);
+  
+  const endWindow = new Date(oneHourFromNow);
+  endWindow.setMinutes(endWindow.getMinutes() + 5);
+  
+  // Format dates for database query
+  const startTime = startWindow.toISOString();
+  const endTime = endWindow.toISOString();
+
+  // Find sessions that:
+  // 1. Start approximately one hour from now
+  // 2. Have notifications enabled
+  // 3. Haven't had reminders sent yet
   const { data: sessions, error } = await supabase
-    .from('study_sessions')
-    .select('*')
-    .gte('start_time', oneHourFromNow.toISOString())
-    .lt('start_time', bufferEnd.toISOString())
-    .eq('status', 'scheduled')
-    .eq('notify_email', true);
-  
+    .from("study_sessions")
+    .select(`
+      id,
+      title,
+      description,
+      start_time,
+      student_id,
+      course_id,
+      profiles(email)
+    `)
+    .eq("status", "scheduled")
+    .eq("notify_user", true)
+    .gte("start_time", startTime)
+    .lte("start_time", endTime)
+    .not("id", "in", (rq) => {
+      return rq
+        .from("session_reminders")
+        .select("session_id")
+        .eq("status", "sent");
+    });
+
   if (error) {
-    console.error('Error fetching upcoming sessions:', error);
-    return { sent: 0, error: error.message };
+    console.error("Error fetching sessions:", error);
+    return { error };
   }
-  
+
+  console.log(`Found ${sessions?.length || 0} sessions needing reminders`);
+
   if (!sessions || sessions.length === 0) {
-    console.log('No upcoming sessions found that require notifications');
-    return { sent: 0, sessions: [] };
+    return { message: "No reminders to send" };
   }
-  
-  console.log(`Found ${sessions.length} sessions to send notifications for`);
-  
-  // Process each session
-  let notificationsSent = 0;
-  const processedSessions = [];
-  
+
+  const results = [];
+
+  // Send email reminders for each session
   for (const session of sessions) {
+    const studentEmail = session.profiles?.email;
+    if (!studentEmail) {
+      console.error(`No email found for student: ${session.student_id}`);
+      continue;
+    }
+
     try {
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('email, first_name')
-        .eq('id', session.student_id)
-        .single();
-        
-      if (userError || !userData) {
-        console.error(`Could not find user for session ${session.id}:`, userError);
-        continue;
-      }
-      
-      // Get course name if applicable
-      let courseName = "N/A";
-      if (session.course_id) {
-        const { data: courseData } = await supabase
-          .from('courses')
-          .select('title')
-          .eq('id', session.course_id)
-          .single();
-          
-        if (courseData) {
-          courseName = courseData.title;
-        }
-      }
-      
-      // Format times for display
-      const startTime = new Date(session.start_time);
-      const endTime = new Date(session.end_time);
-      const timeFormat = new Intl.DateTimeFormat('en-US', { 
-        hour: 'numeric', 
+      // Format the session start time to be more readable
+      const sessionStartTime = new Date(session.start_time);
+      const formattedTime = sessionStartTime.toLocaleTimeString('en-US', {
+        hour: 'numeric',
         minute: '2-digit',
         hour12: true
       });
-      const dateFormat = new Intl.DateTimeFormat('en-US', {
+      
+      const formattedDate = sessionStartTime.toLocaleDateString('en-US', {
         weekday: 'long',
-        month: 'long',
+        month: 'long', 
         day: 'numeric'
       });
-      
-      // Compose email
-      const emailContent = {
-        to: userData.email,
-        subject: `Reminder: Study Session in 1 hour - ${session.title}`,
+
+      // Send the email
+      const emailResult = await resend.emails.send({
+        from: "Study Reminder <noreply@yourapp.com>",
+        to: studentEmail,
+        subject: `Reminder: Your study session "${session.title}" starts in 1 hour`,
         html: `
-          <h2>Study Session Reminder</h2>
-          <p>Hello ${userData.first_name || 'Student'},</p>
-          <p>This is a reminder that you have a study session scheduled in about an hour:</p>
-          <div style="margin: 20px; padding: 15px; border-left: 4px solid #2563eb; background-color: #f3f4f6;">
-            <p><strong>Session:</strong> ${session.title}</p>
-            <p><strong>Date:</strong> ${dateFormat.format(startTime)}</p>
-            <p><strong>Time:</strong> ${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}</p>
-            <p><strong>Course:</strong> ${courseName}</p>
-            ${session.description ? `<p><strong>Description:</strong> ${session.description}</p>` : ''}
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Study Session Reminder</h2>
+            <p>Your scheduled study session <strong>${session.title}</strong> starts in 1 hour.</p>
+            <div style="background-color: #f9f9f9; border-left: 4px solid #5c6ac4; padding: 15px; margin: 20px 0;">
+              <p><strong>Date:</strong> ${formattedDate}</p>
+              <p><strong>Time:</strong> ${formattedTime}</p>
+              ${session.description ? `<p><strong>Description:</strong> ${session.description}</p>` : ''}
+            </div>
+            <p>Good luck with your studies!</p>
           </div>
-          <p>Please make sure you're prepared for your session!</p>
-          <p>Good luck with your studies!</p>
-        `,
-        text: `
-          Study Session Reminder
-          
-          Hello ${userData.first_name || 'Student'},
-          
-          This is a reminder that you have a study session scheduled in about an hour:
-          
-          Session: ${session.title}
-          Date: ${dateFormat.format(startTime)}
-          Time: ${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}
-          Course: ${courseName}
-          ${session.description ? `Description: ${session.description}` : ''}
-          
-          Please make sure you're prepared for your session!
-          
-          Good luck with your studies!
         `
-      };
-      
-      // For this example, we'll just log the email that would be sent
-      // In a real implementation, you would use an email service like Resend or SendGrid
-      console.log(`Would send email to ${userData.email} about session ${session.title}`);
-      console.log(`Email subject: ${emailContent.subject}`);
-      
-      // Mark as processed
-      await supabase
-        .from('session_reminders')
+      });
+
+      console.log("Email sent:", emailResult);
+
+      // Log the reminder in the database
+      const { data: reminderLog, error: logError } = await supabase
+        .from("session_reminders")
         .insert({
           session_id: session.id,
-          notification_sent_at: new Date().toISOString()
-        });
-      
-      notificationsSent++;
-      processedSessions.push({
-        sessionId: session.id,
-        title: session.title,
-        recipient: userData.email
+          student_id: session.student_id,
+          email: studentEmail,
+          session_title: session.title,
+          session_start_time: session.start_time,
+          reminder_time: new Date().toISOString(),
+          status: "sent"
+        })
+        .select()
+        .single();
+
+      if (logError) {
+        console.error("Error logging reminder:", logError);
+      }
+
+      results.push({
+        session_id: session.id,
+        email: studentEmail,
+        status: "sent"
       });
-      
-    } catch (processError) {
-      console.error(`Error processing session ${session.id}:`, processError);
+
+    } catch (err) {
+      console.error(`Error sending reminder for session ${session.id}:`, err);
+      results.push({
+        session_id: session.id,
+        status: "error",
+        error: err.message
+      });
     }
   }
-  
-  return { 
-    sent: notificationsSent, 
-    total: sessions.length,
-    sessions: processedSessions
-  };
-}
 
-// Handler for the endpoint
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-  
-  try {
-    // This endpoint can be triggered either manually or via a cron job
-    const result = await checkAndSendNotifications();
-    
-    return new Response(
-      JSON.stringify(result),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          "Content-Type": "application/json" 
-        } 
-      }
-    );
-  } catch (error) {
-    console.error("Error in send-session-reminder function:", error);
-    
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500, 
-        headers: { 
-          ...corsHeaders, 
-          "Content-Type": "application/json" 
-        } 
-      }
-    );
-  }
+  return { results };
 };
 
-serve(handler);
+serve(async () => {
+  try {
+    const result = await sendSessionReminder();
+    return new Response(JSON.stringify(result), {
+      headers: { "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (error) {
+    console.error("Error in send-session-reminder function:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});

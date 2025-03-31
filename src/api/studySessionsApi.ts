@@ -14,7 +14,7 @@ export const fetchStudySessions = async (userId: string) => {
   return data?.map(session => ({
     ...session,
     status: session.status as 'scheduled' | 'completed' | 'missed',
-    notify_email: session.notify_email || false
+    notify_user: session.notify_user || false
   })) || [];
 };
 
@@ -23,7 +23,7 @@ export const createStudySession = async (userId: string, sessionData: CreateStud
     ...sessionData,
     student_id: userId,
     status: sessionData.status || 'scheduled',
-    notify_email: sessionData.notify_email || false,
+    notify_user: sessionData.notify_user || false,
     ...(sessionData.course_id ? { course_id: sessionData.course_id } : {})
   };
 
@@ -38,7 +38,7 @@ export const createStudySession = async (userId: string, sessionData: CreateStud
   return {
     ...data,
     status: data.status as 'scheduled' | 'completed' | 'missed',
-    notify_email: data.notify_email || false
+    notify_user: data.notify_user || false
   };
 };
 
@@ -61,7 +61,7 @@ export const updateStudySession = async (userId: string, id: string, updates: Pa
   return {
     ...data,
     status: data.status as 'scheduled' | 'completed' | 'missed',
-    notify_email: data.notify_email || false
+    notify_user: data.notify_user || false
   };
 };
 

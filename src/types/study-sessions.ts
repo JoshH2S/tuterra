@@ -7,7 +7,7 @@ export interface StudySession {
   end_time: string;
   course_id: string | null;
   status: 'scheduled' | 'completed' | 'missed';
-  notify_email: boolean;
+  notify_user: boolean;
 }
 
 export type CreateStudySessionData = Omit<StudySession, 'id' | 'student_id'>;
