@@ -3,11 +3,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
+import { lazyLoad } from "@/utils/lazy-loading";
 
 // Lazy load MainLayout
-const MainLayout = lazy(() => import("@/components/layout/MainLayout").then(
-  module => ({ default: module.MainLayout })
-));
+const MainLayout = lazyLoad(
+  () => import("@/components/layout/MainLayout").then(
+    module => ({ default: module.MainLayout })
+  ),
+  "MainLayout"
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
