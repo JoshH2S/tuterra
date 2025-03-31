@@ -24,7 +24,7 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
     course_id: "",
     start_time: "",
     end_time: "",
-    notify_email: true
+    notify_user: true
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +47,7 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
       start_time: startDate.toISOString(),
       end_time: endDate.toISOString(),
       status: 'scheduled',
-      notify_email: newSession.notify_email
+      notify_user: newSession.notify_user
     });
 
     setIsDialogOpen(false);
@@ -57,7 +57,7 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
       course_id: "",
       start_time: "",
       end_time: "",
-      notify_email: true
+      notify_user: true
     });
   };
 
@@ -130,11 +130,11 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
 
           <div className="flex items-center space-x-2">
             <Switch
-              id="notify_email"
-              checked={newSession.notify_email}
-              onCheckedChange={(checked) => setNewSession(prev => ({ ...prev, notify_email: checked }))}
+              id="notify_user"
+              checked={newSession.notify_user}
+              onCheckedChange={(checked) => setNewSession(prev => ({ ...prev, notify_user: checked }))}
             />
-            <Label htmlFor="notify_email" className="text-sm">
+            <Label htmlFor="notify_user" className="text-sm">
               Send email reminder one hour before session
             </Label>
           </div>
