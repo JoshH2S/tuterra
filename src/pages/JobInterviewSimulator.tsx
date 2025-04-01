@@ -47,8 +47,7 @@ const JobInterviewSimulator = () => {
 
   // Local state for this component
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
-  const setInterviewReady = () => {}; // This is derived from questions.length now
-  const sessionCreationErrors = [];
+  const sessionCreationErrors: any[] = [];
   const usedFallbackQuestions = false;
   const isOnline = navigator.onLine;
 

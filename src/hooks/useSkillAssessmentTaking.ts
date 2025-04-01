@@ -14,6 +14,7 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
   const [totalTime, setTotalTime] = useState<number>(0);
   
   // Get assessment data
+  // Pass no arguments here, as useAssessmentData() gets the ID from useParams internally
   const {
     assessment,
     loading,
@@ -21,7 +22,7 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
     startAssessment,
     showUpgradePrompt,
     setShowUpgradePrompt
-  } = useAssessmentData(assessmentId);
+  } = useAssessmentData();
 
   // Sync errors
   if (assessmentError && !error) {
