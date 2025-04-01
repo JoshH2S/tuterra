@@ -40,20 +40,21 @@ const CourseDetail = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="container mx-auto py-6 px-4 md:py-8">
+      <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
         <Button 
           variant="ghost" 
           onClick={handleBack} 
-          className="mb-4 pl-2 flex items-center touch-manipulation"
+          className="mb-3 md:mb-4 pl-1 md:pl-2 flex items-center touch-manipulation"
           size="sm"
+          aria-label="Back to courses"
         >
           <ChevronLeft className="mr-1 h-4 w-4" />
-          Back to Courses
+          <span>Back to Courses</span>
         </Button>
         
         {course && (
-          <Card className="mb-6">
+          <Card className="mb-4 md:mb-6">
             <CardHeader>
               <CardTitle>{course.title}</CardTitle>
               <CardDescription>
