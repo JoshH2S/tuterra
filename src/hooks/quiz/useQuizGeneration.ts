@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Topic, Question, CONTENT_LIMITS } from "@/types/quiz-generation";
 import { QuestionDifficulty } from "@/types/quiz";
 import { useQuizSubmission } from "./useQuizSubmission";

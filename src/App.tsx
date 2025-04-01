@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
 import { lazyLoad } from "@/utils/lazy-loading";
+import { Toaster } from "@/components/ui/toaster";
 
 // Lazy load MainLayout
 const MainLayout = lazyLoad(
@@ -36,6 +37,7 @@ const App = () => {
         <Suspense fallback={<AppLoading />}>
           <MainLayout />
         </Suspense>
+        <Toaster />
       </BrowserRouter>
     </QueryClientProvider>
   );
