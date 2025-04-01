@@ -29,7 +29,9 @@ export const useUserCredits = () => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      // Using 'any' to bypass the type checking since we know user_credits exists in the database
+      // This is a workaround since the Supabase types don't include our newly created table
+      const { data, error } = await (supabase as any)
         .from('user_credits')
         .select('*')
         .eq('user_id', user.id)
@@ -37,7 +39,7 @@ export const useUserCredits = () => {
 
       if (error) throw error;
 
-      setCredits(data);
+      setCredits(data as UserCredits);
       setError(null);
     } catch (err) {
       console.error('Error fetching user credits:', err);
@@ -65,7 +67,8 @@ export const useUserCredits = () => {
         return false;
       }
 
-      const { error } = await supabase
+      // Using 'any' to bypass the type checking
+      const { error } = await (supabase as any)
         .from('user_credits')
         .update({ [creditType]: credits[creditType] - 1 })
         .eq('user_id', user.id);

@@ -1,6 +1,6 @@
+
 import { useEffect } from "react";
-import { useInterviewSession } from "@/hooks/interview/useInterviewSession";
-import { useInterviewSetup } from "@/hooks/interview/useInterviewSetup";
+import { useInterviewSession } from "@/hooks/interview";
 import { InterviewForm } from "@/components/interview/InterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
@@ -8,6 +8,7 @@ import { InterviewDebug } from "@/components/interview/InterviewDebug";
 import { InterviewLogo } from "@/components/interview/InterviewLogo";
 import { InterviewCompletion } from "@/components/interview/InterviewCompletion";
 import { Wifi, WifiOff } from "lucide-react";
+import { useInterviewSetup } from "@/hooks/interview/useInterviewSetup";
 
 const JobInterviewSimulator = () => {
   const {
@@ -36,25 +37,32 @@ const JobInterviewSimulator = () => {
   } = useInterviewSession();
 
   const {
-    handleStartInterview,
-    interviewReady,
-    setInterviewReady,
-    sessionCreationErrors,
-    usedFallbackQuestions,
-    isLoading,
-    isOnline
-  } = useInterviewSetup(setCurrentSessionId, setQuestions, setIsGeneratingQuestions);
+    jobTitle,
+    setJobTitle,
+    loading: isLoading,
+    showUpgradePrompt,
+    setShowUpgradePrompt,
+    handleSubmit
+  } = useInterviewSetup();
 
-  const handleStartInterviewWithParams = (industry: string, jobRole: string, jobDescription: string) => {
+  // Local state for this component
+  const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
+  const setInterviewReady = () => {}; // This is derived from questions.length now
+  const sessionCreationErrors = [];
+  const usedFallbackQuestions = false;
+  const isOnline = navigator.onLine;
+
+  const handleStartInterviewWithParams = (industry: string, role: string, description: string) => {
     setIndustry(industry);
-    setJobRole(jobRole);
-    setJobDescription(jobDescription);
-    handleStartInterview(industry, jobRole, jobDescription);
+    setJobRole(role);
+    setJobDescription(description);
+    
+    // Submit the form using handleSubmit from useInterviewSetup
+    handleSubmit(new Event('submit') as any);
   };
 
   const handleStartNewInterview = () => {
     handleStartNew();
-    setInterviewReady(false);
   };
 
   return (

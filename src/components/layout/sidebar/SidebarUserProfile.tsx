@@ -3,7 +3,11 @@ import { User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 
-export const SidebarUserProfile = () => {
+interface SidebarUserProfileProps {
+  isCollapsed?: boolean;
+}
+
+export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfileProps) => {
   const { user } = useAuth();
   
   return (
@@ -19,17 +23,19 @@ export const SidebarUserProfile = () => {
           <User className="h-5 w-5" />
         )}
       </div>
-      <div className="flex flex-col text-sm">
-        <span className="font-medium">
-          {user?.user_metadata?.first_name
-            ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`
-            : user?.email || 'User'}
-        </span>
-        <span className="text-xs text-muted-foreground flex items-center">
-          Free Plan
-          <CreditsBadge />
-        </span>
-      </div>
+      {!isCollapsed && (
+        <div className="flex flex-col text-sm">
+          <span className="font-medium">
+            {user?.user_metadata?.first_name
+              ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`
+              : user?.email || 'User'}
+          </span>
+          <span className="text-xs text-muted-foreground flex items-center">
+            Free Plan
+            <CreditsBadge />
+          </span>
+        </div>
+      )}
     </div>
   );
 };

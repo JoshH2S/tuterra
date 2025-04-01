@@ -31,15 +31,12 @@ export const TutorChat = ({
   smartNotes = [],
   setSmartNotes = () => {}
 }: TutorChatProps) => {
-  const [message, setMessage] = useState("");
-  const [uploadedFileId, setUploadedFileId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const { messages, isLoading, sendMessage } = useTutorMessages();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendMessage = async (message: string) => {
     if (message.trim() && !isLoading) {
       if (onSendMessage) {
         onSendMessage();
@@ -47,7 +44,7 @@ export const TutorChat = ({
       
       try {
         setIsTyping(true);
-        const response = await sendMessage(message, uploadedFileId, subscription);
+        const response = await sendMessage(message, null, subscription);
         
         // Handle smart notes for premium users
         if (subscription.tier === "premium" && response?.smartNotes) {
@@ -58,9 +55,6 @@ export const TutorChat = ({
       } finally {
         setIsTyping(false);
       }
-      
-      setMessage("");
-      setUploadedFileId(null);  // Reset the file ID after sending
     }
   };
 
@@ -70,7 +64,6 @@ export const TutorChat = ({
       const processedContent = await processFileContent(file);
       
       if (processedContent.fileId) {
-        setUploadedFileId(processedContent.fileId);
         toast({
           title: "File uploaded successfully",
           description: "You can now ask questions about the file content.",
@@ -105,12 +98,9 @@ export const TutorChat = ({
       
       <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 pb-4 pt-3 safe-area-bottom' : ''}`}>
         <TutorChatInput
-          message={message}
-          isLoading={isLoading}
-          onMessageChange={setMessage}
-          onSubmit={handleSubmit}
-          onFileUpload={handleFileUpload}
-          subscription={subscription}
+          onSendMessage={handleSendMessage}
+          isProcessing={isLoading}
+          disabled={isLoading}
         />
         
         {subscription.tier === "free" && (

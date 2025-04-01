@@ -1,22 +1,38 @@
 
+import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { useAssessmentData } from "./skill-assessment/useAssessmentData";
 import { useAssessmentTimer } from "./skill-assessment/useAssessmentTimer";
 import { useAssessmentNavigation } from "./skill-assessment/useAssessmentNavigation";
 import { useAssessmentSubmission } from "./skill-assessment/useAssessmentSubmission";
-import { AssessmentTakingState } from "./skill-assessment/types";
+import { AssessmentTakingState, SkillAssessment } from "./skill-assessment/types";
 
 export const useSkillAssessmentTaking = (assessmentId: string | undefined): AssessmentTakingState => {
+  // Local state
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+  const [totalTime, setTotalTime] = useState<number>(0);
+  
   // Get assessment data
   const {
     assessment,
     loading,
-    userTier,
-    error,
-    setError,
-    timeRemaining,
-    setTimeRemaining,
-    totalTime
+    error: assessmentError,
+    startAssessment,
+    showUpgradePrompt,
+    setShowUpgradePrompt
   } = useAssessmentData(assessmentId);
+
+  // Sync errors
+  if (assessmentError && !error) {
+    setError(assessmentError);
+  }
+  
+  // Initialize timer when assessment loads
+  if (assessment && totalTime === 0 && assessment.time_limit) {
+    setTotalTime(assessment.time_limit);
+    setTimeRemaining(assessment.time_limit);
+  }
 
   // Navigation between questions
   const {
@@ -30,13 +46,12 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
     handleAnswerChange,
     goToNextQuestion,
     goToPreviousQuestion
-  } = useAssessmentNavigation(assessment?.questions);
+  } = useAssessmentNavigation(assessment?.questions || []);
 
   // Handle submission
   const {
     isSubmitting,
     error: submissionError,
-    setError: setSubmissionError,
     submissionProgress,
     handleSubmit
   } = useAssessmentSubmission(
@@ -44,7 +59,7 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
     answers,
     totalTime,
     timeRemaining,
-    userTier
+    assessment?.tier || "free"
   );
 
   // Combine errors from different sources
