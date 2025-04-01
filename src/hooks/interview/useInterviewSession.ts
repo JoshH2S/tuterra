@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useInterviewState } from "./useInterviewState";
 import { useInterviewResponses } from "./useInterviewResponses";
 import { useInterviewPersistence } from "./useInterviewPersistence";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const useInterviewSession = () => {
   const {
@@ -39,17 +40,21 @@ export const useInterviewSession = () => {
   const { toast } = useToast();
   const { saveResponse } = useInterviewResponses(setResponses);
   const { downloadTranscript } = useInterviewPersistence();
+  const { subscription } = useSubscription();
 
   // When typing effect finishes
   useEffect(() => {
     let typingTimer: number;
     if (typingEffect && isInterviewInProgress) {
+      // Premium users get faster typing
+      const typingSpeed = subscription.tier !== "free" ? 1000 : 2000;
+      
       typingTimer = window.setTimeout(() => {
         setTypingEffect(false);
-      }, 2000); // Adjust typing speed here
+      }, typingSpeed);
     }
     return () => clearTimeout(typingTimer);
-  }, [typingEffect, isInterviewInProgress, setTypingEffect]);
+  }, [typingEffect, isInterviewInProgress, setTypingEffect, subscription.tier]);
 
   // Generate transcript when interview is completed
   useEffect(() => {

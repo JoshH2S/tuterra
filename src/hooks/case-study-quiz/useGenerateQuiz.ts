@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Topic, Question, QuestionDifficulty, CaseStudyQuestion, QuizMetadata } from "@/types/quiz";
 import { useQuizSave } from "@/hooks/quiz/useQuizSave";
+import { useUserCredits } from "@/hooks/useUserCredits";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface NewsSource {
   title: string;
@@ -18,7 +20,10 @@ export const useGenerateQuiz = () => {
   const [error, setError] = useState<string | null>(null);
   const [quizMetadata, setQuizMetadata] = useState<QuizMetadata | null>(null);
   const [quizId, setQuizId] = useState<string | null>(null); // Add state for quiz ID
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const { saveQuizToDatabase } = useQuizSave();
+  const { checkCredits, decrementCredits } = useUserCredits();
+  const { subscription } = useSubscription();
 
   const generateQuiz = async (
     topics: Topic[],
@@ -32,6 +37,20 @@ export const useGenerateQuiz = () => {
         variant: "destructive",
       });
       return false;
+    }
+
+    // Check for credits if user is on free plan
+    if (subscription.tier === 'free') {
+      const hasCredits = await checkCredits('quiz_credits');
+      if (!hasCredits) {
+        setShowUpgradePrompt(true);
+        toast({
+          title: "No credits remaining",
+          description: "You have used all your free quiz credits. Please upgrade to continue.",
+          variant: "destructive",
+        });
+        return false;
+      }
     }
 
     setIsGenerating(true);
@@ -69,6 +88,7 @@ export const useGenerateQuiz = () => {
             difficulty,
             teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
             school: teacherData?.school,
+            tier: subscription.tier, // Send subscription tier to backend
           }),
         }
       );
@@ -151,6 +171,11 @@ export const useGenerateQuiz = () => {
           console.log("Quiz saved with ID:", quizId);
           setQuizId(quizId); // Store the quiz ID
           
+          // Decrement credits for free users only
+          if (subscription.tier === 'free') {
+            await decrementCredits('quiz_credits');
+          }
+          
           toast({
             title: "Success",
             description: "Case study quiz generated and saved successfully!",
@@ -201,6 +226,8 @@ export const useGenerateQuiz = () => {
     quizMetadata,
     quizId, // Return the quiz ID
     error,
+    showUpgradePrompt,
+    setShowUpgradePrompt,
     generateQuiz
   };
 };

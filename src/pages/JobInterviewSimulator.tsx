@@ -9,6 +9,8 @@ import { InterviewLogo } from "@/components/interview/InterviewLogo";
 import { InterviewCompletion } from "@/components/interview/InterviewCompletion";
 import { Wifi, WifiOff } from "lucide-react";
 import { useInterviewSetup } from "@/hooks/interview/useInterviewSetup";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
 
 const JobInterviewSimulator = () => {
   const {
@@ -44,6 +46,8 @@ const JobInterviewSimulator = () => {
     setShowUpgradePrompt,
     handleSubmit
   } = useInterviewSetup();
+
+  const { subscription } = useSubscription();
 
   // Local state for this component
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
@@ -120,6 +124,12 @@ const JobInterviewSimulator = () => {
           />
         )}
       </div>
+      
+      <UpgradePrompt
+        isOpen={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        featureType="interview"
+      />
     </div>
   );
 };

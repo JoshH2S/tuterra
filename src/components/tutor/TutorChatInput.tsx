@@ -7,6 +7,7 @@ import { useAuthStatus } from '@/hooks/useAuthStatus';
 import { useUserCredits } from '@/hooks/useUserCredits';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { UpgradePrompt } from '@/components/credits/UpgradePrompt';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface TutorChatInputProps {
   onSendMessage: (message: string) => void;
@@ -25,6 +26,7 @@ export const TutorChatInput = ({
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const { isLoggedIn, checkingAuth } = useAuthStatus();
   const { checkCredits, decrementCredits } = useUserCredits();
+  const { subscription } = useSubscription();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -37,15 +39,18 @@ export const TutorChatInput = ({
   const handleSend = async () => {
     if (!message.trim() || disabled || isProcessing) return;
 
-    // Check if user has tutor message credits
-    const hasCredits = await checkCredits('tutor_message_credits');
-    if (!hasCredits) {
-      setShowUpgradePrompt(true);
-      return;
-    }
+    // Skip credit check for premium users
+    if (subscription.tier === 'free') {
+      // Check if user has tutor message credits
+      const hasCredits = await checkCredits('tutor_message_credits');
+      if (!hasCredits) {
+        setShowUpgradePrompt(true);
+        return;
+      }
 
-    // Decrement tutor message credits
-    await decrementCredits('tutor_message_credits');
+      // Decrement tutor message credits
+      await decrementCredits('tutor_message_credits');
+    }
     
     onSendMessage(message.trim());
     setMessage('');
