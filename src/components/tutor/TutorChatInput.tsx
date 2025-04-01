@@ -1,151 +1,108 @@
 
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { PaperclipIcon, SendIcon, Sparkles, Smile } from "lucide-react";
-import FileUpload from "@/components/FileUpload";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Subscription } from "@/hooks/useSubscription";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { useRef, useEffect } from "react";
+import { useState, KeyboardEvent, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, AlertCircle } from 'lucide-react';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { useUserCredits } from '@/hooks/useUserCredits';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { UpgradePrompt } from '@/components/credits/UpgradePrompt';
 
 interface TutorChatInputProps {
-  message: string;
-  isLoading: boolean;
-  onMessageChange: (message: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  onFileUpload: (file: File) => Promise<void>;
-  subscription?: Subscription;
+  onSendMessage: (message: string) => void;
+  disabled?: boolean;
+  isProcessing?: boolean;
+  placeholder?: string;
 }
 
 export const TutorChatInput = ({
-  message,
-  isLoading,
-  onMessageChange,
-  onSubmit,
-  onFileUpload,
-  subscription = { 
-    tier: "free", 
-    features: { 
-      smartNotes: false, 
-      advancedModel: false, 
-      learningPath: false, 
-      streaming: false 
-    } 
-  }
+  onSendMessage,
+  disabled = false,
+  isProcessing = false,
+  placeholder = 'Type your message here...'
 }: TutorChatInputProps) => {
-  const isMobile = useIsMobile();
-  const isPremium = subscription.tier === "premium";
-  const isPro = subscription.tier === "pro";
+  const [message, setMessage] = useState('');
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const { isLoggedIn, checkingAuth } = useAuthStatus();
+  const { checkCredits, decrementCredits } = useUserCredits();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize the textarea
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const adjustHeight = () => {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-    };
-
-    textarea.addEventListener('input', adjustHeight);
-    adjustHeight(); // Initial adjustment
-
-    return () => textarea.removeEventListener('input', adjustHeight);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
   }, [message]);
 
-  const uploadButton = (
-    <Button 
-      variant="ghost" 
-      size="icon"
-      className="flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-      aria-label="Upload file"
-      type="button"
-      disabled={isLoading}
-      onClick={(e) => {
-        // Prevent the button's default action
-        e.preventDefault();
-        // Let the label's click event handle the file input
-        const fileInput = document.getElementById('file-upload');
-        if (fileInput) {
-          fileInput.click();
-        }
-      }}
-    >
-      <PaperclipIcon className="h-5 w-5" />
-    </Button>
-  );
+  const handleSend = async () => {
+    if (!message.trim() || disabled || isProcessing) return;
+
+    // Check if user has tutor message credits
+    const hasCredits = await checkCredits('tutor_message_credits');
+    if (!hasCredits) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+
+    // Decrement tutor message credits
+    await decrementCredits('tutor_message_credits');
+    
+    onSendMessage(message.trim());
+    setMessage('');
+    
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  if (!isLoggedIn && !checkingAuth) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Authentication Required</AlertTitle>
+        <AlertDescription>
+          Please sign in to chat with the AI tutor.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-2">
-      <div className="flex items-end gap-2">
-        {(isPremium || isPro) && (
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <FileUpload
-              onFileSelect={onFileUpload}
-              acceptedTypes=".txt,.pdf,.doc,.docx"
-              trigger={uploadButton}
-            />
-          </motion.div>
-        )}
-
-        <div className="relative flex-1">
-          <Textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => onMessageChange(e.target.value)}
-            placeholder={isPremium ? "Ask anything with enhanced AI..." : "Ask me anything..."}
-            className={cn(
-              "resize-none min-h-[44px] px-5 pr-12 transition-all",
-              isMobile ? "py-2 text-sm" : "py-2.5",
-              isPremium 
-                ? "focus-visible:ring-amber-300" 
-                : "",
-              "rounded-full"
-            )}
-            disabled={isLoading}
-            onKeyDown={(e) => {
-              // Submit form on Enter (but not with Shift+Enter)
-              if (e.key === "Enter" && !e.shiftKey && !isMobile) {
-                e.preventDefault();
-                if (message.trim()) {
-                  onSubmit(e);
-                }
-              }
-            }}
-          />
-          
-          {(isPremium || isPro) && (
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="absolute right-12 bottom-2 text-muted-foreground hover:text-foreground"
-              disabled={isLoading}
-            >
-              <Smile className="h-5 w-5" />
-            </Button>
-          )}
-          
-          <Button 
-            type="submit" 
-            size="icon"
-            disabled={isLoading || !message.trim()}
-            className={cn(
-              "absolute right-2 bottom-2 rounded-full h-9 w-9 flex items-center justify-center",
-              isPremium ? "bg-amber-500 hover:bg-amber-600" : ""
-            )}
-            aria-label="Send message"
-          >
-            <SendIcon className="h-4 w-4" />
-          </Button>
-        </div>
+    <>
+      <div className="flex items-end gap-2 bg-background border rounded-md p-2">
+        <Textarea
+          ref={textareaRef}
+          placeholder={placeholder}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={disabled || isProcessing}
+          className="min-h-10 resize-none border-0 focus-visible:ring-0 focus-visible:ring-transparent"
+          rows={1}
+        />
+        <Button
+          onClick={handleSend}
+          disabled={!message.trim() || disabled || isProcessing}
+          size="icon"
+          className="h-8 w-8 shrink-0"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
       </div>
-    </form>
+      
+      <UpgradePrompt
+        isOpen={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        featureType="tutor"
+      />
+    </>
   );
 };

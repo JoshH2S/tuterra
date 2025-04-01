@@ -6,6 +6,7 @@ import { Topic, Question, CONTENT_LIMITS } from "@/types/quiz-generation";
 import { QuestionDifficulty } from "@/types/quiz";
 import { useQuizSubmission } from "./useQuizSubmission";
 import { useQuizFileUpload } from "./useQuizFileUpload";
+import { useUserCredits } from "@/hooks/useUserCredits";
 
 export interface GenerationProgress {
   stage: 'idle' | 'analyzing' | 'generating' | 'saving' | 'error';
@@ -26,7 +27,9 @@ export const useQuizGeneration = () => {
     percent: 0,
     message: ''
   });
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState<boolean>(false);
   
+  const { credits, decrementCredits, checkCredits } = useUserCredits();
   const { 
     selectedFile, 
     contentLength, 
@@ -71,6 +74,17 @@ export const useQuizGeneration = () => {
   };
 
   const handleSubmit = async () => {
+    // Check if user has enough credits
+    if (!checkCredits('quiz_credits')) {
+      setShowUpgradePrompt(true);
+      toast({
+        title: "No credits remaining",
+        description: "You have used all your free quiz credits. Please upgrade to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Start with analyzing stage
       setGenerationProgress({
@@ -124,6 +138,9 @@ export const useQuizGeneration = () => {
         percent: 90,
         message: 'Finalizing your quiz...'
       });
+
+      // Decrement quiz credits after successful generation
+      await decrementCredits('quiz_credits');
 
       // If successful, reset progress to idle
       setTimeout(() => {
@@ -235,6 +252,7 @@ export const useQuizGeneration = () => {
     selectedCourseId,
     difficulty,
     generationProgress,
+    showUpgradePrompt,
     error,
     handleRetry,
     setTitle,
@@ -246,5 +264,6 @@ export const useQuizGeneration = () => {
     setDuration,
     setSelectedCourseId,
     setDifficulty,
+    setShowUpgradePrompt,
   };
 };

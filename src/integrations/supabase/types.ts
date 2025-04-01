@@ -1668,6 +1668,39 @@ export type Database = {
           },
         ]
       }
+      user_credits: {
+        Row: {
+          assessment_credits: number
+          created_at: string
+          id: string
+          interview_credits: number
+          quiz_credits: number
+          tutor_message_credits: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assessment_credits?: number
+          created_at?: string
+          id?: string
+          interview_credits?: number
+          quiz_credits?: number
+          tutor_message_credits?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assessment_credits?: number
+          created_at?: string
+          id?: string
+          interview_credits?: number
+          quiz_credits?: number
+          tutor_message_credits?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_feature_interactions: {
         Row: {
           action: string

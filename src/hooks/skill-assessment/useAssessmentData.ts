@@ -1,94 +1,93 @@
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { SkillAssessment } from "./types";
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserCredits } from '@/hooks/useUserCredits';
 
-export const useAssessmentData = (assessmentId: string | undefined) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [assessment, setAssessment] = useState<SkillAssessment | null>(null);
+export const useAssessmentData = () => {
+  const [assessment, setAssessment] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userTier, setUserTier] = useState<string>("free");
-  const [error, setError] = useState<string | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number>(3600); // 1 hour default
-  const [totalTime, setTotalTime] = useState<number>(3600); // 1 hour default
-
-  // Fetch assessment data
+  const [error, setError] = useState(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { checkCredits, decrementCredits } = useUserCredits();
+  
   useEffect(() => {
     const fetchAssessment = async () => {
-      if (!assessmentId || !user) return;
-
+      if (!id) return;
+      
       try {
-        // Get user's tier
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('subscription_tier')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        setUserTier(profile?.subscription_tier || 'free');
-        
-        // Get assessment
+        setLoading(true);
         const { data, error } = await supabase
-          .from("skill_assessments")
-          .select("*")
-          .eq("id", assessmentId)
+          .from('skill_assessments')
+          .select('*')
+          .eq('id', id)
           .single();
-
+          
         if (error) throw error;
         
-        // Cast the JSON questions to the correct type
-        const typedAssessment: SkillAssessment = {
-          ...data,
-          questions: data.questions as SkillAssessment['questions']
-        };
-        
-        setAssessment(typedAssessment);
-        
-        // Set timer based on question count (2 minutes per question, min 30 minutes, max 2 hours)
-        const questionCount = typedAssessment.questions?.length || 0;
-        const calculatedTime = Math.max(30 * 60, Math.min(120 * 60, questionCount * 120));
-        setTimeRemaining(calculatedTime);
-        setTotalTime(calculatedTime);
-        
-        // Track assessment view
-        try {
-          await supabase.from('user_feature_interactions').insert({
-            user_id: user.id,
-            feature: 'skill-assessment-view',
-            action: 'view',
-            metadata: { assessment_id: assessmentId },
-            timestamp: new Date().toISOString()
-          });
-        } catch (trackError) {
-          console.error("Error tracking assessment view:", trackError);
-          // Don't throw here, just log the error
-        }
-      } catch (error) {
-        console.error("Error fetching assessment:", error);
+        setAssessment(data);
+      } catch (err) {
+        console.error('Error fetching assessment:', err);
+        setError(err.message);
         toast({
-          title: "Error",
-          description: "Failed to load the assessment",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Failed to load the assessment',
+          variant: 'destructive',
         });
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchAssessment();
-  }, [assessmentId, user, toast]);
+  }, [id]);
 
+  const startAssessment = async () => {
+    if (!user) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please sign in to take this assessment',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Check if user has assessment credits
+    if (!checkCredits('assessment_credits')) {
+      setShowUpgradePrompt(true);
+      toast({
+        title: 'No credits remaining',
+        description: 'You have used all your free skill assessment credits. Please upgrade to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      // Decrement assessment credits
+      await decrementCredits('assessment_credits');
+      navigate(`/take-assessment/${id}`);
+    } catch (error) {
+      console.error('Error starting assessment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to start the assessment',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   return {
     assessment,
     loading,
-    userTier,
     error,
-    setError,
-    timeRemaining,
-    setTimeRemaining,
-    totalTime
+    startAssessment,
+    showUpgradePrompt,
+    setShowUpgradePrompt
   };
 };
