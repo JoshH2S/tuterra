@@ -14,15 +14,23 @@ import {
   ScrollText,
   Users,
   FileQuestion,
-  CreditCard
+  CreditCard,
+  LucideIcon
 } from "lucide-react";
 
 interface SidebarNavigationProps {
   isCollapsed?: boolean;
 }
 
+// Define the navigation item interface
+interface NavigationItem {
+  icon: LucideIcon;
+  label: string;
+  path: string;
+}
+
 // Export navigation items for reuse in mobile navigation
-export const navigationItems = [
+export const navigationItems: NavigationItem[] = [
   { 
     icon: Home, 
     label: "Dashboard", 
@@ -92,7 +100,7 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
         {navigationItems.map((item) => (
           <SidebarNavItem 
             key={item.path}
-            icon={item.icon && <item.icon className="h-5 w-5" />}
+            icon={item.icon}
             label={item.label}
             isActive={activeItem === item.path.split("/")[1] || 
                      (activeItem === "" && item.path === "/dashboard")}

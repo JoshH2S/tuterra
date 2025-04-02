@@ -8,19 +8,19 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SidebarNavItemProps {
-  to: string;
   icon: LucideIcon;
-  children: ReactNode;
+  label: string;
   isActive?: boolean;
   isCollapsed?: boolean;
+  onClick: () => void;
 }
 
 export const SidebarNavItem = ({ 
-  to, 
   icon: Icon, 
-  children, 
+  label, 
   isActive = false,
-  isCollapsed = false
+  isCollapsed = false,
+  onClick
 }: SidebarNavItemProps) => {
   // Animation variants for each menu item
   const itemVariants = {
@@ -29,8 +29,8 @@ export const SidebarNavItem = ({
   };
   
   const itemContent = (
-    <Link 
-      to={to} 
+    <button 
+      onClick={onClick}
       className={cn(
         "flex items-center relative w-full py-2.5 px-3 rounded-xl transition-all duration-200 touch-manipulation",
         isActive && "text-primary font-medium"
@@ -60,7 +60,7 @@ export const SidebarNavItem = ({
             : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 hover:from-gray-800 hover:to-gray-700 dark:hover:from-gray-300 dark:hover:to-gray-400",
           isCollapsed && isActive && "absolute left-16 bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-md whitespace-nowrap"
         )}>
-          {children}
+          {label}
         </span>
       )}
       
@@ -80,7 +80,7 @@ export const SidebarNavItem = ({
           !isActive && "hover:bg-gray-100 dark:hover:bg-gray-800"
         )} 
       />
-    </Link>
+    </button>
   );
 
   return (
@@ -93,7 +93,7 @@ export const SidebarNavItem = ({
                 {itemContent}
               </TooltipTrigger>
               <TooltipContent side="right" align="center">
-                {children}
+                {label}
               </TooltipContent>
             </Tooltip>
           ) : (
