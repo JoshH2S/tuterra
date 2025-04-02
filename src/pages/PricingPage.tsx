@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -28,7 +27,7 @@ export default function PricingPage() {
     await createCheckoutSession({
       planId,
       successUrl: `${window.location.origin}/subscription-success`,
-      cancelUrl: `${window.location.origin}/pricing`,
+      cancelUrl: `${window.location.origin}/subscription-canceled`,
     });
   };
   

@@ -41,6 +41,8 @@ serve(async (req) => {
       endpointSecret
     );
 
+    console.log(`Processing webhook event: ${event.type}`);
+
     // Handle the event
     switch (event.type) {
       case "customer.subscription.created":
@@ -49,6 +51,10 @@ serve(async (req) => {
         const userId = subscription.metadata.user_id;
         const planId = subscription.metadata.plan_id || 
                       (subscription.items.data[0].plan.nickname === "Pro Plan" ? "pro_plan" : "premium_plan");
+        
+        const subscriptionTier = planId.includes("premium") ? "premium" : "pro";
+        
+        console.log(`Updating subscription for user ${userId} to ${subscriptionTier} tier`);
         
         // Update or insert subscription information
         await supabaseClient
@@ -63,16 +69,45 @@ serve(async (req) => {
             cancel_at_period_end: subscription.cancel_at_period_end,
           })
           .select();
+        
+        // Update the user's subscription tier in the profiles table
+        const { error: profileError } = await supabaseClient
+          .from("profiles")
+          .update({ subscription_tier: subscriptionTier })
+          .eq("id", userId);
+          
+        if (profileError) {
+          console.error("Error updating profile subscription tier:", profileError);
+        } else {
+          console.log(`Successfully updated profile tier to ${subscriptionTier}`);
+        }
         break;
 
       case "customer.subscription.deleted":
         const deletedSubscription = event.data.object;
+        const deletedUserId = deletedSubscription.metadata.user_id;
+        
+        console.log(`Subscription deleted for user ${deletedUserId}`);
+        
+        // Update subscription status to canceled
         await supabaseClient
           .from("subscriptions")
           .update({
             status: "canceled",
           })
           .eq("stripe_subscription_id", deletedSubscription.id);
+          
+        // Reset user tier to free
+        const { error: resetError } = await supabaseClient
+          .from("profiles")
+          .update({ subscription_tier: "free" })
+          .eq("id", deletedUserId);
+          
+        if (resetError) {
+          console.error("Error resetting profile subscription tier:", resetError);
+        } else {
+          console.log("Successfully reset profile tier to free");
+        }
         break;
 
       default:

@@ -17,6 +17,7 @@ import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
 import PricingPage from "@/pages/PricingPage";
 import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
+import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 
 export const AppRoutes = () => {
   return (
@@ -36,6 +37,7 @@ export const AppRoutes = () => {
       <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
       <Route path="/update-password" element={<ProtectedRoute><UpdatePassword /></ProtectedRoute>} />
       <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
+      <Route path="/subscription-canceled" element={<ProtectedRoute><SubscriptionCanceled /></ProtectedRoute>} />
       
       {/* Unprotected Routes */}
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
