@@ -21,6 +21,16 @@ export interface Subscription {
   stripeSubscriptionId?: string;
 }
 
+// Define custom interface for subscription data
+interface SubscriptionData {
+  plan_id: string;
+  status: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  stripe_customer_id: string;
+  stripe_subscription_id: string;
+}
+
 export const useSubscription = () => {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription>({
@@ -73,17 +83,8 @@ export const useSubscription = () => {
 
         // Add subscription details if available
         if (!subscriptionError && subscriptionData) {
-          // Type assertion for the subscription data
-          type SubData = {
-            plan_id: string;
-            status: string;
-            current_period_end: string;
-            cancel_at_period_end: boolean;
-            stripe_customer_id: string;
-            stripe_subscription_id: string;
-          };
-          
-          const typedData = subscriptionData as unknown as SubData;
+          // Type assert the data to our interface
+          const typedData = subscriptionData as unknown as SubscriptionData;
           
           subscriptionInfo.planId = typedData.plan_id;
           subscriptionInfo.status = typedData.status;

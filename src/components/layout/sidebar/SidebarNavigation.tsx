@@ -92,7 +92,7 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
         {navigationItems.map((item) => (
           <SidebarNavItem 
             key={item.path}
-            icon={<item.icon className="h-5 w-5" />}
+            icon={item.icon && <item.icon className="h-5 w-5" />}
             label={item.label}
             isActive={activeItem === item.path.split("/")[1] || 
                      (activeItem === "" && item.path === "/dashboard")}
