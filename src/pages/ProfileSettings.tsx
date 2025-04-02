@@ -20,9 +20,11 @@ import {
   Bell, 
   Lock, 
   Newspaper, 
-  User 
+  User,
+  CreditCard
 } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
+import { SubscriptionManager } from "@/components/subscription/SubscriptionManager";
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
@@ -71,7 +73,7 @@ const ProfileSettings = () => {
         className="space-y-6"
       >
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="w-full md:w-auto mb-6 grid grid-cols-4 h-auto bg-transparent space-x-2 p-0">
+          <TabsList className="w-full md:w-auto mb-6 grid grid-cols-5 h-auto bg-transparent space-x-2 p-0">
             <TabsTrigger 
               value="profile" 
               className="flex flex-col md:flex-row items-center space-x-0 md:space-x-2 rounded-xl data-[state=active]:bg-background"
@@ -85,6 +87,13 @@ const ProfileSettings = () => {
             >
               <Newspaper className="h-4 w-4 mb-1 md:mb-0" />
               <span>News</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="subscription" 
+              className="flex flex-col md:flex-row items-center space-x-0 md:space-x-2 rounded-xl data-[state=active]:bg-background"
+            >
+              <CreditCard className="h-4 w-4 mb-1 md:mb-0" />
+              <span>Billing</span>
             </TabsTrigger>
             <TabsTrigger 
               value="security" 
@@ -159,6 +168,34 @@ const ProfileSettings = () => {
                 >
                   <Newspaper className="h-4 w-4" />
                   Manage News Topics
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent
+            value="subscription"
+            className="space-y-6 mt-0"
+          >
+            <SubscriptionManager />
+            
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle>Change Plan</CardTitle>
+                <CardDescription>
+                  Upgrade or downgrade your subscription
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Visit our pricing page to view available plans and upgrade options.
+                </p>
+                <Button 
+                  onClick={() => navigate("/pricing")}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  View Plans
                 </Button>
               </CardContent>
             </Card>

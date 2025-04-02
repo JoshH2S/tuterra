@@ -1,69 +1,105 @@
 
-import { 
-  BookOpen, 
-  ClipboardList, 
-  Brain, 
-  FileText, 
-  LayoutDashboard, 
-  Award,
-  CalendarClock
-} from "lucide-react";
-import { SidebarMenu } from "@/components/ui/sidebar";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { SidebarNavItem } from "./SidebarNavItem";
-import { useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-
-export const navigationItems = [
-  { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { path: "/courses", icon: BookOpen, label: "Courses" },
-  { path: "/lesson-planning", icon: ClipboardList, label: "Lesson Planning" },
-  { path: "/quiz-generation", icon: FileText, label: "Quiz Generation" },
-  { path: "/skill-assessments", icon: Award, label: "Skill Assessments" },
-  { path: "/job-interview-simulator", icon: CalendarClock, label: "Interview Simulator" },
-  { path: "/tutor", icon: Brain, label: "AI Tutor" },
-];
+import { 
+  BookOpenText, 
+  GraduationCap, 
+  Home, 
+  BrainCircuit, 
+  UserRoundCog,
+  MessageCircleQuestion,
+  ScrollText,
+  Users,
+  FileQuestion,
+  CreditCard
+} from "lucide-react";
 
 interface SidebarNavigationProps {
   isCollapsed?: boolean;
 }
 
-export const SidebarNavigation = ({ isCollapsed }: SidebarNavigationProps) => {
+export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProps) => {
+  const navigate = useNavigate();
   const location = useLocation();
-  
-  // Animation variants for staggered children
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        staggerChildren: 0.05,
-        delayChildren: 0.05
-      }
-    }
+  const { user } = useAuth();
+  const { subscription } = useSubscription();
+  const [activeItem, setActiveItem] = useState<string>("");
+
+  useEffect(() => {
+    const pathSegment = location.pathname.split("/")[1] || "dashboard";
+    setActiveItem(pathSegment);
+  }, [location]);
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
   };
+
+  const menuItems = [
+    { 
+      icon: Home, 
+      label: "Dashboard", 
+      path: "/dashboard" 
+    },
+    { 
+      icon: BookOpenText, 
+      label: "Courses", 
+      path: "/courses" 
+    },
+    { 
+      icon: ScrollText, 
+      label: "Quizzes", 
+      path: "/quizzes" 
+    },
+    { 
+      icon: FileQuestion, 
+      label: "Assessments", 
+      path: "/assessments" 
+    },
+    { 
+      icon: MessageCircleQuestion, 
+      label: "AI Tutor", 
+      path: "/courses/tutor" 
+    },
+    { 
+      icon: BrainCircuit, 
+      label: "Interview Simulator", 
+      path: "/interview-simulator" 
+    },
+    { 
+      icon: CreditCard, 
+      label: "Pricing", 
+      path: "/pricing" 
+    },
+    { 
+      icon: UserRoundCog, 
+      label: "Settings", 
+      path: "/profile-settings" 
+    }
+  ];
+
+  // Admin or teacher-only items
+  if (user?.user_metadata?.user_type === "teacher") {
+    // Add teacher-specific items if needed
+  }
   
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className="mt-2"
-    >
-      <SidebarMenu>
-        <AnimatePresence mode="wait">
-          {navigationItems.map((item) => (
-            <SidebarNavItem 
-              key={item.path} 
-              to={item.path} 
-              icon={item.icon} 
-              isActive={location.pathname === item.path}
-              isCollapsed={isCollapsed}
-            >
-              {item.label}
-            </SidebarNavItem>
-          ))}
-        </AnimatePresence>
-      </SidebarMenu>
-    </motion.div>
+    <nav className="flex-1 py-2">
+      <div className="space-y-1 px-2">
+        {menuItems.map((item) => (
+          <SidebarNavItem 
+            key={item.path}
+            icon={<item.icon className="h-5 w-5" />}
+            label={item.label}
+            isActive={activeItem === item.path.split("/")[1] || 
+                     (activeItem === "" && item.path === "/dashboard")}
+            onClick={() => handleNavigation(item.path)}
+            isCollapsed={isCollapsed}
+          />
+        ))}
+      </div>
+    </nav>
   );
 };

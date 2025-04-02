@@ -13,6 +13,12 @@ export interface Subscription {
     learningPath: boolean;
     streaming: boolean;
   };
+  planId?: string;
+  status?: string;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 export const useSubscription = () => {
@@ -36,18 +42,26 @@ export const useSubscription = () => {
       }
 
       try {
-        const { data, error } = await supabase
+        // Get subscription tier from profiles table
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("subscription_tier")
           .eq("id", user.id)
           .single();
 
-        if (error) throw error;
+        if (profileError) throw profileError;
 
-        const tier = (data?.subscription_tier || "free") as SubscriptionTier;
+        const tier = (profileData?.subscription_tier || "free") as SubscriptionTier;
         
+        // Get subscription details from subscriptions table
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
         // Set features based on tier
-        setSubscription({
+        const subscriptionInfo: Subscription = {
           tier,
           features: {
             smartNotes: tier === "premium",
@@ -55,7 +69,19 @@ export const useSubscription = () => {
             learningPath: tier !== "free",
             streaming: tier !== "free"
           }
-        });
+        };
+
+        // Add subscription details if available
+        if (!subscriptionError && subscriptionData) {
+          subscriptionInfo.planId = subscriptionData.plan_id;
+          subscriptionInfo.status = subscriptionData.status;
+          subscriptionInfo.currentPeriodEnd = subscriptionData.current_period_end;
+          subscriptionInfo.cancelAtPeriodEnd = subscriptionData.cancel_at_period_end;
+          subscriptionInfo.stripeCustomerId = subscriptionData.stripe_customer_id;
+          subscriptionInfo.stripeSubscriptionId = subscriptionData.stripe_subscription_id;
+        }
+
+        setSubscription(subscriptionInfo);
       } catch (error) {
         console.error("Error fetching subscription:", error);
       } finally {

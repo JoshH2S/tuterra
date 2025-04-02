@@ -6,9 +6,16 @@ import { cn } from "@/lib/utils";
 interface SubscriptionBadgeProps {
   tier: "free" | "pro" | "premium";
   className?: string;
+  showIcon?: boolean;
+  showLabel?: boolean;
 }
 
-export const SubscriptionBadge = ({ tier, className }: SubscriptionBadgeProps) => {
+export const SubscriptionBadge = ({ 
+  tier, 
+  className, 
+  showIcon = true, 
+  showLabel = true 
+}: SubscriptionBadgeProps) => {
   const variants = {
     free: {
       icon: Shield,
@@ -38,8 +45,8 @@ export const SubscriptionBadge = ({ tier, className }: SubscriptionBadgeProps) =
         className
       )}
     >
-      <Icon className="h-3.5 w-3.5" />
-      {label}
+      {showIcon && <Icon className="h-3.5 w-3.5" />}
+      {showLabel && label}
     </Badge>
   );
 };

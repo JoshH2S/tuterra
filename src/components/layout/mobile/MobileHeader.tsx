@@ -1,24 +1,31 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, Bell, Search } from "lucide-react";
+import { Menu, Bell, Search, CreditCard } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { MobileSearch } from "./MobileSearch";
 import { MobileMenu } from "./MobileMenu";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export function MobileHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { subscription } = useSubscription();
   
   // Close the menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
+
+  const handleUpgradeClick = () => {
+    navigate('/pricing');
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -39,6 +46,18 @@ export function MobileHeader() {
           <div className="font-semibold text-lg">EduPortal</div>
           
           <div className="flex items-center space-x-2">
+            {subscription?.tier === 'free' && (
+              <Button
+                variant="default"
+                size="sm"
+                className="text-xs h-8 px-3"
+                onClick={handleUpgradeClick}
+              >
+                <CreditCard className="h-3.5 w-3.5 mr-1" />
+                Upgrade
+              </Button>
+            )}
+            
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsSearchOpen(true)}
