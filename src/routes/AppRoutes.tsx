@@ -2,17 +2,17 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { authRoutes } from "./AuthRoutes";
-import { DashboardRoutes } from "./DashboardRoutes";
-import { QuizRoutes } from "./QuizRoutes";
-import { CourseRoutes } from "./CourseRoutes";
-import { AssessmentRoutes } from "./AssessmentRoutes";
-import { MediaRoutes } from "./MediaRoutes";
-import { DemoRoutes } from "./DemoRoutes";
+import { dashboardRoutes } from "./DashboardRoutes";
+import { quizRoutes } from "./QuizRoutes";
+import { courseRoutes } from "./CourseRoutes";
+import { assessmentRoutes } from "./AssessmentRoutes";
+import { mediaRoutes } from "./MediaRoutes";
+import { demoRoutes } from "./DemoRoutes";
 import Index from "@/pages/Index";
 import JobInterviewSimulator from "@/pages/JobInterviewSimulator";
 import NotFound from "@/pages/NotFound";
-import PrivacyPolicy from "@/components/legal/PrivacyPolicy";
-import TermsOfUse from "@/components/legal/TermsOfUse";
+import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
+import { TermsOfUse } from "@/components/legal/TermsOfUse";
 import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
 import PricingPage from "@/pages/PricingPage";
@@ -27,11 +27,11 @@ export const AppRoutes = () => {
       {authRoutes}
       
       {/* Protected Routes */}
-      <Route path="/dashboard/*" element={<ProtectedRoute><DashboardRoutes /></ProtectedRoute>} />
-      <Route path="/quizzes/*" element={<ProtectedRoute><QuizRoutes /></ProtectedRoute>} />
-      <Route path="/courses/*" element={<ProtectedRoute><CourseRoutes /></ProtectedRoute>} />
-      <Route path="/assessments/*" element={<ProtectedRoute><AssessmentRoutes /></ProtectedRoute>} />
-      <Route path="/media/*" element={<ProtectedRoute><MediaRoutes /></ProtectedRoute>} />
+      <Route path="/dashboard/*" element={<ProtectedRoute><Route path="/*" element={<>{dashboardRoutes}</>} /></ProtectedRoute>} />
+      <Route path="/quizzes/*" element={<ProtectedRoute><Route path="/*" element={<>{quizRoutes}</>} /></ProtectedRoute>} />
+      <Route path="/courses/*" element={<ProtectedRoute><Route path="/*" element={<>{courseRoutes}</>} /></ProtectedRoute>} />
+      <Route path="/assessments/*" element={<ProtectedRoute><Route path="/*" element={<>{assessmentRoutes}</>} /></ProtectedRoute>} />
+      <Route path="/media/*" element={<ProtectedRoute><Route path="/*" element={<>{mediaRoutes}</>} /></ProtectedRoute>} />
       <Route path="/interview-simulator" element={<ProtectedRoute><JobInterviewSimulator /></ProtectedRoute>} />
       <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
       <Route path="/update-password" element={<ProtectedRoute><UpdatePassword /></ProtectedRoute>} />
@@ -41,7 +41,7 @@ export const AppRoutes = () => {
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/demos/*" element={<DemoRoutes />} />
+      <Route path="/demos/*" element={<Route path="/*" element={<>{demoRoutes}</>} />} />
       
       {/* Fallback routes */}
       <Route path="/404" element={<NotFound />} />

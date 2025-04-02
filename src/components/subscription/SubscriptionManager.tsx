@@ -1,22 +1,14 @@
 
-import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CreditCard, ExternalLink, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
-import { format } from "date-fns";
+import { SubscriptionBadge } from "@/components/ai-tutor/SubscriptionBadge";
+import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
 import { Badge } from "@/components/ui/badge";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Loader2, AlertCircle, Info, CreditCard } from "lucide-react";
+import { formatDate } from "@/utils/date-utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 interface SubscriptionManagerProps {
   className?: string;
@@ -25,168 +17,191 @@ interface SubscriptionManagerProps {
 export function SubscriptionManager({ className }: SubscriptionManagerProps) {
   const { 
     subscription, 
-    subscriptionLoading, 
+    loading, 
     cancelSubscription, 
     reactivateSubscription,
-    createBillingPortalSession,
-    loading 
+    createBillingPortalSession 
   } = useSubscriptionManagement();
-  
-  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
-  const isMobile = useIsMobile();
-
-  if (subscriptionLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!subscription || subscription.tier === "free") {
-    return (
-      <div className="space-y-4">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>No active subscription</AlertTitle>
-          <AlertDescription>
-            You currently don't have an active subscription. Upgrade to access premium features.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  const currentPeriodEnd = subscription.currentPeriodEnd 
-    ? format(new Date(subscription.currentPeriodEnd), 'MMMM d, yyyy')
-    : 'N/A';
-  
-  const planName = 
-    subscription.planId === 'pro_plan' ? 'Pro Plan' : 
-    subscription.planId === 'premium_plan' ? 'Premium Plan' : 
-    'Unknown Plan';
-
-  const handleOpenBillingPortal = async () => {
-    await createBillingPortalSession(window.location.origin + '/profile-settings');
-  };
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const handleCancelSubscription = async () => {
-    const success = await cancelSubscription();
-    if (success) {
-      setConfirmCancelOpen(false);
+    if (window.confirm("Are you sure you want to cancel your subscription? You'll still have access until the end of your billing period.")) {
+      setActionLoading("cancel");
+      await cancelSubscription();
+      setActionLoading(null);
     }
   };
 
   const handleReactivateSubscription = async () => {
+    setActionLoading("reactivate");
     await reactivateSubscription();
+    setActionLoading(null);
   };
 
-  return (
-    <div className={className}>
-      <Card className="border-0 shadow-sm bg-gradient-to-b from-background to-muted/20">
+  const handleBillingPortal = async () => {
+    setActionLoading("billing");
+    await createBillingPortalSession(window.location.origin + "/profile-settings");
+    setActionLoading(null);
+  };
+
+  if (loading) {
+    return (
+      <Card className={cn("w-full", className)}>
+        <CardHeader>
+          <CardTitle>Subscription</CardTitle>
+          <CardDescription>Loading your subscription details...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Free tier display
+  if (subscription.tier === "free" || !subscription.status) {
+    return (
+      <Card className={cn("w-full", className)}>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Subscription Details</CardTitle>
-              <CardDescription>Manage your plan and billing information</CardDescription>
-            </div>
-            <Badge
-              variant={subscription.status === 'active' ? 'default' : 'destructive'}
-              className="h-7 px-3"
-            >
-              {subscription.status === 'active' 
-                ? subscription.cancelAtPeriodEnd 
-                  ? 'Canceling' 
-                  : 'Active'
-                : 'Inactive'}
-            </Badge>
+            <CardTitle>Subscription</CardTitle>
+            <SubscriptionBadge tier={subscription.tier} />
           </div>
+          <CardDescription>You are currently on the free plan</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <h3 className="font-medium text-sm text-muted-foreground">Plan</h3>
-              <p className="font-semibold">{planName}</p>
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-medium text-sm text-muted-foreground">
-                {subscription.cancelAtPeriodEnd ? 'Access Until' : 'Next Billing Date'}
-              </h3>
-              <p className="font-semibold">{currentPeriodEnd}</p>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-6">
+            Upgrade to unlock premium features like AI-powered notes, advanced question generation, and more.
+          </p>
+          <Button onClick={() => window.location.href = "/pricing"} className="w-full">
+            Upgrade Now
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Paid tier display
+  return (
+    <Card className={cn("w-full", className)}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Subscription</CardTitle>
+          <SubscriptionBadge tier={subscription.tier} />
+        </div>
+        <CardDescription>
+          Manage your subscription
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Subscription Status */}
+        <div className="flex flex-col gap-1">
+          <div className="text-sm font-medium">Status</div>
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant="outline"
+              className={cn(
+                "font-normal",
+                subscription.status === "active" ? "text-emerald-500 border-emerald-200 bg-emerald-50" :
+                subscription.status === "trialing" ? "text-blue-500 border-blue-200 bg-blue-50" :
+                "text-amber-500 border-amber-200 bg-amber-50"
+              )}
+            >
+              {subscription.status === "active" ? "Active" : 
+               subscription.status === "trialing" ? "Trial" : 
+               subscription.status === "past_due" ? "Past Due" : 
+               subscription.status === "incomplete" ? "Incomplete" : 
+               "Inactive"}
+            </Badge>
+            
+            {subscription.cancelAtPeriodEnd && (
+              <Badge 
+                variant="outline"
+                className="font-normal text-gray-500 border-gray-200 bg-gray-50"
+              >
+                Cancels at period end
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Billing Period */}
+        {subscription.currentPeriodEnd && (
+          <div className="flex flex-col gap-1">
+            <div className="text-sm font-medium">Current period ends</div>
+            <div className="text-sm text-muted-foreground">
+              {formatDate(new Date(subscription.currentPeriodEnd))}
             </div>
           </div>
+        )}
 
-          {subscription.cancelAtPeriodEnd && (
-            <Alert variant="warning" className="bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/30">
-              <AlertTitle className="font-medium">Subscription Canceling</AlertTitle>
-              <AlertDescription>
-                Your subscription has been canceled and will end on {currentPeriodEnd}. 
-                You'll lose access to premium features after this date.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3 sm:flex-row">
-          <Button 
-            variant="outline" 
-            className="w-full sm:w-auto gap-2"
-            onClick={handleOpenBillingPortal}
-            disabled={loading}
-          >
-            <CreditCard className="h-4 w-4" />
-            {isMobile ? "Billing Portal" : "Manage Payment Methods"}
-            {loading && <Loader2 className="h-4 w-4 animate-spin ml-1" />}
-          </Button>
-
-          {subscription.cancelAtPeriodEnd ? (
-            <Button
-              className="w-full sm:w-auto"
-              onClick={handleReactivateSubscription}
-              disabled={loading}
-            >
-              Reactivate Subscription
-              {loading && <Loader2 className="h-4 w-4 animate-spin ml-1" />}
-            </Button>
+        {/* Cancellation Info */}
+        {subscription.cancelAtPeriodEnd && (
+          <Alert variant="default" className="bg-blue-50 border-blue-200 text-blue-800">
+            <Info className="h-4 w-4" />
+            <AlertTitle>Subscription Canceled</AlertTitle>
+            <AlertDescription>
+              Your subscription has been canceled but you'll still have access to premium features until the end of your billing period.
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+      <CardFooter className="flex flex-col gap-3">
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={handleBillingPortal}
+          disabled={actionLoading === "billing"}
+        >
+          {actionLoading === "billing" ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Redirecting...
+            </span>
           ) : (
-            <Dialog open={confirmCancelOpen} onOpenChange={setConfirmCancelOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  className="w-full sm:w-auto"
-                >
-                  Cancel Subscription
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Cancel Subscription</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to cancel your subscription? You'll continue to have access to premium features until {currentPeriodEnd}.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setConfirmCancelOpen(false)}
-                    className="w-full sm:w-auto"
-                  >
-                    Keep Subscription
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleCancelSubscription}
-                    disabled={loading}
-                    className="w-full sm:w-auto"
-                  >
-                    Yes, Cancel
-                    {loading && <Loader2 className="h-4 w-4 animate-spin ml-1" />}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <span className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Manage Billing
+            </span>
           )}
-        </CardFooter>
-      </Card>
-    </div>
+        </Button>
+        
+        {!subscription.cancelAtPeriodEnd && subscription.status === "active" && (
+          <Button
+            variant="outline"
+            className="w-full text-red-500 hover:text-red-600 hover:bg-red-50"
+            onClick={handleCancelSubscription}
+            disabled={actionLoading === "cancel"}
+          >
+            {actionLoading === "cancel" ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Processing...
+              </span>
+            ) : (
+              "Cancel Subscription"
+            )}
+          </Button>
+        )}
+        
+        {subscription.cancelAtPeriodEnd && (
+          <Button
+            variant="default"
+            className="w-full"
+            onClick={handleReactivateSubscription}
+            disabled={actionLoading === "reactivate"}
+          >
+            {actionLoading === "reactivate" ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Processing...
+              </span>
+            ) : (
+              "Reactivate Subscription"
+            )}
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
   );
 }

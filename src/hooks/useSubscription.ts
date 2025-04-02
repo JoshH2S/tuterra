@@ -73,12 +73,24 @@ export const useSubscription = () => {
 
         // Add subscription details if available
         if (!subscriptionError && subscriptionData) {
-          subscriptionInfo.planId = subscriptionData.plan_id;
-          subscriptionInfo.status = subscriptionData.status;
-          subscriptionInfo.currentPeriodEnd = subscriptionData.current_period_end;
-          subscriptionInfo.cancelAtPeriodEnd = subscriptionData.cancel_at_period_end;
-          subscriptionInfo.stripeCustomerId = subscriptionData.stripe_customer_id;
-          subscriptionInfo.stripeSubscriptionId = subscriptionData.stripe_subscription_id;
+          // Type assertion for the subscription data
+          type SubData = {
+            plan_id: string;
+            status: string;
+            current_period_end: string;
+            cancel_at_period_end: boolean;
+            stripe_customer_id: string;
+            stripe_subscription_id: string;
+          };
+          
+          const typedData = subscriptionData as unknown as SubData;
+          
+          subscriptionInfo.planId = typedData.plan_id;
+          subscriptionInfo.status = typedData.status;
+          subscriptionInfo.currentPeriodEnd = typedData.current_period_end;
+          subscriptionInfo.cancelAtPeriodEnd = typedData.cancel_at_period_end;
+          subscriptionInfo.stripeCustomerId = typedData.stripe_customer_id;
+          subscriptionInfo.stripeSubscriptionId = typedData.stripe_subscription_id;
         }
 
         setSubscription(subscriptionInfo);
