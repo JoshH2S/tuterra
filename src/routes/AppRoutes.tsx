@@ -28,22 +28,86 @@ export const AppRoutes = () => {
       {authRoutes}
       
       {/* Protected Routes */}
-      <Route path="/dashboard/*" element={<ProtectedRoute><Route path="/*" element={<>{dashboardRoutes}</>} /></ProtectedRoute>} />
-      <Route path="/quizzes/*" element={<ProtectedRoute><Route path="/*" element={<>{quizRoutes}</>} /></ProtectedRoute>} />
-      <Route path="/courses/*" element={<ProtectedRoute><Route path="/*" element={<>{courseRoutes}</>} /></ProtectedRoute>} />
-      <Route path="/assessments/*" element={<ProtectedRoute><Route path="/*" element={<>{assessmentRoutes}</>} /></ProtectedRoute>} />
-      <Route path="/media/*" element={<ProtectedRoute><Route path="/*" element={<>{mediaRoutes}</>} /></ProtectedRoute>} />
-      <Route path="/interview-simulator" element={<ProtectedRoute><JobInterviewSimulator /></ProtectedRoute>} />
-      <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
-      <Route path="/update-password" element={<ProtectedRoute><UpdatePassword /></ProtectedRoute>} />
-      <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
-      <Route path="/subscription-canceled" element={<ProtectedRoute><SubscriptionCanceled /></ProtectedRoute>} />
+      <Route path="/dashboard/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {dashboardRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/quizzes/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {quizRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/courses/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {courseRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/assessments/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {assessmentRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/media/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {mediaRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/interview-simulator" element={
+        <ProtectedRoute>
+          <JobInterviewSimulator />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile-settings" element={
+        <ProtectedRoute>
+          <ProfileSettings />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/update-password" element={
+        <ProtectedRoute>
+          <UpdatePassword />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/subscription-success" element={
+        <ProtectedRoute>
+          <SubscriptionSuccess />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/subscription-canceled" element={
+        <ProtectedRoute>
+          <SubscriptionCanceled />
+        </ProtectedRoute>
+      } />
       
       {/* Unprotected Routes */}
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/demos/*" element={<Route path="/*" element={<>{demoRoutes}</>} />} />
+      
+      <Route path="/demos/*" element={
+        <Routes>
+          {demoRoutes}
+        </Routes>
+      } />
       
       {/* Fallback routes */}
       <Route path="/404" element={<NotFound />} />

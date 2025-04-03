@@ -11,8 +11,8 @@ const AuthRedirect = () => {
 
 // Export an array of route elements instead of a component
 export const authRoutes = [
-  <Route key="root" path="/" element={<AuthRedirect />} />,
-  <Route key="auth" path="/auth" element={<Auth />} />,
-  <Route key="verify-email" path="/verify-email" element={<Auth mode="emailVerification" />} />,
-  <Route key="reset-password" path="/reset-password" element={<Auth mode="resetPassword" />} />
+  <Route key="auth-root" path="/" element={<AuthRedirect />} />,
+  <Route key="auth-page" path="/auth" element={<Auth />} />,
+  <Route key="auth-verify-email" path="/verify-email" element={<Auth mode="emailVerification" />} />,
+  <Route key="auth-reset-password" path="/reset-password" element={<Auth mode="resetPassword" />} />
 ];
