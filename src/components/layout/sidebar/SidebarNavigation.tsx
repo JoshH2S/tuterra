@@ -27,7 +27,6 @@ interface NavigationItem {
   icon: LucideIcon;
   label: string;
   path: string;
-  highlight?: boolean;
 }
 
 // Export navigation items for reuse in mobile navigation
@@ -65,8 +64,7 @@ export const navigationItems: NavigationItem[] = [
   { 
     icon: CreditCard, 
     label: "Pricing", 
-    path: "/pricing",
-    highlight: true
+    path: "/pricing"
   },
   { 
     icon: UserRoundCog, 
@@ -103,7 +101,6 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
                      (activeItem === "" && item.path === "/dashboard")}
             onClick={() => handleNavigation(item.path)}
             isCollapsed={isCollapsed}
-            highlight={item.highlight}
           />
         ))}
       </div>
