@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +9,7 @@ import { SidebarUserProfile } from "./sidebar/SidebarUserProfile";
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+
 export const MainSidebar = () => {
   const {
     state,
@@ -58,6 +60,7 @@ export const MainSidebar = () => {
   if (isMobile) {
     return null;
   }
+
   return <div ref={sidebarRef} className="relative flex">
       {/* Add a fixed toggle button for collapsed state */}
       {isCollapsed && <motion.button initial={{
@@ -68,7 +71,14 @@ export const MainSidebar = () => {
           <ChevronRight size={18} />
         </motion.button>}
       
-      <Sidebar className={cn("transition-all duration-300 ease-in-out border-r border-border", isCollapsed ? "w-[60px]" : "w-[190px]")}>
+      <Sidebar className={cn(
+        "fixed left-0 top-0 h-screen",
+        "bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm",
+        "border-r border-gray-200 dark:border-gray-800",
+        "shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]",
+        "transition-all duration-300 ease-in-out z-30",
+        isCollapsed ? "w-[60px]" : "w-[240px]"
+      )}>
         <SidebarHeader className="relative">
           <AnimatePresence mode="wait">
             {!isCollapsed ? <motion.div key="logo" initial={{

@@ -96,19 +96,21 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
   
   return (
     <nav className="flex-1 py-2">
-      <div className="space-y-1 px-2">
+      <ul className="space-y-1 px-2 list-none">
         {navigationItems.map((item) => (
-          <SidebarNavItem 
-            key={item.path}
-            icon={item.icon}
-            label={item.label}
-            isActive={activeItem === item.path.split("/")[1] || 
-                     (activeItem === "" && item.path === "/dashboard")}
-            onClick={() => handleNavigation(item.path)}
-            isCollapsed={isCollapsed}
-          />
+          <li key={item.path}>
+            <SidebarNavItem 
+              key={item.path}
+              icon={item.icon}
+              label={item.label}
+              isActive={activeItem === item.path.split("/")[1] || 
+                       (activeItem === "" && item.path === "/dashboard")}
+              onClick={() => handleNavigation(item.path)}
+              isCollapsed={isCollapsed}
+            />
+          </li>
         ))}
-      </div>
+      </ul>
     </nav>
   );
 };
