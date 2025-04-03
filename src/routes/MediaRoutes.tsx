@@ -1,5 +1,5 @@
 
-import { Route, Routes } from "react-router-dom";
+import { Route } from "react-router-dom";
 import { MediaLibrary } from "@/components/media/MediaLibrary";
 
 export const mediaRoutes = [
