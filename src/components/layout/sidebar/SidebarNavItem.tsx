@@ -25,50 +25,54 @@ export const SidebarNavItem = ({
     <button 
       onClick={onClick}
       className={cn(
-        "flex items-center relative w-full py-2 px-3 rounded-lg transition-all duration-200",
-        isActive && "bg-blue-50 dark:bg-blue-950/30"
+        "w-full flex items-center gap-3 px-3 h-[34px] rounded-md text-sm transition-all duration-200",
+        "group/item relative",
+        isActive 
+          ? "bg-gray-100 dark:bg-gray-800" 
+          : "hover:bg-gray-100 dark:hover:bg-gray-800"
       )}
     >
-      <div className={cn(
-        "flex items-center gap-2 relative z-10",
-        isCollapsed && "justify-center"
-      )}>
-        {/* Icon */}
-        <Icon className={cn(
-          "h-5 w-5",
-          isActive 
-            ? "text-blue-500" 
-            : "text-gray-500 group-hover:text-gray-900"
-        )} />
-        
-        {/* Label */}
-        {(!isCollapsed || (isCollapsed && isActive)) && (
-          <span className={cn(
-            "font-medium",
+      <div className="min-w-[24px] flex items-center justify-center">
+        <Icon 
+          className={cn(
+            "h-4 w-4",
             isActive 
-              ? "text-blue-500"
-              : "text-gray-700 group-hover:text-gray-900",
-            isCollapsed && isActive && "absolute left-16 bg-white shadow-sm px-2 py-1 rounded-md"
-          )}>
-            {label}
-          </span>
-        )}
+              ? "text-gray-900 dark:text-gray-100" 
+              : "text-gray-600 dark:text-gray-400"
+          )} 
+        />
       </div>
-
-      {/* Hover effect */}
-      <div className="absolute inset-0 rounded-lg bg-gray-100/0 hover:bg-gray-100/50 transition-colors" />
+      
+      {(!isCollapsed || (isCollapsed && isActive)) && (
+        <span 
+          className={cn(
+            "truncate",
+            isActive 
+              ? "text-gray-900 dark:text-gray-100" 
+              : "text-gray-700 dark:text-gray-300",
+            isCollapsed && "opacity-0 group-hover/sidebar:opacity-100 transition-opacity",
+            isCollapsed && isActive && "absolute left-12 bg-white dark:bg-gray-900 shadow-sm px-2 py-1 rounded-md z-50"
+          )}
+        >
+          {label}
+        </span>
+      )}
     </button>
   );
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem className="my-1 px-2">
       <SidebarMenuButton asChild>
         {isCollapsed && !isActive ? (
           <Tooltip>
             <TooltipTrigger asChild>
               {itemContent}
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent 
+              side="right" 
+              sideOffset={10}
+              className="bg-white dark:bg-gray-900 text-sm font-medium"
+            >
               {label}
             </TooltipContent>
           </Tooltip>
