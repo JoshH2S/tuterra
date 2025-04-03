@@ -13,7 +13,6 @@ interface SidebarNavItemProps {
   isActive?: boolean;
   isCollapsed?: boolean;
   onClick: () => void;
-  highlight?: boolean;
 }
 
 export const SidebarNavItem = ({ 
@@ -21,8 +20,7 @@ export const SidebarNavItem = ({
   label, 
   isActive = false,
   isCollapsed = false,
-  onClick,
-  highlight = false
+  onClick
 }: SidebarNavItemProps) => {
   // Animation variants for each menu item
   const itemVariants = {
@@ -35,8 +33,7 @@ export const SidebarNavItem = ({
       onClick={onClick}
       className={cn(
         "flex items-center relative w-full py-2.5 px-3 rounded-xl transition-all duration-200 touch-manipulation",
-        isActive && "text-primary font-medium",
-        highlight && "ring-2 ring-blue-400 dark:ring-blue-500 ring-opacity-50"
+        isActive && "text-primary font-medium"
       )}
     >
       <motion.div
@@ -50,9 +47,7 @@ export const SidebarNavItem = ({
           "h-5 w-5 transition-colors",
           isActive 
             ? "text-blue-500" 
-            : highlight
-              ? "text-blue-500"
-              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         )} />
       </motion.div>
       
@@ -62,9 +57,7 @@ export const SidebarNavItem = ({
           "text-transparent bg-clip-text transition-colors z-10",
           isActive
             ? "bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500"
-            : highlight
-              ? "bg-gradient-to-r from-blue-700 to-blue-500 dark:from-blue-400 dark:to-blue-300"
-              : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 hover:from-gray-800 hover:to-gray-700 dark:hover:from-gray-300 dark:hover:to-gray-400",
+            : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 hover:from-gray-800 hover:to-gray-700 dark:hover:from-gray-300 dark:hover:to-gray-400",
           isCollapsed && isActive && "absolute left-16 bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-md whitespace-nowrap"
         )}>
           {label}
