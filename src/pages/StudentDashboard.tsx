@@ -48,7 +48,7 @@ export default function StudentDashboard() {
 
   if (isLoading || isLoadingSessions) {
     return (
-      <div className={`container mx-auto ${isMobile ? 'py-6 px-4' : 'py-12'}`}>
+      <div className="container mx-auto">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -62,7 +62,7 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className={`container mx-auto ${isMobile ? 'py-6 px-4' : 'py-12'}`}>
+    <div className="container mx-auto">
       <DashboardHeader 
         title="My Dashboard" 
         description="Track your progress and performance across all your courses" 

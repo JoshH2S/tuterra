@@ -67,7 +67,7 @@ export const MainSidebar = () => {
       opacity: 0
     }} animate={{
       opacity: 1
-    }} className="absolute left-[calc(60px+4px)] top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-all touch-manipulation" onClick={toggleSidebar} aria-label="Expand sidebar">
+    }} className="absolute left-[calc(50px+4px)] top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-all touch-manipulation" onClick={toggleSidebar} aria-label="Expand sidebar">
           <ChevronRight size={18} />
         </motion.button>}
       
@@ -77,7 +77,7 @@ export const MainSidebar = () => {
         "border-r border-gray-200 dark:border-gray-800",
         "shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]",
         "transition-all duration-300 ease-in-out z-30",
-        isCollapsed ? "w-[60px]" : "w-[240px]"
+        isCollapsed ? "w-[50px]" : "w-[200px]"
       )}>
         <SidebarHeader className="relative">
           <AnimatePresence mode="wait">
