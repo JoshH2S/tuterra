@@ -2,7 +2,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
-import { ModernSidebar } from "./ModernSidebar";
+import { MainSidebar } from "./MainSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileNavigation } from "./mobile/MobileNavigation";
 import { MobileHeader } from "./mobile/MobileHeader";
@@ -19,7 +19,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     <div className="min-h-screen flex flex-col w-full">
       <SkipToContent />
       <div className="flex flex-1">
-        <ModernSidebar />
+        <MainSidebar />
         <div className={cn(
           "flex-1 flex flex-col",
           "transition-all duration-300 ease-in-out",

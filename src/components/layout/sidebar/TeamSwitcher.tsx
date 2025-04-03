@@ -76,11 +76,12 @@ export function TeamSwitcher({ isCollapsed = false }: TeamSwitcherProps) {
                 {!isCollapsed && <ChevronsUpDown className="h-4 w-4 text-slate-500" />}
               </Button>
             </DropdownMenuTrigger>
-            {isCollapsed && (
-              <TooltipContent side="right">Switch Team</TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
+          </TooltipTrigger>
+          {isCollapsed && (
+            <TooltipContent side="right">Switch Team</TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuLabel>My Teams</DropdownMenuLabel>
         <DropdownMenuSeparator />

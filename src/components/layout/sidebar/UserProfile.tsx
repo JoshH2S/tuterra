@@ -91,30 +91,31 @@ export function UserProfile({ isCollapsed = false }: UserProfileProps) {
                   </p>
                 </TooltipContent>
               )}
-            </Tooltip>
-          </TooltipProvider>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link to="/profile-settings" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span>Profile Settings</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/update-password" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span>Update Password</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 text-red-500">
-            <LogOut className="h-4 w-4" />
-            <span>Log Out</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile-settings" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>Profile Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/update-password" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span>Update Password</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 text-red-500">
+                  <LogOut className="h-4 w-4" />
+                  <span>Log Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TooltipTrigger>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }
