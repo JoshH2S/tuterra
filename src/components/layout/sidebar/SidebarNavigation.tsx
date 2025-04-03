@@ -29,12 +29,6 @@ interface NavigationItem {
   path: string;
 }
 
-// Group navigation items by sections
-interface NavigationSection {
-  title: string;
-  items: NavigationItem[];
-}
-
 // Export navigation items for reuse in mobile navigation
 export const navigationItems: NavigationItem[] = [
   { 
@@ -70,28 +64,12 @@ export const navigationItems: NavigationItem[] = [
   { 
     icon: CreditCard, 
     label: "Pricing", 
-    path: "/pricing"
+    path: "/pricing" 
   },
   { 
     icon: UserRoundCog, 
     label: "Settings", 
     path: "/profile-settings" 
-  }
-];
-
-// Organize navigation items into sections
-const navigationSections: NavigationSection[] = [
-  {
-    title: "Main",
-    items: navigationItems.slice(0, 4)
-  },
-  {
-    title: "Learning Tools",
-    items: navigationItems.slice(4, 6)
-  },
-  {
-    title: "Account",
-    items: navigationItems.slice(6)
   }
 ];
 
@@ -111,28 +89,24 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
     navigate(path);
   };
 
+  // Admin or teacher-only items
+  if (user?.user_metadata?.user_type === "teacher") {
+    // Add teacher-specific items if needed
+  }
+  
   return (
     <nav className="flex-1 py-2">
-      <div className="space-y-5">
-        {navigationSections.map((section) => (
-          <div key={section.title} className="px-2">
-            {!isCollapsed && (
-              <h4 className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 px-3 mb-2">
-                {section.title}
-              </h4>
-            )}
-            {section.items.map((item) => (
-              <SidebarNavItem 
-                key={item.path}
-                icon={item.icon}
-                label={item.label}
-                isActive={activeItem === item.path.split("/")[1] || 
-                         (activeItem === "" && item.path === "/dashboard")}
-                onClick={() => handleNavigation(item.path)}
-                isCollapsed={isCollapsed}
-              />
-            ))}
-          </div>
+      <div className="space-y-1 px-2">
+        {navigationItems.map((item) => (
+          <SidebarNavItem 
+            key={item.path}
+            icon={item.icon}
+            label={item.label}
+            isActive={activeItem === item.path.split("/")[1] || 
+                     (activeItem === "" && item.path === "/dashboard")}
+            onClick={() => handleNavigation(item.path)}
+            isCollapsed={isCollapsed}
+          />
         ))}
       </div>
     </nav>

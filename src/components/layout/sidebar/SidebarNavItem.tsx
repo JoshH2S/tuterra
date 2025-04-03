@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -21,65 +22,85 @@ export const SidebarNavItem = ({
   isCollapsed = false,
   onClick
 }: SidebarNavItemProps) => {
+  // Animation variants for each menu item
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.2 } }
+  };
+  
   const itemContent = (
     <button 
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 px-3 h-[34px] rounded-md text-sm transition-all duration-200",
-        "group/item relative",
-        isActive 
-          ? "bg-gray-100 dark:bg-gray-800" 
-          : "hover:bg-gray-100 dark:hover:bg-gray-800"
+        "flex items-center relative w-full py-2.5 px-3 rounded-xl transition-all duration-200 touch-manipulation",
+        isActive && "text-primary font-medium"
       )}
     >
-      <div className="min-w-[24px] flex items-center justify-center">
-        <Icon 
-          className={cn(
-            "h-4 w-4",
-            isActive 
-              ? "text-gray-900 dark:text-gray-100" 
-              : "text-gray-600 dark:text-gray-400"
-          )} 
-        />
-      </div>
+      <motion.div
+        className={cn(
+          "relative z-10 flex items-center",
+          isCollapsed ? "justify-center w-full" : "mr-2"
+        )}
+        whileTap={{ scale: 0.95 }}
+      >
+        <Icon className={cn(
+          "h-5 w-5 transition-colors",
+          isActive 
+            ? "text-blue-500" 
+            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+        )} />
+      </motion.div>
       
+      {/* Always show text for active items, even when sidebar is collapsed */}
       {(!isCollapsed || (isCollapsed && isActive)) && (
-        <span 
-          className={cn(
-            "truncate",
-            isActive 
-              ? "text-gray-900 dark:text-gray-100" 
-              : "text-gray-700 dark:text-gray-300",
-            isCollapsed && "opacity-0 group-hover/sidebar:opacity-100 transition-opacity",
-            isCollapsed && isActive && "absolute left-12 bg-white dark:bg-gray-900 shadow-sm px-2 py-1 rounded-md z-50"
-          )}
-        >
+        <span className={cn(
+          "text-transparent bg-clip-text transition-colors z-10",
+          isActive
+            ? "bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500"
+            : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 hover:from-gray-800 hover:to-gray-700 dark:hover:from-gray-300 dark:hover:to-gray-400",
+          isCollapsed && isActive && "absolute left-16 bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-md whitespace-nowrap"
+        )}>
           {label}
         </span>
       )}
+      
+      {/* Active highlight with reduced width */}
+      {isActive && (
+        <motion.div 
+          layoutId="activeBackground"
+          className="absolute inset-0 w-[calc(100%-40px)] mx-auto bg-blue-50 dark:bg-blue-950/30 rounded-xl"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
+      
+      {/* Hover highlight with the same reduced width - no group/group-hover */}
+      <div 
+        className={cn(
+          "absolute inset-0 w-[calc(100%-40px)] mx-auto rounded-xl bg-transparent transition-colors duration-200",
+          !isActive && "hover:bg-gray-100 dark:hover:bg-gray-800"
+        )} 
+      />
     </button>
   );
 
   return (
-    <SidebarMenuItem className="my-1 px-2">
-      <SidebarMenuButton asChild>
-        {isCollapsed && !isActive ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {itemContent}
-            </TooltipTrigger>
-            <TooltipContent 
-              side="right" 
-              sideOffset={10}
-              className="bg-white dark:bg-gray-900 text-sm font-medium"
-            >
-              {label}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          itemContent
-        )}
-      </SidebarMenuButton>
+    <SidebarMenuItem>
+      <motion.div variants={itemVariants}>
+        <SidebarMenuButton asChild>
+          {isCollapsed && !isActive ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {itemContent}
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center">
+                {label}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            itemContent
+          )}
+        </SidebarMenuButton>
+      </motion.div>
     </SidebarMenuItem>
   );
 };
