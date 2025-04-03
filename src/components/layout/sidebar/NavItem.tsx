@@ -28,6 +28,15 @@ export function NavItem({
 }: NavItemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const hasChildren = !!children;
+  const location = useLocation();
+  
+  // Fix: More precise path matching to prevent multiple items being active
+  const exactPathMatch = location.pathname === path;
+  const isSubpathMatch = path !== '/' && location.pathname.startsWith(path);
+  const isDashboardPath = path === '/dashboard' && location.pathname === '/';
+  
+  // Ensure we only get active for exact matches or proper subpaths
+  const computedIsActive = isActive || exactPathMatch || (isSubpathMatch && !exactPathMatch) || isDashboardPath;
 
   const item = (
     <div
@@ -35,7 +44,7 @@ export function NavItem({
         "relative flex items-center gap-2 rounded-md p-2",
         "hover:bg-slate-100 dark:hover:bg-slate-800",
         "transition-colors duration-200 ease-in-out",
-        isActive && "bg-slate-100 dark:bg-slate-800 font-medium",
+        computedIsActive && "bg-slate-100 dark:bg-slate-800 font-medium",
         hasChildren && isOpen && "bg-slate-100 dark:bg-slate-800",
         className
       )}
@@ -44,7 +53,7 @@ export function NavItem({
       <Icon
         className={cn(
           "h-5 w-5 text-slate-500 dark:text-slate-400",
-          isActive && "text-slate-900 dark:text-slate-100"
+          computedIsActive && "text-slate-900 dark:text-slate-100"
         )}
       />
       {!isCollapsed && (

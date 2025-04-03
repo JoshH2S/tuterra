@@ -78,12 +78,29 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
   const location = useLocation();
   const { user } = useAuth();
   const { subscription } = useSubscription();
-  const [activeItem, setActiveItem] = useState<string>("");
-
-  useEffect(() => {
-    const pathSegment = location.pathname.split("/")[1] || "dashboard";
-    setActiveItem(pathSegment);
-  }, [location]);
+  
+  // Fix: Improved active path detection
+  const isActive = (path: string) => {
+    // Exact match
+    if (location.pathname === path) return true;
+    
+    // For dashboard, it's active on the root path too
+    if (path === '/dashboard' && location.pathname === '/') return true;
+    
+    // For other paths, check if it's a sub-path but not an exact match
+    // This prevents multiple items being active
+    if (path !== '/' && path !== '/dashboard' && location.pathname.startsWith(path)) {
+      // Make sure we're not activating a parent path when a more specific child path should be active
+      const morePreciseMatch = navigationItems.some(item => 
+        item.path !== path && 
+        item.path.startsWith(path) && 
+        location.pathname.startsWith(item.path)
+      );
+      return !morePreciseMatch;
+    }
+    
+    return false;
+  };
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -103,10 +120,10 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
               key={item.path}
               icon={item.icon}
               label={item.label}
-              isActive={activeItem === item.path.split("/")[1] || 
-                       (activeItem === "" && item.path === "/dashboard")}
+              isActive={isActive(item.path)}
               onClick={() => handleNavigation(item.path)}
               isCollapsed={isCollapsed}
+              path={item.path}
             />
           </li>
         ))}
