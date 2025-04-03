@@ -27,6 +27,7 @@ interface NavigationItem {
   icon: LucideIcon;
   label: string;
   path: string;
+  highlight?: boolean;
 }
 
 // Export navigation items for reuse in mobile navigation
@@ -64,7 +65,8 @@ export const navigationItems: NavigationItem[] = [
   { 
     icon: CreditCard, 
     label: "Pricing", 
-    path: "/pricing" 
+    path: "/pricing",
+    highlight: true
   },
   { 
     icon: UserRoundCog, 
@@ -89,11 +91,6 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
     navigate(path);
   };
 
-  // Admin or teacher-only items
-  if (user?.user_metadata?.user_type === "teacher") {
-    // Add teacher-specific items if needed
-  }
-  
   return (
     <nav className="flex-1 py-2">
       <div className="space-y-1 px-2">
@@ -106,6 +103,7 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
                      (activeItem === "" && item.path === "/dashboard")}
             onClick={() => handleNavigation(item.path)}
             isCollapsed={isCollapsed}
+            highlight={item.highlight}
           />
         ))}
       </div>
