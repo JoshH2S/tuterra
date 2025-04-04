@@ -124,7 +124,6 @@ export default {
   safelist: [
     'btn-gold-gradient',
     'btn-gold-gradient-hover',
-    'gradient-text',
-    'gradient-text-solid' // New solid (non-transparent) gradient text class
+    'gradient-text'
   ],
 } satisfies Config;
