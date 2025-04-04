@@ -118,3 +118,16 @@
     }
   }
 }
+
+@layer components {
+  /* Reusable gold gradient button style */
+  .btn-gold-gradient {
+    @apply bg-gradient-to-br from-primary-500 to-primary-400 
+           text-black font-medium shadow-md 
+           transition-all duration-300;
+  }
+  
+  .btn-gold-gradient:hover {
+    @apply from-primary-600 to-primary-500 shadow-lg;
+  }
+}

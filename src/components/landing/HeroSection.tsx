@@ -38,7 +38,7 @@ export function HeroSection() {
             and helps you achieve your educational goals.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/courses" className="px-8 py-3 bg-gradient-to-r from-primary-500 to-primary-400 text-black font-medium flex items-center justify-center gap-2 hover:from-primary-600 hover:to-primary-500 transition-all duration-300 rounded-lg shadow-md">
+            <Link to="/courses" className="btn-gold-gradient px-8 py-3 rounded-lg flex items-center justify-center gap-2">
               Get Started <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/tutor" className="px-8 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">

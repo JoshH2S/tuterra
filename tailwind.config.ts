@@ -117,4 +117,12 @@ export default {
     },
   },
   plugins: [require("tailwindcss-animate")],
+  corePlugins: {
+    preflight: true,
+  },
+  // Add custom utility classes
+  safelist: [
+    'btn-gold-gradient',
+    'btn-gold-gradient-hover'
+  ],
 } satisfies Config;
