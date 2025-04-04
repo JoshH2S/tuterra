@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 
 export function DashboardPreview() {
   return (
-    <section className="py-20 bg-gray-50 dark:bg-gray-800">
+    <section className="py-20 bg-white dark:bg-gray-800">
       <div className="container mx-auto px-4">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
