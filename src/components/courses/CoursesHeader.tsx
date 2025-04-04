@@ -26,7 +26,7 @@ export const CoursesHeader = ({
     <div className="mb-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'} text-gray-900 dark:text-white`}>
+          <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'} text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-primary-300 dark:from-primary-400 dark:to-primary-200`}>
             Courses
           </h1>
           <p className={`text-gray-600 dark:text-gray-300 ${isMobile ? 'text-sm' : ''} mt-1`}>
