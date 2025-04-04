@@ -119,7 +119,7 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
                     />
                     <Bar 
                       dataKey="score" 
-                      fill="url(#performanceGradient)" 
+                      fill="#3b82f6" 
                       radius={[4, 4, 0, 0]}
                       animationDuration={1000}
                       name="Average Score"
