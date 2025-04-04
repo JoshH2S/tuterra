@@ -3,6 +3,7 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { FloatingCards } from "@/components/landing/FloatingCards";
 import { DashboardPreview } from "@/components/landing/DashboardPreview";
+import { ComparisonSection } from "@/components/landing/ComparisonSection";
 import { CtaSection } from "@/components/landing/CtaSection";
 import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
 
@@ -15,6 +16,7 @@ const Index = () => {
       <FeaturesSection />
       <FloatingCards />
       <DashboardPreview />
+      <ComparisonSection />
       <CtaSection />
       
       {!isOnline && (
