@@ -12,7 +12,7 @@ export function StatisticsCard({ correctAnswers, totalQuestions }: StatisticsCar
       <CardContent className="pt-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-2xl font-bold mb-1 text-[#091747]">
+            <h3 className="text-2xl font-bold mb-1 text-gradient-blue">
               {correctAnswers}
             </h3>
             <p className="text-muted-foreground">
@@ -20,7 +20,7 @@ export function StatisticsCard({ correctAnswers, totalQuestions }: StatisticsCar
             </p>
           </div>
           <div>
-            <h3 className="text-2xl font-bold mb-1 text-[#091747]">
+            <h3 className="text-2xl font-bold mb-1 text-gradient-blue">
               {totalQuestions}
             </h3>
             <p className="text-muted-foreground">
@@ -28,7 +28,7 @@ export function StatisticsCard({ correctAnswers, totalQuestions }: StatisticsCar
             </p>
           </div>
           <div>
-            <h3 className="text-2xl font-bold mb-1 text-[#091747]">
+            <h3 className="text-2xl font-bold mb-1 text-gradient-blue">
               {totalQuestions - correctAnswers}
             </h3>
             <p className="text-muted-foreground">

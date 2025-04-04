@@ -58,7 +58,7 @@ export function NavItem({
       />
       {!isCollapsed && (
         <>
-          <span className="flex-1 truncate">{label}</span>
+          <span className={cn("flex-1 truncate", computedIsActive && "text-gradient-blue")}>{label}</span>
           {hasChildren && (
             <motion.div
               animate={{ rotate: isOpen ? 180 : 0 }}

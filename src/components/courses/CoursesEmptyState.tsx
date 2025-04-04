@@ -18,7 +18,7 @@ export const CoursesEmptyState = ({ onCreateClick }: CoursesEmptyStateProps) => 
         <BookOpen className="w-8 h-8 text-primary" />
       </div>
       
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-semibold text-gradient-blue mb-2">
         No Courses Yet
       </h3>
       
