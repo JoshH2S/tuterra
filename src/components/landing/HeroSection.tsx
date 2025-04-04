@@ -15,6 +15,19 @@ export function HeroSection() {
           transition={{ duration: 0.8 }}
           className="text-center max-w-3xl mx-auto"
         >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex justify-center mb-6"
+          >
+            <img 
+              src="/lovable-uploads/78778e79-7be3-4fb2-b3af-90404757e8f4.png" 
+              alt="tuterra.ai logo" 
+              className="h-20 md:h-24 w-auto"
+            />
+          </motion.div>
+          
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
             Transform Your Learning Experience with{" "}
             <span className="text-blue-600 dark:text-blue-400">tuterra.ai</span>
