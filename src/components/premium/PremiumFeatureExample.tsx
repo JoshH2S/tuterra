@@ -1,5 +1,5 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PremiumContentCard } from "@/components/ui/premium-card";
 import { FeatureLock } from "./FeatureLock";
 import { useSubscription } from "@/hooks/useSubscription";
 
@@ -26,15 +26,14 @@ export const PremiumFeatureExample = ({
       tier={tier}
       userTier={subscription.tier}
     >
-      <Card className="w-full h-full">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {children}
-        </CardContent>
-      </Card>
+      <PremiumContentCard
+        title={title}
+        description={description}
+        variant="elevated"
+        className="w-full h-full"
+      >
+        {children}
+      </PremiumContentCard>
     </FeatureLock>
   );
 };

@@ -1,7 +1,7 @@
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Star } from "lucide-react";
+import { PremiumCard } from "@/components/ui/premium-card";
 import { cn } from "@/lib/utils";
 
 interface SubscriptionCardProps {
@@ -9,69 +9,77 @@ interface SubscriptionCardProps {
   price: string;
   description: string;
   features: string[];
-  planId: 'pro_plan' | 'premium_plan';
-  isPopular?: boolean;
-  className?: string;
-  onSelect: (planId: 'pro_plan' | 'premium_plan') => void;
+  planId: "pro_plan" | "premium_plan";
+  onSelect: (planId: "pro_plan" | "premium_plan") => void;
+  buttonText: string;
   buttonDisabled?: boolean;
-  buttonText?: string;
+  isPopular?: boolean;
 }
 
-export function SubscriptionCard({
+export const SubscriptionCard = ({
   title,
   price,
   description,
   features,
   planId,
-  isPopular = false,
-  className,
   onSelect,
+  buttonText,
   buttonDisabled = false,
-  buttonText = "Upgrade",
-}: SubscriptionCardProps) {
+  isPopular = false,
+}: SubscriptionCardProps) => {
   return (
-    <Card className={cn(
-      "flex flex-col overflow-hidden transition-all duration-200",
-      isPopular && "border-primary shadow-md scale-[1.02]",
-      className
-    )}>
-      <CardHeader className={cn(
-        "flex flex-col space-y-1.5 p-6",
-        isPopular && "bg-primary/10"
-      )}>
-        {isPopular && (
-          <div className="mb-2 flex items-center">
-            <Star className="mr-1 h-5 w-5 fill-primary text-primary" />
-            <p className="text-xs font-semibold text-primary">MOST POPULAR</p>
+    <PremiumCard 
+      variant={isPopular ? "gradient" : "default"}
+      className={cn(
+        "relative flex flex-col h-full overflow-hidden",
+        isPopular ? "border-primary/50 shadow-md" : ""
+      )}
+      interactive
+      hoverEffect={isPopular ? "lift" : "scale"}
+    >
+      {isPopular && (
+        <div className="absolute top-0 right-0">
+          <div className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-bl">
+            Popular
           </div>
-        )}
-        <CardTitle className="text-xl">{title}</CardTitle>
-        <div className="flex items-baseline">
-          <span className="text-3xl font-bold tracking-tight">{price}</span>
-          <span className="ml-1 text-sm font-medium text-muted-foreground">/month</span>
         </div>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="p-6 pt-0 flex-1">
-        <ul className="space-y-2">
-          {features.map((feature, index) => (
-            <li key={index} className="flex items-center">
-              <CheckCircle2 className="h-4 w-4 mr-2 text-primary flex-shrink-0" />
-              <span className="text-sm">{feature}</span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-      <CardFooter className="p-6 pt-0">
-        <Button 
-          onClick={() => onSelect(planId)} 
-          className="w-full" 
-          variant={isPopular ? "default" : "outline"}
-          disabled={buttonDisabled}
-        >
-          {buttonText}
-        </Button>
-      </CardFooter>
-    </Card>
+      )}
+      
+      <div className="p-6">
+        <h3 className="text-xl font-bold">{title}</h3>
+        <div className="mt-4 flex items-baseline">
+          <span className="text-3xl font-extrabold">{price}</span>
+          {price !== "$0" && (
+            <span className="ml-1 text-sm text-muted-foreground">
+              /{price.includes("95") || price.includes("191") ? "year" : "month"}
+            </span>
+          )}
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+        
+        <div className="mt-6">
+          <h4 className="text-sm font-medium text-foreground">What's included:</h4>
+          <ul className="mt-2 space-y-3">
+            {features.map((feature, index) => (
+              <li key={index} className="flex items-start">
+                <Check className="h-5 w-5 text-green-500 flex-shrink-0 mr-2" />
+                <span className="text-sm">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        <div className="mt-6 pt-6 border-t">
+          <Button
+            onClick={() => onSelect(planId)}
+            disabled={buttonDisabled}
+            className="w-full"
+            variant={isPopular ? "default" : "outline"}
+          >
+            {buttonText}
+          </Button>
+        </div>
+      </div>
+    </PremiumCard>
   );
-}
+};

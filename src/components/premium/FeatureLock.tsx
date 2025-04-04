@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { PremiumCard } from "@/components/ui/premium-card";
 
 type FeatureTier = "pro" | "premium" | "free";
 
@@ -102,7 +103,7 @@ export const FeatureLock = ({
           </DialogHeader>
           
           <div className="py-4 space-y-4">
-            <div className="rounded-lg border p-4">
+            <PremiumCard variant="minimal" className="p-4">
               <h3 className="font-medium mb-2">What you'll get:</h3>
               <ul className="space-y-2">
                 <li className="flex items-center gap-2 text-sm">
@@ -122,7 +123,7 @@ export const FeatureLock = ({
                   </>
                 )}
               </ul>
-            </div>
+            </PremiumCard>
           </div>
 
           <DialogFooter className="flex sm:justify-between gap-2">

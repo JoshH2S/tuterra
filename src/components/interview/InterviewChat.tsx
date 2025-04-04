@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { InterviewQuestion } from "@/types/interview";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { PremiumContentCard } from "@/components/ui/premium-card";
 import { AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/interview/useVoiceRecorder";
@@ -79,17 +79,20 @@ export const InterviewChat = ({
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
-      <Card className="flex-1 flex flex-col mb-4 shadow-md overflow-hidden">
-        <CardContent className="flex-1 p-6 pb-0">
+      <PremiumContentCard 
+        title={currentQuestion?.question || "Interview Question"} 
+        variant="glass"
+        className="mb-4 shadow-md"
+      >
+        <div className="space-y-4">
           <AnimatePresence mode="wait">
             <QuestionDisplay 
               currentQuestion={currentQuestion} 
               typingEffect={typingEffect} 
             />
           </AnimatePresence>
-        </CardContent>
-        <CardFooter className="p-6 border-t">
-          <div className="w-full space-y-4">
+          
+          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 mt-4">
             <ResponseInput
               response={response}
               onResponseChange={setResponse}
@@ -101,7 +104,7 @@ export const InterviewChat = ({
               onToggleRecording={toggleRecording}
               recordingTime={formattedTime}
             />
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mt-4">
               <p className="text-xs text-muted-foreground">
                 Press Ctrl+Enter to submit or use the microphone to speak
               </p>
@@ -122,8 +125,8 @@ export const InterviewChat = ({
               </Button>
             </div>
           </div>
-        </CardFooter>
-      </Card>
+        </div>
+      </PremiumContentCard>
     </div>
   );
 };

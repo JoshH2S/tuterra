@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { PremiumContentCard, PremiumCard } from "@/components/ui/premium-card";
 
 export default function PricingPage() {
   const { isLoggedIn } = useAuthStatus();
@@ -70,32 +72,38 @@ export default function PricingPage() {
           Unlock powerful learning features tailored to your educational needs
         </p>
         
-        <Tabs defaultValue="monthly" className="w-full max-w-xs mx-auto">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
-              Monthly
-            </TabsTrigger>
-            <TabsTrigger value="yearly" onClick={() => setBillingInterval('yearly')}>
-              Yearly <span className="ml-1 text-xs text-emerald-600">-20%</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <PremiumCard variant="glass" className="max-w-xs mx-auto p-2">
+          <Tabs defaultValue="monthly" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
+                Monthly
+              </TabsTrigger>
+              <TabsTrigger value="yearly" onClick={() => setBillingInterval('yearly')}>
+                Yearly <span className="ml-1 text-xs text-emerald-600">-20%</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </PremiumCard>
       </motion.div>
 
       {!isLoggedIn && (
-        <Alert className="max-w-3xl mx-auto mb-8">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Sign in required</AlertTitle>
-          <AlertDescription className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            You need to sign in or create an account to subscribe to a plan.
+        <PremiumContentCard
+          title="Sign in required"
+          variant="glass"
+          className="max-w-3xl mx-auto mb-8"
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-1">
+              You need to sign in or create an account to subscribe to a plan.
+            </div>
             <Button 
               onClick={() => navigate('/auth?returnTo=/pricing')}
               className="whitespace-nowrap"
             >
               Sign in
             </Button>
-          </AlertDescription>
-        </Alert>
+          </div>
+        </PremiumContentCard>
       )}
 
       <motion.div 
@@ -159,15 +167,18 @@ export default function PricingPage() {
         />
       </motion.div>
 
-      <div className="mt-12 max-w-3xl mx-auto text-center">
-        <h3 className="text-lg font-medium mb-4">Questions about our plans?</h3>
-        <p className="text-muted-foreground mb-6">
-          Contact our support team for more information about which plan is right for you.
-        </p>
-        <Button variant="outline" onClick={() => navigate('/contact')}>
-          Contact Support
-        </Button>
-      </div>
+      <PremiumContentCard
+        title="Questions about our plans?"
+        description="Contact our support team for more information about which plan is right for you."
+        variant="minimal"
+        className="mt-12 max-w-3xl mx-auto text-center"
+      >
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => navigate('/contact')}>
+            Contact Support
+          </Button>
+        </div>
+      </PremiumContentCard>
     </div>
   );
 }
