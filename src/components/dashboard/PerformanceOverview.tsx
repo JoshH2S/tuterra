@@ -1,15 +1,18 @@
 
 import { StudentPerformance } from "@/types/student";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertTriangle, BarChart as BarChartIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PremiumCard, PremiumContentCard, PremiumStatsCard } from "@/components/ui/premium-card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PerformanceOverviewProps {
   performance: StudentPerformance[];
 }
 
 export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) => {
+  const isMobile = useIsMobile();
+  
   // Calculate the weighted average score based on completed quizzes
   const totalCompletedQuizzes = performance.reduce((acc, curr) => acc + curr.completed_quizzes, 0);
   const averageScore = totalCompletedQuizzes > 0
@@ -29,39 +32,42 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
 
   return (
     <div className="grid gap-6">
-      <Card className="col-span-full">
-        <CardHeader>
-          <CardTitle>Performance Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <Card className="p-4 border-l-4 border-l-blue-500">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Overall Average</p>
-                <p className="text-2xl font-bold">{averageScore.toFixed(1)}%</p>
-              </div>
-            </Card>
-            <Card className="p-4 border-l-4 border-l-green-500">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Quizzes Completed</p>
-                <p className="text-2xl font-bold">{totalQuizzes}</p>
-              </div>
-            </Card>
-            <Card className="p-4 border-l-4 border-l-purple-500">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Completion Rate</p>
-                <p className="text-2xl font-bold">{totalCompletionRate.toFixed(1)}%</p>
-              </div>
-            </Card>
-          </div>
+      <PremiumContentCard 
+        title="Performance Overview" 
+        variant="gradient"
+      >
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <PremiumStatsCard
+            title="Overall Average"
+            value={`${averageScore.toFixed(1)}%`}
+            trend={averageScore > 75 ? "up" : averageScore > 50 ? "neutral" : "down"}
+            trendValue={averageScore > 75 ? "Excellent" : averageScore > 50 ? "Good" : "Needs improvement"}
+            className="border-l-4 border-l-blue-500"
+          />
           
-          {chartData.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <BarChartIcon className="mr-2 h-5 w-5 text-blue-500" />
-                Course Performance
-              </h3>
-              <div className="h-[250px] bg-card rounded-lg p-4">
+          <PremiumStatsCard
+            title="Quizzes Completed"
+            value={totalQuizzes}
+            className="border-l-4 border-l-green-500"
+          />
+          
+          <PremiumStatsCard
+            title="Completion Rate"
+            value={`${totalCompletionRate.toFixed(1)}%`}
+            trend={totalCompletionRate > 75 ? "up" : totalCompletionRate > 50 ? "neutral" : "down"}
+            trendValue={`${totalCompletionRate > 75 ? "On track" : totalCompletionRate > 50 ? "Making progress" : "Behind schedule"}`}
+            className="border-l-4 border-l-purple-500"
+          />
+        </div>
+          
+        {chartData.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <BarChartIcon className="mr-2 h-5 w-5 text-blue-500" />
+              Course Performance
+            </h3>
+            <PremiumCard variant="minimal" className="p-4">
+              <div className="h-[250px] bg-transparent rounded-lg">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart 
                     data={chartData}
@@ -87,6 +93,11 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
                     <Tooltip 
                       formatter={(value) => [`${value}%`, 'Average Score']}
                       labelStyle={{ fontWeight: 'bold' }}
+                      contentStyle={{ 
+                        borderRadius: '0.5rem',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                        border: '1px solid rgba(0, 0, 0, 0.05)'
+                      }}
                     />
                     <Bar 
                       dataKey="score" 
@@ -98,10 +109,10 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </PremiumCard>
+          </div>
+        )}
+      </PremiumContentCard>
 
       {performance.map((p, index) => {
         const completionRate = (p.completed_quizzes / p.total_quizzes) * 100;

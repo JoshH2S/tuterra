@@ -6,6 +6,7 @@ import { SessionForm } from "./calendar/SessionForm";
 import { CreateStudySessionData } from "@/types/study-sessions";
 import type { StudySession } from "@/hooks/useStudySessions";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PremiumContentCard } from "@/components/ui/premium-card";
 
 interface StudyCalendarProps {
   sessions: StudySession[];
@@ -17,20 +18,21 @@ export function StudyCalendar({ sessions, onCreateSession }: StudyCalendarProps)
   const isMobile = useIsMobile();
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Study Schedule</h2>
+    <PremiumContentCard
+      title="Study Schedule"
+      headerAction={
         <SessionForm 
           selectedDate={date} 
           onCreateSession={onCreateSession} 
         />
-      </div>
-
+      }
+      variant="glass"
+    >
       {/* Responsive layout with a single column on mobile and two columns on larger screens */}
       <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6">
         <CalendarView selectedDate={date} onDateSelect={setDate} />
         <SessionsList date={date} sessions={sessions} />
       </div>
-    </div>
+    </PremiumContentCard>
   );
 }

@@ -1,15 +1,15 @@
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Newspaper, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StudentCourse } from "@/types/student";
-import { useNewsFeed, NewsItem } from "@/hooks/useNewsFeed";
+import { useNewsFeed } from "@/hooks/useNewsFeed";
 import { NewsCard } from "./NewsCard";
 import { NewsEmptyState } from "./NewsEmptyState";
 import { NewsNoResults } from "./NewsNoResults";
+import { PremiumCard, PremiumContentCard } from "@/components/ui/premium-card";
 
 interface NewsFeedProps {
   courses: StudentCourse[];
@@ -52,11 +52,11 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
 
   if (isLoading) {
     return (
-      <Card className="mb-6">
-        <CardContent className="flex items-center justify-center py-6">
+      <PremiumCard className="mb-6 p-6">
+        <div className="flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+        </div>
+      </PremiumCard>
     );
   }
 
@@ -74,12 +74,11 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
   }
 
   return (
-    <Card className="mb-6">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="flex items-center gap-2">
-          <Newspaper className="h-5 w-5" />
-          Latest News
-        </CardTitle>
+    <PremiumContentCard 
+      title="Latest News" 
+      className="mb-6"
+      variant="glass"
+      headerAction={
         <Button 
           variant="outline" 
           size={isMobile ? "sm" : "default"} 
@@ -94,14 +93,13 @@ export const NewsFeed = ({ courses }: NewsFeedProps) => {
           )}
           <span className={isMobile ? "sr-only" : ""}>Refresh</span>
         </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {newsItems.map((item, index) => (
-            <NewsCard key={index} item={item} />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+      }
+    >
+      <div className="space-y-4">
+        {newsItems.map((item, index) => (
+          <NewsCard key={index} item={item} />
+        ))}
+      </div>
+    </PremiumContentCard>
   );
 };
