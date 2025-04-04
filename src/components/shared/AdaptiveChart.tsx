@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -54,8 +55,8 @@ export function InteractiveChart() {
         >
           <defs>
             <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              <stop offset="5%" stopColor="#091747" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="var(--chart-gradient-end)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -74,7 +75,7 @@ export function InteractiveChart() {
           <Area
             type="monotone"
             dataKey="score"
-            stroke="#3b82f6"
+            stroke="#091747"
             fillOpacity={1}
             fill="url(#colorScore)"
             activeDot={{ r: 8 }}
@@ -99,6 +100,12 @@ export function SimpleChart() {
           margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
           barSize={20}
         >
+          <defs>
+            <linearGradient id="mobileScoreGradient" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#091747" />
+              <stop offset="100%" stopColor="var(--chart-gradient-end)" />
+            </linearGradient>
+          </defs>
           <XAxis 
             dataKey="month" 
             scale="point" 
@@ -121,7 +128,7 @@ export function SimpleChart() {
           />
           <Bar 
             dataKey="score" 
-            fill="#3b82f6" 
+            fill="url(#mobileScoreGradient)" 
             radius={[4, 4, 0, 0]}
           />
         </BarChart>

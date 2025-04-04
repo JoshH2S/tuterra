@@ -1,4 +1,6 @@
 
+"use client";
+
 import { motion } from "framer-motion";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,11 +19,11 @@ const comparisonData = [
 const chartConfig = {
   traditional: {
     label: "Traditional LMS",
-    color: "#94a3b8" // Slate-400
+    color: "url(#traditionalGradient)"
   },
   eduportal: {
     label: "EduPortal",
-    color: "#3b82f6" // Blue-500
+    color: "url(#eduportalGradient)"
   }
 };
 
@@ -44,7 +46,7 @@ export function ComparisonSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
+          <h2 className="text-3xl font-bold mb-4 gradient-text">
             Why Choose EduPortal?
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
@@ -73,6 +75,16 @@ export function ComparisonSection() {
                       data={comparisonData}
                       margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
                     >
+                      <defs>
+                        <linearGradient id="eduportalGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#091747" />
+                          <stop offset="100%" stopColor="var(--chart-gradient-end)" />
+                        </linearGradient>
+                        <linearGradient id="traditionalGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#091747" stopOpacity="0.6" />
+                          <stop offset="100%" stopColor="var(--chart-gradient-end)" stopOpacity="0.6" />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.3} vertical={false} />
                       <XAxis 
                         dataKey="category" 
@@ -92,14 +104,14 @@ export function ComparisonSection() {
                       />
                       <Bar 
                         dataKey="traditional" 
-                        fill="var(--color-traditional, #94a3b8)" 
+                        fill="url(#traditionalGradient)" 
                         name="Traditional LMS" 
                         radius={[4, 4, 0, 0]}
                         barSize={20}
                       />
                       <Bar 
                         dataKey="eduportal" 
-                        fill="var(--color-eduportal, #3b82f6)" 
+                        fill="url(#eduportalGradient)" 
                         name="EduPortal" 
                         radius={[4, 4, 0, 0]}
                         barSize={20}

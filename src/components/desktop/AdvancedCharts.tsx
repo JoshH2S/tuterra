@@ -53,8 +53,8 @@ export function EnhancedPerformanceChart() {
           >
             <defs>
               <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                <stop offset="5%" stopColor="#091747" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="var(--chart-gradient-end)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="avgGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
@@ -77,7 +77,7 @@ export function EnhancedPerformanceChart() {
             <Area
               type="monotone"
               dataKey="score"
-              stroke="#3b82f6"
+              stroke="#091747"
               fillOpacity={1}
               fill="url(#scoreGradient)"
               activeDot={{
@@ -130,6 +130,16 @@ export function DetailedAnalyticsChart() {
             barSize={35}
             barGap={10}
           >
+            <defs>
+              <linearGradient id="completedGradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#091747" />
+                <stop offset="100%" stopColor="#10b981" />
+              </linearGradient>
+              <linearGradient id="targetGradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#091747" />
+                <stop offset="100%" stopColor="#6366f1" />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
             <XAxis
               dataKey="category"
@@ -161,14 +171,14 @@ export function DetailedAnalyticsChart() {
             <Bar
               dataKey="completed"
               name="Completed"
-              fill="#10b981"
+              fill="url(#completedGradient)"
               radius={[4, 4, 0, 0]}
               animationDuration={1500}
             />
             <Bar
               dataKey="target"
               name="Target"
-              fill="#6366f1"
+              fill="url(#targetGradient)"
               radius={[4, 4, 0, 0]}
               animationDuration={1500}
             />

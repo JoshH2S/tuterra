@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -78,14 +79,25 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
 
     const data = performance.map(item => item.average_score);
     
-    const backgroundColor = data.map(score => {
-      if (score >= 85) return 'rgba(46, 204, 113, 0.6)';
-      if (score >= 70) return 'rgba(52, 152, 219, 0.6)';
-      if (score >= 50) return 'rgba(241, 196, 15, 0.6)';
-      return 'rgba(231, 76, 60, 0.6)';
-    });
-
-    const borderColor = backgroundColor.map(color => color.replace('0.6', '1'));
+    // Create a gradient for each bar
+    const createGradient = (ctx: any, i: number) => {
+      const gradient = ctx.createLinearGradient(0, 0, 300, 0);
+      gradient.addColorStop(0, "#091747");
+      
+      // Adjust the end color based on score
+      const score = data[i];
+      if (score >= 85) {
+        gradient.addColorStop(1, "#60A5FA");  // Light blue for high scores
+      } else if (score >= 70) {
+        gradient.addColorStop(1, "#3B82F6");  // Medium blue for good scores
+      } else if (score >= 50) {
+        gradient.addColorStop(1, "#2563EB");  // Darker blue for average scores
+      } else {
+        gradient.addColorStop(1, "#1E40AF");  // Navy for low scores
+      }
+      
+      return gradient;
+    };
 
     setChartData({
       labels,
@@ -93,8 +105,18 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
         {
           label: 'Average Score',
           data,
-          backgroundColor,
-          borderColor,
+          backgroundColor: function(context: any) {
+            const chart = context.chart;
+            const {ctx, chartArea} = chart;
+            
+            // This case happens on initial chart load
+            if (!chartArea) {
+              return;
+            }
+            
+            // Use dataIndex to get the right gradient for each bar
+            return createGradient(ctx, context.dataIndex);
+          },
           borderWidth: 1,
           borderRadius: 6,
           maxBarThickness: 40,

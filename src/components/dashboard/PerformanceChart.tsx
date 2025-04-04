@@ -30,6 +30,12 @@ export function PerformanceChart({ performance }: PerformanceChartProps) {
               margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
               barSize={40}
             >
+              <defs>
+                <linearGradient id="scoreGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#091747" />
+                  <stop offset="100%" stopColor="var(--chart-gradient-end)" />
+                </linearGradient>
+              </defs>
               <XAxis 
                 dataKey="course" 
                 angle={-45}
@@ -52,7 +58,7 @@ export function PerformanceChart({ performance }: PerformanceChartProps) {
               />
               <Bar 
                 dataKey="score" 
-                fill="#3b82f6" 
+                fill="url(#scoreGradient)" 
                 radius={[4, 4, 0, 0]}
                 animationDuration={1000}
                 name="Average Score"

@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,6 +50,9 @@
     --primary-100: 45 90% 88%;
     --primary-200: 43 89% 70%;
     --primary-300: 43 89% 60%;
+
+    /* Chart gradients */
+    --chart-gradient-end: #60A5FA;
   }
 
   .dark {
@@ -98,6 +100,9 @@
     --primary-100: 45 90% 82%;
     --primary-200: 43 89% 65%;
     --primary-300: 43 89% 55%;
+
+    /* Chart gradients for dark mode */
+    --chart-gradient-end: #3B82F6;
   }
 }
 
