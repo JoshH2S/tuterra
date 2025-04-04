@@ -46,7 +46,7 @@ export const CoursesHeader = ({
           
           <Button 
             onClick={onCreateClick}
-            className={isMobile ? 'px-3 py-2 text-sm' : ''}
+            className={`bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-black hover:from-primary-200 hover:to-primary-300 ${isMobile ? 'px-3 py-2 text-sm' : ''}`}
           >
             <Plus className="w-4 h-4 mr-2" />
             Create New Course
