@@ -4,18 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CourseSelector } from "./CourseSelector";
 import { TimeRangePicker } from "./TimeRangePicker";
 import { DateSelector } from "./DateSelector";
-import { CalendarDays } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar-new";
-import { Button } from "@/components/ui/button";
 import { CreateStudySessionData } from "@/types/study-sessions";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CourseOption {
   id: string;
@@ -40,14 +32,6 @@ export function SessionFormFields({
   courses,
   isLoading
 }: SessionFormFieldsProps) {
-  const isMobile = useIsMobile();
-  const [showCalendar, setShowCalendar] = useState(false);
-
-  const handleDateChange = (date: Date | undefined) => {
-    setSelectedDate(date);
-    setShowCalendar(false);
-  };
-
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -79,85 +63,12 @@ export function SessionFormFields({
         isLoading={isLoading}
       />
 
-      {/* Date selection with calendar option */}
-      <div className="space-y-2">
-        <Label htmlFor="date">Date</Label>
-        <div className="flex gap-2">
-          <Popover open={showCalendar} onOpenChange={setShowCalendar}>
-            <PopoverTrigger asChild>
-              <Button
-                id="date"
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarDays className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent 
-              className="w-auto p-0 pointer-events-auto" 
-              align="center"
-              side="bottom" 
-              sideOffset={4}
-            >
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDateChange}
-                initialFocus
-                className={cn("border-0 pointer-events-auto", isMobile ? "scale-90 origin-center" : "")}
-                fromDate={new Date()} // Can only select today or future dates
-                modifiers={{
-                  selected: selectedDate ? [selectedDate] : [],
-                }}
-                modifiersStyles={{
-                  selected: {
-                    backgroundColor: "#facc15", // Yellow highlight
-                    color: "#000",
-                    fontWeight: "bold",
-                  }
-                }}
-                captionLayout="dropdown"
-                components={{
-                  Dropdown: (props: any) => {
-                    return (
-                      <Select
-                        value={String(props.value)}
-                        onValueChange={(value) => {
-                          if (props.onChange) {
-                            const event = {
-                              target: { value: String(value) }
-                            } as React.ChangeEvent<HTMLSelectElement>;
-                            props.onChange(event);
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="h-8 w-fit font-medium first:grow">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[min(26rem,var(--radix-select-content-available-height))]">
-                          {props.children && Array.isArray(props.children) && props.children.map((option: any) => (
-                            <SelectItem
-                              key={option.props.value}
-                              value={String(option.props.value)}
-                              disabled={option.props.disabled}
-                            >
-                              {option.props.children}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    );
-                  },
-                }}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
+      {/* Add the DateSelector component */}
+      <DateSelector
+        selectedDate={selectedDate}
+        onDateSelect={setSelectedDate}
+        label="Session Date"
+      />
 
       <TimeRangePicker
         startTime={sessionData.start_time || ""}
