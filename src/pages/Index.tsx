@@ -1,6 +1,7 @@
 
 import { HeroSection } from "@/components/landing/HeroSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { FloatingCards } from "@/components/landing/FloatingCards";
 import { DashboardPreview } from "@/components/landing/DashboardPreview";
 import { CtaSection } from "@/components/landing/CtaSection";
 import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
@@ -12,6 +13,7 @@ const Index = () => {
     <div className="min-h-screen bg-white dark:from-gray-950 dark:to-gray-900 -m-4 md:-m-8">
       <HeroSection />
       <FeaturesSection />
+      <FloatingCards />
       <DashboardPreview />
       <CtaSection />
       
