@@ -1,3 +1,4 @@
+
 "use client";
 
 import { motion } from "framer-motion";
@@ -25,7 +26,7 @@ export function HeroSection() {
           duration: 0.6,
           delay: 0.2
         }} className="flex justify-center mb-6">
-            <img src="/lovable-uploads/78778e79-7be3-4fb2-b3af-90404757e8f4.png" alt="tuterra.ai logo" className="h-20 md:h-24 w-auto object-fill" />
+            <img src="/lovable-uploads/78778e79-7be3-4fb2-b3af-90404757e8f4.png" alt="tuterra.ai logo" className="h-40 md:h-48 w-auto object-fill" />
           </motion.div>
           
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
