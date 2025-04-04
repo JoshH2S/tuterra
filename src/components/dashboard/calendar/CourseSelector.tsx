@@ -1,18 +1,23 @@
 
 import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import type { Course } from "@/types/course";
+
+interface CourseOption {
+  id: string;
+  title: string;
+  code?: string;
+}
 
 interface CourseSelectorProps {
-  courses: Course[];
-  selectedCourseId: string | undefined;
+  courses: CourseOption[];
+  courseId: string;
   onCourseSelect: (courseId: string) => void;
   isLoading: boolean;
 }
 
 export function CourseSelector({ 
   courses, 
-  selectedCourseId, 
+  courseId, 
   onCourseSelect, 
   isLoading 
 }: CourseSelectorProps) {
@@ -20,7 +25,7 @@ export function CourseSelector({
     <div className="space-y-2">
       <Label htmlFor="course">Course</Label>
       <Select 
-        value={selectedCourseId} 
+        value={courseId} 
         onValueChange={onCourseSelect}
         disabled={isLoading}
       >
