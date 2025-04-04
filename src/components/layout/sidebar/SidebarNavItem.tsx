@@ -79,7 +79,7 @@ export const SidebarNavItem = ({
       <div 
         className={cn(
           "absolute inset-0 rounded-lg bg-transparent transition-colors duration-200",
-          !isActive && "hover:bg-gray-100 dark:hover:bg-gray-800"
+          !isActive && "hover:bg-blue-100/50 dark:hover:bg-gray-800"
         )} 
       />
     </button>

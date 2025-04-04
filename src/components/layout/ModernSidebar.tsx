@@ -85,7 +85,7 @@ export function ModernSidebar() {
         width: isCollapsed ? 64 : 240,
         transition: { duration: 0.2, type: "spring", stiffness: 500, damping: 30 },
       }}
-      className="fixed left-0 top-0 z-30 h-screen border-r border-slate-200 bg-white/80 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/80 shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]"
+      className="fixed left-0 top-0 z-30 h-screen border-r border-slate-200 bg-blue-50 dark:border-slate-800 dark:bg-slate-800 shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]"
     >
       <div className="flex h-full flex-col">
         {/* Header with team switcher */}

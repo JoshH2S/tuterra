@@ -21,7 +21,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex flex-1">
         <MainSidebar />
         <div 
-          className="flex-1 flex flex-col transition-all duration-300 ease-in-out"
+          className="flex-1 flex flex-col transition-all duration-300 ease-in-out bg-white"
           style={{ 
             marginLeft: isMobile ? 0 : isCollapsed ? "50px" : "200px" 
           }}
