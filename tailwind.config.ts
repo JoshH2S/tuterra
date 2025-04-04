@@ -123,6 +123,7 @@ export default {
   // Add custom utility classes
   safelist: [
     'btn-gold-gradient',
-    'btn-gold-gradient-hover'
+    'btn-gold-gradient-hover',
+    'gradient-text'
   ],
 } satisfies Config;

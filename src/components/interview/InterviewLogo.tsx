@@ -25,7 +25,7 @@ export const InterviewLogo = () => {
           </svg>
         </div>
         <div className="text-foreground">
-          <h1 className="font-bold text-lg sm:text-xl">Interview Simulator</h1>
+          <h1 className="font-bold text-lg sm:text-xl gradient-text">Interview Simulator</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Professional interview practice</p>
         </div>
       </div>

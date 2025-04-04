@@ -10,7 +10,7 @@ export function ResultsHeader({ title }: ResultsHeaderProps) {
   
   return (
     <>
-      <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-bold mb-2 text-gradient-blue`}>
+      <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-bold mb-2 gradient-text`}>
         {title}
       </h1>
       <p className="text-muted-foreground text-lg mb-6">

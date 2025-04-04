@@ -13,7 +13,7 @@ export const LessonPlanningHeaderWithTemplates = ({ onSaveTemplate }: LessonPlan
     <div className="mb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">AI Lesson Planning</h1>
+          <h1 className="text-3xl font-bold mb-2 gradient-text">AI Lesson Planning</h1>
           <p className="text-gray-600">Create AI-powered lesson plans from your course materials</p>
         </div>
         <div className="flex gap-4">

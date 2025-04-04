@@ -25,7 +25,7 @@ export const TopicsCard = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Quiz Topics</CardTitle>
+        <CardTitle className="gradient-text">Quiz Topics</CardTitle>
         <CardDescription>Define topics and number of questions</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

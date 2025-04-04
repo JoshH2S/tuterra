@@ -30,7 +30,7 @@ export const TutorChatHeader = ({ isPremium = false }: TutorChatHeaderProps) => 
       
       <div>
         <div className="flex items-center gap-2">
-          <h3 className="font-medium text-foreground">
+          <h3 className="font-medium gradient-text">
             AI Study Assistant
           </h3>
           {isPremium && (
