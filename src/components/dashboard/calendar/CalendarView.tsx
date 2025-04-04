@@ -42,7 +42,6 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
           month: "w-full",
         }}
         captionLayout="dropdown"
-        showNavigation={false}
         components={{
           Dropdown: (props: DropdownProps) => {
             return (

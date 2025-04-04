@@ -71,7 +71,6 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
             className="border-0"
             fromDate={today} 
             disabled={(date) => date < today}
-            showNavigation={false}
             captionLayout="dropdown"
             components={{
               Dropdown: (props: DropdownProps) => {

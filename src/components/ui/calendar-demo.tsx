@@ -36,7 +36,6 @@ export function CalendarDemo() {
         className="rounded-lg border border-border p-2 bg-background pointer-events-auto"
         captionLayout="dropdown"
         defaultMonth={new Date()}
-        showNavigation={false}
         components={{
           Dropdown: (props: DropdownProps) => {
             return (
