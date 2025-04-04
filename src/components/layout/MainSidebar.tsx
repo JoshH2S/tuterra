@@ -73,7 +73,7 @@ export const MainSidebar = () => {
       
       <Sidebar className={cn(
         "fixed left-0 top-0 h-screen",
-        "bg-blue-50 dark:bg-slate-800", // Changed from white/80 to blue-50
+        "bg-gradient-to-br from-primary-100/80 to-primary-200/80 dark:bg-slate-800", // Updated to match the selected item gradient
         "border-r border-gray-200 dark:border-gray-800",
         "shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]",
         "transition-all duration-300 ease-in-out z-30",
@@ -104,7 +104,7 @@ export const MainSidebar = () => {
               </motion.div>}
           </AnimatePresence>
           
-          {!isCollapsed && <motion.button className="absolute right-2 top-4 p-1 rounded-md hover:bg-blue-100 dark:hover:bg-gray-800 touch-manipulation" whileTap={{
+          {!isCollapsed && <motion.button className="absolute right-2 top-4 p-1 rounded-md hover:bg-blue-200/70 dark:hover:bg-gray-800 touch-manipulation" whileTap={{
           scale: 0.9
         }} onClick={toggleSidebar} aria-label="Collapse sidebar">
               <AnimatePresence mode="wait">

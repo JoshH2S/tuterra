@@ -66,11 +66,11 @@ export const SidebarNavItem = ({
         </span>
       )}
       
-      {/* Active highlight with full width */}
+      {/* Active highlight with gradient matching course card */}
       {isActive && (
         <motion.div 
           layoutId="activeBackground"
-          className="absolute inset-0 bg-blue-50 dark:bg-blue-950/30 rounded-lg"
+          className="absolute inset-0 bg-gradient-to-r from-primary-100 to-primary-200 dark:bg-blue-950/30 rounded-lg"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}

@@ -42,10 +42,10 @@ export function NavItem({
     <div
       className={cn(
         "relative flex items-center gap-2 rounded-md p-2",
-        "hover:bg-slate-100 dark:hover:bg-slate-800",
+        "hover:bg-blue-100/50 dark:hover:bg-slate-800",
         "transition-colors duration-200 ease-in-out",
-        computedIsActive && "bg-slate-100 dark:bg-slate-800 font-medium",
-        hasChildren && isOpen && "bg-slate-100 dark:bg-slate-800",
+        computedIsActive && "bg-gradient-to-r from-primary-100 to-primary-200 dark:bg-slate-800 font-medium",
+        hasChildren && isOpen && "bg-blue-100/50 dark:bg-slate-800",
         className
       )}
       onClick={() => hasChildren && setIsOpen(!isOpen)}
