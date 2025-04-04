@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar-new";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { DropdownNavProps, DropdownProps } from "react-day-picker";
+import { DropdownProps } from "react-day-picker";
 import {
   Select,
   SelectContent,
@@ -72,9 +72,6 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
             fromDate={today} 
             disabled={(date) => date < today}
             components={{
-              DropdownNav: (props: DropdownNavProps) => {
-                return <div className="flex w-full items-center gap-2">{props.children}</div>;
-              },
               Dropdown: (props: DropdownProps) => {
                 return (
                   <Select
@@ -89,13 +86,13 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-[min(26rem,var(--radix-select-content-available-height))]">
-                      {props.options?.map((option) => (
+                      {props.children?.map((option: any) => (
                         <SelectItem
-                          key={option.value}
-                          value={String(option.value)}
-                          disabled={option.disabled}
+                          key={option.props.value}
+                          value={String(option.props.value)}
+                          disabled={option.props.disabled}
                         >
-                          {option.label}
+                          {option.props.children}
                         </SelectItem>
                       ))}
                     </SelectContent>

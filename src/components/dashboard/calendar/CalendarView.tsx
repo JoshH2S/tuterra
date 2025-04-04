@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar-new";
-import { DropdownNavProps, DropdownProps } from "react-day-picker";
+import { DropdownProps } from "react-day-picker";
 import {
   Select,
   SelectContent,
@@ -39,14 +39,11 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
         onSelect={onDateSelect}
         className={`mx-auto w-full ${isMobile ? "scale-90 origin-center transform" : ""}`}
         classNames={{
-          month_caption: "mx-0",
+          month: "w-full",
         }}
         captionLayout="dropdown"
         hideNavigation
         components={{
-          DropdownNav: (props: DropdownNavProps) => {
-            return <div className="flex w-full items-center gap-2">{props.children}</div>;
-          },
           Dropdown: (props: DropdownProps) => {
             return (
               <Select
@@ -61,13 +58,13 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-[min(26rem,var(--radix-select-content-available-height))]">
-                  {props.options?.map((option) => (
+                  {props.children?.map((option: any) => (
                     <SelectItem
-                      key={option.value}
-                      value={String(option.value)}
-                      disabled={option.disabled}
+                      key={option.props.value}
+                      value={String(option.props.value)}
+                      disabled={option.props.disabled}
                     >
-                      {option.label}
+                      {option.props.children}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { DropdownNavProps, DropdownProps } from "react-day-picker";
+import { DropdownProps } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar-new";
 import {
   Select,
@@ -34,17 +34,11 @@ export function CalendarDemo() {
         selected={date}
         onSelect={setDate}
         className="rounded-lg border border-border p-2 bg-background"
-        classNames={{
-          month_caption: "mx-0",
-        }}
         captionLayout="dropdown"
         defaultMonth={new Date()}
         startMonth={new Date(1980, 6)}
         hideNavigation
         components={{
-          DropdownNav: (props: DropdownNavProps) => {
-            return <div className="flex w-full items-center gap-2">{props.children}</div>;
-          },
           Dropdown: (props: DropdownProps) => {
             return (
               <Select
@@ -59,13 +53,13 @@ export function CalendarDemo() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-[min(26rem,var(--radix-select-content-available-height))]">
-                  {props.options?.map((option) => (
+                  {props.children?.map((option: any) => (
                     <SelectItem
-                      key={option.value}
-                      value={String(option.value)}
-                      disabled={option.disabled}
+                      key={option.props.value}
+                      value={String(option.props.value)}
+                      disabled={option.props.disabled}
                     >
-                      {option.label}
+                      {option.props.children}
                     </SelectItem>
                   ))}
                 </SelectContent>
