@@ -64,7 +64,7 @@ export function SessionForm({ selectedDate, onCreateSession }: SessionFormProps)
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button className="btn-gold-gradient">Schedule Study Session</Button>
+        <Button>Schedule Study Session</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

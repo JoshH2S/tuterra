@@ -1,4 +1,3 @@
-
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Lightbulb, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
@@ -125,7 +124,6 @@ export function StrengthsAndAreas({ strengths, areasForImprovement }: StrengthsA
             variant={activeTab === 'strengths' ? "default" : "outline"} 
             size="sm"
             onClick={() => setActiveTab('strengths')}
-            className={`${activeTab === 'strengths' ? 'bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-black' : ''}`}
           >
             Strengths
           </Button>

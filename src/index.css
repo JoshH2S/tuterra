@@ -46,6 +46,11 @@
     --strength-fair: 45 93% 47%;
     --strength-good: 142 72% 29%;
     --strength-strong: 160 84% 39%;
+    
+    /* Primary gradients */
+    --primary-100: 45 90% 88%;
+    --primary-200: 43 89% 70%;
+    --primary-300: 43 89% 60%;
   }
 
   .dark {
@@ -88,6 +93,11 @@
     --strength-fair: 45 93% 55%;
     --strength-good: 142 72% 45%;
     --strength-strong: 160 84% 55%;
+    
+    /* Primary gradients for dark mode */
+    --primary-100: 45 90% 82%;
+    --primary-200: 43 89% 65%;
+    --primary-300: 43 89% 55%;
   }
 }
 

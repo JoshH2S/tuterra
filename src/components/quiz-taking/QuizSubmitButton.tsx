@@ -20,7 +20,7 @@ export const QuizSubmitButton: React.FC<QuizSubmitButtonProps> = ({
     <Button 
       onClick={onSubmit}
       disabled={isSubmitting}
-      className="bg-primary hover:bg-primary-dark text-white transition-colors" 
+      className="transition-colors" 
       size={isLastQuestion ? "default" : "lg"}
     >
       {isSubmitting ? (
