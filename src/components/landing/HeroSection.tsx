@@ -31,7 +31,7 @@ export function HeroSection() {
           
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
             Transform Your Learning Experience with{" "}
-            <span className="text-blue-600 dark:text-blue-400">tuterra.ai</span>
+            <span className="bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-transparent bg-clip-text">tuterra.ai</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
             An intelligent learning platform that adapts to your needs, tracks your progress,
