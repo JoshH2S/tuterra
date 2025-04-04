@@ -17,7 +17,7 @@ export const QuizHeader = ({ title, timeRemaining, onTimeUp }: QuizHeaderProps) 
       flex flex-col sm:flex-row items-start sm:items-center justify-between
       ${isMobile ? 'p-3 space-y-2 sm:space-y-0' : ''}
     `}>
-      <CardTitle className={isMobile ? 'text-lg' : ''}>
+      <CardTitle className={`${isMobile ? 'text-lg' : ''} text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500`}>
         {title}
       </CardTitle>
       <QuizTimer 
