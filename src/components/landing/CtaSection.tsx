@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 export function CtaSection() {
   return (
-    <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+    <section className="py-20 bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-white shadow-md">
       <div className="container mx-auto px-4">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
