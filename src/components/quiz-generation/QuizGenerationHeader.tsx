@@ -11,7 +11,7 @@ export const QuizGenerationHeader = ({ onSaveTemplate }: QuizGenerationHeaderPro
     <div className="mb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-primary-300 dark:from-primary-400 dark:to-primary-200 mb-2">AI Quiz Generation</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">AI Quiz Generation</h1>
           <p className="text-gray-600 dark:text-gray-400">Create AI-powered quizzes from your course materials</p>
         </div>
         {onSaveTemplate && (

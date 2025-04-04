@@ -48,7 +48,7 @@ export const SidebarNavItem = ({
         <Icon className={cn(
           "h-5 w-5 transition-colors",
           isActive 
-            ? "text-primary-400" 
+            ? "text-blue-500" 
             : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         )} />
       </motion.div>
@@ -58,7 +58,7 @@ export const SidebarNavItem = ({
         <span className={cn(
           "text-transparent bg-clip-text transition-colors z-10",
           isActive
-            ? "bg-gradient-to-r from-primary-500 to-primary-300 dark:from-primary-400 dark:to-primary-200"
+            ? "bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500"
             : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 hover:from-gray-800 hover:to-gray-700 dark:hover:from-gray-300 dark:hover:to-gray-400",
           isCollapsed && isActive && "absolute left-16 bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-md whitespace-nowrap"
         )}>
@@ -70,7 +70,7 @@ export const SidebarNavItem = ({
       {isActive && (
         <motion.div 
           layoutId="activeBackground"
-          className="absolute inset-0 bg-gradient-to-r from-primary-100 to-primary-200 dark:bg-primary-950/30 rounded-lg"
+          className="absolute inset-0 bg-gradient-to-r from-primary-100 to-primary-200 dark:bg-blue-950/30 rounded-lg"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
@@ -79,7 +79,7 @@ export const SidebarNavItem = ({
       <div 
         className={cn(
           "absolute inset-0 rounded-lg bg-transparent transition-colors duration-200",
-          !isActive && "hover:bg-primary-100/50 dark:hover:bg-gray-800"
+          !isActive && "hover:bg-blue-100/50 dark:hover:bg-gray-800"
         )} 
       />
     </button>

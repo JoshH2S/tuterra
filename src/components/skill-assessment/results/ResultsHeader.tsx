@@ -87,7 +87,7 @@ export const ResultsHeader = ({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-primary-300 dark:from-primary-400 dark:to-primary-200">{title} Results</h1>
+          <h1 className="text-2xl font-bold">{title} Results</h1>
           <p className="text-muted-foreground">
             Completed on {new Date(createdAt).toLocaleDateString()}
             {level && ` • ${level.charAt(0).toUpperCase() + level.slice(1)} level`}
