@@ -20,11 +20,12 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       <SkipToContent />
       <div className="flex flex-1">
         <MainSidebar />
-        <div className={cn(
-          "flex-1 flex flex-col",
-          "transition-all duration-300 ease-in-out",
-          !isMobile && "ml-[64px]" // Always use 64px margin for desktop
-        )}>
+        <div 
+          className="flex-1 flex flex-col transition-all duration-300 ease-in-out"
+          style={{ 
+            marginLeft: isMobile ? 0 : isCollapsed ? "50px" : "200px" 
+          }}
+        >
           {isMobile ? <MobileHeader /> : <DesktopHeader />}
           <main id="main-content" className={`flex-1 ${isMobile ? 'px-4 py-4 pb-24' : 'p-6'} overflow-x-hidden`}>
             {children}
