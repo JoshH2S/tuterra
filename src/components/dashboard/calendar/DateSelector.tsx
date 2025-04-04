@@ -56,7 +56,7 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-auto p-0" 
+          className="w-auto p-0 pointer-events-auto" 
           align="center"
           side="bottom" 
           sideOffset={4}
@@ -71,6 +71,8 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
             className="border-0"
             fromDate={today} 
             disabled={(date) => date < today}
+            showNavigation={false}
+            captionLayout="dropdown"
             components={{
               Dropdown: (props: DropdownProps) => {
                 return (
@@ -86,7 +88,7 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-[min(26rem,var(--radix-select-content-available-height))]">
-                      {props.children?.map((option: any) => (
+                      {props.children && Array.isArray(props.children) && props.children.map((option: any) => (
                         <SelectItem
                           key={option.props.value}
                           value={String(option.props.value)}

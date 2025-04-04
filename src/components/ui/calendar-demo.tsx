@@ -33,11 +33,10 @@ export function CalendarDemo() {
         mode="single"
         selected={date}
         onSelect={setDate}
-        className="rounded-lg border border-border p-2 bg-background"
+        className="rounded-lg border border-border p-2 bg-background pointer-events-auto"
         captionLayout="dropdown"
         defaultMonth={new Date()}
-        startMonth={new Date(1980, 6)}
-        hideNavigation
+        showNavigation={false}
         components={{
           Dropdown: (props: DropdownProps) => {
             return (
@@ -53,7 +52,7 @@ export function CalendarDemo() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-[min(26rem,var(--radix-select-content-available-height))]">
-                  {props.children?.map((option: any) => (
+                  {props.children && Array.isArray(props.children) && props.children.map((option: any) => (
                     <SelectItem
                       key={option.props.value}
                       value={String(option.props.value)}

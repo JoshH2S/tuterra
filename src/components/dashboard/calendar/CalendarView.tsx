@@ -42,7 +42,7 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
           month: "w-full",
         }}
         captionLayout="dropdown"
-        hideNavigation
+        showNavigation={false}
         components={{
           Dropdown: (props: DropdownProps) => {
             return (
@@ -58,7 +58,7 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-[min(26rem,var(--radix-select-content-available-height))]">
-                  {props.children?.map((option: any) => (
+                  {props.children && Array.isArray(props.children) && props.children.map((option: any) => (
                     <SelectItem
                       key={option.props.value}
                       value={String(option.props.value)}
