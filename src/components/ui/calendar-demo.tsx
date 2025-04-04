@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export function CalendarDemo() {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -36,6 +37,16 @@ export function CalendarDemo() {
         className="rounded-lg border border-border p-2 bg-background pointer-events-auto"
         captionLayout="dropdown"
         defaultMonth={new Date()}
+        modifiers={{
+          selected: date ? [date] : [],
+        }}
+        modifiersStyles={{
+          selected: {
+            backgroundColor: "#facc15", // Yellow highlight
+            color: "#000",
+            fontWeight: "bold",
+          }
+        }}
         components={{
           Dropdown: (props: DropdownProps) => {
             return (

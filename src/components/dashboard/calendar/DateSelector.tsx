@@ -1,6 +1,6 @@
 
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar-new";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DateSelectorProps {
   selectedDate: Date | undefined;
@@ -22,6 +23,8 @@ interface DateSelectorProps {
 }
 
 export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: DateSelectorProps) {
+  const isMobile = useIsMobile();
+  
   // Get today's date at the start of the day for date comparisons
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -51,7 +54,7 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
               !selectedDate && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
+            <CalendarDays className="mr-2 h-4 w-4" />
             {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
           </Button>
         </PopoverTrigger>
@@ -68,9 +71,19 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
             selected={selectedDate}
             onSelect={onDateSelect}
             initialFocus
-            className="border-0"
+            className={cn("border-0 pointer-events-auto", isMobile ? "scale-90 origin-center" : "")}
             fromDate={today} 
             disabled={(date) => date < today}
+            modifiers={{
+              selected: selectedDate ? [selectedDate] : [],
+            }}
+            modifiersStyles={{
+              selected: {
+                backgroundColor: "#facc15", // Yellow highlight
+                color: "#000",
+                fontWeight: "bold",
+              }
+            }}
             captionLayout="dropdown"
             components={{
               Dropdown: (props: DropdownProps) => {

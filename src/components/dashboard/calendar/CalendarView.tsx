@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface CalendarViewProps {
   selectedDate: Date | undefined;
@@ -37,9 +38,19 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
         mode="single"
         selected={selectedDate}
         onSelect={onDateSelect}
-        className={`mx-auto w-full ${isMobile ? "scale-90 origin-center transform" : ""}`}
+        className={cn("mx-auto w-full pointer-events-auto", isMobile ? "scale-90 origin-center transform" : "")}
         classNames={{
           month: "w-full",
+        }}
+        modifiers={{
+          selected: selectedDate ? [selectedDate] : [],
+        }}
+        modifiersStyles={{
+          selected: {
+            backgroundColor: "#facc15", // Yellow highlight
+            color: "#000",
+            fontWeight: "bold",
+          }
         }}
         captionLayout="dropdown"
         components={{
