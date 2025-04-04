@@ -6,7 +6,6 @@ import { SessionForm } from "./calendar/SessionForm";
 import { CreateStudySessionData } from "@/types/study-sessions";
 import type { StudySession } from "@/hooks/useStudySessions";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Course } from "@/types/course";
 
 interface StudyCalendarProps {
   sessions: StudySession[];

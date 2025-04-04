@@ -1,7 +1,9 @@
 
+"use client";
+
 import { useState } from "react";
-import { Calendar } from "@/components/ui/calendar-new";
 import { DropdownNavProps, DropdownProps } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar-new";
 import {
   Select,
   SelectContent,
@@ -9,16 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useIsMobile } from "@/hooks/use-mobile";
 
-interface CalendarViewProps {
-  selectedDate: Date | undefined;
-  onDateSelect: (date: Date | undefined) => void;
-}
+export function CalendarDemo() {
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
-export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) {
-  const isMobile = useIsMobile();
-  
   const handleCalendarChange = (
     _value: string | number,
     _e: React.ChangeEventHandler<HTMLSelectElement>,
@@ -32,16 +28,18 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
   };
 
   return (
-    <div className="rounded-md border p-4">
+    <div>
       <Calendar
         mode="single"
-        selected={selectedDate}
-        onSelect={onDateSelect}
-        className={`mx-auto w-full ${isMobile ? "scale-90 origin-center transform" : ""}`}
+        selected={date}
+        onSelect={setDate}
+        className="rounded-lg border border-border p-2 bg-background"
         classNames={{
           month_caption: "mx-0",
         }}
         captionLayout="dropdown"
+        defaultMonth={new Date()}
+        startMonth={new Date(1980, 6)}
         hideNavigation
         components={{
           DropdownNav: (props: DropdownNavProps) => {
@@ -76,6 +74,21 @@ export function CalendarView({ selectedDate, onDateSelect }: CalendarViewProps) 
           },
         }}
       />
+      <p
+        className="mt-4 text-center text-xs text-muted-foreground"
+        role="region"
+        aria-live="polite"
+      >
+        Monthly / yearly selects -{" "}
+        <a
+          className="underline hover:text-foreground"
+          href="https://daypicker.dev/"
+          target="_blank"
+          rel="noopener nofollow"
+        >
+          React DayPicker
+        </a>
+      </p>
     </div>
   );
 }
