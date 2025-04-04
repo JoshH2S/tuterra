@@ -13,7 +13,7 @@ export function CtaSection() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-3xl mx-auto"
         >
-          <h2 className="text-4xl font-bold mb-6">
+          <h2 className="text-4xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:to-blue-500">
             Ready to Transform Your Educational Experience?
           </h2>
           <p className="text-xl opacity-90 mb-8">
