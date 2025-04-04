@@ -1,10 +1,9 @@
-
 import React from "react";
-import { motion, MotionProps } from "framer-motion";
+import { motion, MotionProps, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useResponsive } from "@/hooks/useResponsive";
 
-interface PremiumCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface PremiumCardProps {
   children: React.ReactNode;
   variant?: "default" | "elevated" | "glass" | "minimal" | "gradient";
   interactive?: boolean;
@@ -27,7 +26,7 @@ export function PremiumCard({
   className,
   contentClassName,
   ...props
-}: PremiumCardProps) {
+}: PremiumCardProps & Omit<React.HTMLAttributes<HTMLDivElement>, keyof MotionProps>) {
   const { isDesktop } = useResponsive();
   
   // Get variant-specific styles
@@ -112,12 +111,16 @@ export function PremiumCard({
     };
   };
 
+  // Create a properly typed motionProps object that combines all our custom props
+  const motionProps: HTMLMotionProps<"div"> = {
+    className: cn(getVariantStyles(), className),
+    ...getHoverProps(),
+    ...getTapProps()
+  };
+
   return (
     <motion.div
-      className={cn(getVariantStyles(), className)}
-      {...getHoverProps()}
-      {...getTapProps()}
-      {...props}
+      {...motionProps}
     >
       <div 
         className={cn(
