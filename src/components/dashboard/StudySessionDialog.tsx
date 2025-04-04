@@ -40,7 +40,7 @@ export function StudySessionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px] py-6">
+      <DialogContent className="sm:max-w-[450px] py-6">
         <h3 className="text-lg font-semibold mb-6">Schedule Study Session</h3>
         
         <form className="space-y-5" onSubmit={handleSubmit}>

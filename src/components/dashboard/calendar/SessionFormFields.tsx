@@ -63,12 +63,14 @@ export function SessionFormFields({
         isLoading={isLoading}
       />
 
-      {/* Add the DateSelector component */}
-      <DateSelector
-        selectedDate={selectedDate}
-        onDateSelect={setSelectedDate}
-        label="Session Date"
-      />
+      {/* Date Selector - Ensure this is visible */}
+      <div className="space-y-2">
+        <DateSelector
+          selectedDate={selectedDate}
+          onDateSelect={setSelectedDate}
+          label="Session Date"
+        />
+      </div>
 
       <TimeRangePicker
         startTime={sessionData.start_time || ""}

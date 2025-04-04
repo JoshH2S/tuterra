@@ -42,7 +42,7 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 w-full">
       <Label htmlFor="date">{label}</Label>
       <Popover>
         <PopoverTrigger asChild>
@@ -53,6 +53,7 @@ export function DateSelector({ selectedDate, onDateSelect, label = "Date" }: Dat
               "w-full justify-start text-left font-normal",
               !selectedDate && "text-muted-foreground"
             )}
+            type="button" // Make sure it's type button so it doesn't submit forms
           >
             <CalendarDays className="mr-2 h-4 w-4" />
             {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
