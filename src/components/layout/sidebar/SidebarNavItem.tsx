@@ -13,6 +13,7 @@ interface SidebarNavItemProps {
   isActive?: boolean;
   isCollapsed?: boolean;
   onClick: () => void;
+  path?: string; // Add path prop to match what's being passed from SidebarNavigation
 }
 
 export const SidebarNavItem = ({ 
@@ -20,7 +21,8 @@ export const SidebarNavItem = ({
   label, 
   isActive = false,
   isCollapsed = false,
-  onClick
+  onClick,
+  path
 }: SidebarNavItemProps) => {
   // Animation variants for each menu item
   const itemVariants = {
@@ -32,7 +34,7 @@ export const SidebarNavItem = ({
     <button 
       onClick={onClick}
       className={cn(
-        "flex items-center relative w-full py-2.5 px-3 rounded-xl transition-all duration-200 touch-manipulation",
+        "flex items-center relative w-full py-2.5 px-3 rounded-lg transition-all duration-200 touch-manipulation",
         isActive && "text-primary font-medium"
       )}
     >
@@ -64,19 +66,19 @@ export const SidebarNavItem = ({
         </span>
       )}
       
-      {/* Active highlight with reduced width */}
+      {/* Active highlight with full width */}
       {isActive && (
         <motion.div 
           layoutId="activeBackground"
-          className="absolute inset-0 w-[calc(100%-40px)] mx-auto bg-blue-50 dark:bg-blue-950/30 rounded-xl"
+          className="absolute inset-0 bg-blue-50 dark:bg-blue-950/30 rounded-lg"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
       
-      {/* Hover highlight with the same reduced width - no group/group-hover */}
+      {/* Hover highlight with full width - make sure this div covers the full area */}
       <div 
         className={cn(
-          "absolute inset-0 w-[calc(100%-40px)] mx-auto rounded-xl bg-transparent transition-colors duration-200",
+          "absolute inset-0 rounded-lg bg-transparent transition-colors duration-200",
           !isActive && "hover:bg-gray-100 dark:hover:bg-gray-800"
         )} 
       />
