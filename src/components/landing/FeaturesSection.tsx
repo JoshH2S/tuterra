@@ -5,23 +5,23 @@ import { Book, Brain, Users, Sparkles } from "lucide-react";
 const features = [
   {
     icon: <Book className="w-6 h-6" />,
-    title: "Comprehensive Course Management",
-    description: "Create, organize, and manage courses with ease. Upload materials and track student progress in one place."
+    title: "Smart Learning Paths",
+    description: "Personalized learning journeys adapted to your pace and style."
   },
   {
     icon: <Brain className="w-6 h-6" />,
-    title: "AI-Powered Learning",
-    description: "Leverage AI technology to generate quizzes, assessments, and personalized learning recommendations."
+    title: "AI-Powered Insights",
+    description: "Advanced analytics to track and optimize your learning progress."
   },
   {
     icon: <Users className="w-6 h-6" />,
-    title: "Collaborative Environment",
-    description: "Foster student engagement with interactive discussions, group projects, and real-time feedback."
+    title: "Collaborative Learning",
+    description: "Connect with peers and engage in group learning activities."
   },
   {
     icon: <Sparkles className="w-6 h-6" />,
-    title: "Performance Analytics",
-    description: "Gain insights into student performance with detailed analytics and actionable reports."
+    title: "Progress Tracking",
+    description: "Detailed analytics and progress monitoring in real-time."
   }
 ];
 
