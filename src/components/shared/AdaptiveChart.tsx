@@ -20,6 +20,14 @@ import {
   Pie,
   Cell
 } from "recharts";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent, 
+  ChartLegend, 
+  ChartLegendContent,
+  ChartConfig 
+} from "@/components/ui/chart";
 
 // Sample data for the charts
 const performanceData = [
@@ -46,9 +54,16 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
  * - Multiple data visualization options
  */
 export function InteractiveChart() {
+  const chartConfig: ChartConfig = {
+    score: {
+      label: "Performance Score",
+      color: "#091747"
+    }
+  };
+
   return (
     <div className="h-[350px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ChartContainer config={chartConfig} className="w-full h-full">
         <AreaChart
           data={performanceData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -60,18 +75,16 @@ export function InteractiveChart() {
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "6px",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              border: "none",
-            }}
-            labelStyle={{ fontWeight: "bold" }}
+          <XAxis dataKey="month" tickLine={false} axisLine={false} />
+          <YAxis tickLine={false} axisLine={false} />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value, name) => [`${value}`, 'Performance Score']}
+              />
+            }
           />
-          <Legend />
+          <ChartLegend content={<ChartLegendContent />} />
           <Area
             type="monotone"
             dataKey="score"
@@ -81,7 +94,7 @@ export function InteractiveChart() {
             activeDot={{ r: 8 }}
           />
         </AreaChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }
@@ -92,9 +105,16 @@ export function InteractiveChart() {
  * - Optimized for smaller screens
  */
 export function SimpleChart() {
+  const chartConfig: ChartConfig = {
+    score: {
+      label: "Performance Score",
+      color: "url(#mobileScoreGradient)"
+    }
+  };
+
   return (
     <div className="h-[250px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ChartContainer config={chartConfig} className="w-full h-full">
         <BarChart
           data={performanceData}
           margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
@@ -118,13 +138,12 @@ export function SimpleChart() {
             tickLine={false}
             tick={{ fontSize: 12 }}
           />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "6px",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              border: "none",
-            }}
+          <ChartTooltip
+            content={
+              <ChartTooltipContent 
+                formatter={(value, name) => [`${value}`, 'Performance Score']}
+              />
+            }
           />
           <Bar 
             dataKey="score" 
@@ -132,7 +151,7 @@ export function SimpleChart() {
             radius={[4, 4, 0, 0]}
           />
         </BarChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }
@@ -141,9 +160,16 @@ export function SimpleChart() {
  * Subject Distribution chart - alternative visualization
  */
 export function SubjectDistributionChart({ simple = false }: { simple?: boolean }) {
+  const chartConfig: ChartConfig = {
+    value: {
+      label: "Subject Score",
+      color: "#8884d8"
+    }
+  };
+
   return (
     <div className={`${simple ? "h-[200px]" : "h-[300px]"} w-full`}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ChartContainer config={chartConfig} className="w-full h-full">
         <PieChart>
           <Pie
             data={subjectData}
@@ -159,17 +185,16 @@ export function SubjectDistributionChart({ simple = false }: { simple?: boolean 
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "rgba(255, 255, 255, 0.9)",
-              borderRadius: "6px",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              border: "none",
-            }}
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value, name) => [`${value}%`, name]}
+              />
+            }
           />
-          {!simple && <Legend layout="horizontal" verticalAlign="bottom" align="center" />}
+          {!simple && <ChartLegend content={<ChartLegendContent />} layout="horizontal" verticalAlign="bottom" align="center" />}
         </PieChart>
-      </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }

@@ -1,8 +1,14 @@
 
 import { Card } from "@/components/ui/card";
 import { StudentPerformance } from "@/types/student";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { BarChart as BarChartIcon } from "lucide-react";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent,
+  ChartConfig
+} from "@/components/ui/chart";
 
 interface PerformanceChartProps {
   performance: StudentPerformance[];
@@ -15,6 +21,13 @@ export function PerformanceChart({ performance }: PerformanceChartProps) {
     quizzes: p.completed_quizzes,
   }));
 
+  const chartConfig: ChartConfig = {
+    score: {
+      label: "Average Score",
+      color: "url(#scoreGradient)",
+    }
+  };
+
   return (
     <Card className="p-6">
       <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -24,7 +37,7 @@ export function PerformanceChart({ performance }: PerformanceChartProps) {
       
       {chartData.length > 0 ? (
         <div className="h-[300px] bg-card rounded-lg">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig} className="w-full h-full">
             <BarChart 
               data={chartData}
               margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
@@ -36,12 +49,15 @@ export function PerformanceChart({ performance }: PerformanceChartProps) {
                   <stop offset="100%" stopColor="var(--chart-gradient-end)" />
                 </linearGradient>
               </defs>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
               <XAxis 
                 dataKey="course" 
                 angle={-45}
                 textAnchor="end"
                 height={70}
                 tick={{ fontSize: 12 }}
+                tickLine={false}
+                axisLine={false}
               />
               <YAxis 
                 domain={[0, 100]}
@@ -51,10 +67,15 @@ export function PerformanceChart({ performance }: PerformanceChartProps) {
                   position: 'insideLeft',
                   style: { textAnchor: 'middle' }
                 }} 
+                tickLine={false}
+                axisLine={false}
               />
-              <Tooltip 
-                formatter={(value) => [`${value}%`, 'Average Score']}
-                labelStyle={{ fontWeight: 'bold' }}
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value, name) => [`${value}%`, 'Average Score']}
+                  />
+                }
               />
               <Bar 
                 dataKey="score" 
@@ -64,7 +85,7 @@ export function PerformanceChart({ performance }: PerformanceChartProps) {
                 name="Average Score"
               />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
       ) : (
         <div className="text-center py-12 text-muted-foreground">

@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Book, CheckCircle } from "lucide-react";
 import { StudentPerformance } from "@/types/student";
-import { Bar } from "react-chartjs-2";
+import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from "recharts";
 import { useIsMobile } from "@/hooks/use-mobile";
-import "../../../src/lib/chartjs";
 
 interface StatCardProps {
   title: string;
@@ -79,50 +79,10 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
 
     const data = performance.map(item => item.average_score);
     
-    // Create a gradient for each bar
-    const createGradient = (ctx: any, i: number) => {
-      const gradient = ctx.createLinearGradient(0, 0, 300, 0);
-      gradient.addColorStop(0, "#091747");
-      
-      // Adjust the end color based on score
-      const score = data[i];
-      if (score >= 85) {
-        gradient.addColorStop(1, "#60A5FA");  // Light blue for high scores
-      } else if (score >= 70) {
-        gradient.addColorStop(1, "#3B82F6");  // Medium blue for good scores
-      } else if (score >= 50) {
-        gradient.addColorStop(1, "#2563EB");  // Darker blue for average scores
-      } else {
-        gradient.addColorStop(1, "#1E40AF");  // Navy for low scores
-      }
-      
-      return gradient;
-    };
-
-    setChartData({
-      labels,
-      datasets: [
-        {
-          label: 'Average Score',
-          data,
-          backgroundColor: function(context: any) {
-            const chart = context.chart;
-            const {ctx, chartArea} = chart;
-            
-            // This case happens on initial chart load
-            if (!chartArea) {
-              return;
-            }
-            
-            // Use dataIndex to get the right gradient for each bar
-            return createGradient(ctx, context.dataIndex);
-          },
-          borderWidth: 1,
-          borderRadius: 6,
-          maxBarThickness: 40,
-        }
-      ]
-    });
+    setChartData(performance.map(item => ({
+      course: item.course_title || `Course ${item.course_id.substring(0, 4)}`,
+      score: item.average_score
+    })));
   }, [performance]);
 
   if (!stats || !chartData) {
@@ -139,57 +99,11 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
     );
   }
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: 12,
-        titleFont: {
-          size: 14,
-        },
-        bodyFont: {
-          size: 13,
-        },
-        cornerRadius: 6,
-        displayColors: false,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 100,
-        grid: {
-          display: true,
-          color: 'rgba(0, 0, 0, 0.05)',
-        },
-        ticks: {
-          font: {
-            size: isMobile ? 10 : 12,
-          },
-        },
-      },
-      x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          maxRotation: isMobile ? 45 : 0,
-          minRotation: isMobile ? 45 : 0,
-          font: {
-            size: isMobile ? 10 : 12,
-          },
-        },
-      },
-    },
-    animation: {
-      duration: 1500,
-      easing: 'easeOutQuart' as const,
-    },
+  const chartConfig: ChartConfig = {
+    score: {
+      label: "Average Score",
+      color: "url(#performanceGradient)"
+    }
   };
 
   return (
@@ -230,7 +144,55 @@ export function CoursePerformanceCard({ performance }: { performance: StudentPer
         transition={{ duration: 0.7, delay: 0.4 }}
         className="h-64 md:h-80"
       >
-        <Bar data={chartData} options={options} />
+        <ChartContainer config={chartConfig} className="w-full h-full">
+          <BarChart 
+            data={chartData}
+            margin={{ 
+              top: 10, 
+              right: 10, 
+              left: 10, 
+              bottom: isMobile ? 60 : 30 
+            }}
+            barSize={40}
+          >
+            <defs>
+              <linearGradient id="performanceGradient" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#091747" />
+                <stop offset="100%" stopColor="var(--chart-gradient-end)" />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
+            <XAxis 
+              dataKey="course" 
+              angle={isMobile ? -45 : 0}
+              textAnchor={isMobile ? "end" : "middle"}
+              height={isMobile ? 80 : 40}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis 
+              domain={[0, 100]}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value, name) => [`${value}%`, 'Average Score']}
+                />
+              }
+            />
+            <Bar 
+              dataKey="score" 
+              fill="url(#performanceGradient)" 
+              radius={[4, 4, 0, 0]}
+              animationDuration={1000}
+              name="Average Score"
+            />
+          </BarChart>
+        </ChartContainer>
       </motion.div>
     </Card>
   );

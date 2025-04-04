@@ -53,6 +53,10 @@
 
     /* Chart gradients */
     --chart-gradient-end: #60A5FA;
+    
+    /* Chart colors */
+    --chart-1: 217 91% 60%;
+    --chart-2: 221 83% 53%;
   }
 
   .dark {
@@ -103,6 +107,10 @@
 
     /* Chart gradients for dark mode */
     --chart-gradient-end: #3B82F6;
+    
+    /* Chart colors for dark mode */
+    --chart-1: 217 91% 60%;
+    --chart-2: 221 83% 53%;
   }
 }
 

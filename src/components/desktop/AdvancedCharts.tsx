@@ -14,6 +14,14 @@ import {
   Bar,
   Legend
 } from "recharts";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent, 
+  ChartLegend, 
+  ChartLegendContent,
+  ChartConfig 
+} from "@/components/ui/chart";
 
 const mockPerformanceData = [
   { month: "Jan", score: 65, average: 55 },
@@ -42,11 +50,22 @@ export function EnhancedPerformanceChart() {
 
   if (isDesktop === false) return null;
 
+  const chartConfig: ChartConfig = {
+    score: {
+      label: "Your Score",
+      color: "#091747"
+    },
+    average: {
+      label: "Class Average",
+      color: "#6366f1"
+    }
+  };
+
   return (
     <Card className="p-6 hidden lg:block">
       <h3 className="text-lg font-semibold mb-6">Performance Trend</h3>
       <div className="h-[350px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartContainer config={chartConfig} className="w-full h-full">
           <AreaChart
             data={mockPerformanceData}
             margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -62,17 +81,15 @@ export function EnhancedPerformanceChart() {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="month" />
-            <YAxis domain={[0, 100]} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "rgba(255, 255, 255, 0.9)",
-                borderRadius: "6px",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                border: "none",
-              }}
-              labelStyle={{ fontWeight: "bold" }}
-              cursor={{ strokeDasharray: "3 3" }}
+            <XAxis dataKey="month" tickLine={false} axisLine={false} />
+            <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  labelStyle={{ fontWeight: "bold" }}
+                  cursor={{ strokeDasharray: "3 3" }}
+                />
+              }
             />
             <Area
               type="monotone"
@@ -97,14 +114,13 @@ export function EnhancedPerformanceChart() {
               activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
               name="Class Average"
             />
-            <Legend
+            <ChartLegend
+              content={<ChartLegendContent />}
               verticalAlign="top"
               height={36}
-              iconType="circle"
-              iconSize={10}
             />
           </AreaChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </div>
     </Card>
   );
@@ -119,11 +135,22 @@ export function DetailedAnalyticsChart() {
 
   if (isDesktop === false) return null;
 
+  const chartConfig: ChartConfig = {
+    completed: {
+      label: "Completed",
+      color: "url(#completedGradient)"
+    },
+    target: {
+      label: "Target",
+      color: "url(#targetGradient)"
+    }
+  };
+
   return (
     <Card className="p-6 mt-6 hidden lg:block">
       <h3 className="text-lg font-semibold mb-6">Skill Analytics</h3>
       <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartContainer config={chartConfig} className="w-full h-full">
           <BarChart
             data={mockAnalyticsData}
             margin={{ top: 10, right: 30, left: 20, bottom: 5 }}
@@ -153,20 +180,17 @@ export function DetailedAnalyticsChart() {
               tickLine={false}
               tick={{ fontSize: 12 }}
             />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "rgba(255, 255, 255, 0.9)",
-                borderRadius: "6px",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                border: "none",
-              }}
-              cursor={{ fill: "rgba(0, 0, 0, 0.05)" }}
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  cursor={{ fill: "rgba(0, 0, 0, 0.05)" }}
+                />
+              }
             />
-            <Legend
+            <ChartLegend
+              content={<ChartLegendContent />}
               verticalAlign="top"
               height={36}
-              iconType="circle"
-              iconSize={10}
             />
             <Bar
               dataKey="completed"
@@ -183,7 +207,7 @@ export function DetailedAnalyticsChart() {
               animationDuration={1500}
             />
           </BarChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </div>
     </Card>
   );

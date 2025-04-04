@@ -1,10 +1,11 @@
 
 import { StudentPerformance } from "@/types/student";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { AlertTriangle, BarChart as BarChartIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PremiumCard, PremiumContentCard, PremiumStatsCard } from "@/components/ui/premium-card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart";
 
 interface PerformanceOverviewProps {
   performance: StudentPerformance[];
@@ -29,6 +30,13 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
     score: p.average_score,
     quizzes: p.completed_quizzes,
   }));
+
+  const chartConfig: ChartConfig = {
+    score: {
+      label: "Average Score",
+      color: "#3b82f6",
+    }
+  };
 
   return (
     <div className="grid gap-6">
@@ -68,18 +76,27 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
             </h3>
             <PremiumCard variant="minimal" className="p-4">
               <div className="h-[250px] bg-transparent rounded-lg">
-                <ResponsiveContainer width="100%" height="100%">
+                <ChartContainer config={chartConfig} className="w-full h-full">
                   <BarChart 
                     data={chartData}
                     margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
                     barSize={36}
                   >
+                    <defs>
+                      <linearGradient id="performanceGradient" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#091747" />
+                        <stop offset="100%" stopColor="var(--chart-gradient-end)" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.2} />
                     <XAxis 
                       dataKey="course" 
                       angle={-45}
                       textAnchor="end"
                       height={70}
                       tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
                     />
                     <YAxis 
                       domain={[0, 100]}
@@ -88,26 +105,27 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
                         angle: -90, 
                         position: 'insideLeft',
                         style: { textAnchor: 'middle' }
-                      }} 
-                    />
-                    <Tooltip 
-                      formatter={(value) => [`${value}%`, 'Average Score']}
-                      labelStyle={{ fontWeight: 'bold' }}
-                      contentStyle={{ 
-                        borderRadius: '0.5rem',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                        border: '1px solid rgba(0, 0, 0, 0.05)'
                       }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <ChartTooltip 
+                      content={
+                        <ChartTooltipContent 
+                          formatter={(value, name) => [`${value}%`, 'Average Score']}
+                          labelClassName="font-bold"
+                        />
+                      }
                     />
                     <Bar 
                       dataKey="score" 
-                      fill="#3b82f6" 
+                      fill="url(#performanceGradient)" 
                       radius={[4, 4, 0, 0]}
                       animationDuration={1000}
                       name="Average Score"
                     />
                   </BarChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               </div>
             </PremiumCard>
           </div>
