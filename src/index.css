@@ -122,12 +122,12 @@
 @layer components {
   /* Reusable gold gradient button style */
   .btn-gold-gradient {
-    @apply bg-gradient-to-br from-primary-500 to-primary-400 
+    @apply bg-gradient-to-br from-primary-100/80 to-primary-200/80 
            text-black font-medium shadow-md 
            transition-all duration-300;
   }
   
   .btn-gold-gradient:hover {
-    @apply from-primary-600 to-primary-500 shadow-lg;
+    @apply from-primary-200 to-primary-300 shadow-lg;
   }
 }
