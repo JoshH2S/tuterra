@@ -1,7 +1,9 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Course } from "@/types/course";
 import { Calendar, Users, BookOpen, MoreHorizontal, FileEdit, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -51,6 +53,7 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
   const [editedDescription, setEditedDescription] = useState(course.description || "");
   
   // These would be real in a production app, but we'll mock them for now
+  const progressValue = 75;
   const studentCount = 24;
   
   const handleEditCourse = async () => {
@@ -151,6 +154,15 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
               {studentCount} Students
             </span>
           </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-medium text-gray-700">Progress</span>
+            <span className="text-sm text-gray-600">{progressValue}%</span>
+          </div>
+          <Progress value={progressValue} className="h-2" />
         </div>
 
         {/* Quick Actions */}
