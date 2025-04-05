@@ -12,6 +12,7 @@ import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview"
 import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { InsightsSection } from "@/components/dashboard/InsightsSection";
+import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -48,12 +49,12 @@ export default function StudentDashboard() {
 
   if (isLoading || isLoadingSessions) {
     return (
-      <div className="container mx-auto">
+      <div className="container mx-auto px-4 w-full">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 bg-gray-200 rounded"></div>
+              <div key={i} className="h-48 sm:h-64 bg-gray-200 rounded"></div>
             ))}
           </div>
         </div>
@@ -62,37 +63,51 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="container mx-auto">
+    <div className="container mx-auto px-4 w-full max-w-full">
       <DashboardHeader 
         title="My Dashboard" 
         description="Track your progress and performance across all your courses" 
       />
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* News Feed at the top */}
         <NewsFeed courses={courses} />
 
-        {/* Insights Section */}
-        <InsightsSection insights={insights} />
+        {isMobile ? (
+          <MobileDashboard 
+            performance={performance}
+            insights={insights}
+            sessions={sessions}
+            courses={courses}
+            onCreateSession={handleCreateSession}
+            openSessionDialog={openSessionDialog}
+            onUpdateSession={handleUpdateSession}
+          />
+        ) : (
+          <>
+            {/* Insights Section */}
+            <InsightsSection insights={insights} />
 
-        {/* Main Content Stack */}
-        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
-          <div className="space-y-6">
-            <PerformanceOverview performance={performance} />
-            
-            {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
-              <StrengthsAndAreas 
-                strengths={uniqueStrengths} 
-                areasForImprovement={uniqueAreasForImprovement} 
-              />
-            )}
+            {/* Main Content Stack */}
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
+              <div className="space-y-6">
+                <PerformanceOverview performance={performance} />
+                
+                {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
+                  <StrengthsAndAreas 
+                    strengths={uniqueStrengths} 
+                    areasForImprovement={uniqueAreasForImprovement} 
+                  />
+                )}
 
-            <StudyCalendar 
-              sessions={sessions}
-              onCreateSession={handleCreateSession}
-            />
-          </div>
-        </div>
+                <StudyCalendar 
+                  sessions={sessions}
+                  onCreateSession={handleCreateSession}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <StudySessionDialog

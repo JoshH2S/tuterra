@@ -23,18 +23,13 @@ export default function SkillAssessmentResults() {
     benchmarks,
     exportPdfLoading,
     handleExportPdf,
-    handleShareResults
+    handleShareResults,
+    handleRetakeAssessment
   } = useAssessmentResults(id);
-
-  const handleRetakeAssessment = () => {
-    if (assessment) {
-      navigate(`/take-skill-assessment/${assessment.id}`);
-    }
-  };
 
   if (loading) {
     return (
-      <div className="container py-8 flex justify-center items-center min-h-[60vh]">
+      <div className="container px-4 py-8 flex justify-center items-center min-h-[60vh] w-full">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -42,11 +37,11 @@ export default function SkillAssessmentResults() {
 
   if (!result || !assessment) {
     return (
-      <div className="container py-8">
+      <div className="container px-4 py-6 sm:py-8 w-full">
         <Card>
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Results not found</h2>
-            <p className="mb-4">The assessment results you're looking for don't exist or you don't have access to them.</p>
+          <CardContent className="p-4 sm:p-6 text-center">
+            <h2 className="text-lg sm:text-xl font-semibold mb-2">Results not found</h2>
+            <p className="text-sm mb-4">The assessment results you're looking for don't exist or you don't have access to them.</p>
             <Button onClick={() => navigate("/skill-assessments")}>
               Back to Assessments
             </Button>
@@ -57,7 +52,7 @@ export default function SkillAssessmentResults() {
   }
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 w-full">
       <ResultsHeader 
         title={assessment.title}
         createdAt={result.created_at}

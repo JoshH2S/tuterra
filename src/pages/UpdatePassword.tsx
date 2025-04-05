@@ -53,10 +53,10 @@ const UpdatePassword = () => {
   };
 
   return (
-    <div className="container max-w-md mx-auto">
-      <Card>
+    <div className="container px-4 max-w-md mx-auto py-6 sm:py-8 w-full">
+      <Card className="w-full">
         <CardHeader>
-          <CardTitle>Update Password</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">Update Password</CardTitle>
           <CardDescription>Enter your new password below</CardDescription>
         </CardHeader>
         <form onSubmit={handlePasswordUpdate}>
@@ -70,6 +70,7 @@ const UpdatePassword = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -81,14 +82,24 @@ const UpdatePassword = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={6}
+                className="w-full"
               />
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+          <CardFooter className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => navigate(-1)}
+              className="w-full sm:w-auto order-2 sm:order-1"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="w-full sm:w-auto order-1 sm:order-2"
+            >
               {loading ? "Updating..." : "Update Password"}
             </Button>
           </CardFooter>

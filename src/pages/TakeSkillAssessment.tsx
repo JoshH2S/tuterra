@@ -83,7 +83,7 @@ export default function TakeSkillAssessment() {
 
   if (loading) {
     return (
-      <div className="container py-8 flex justify-center items-center min-h-[60vh]">
+      <div className="container px-4 py-8 flex justify-center items-center min-h-[60vh] w-full">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -91,11 +91,11 @@ export default function TakeSkillAssessment() {
 
   if (!assessment) {
     return (
-      <div className="container py-8">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Assessment not found</h2>
-            <p className="mb-4">The assessment you're looking for doesn't exist or you don't have access to it.</p>
+      <div className="container px-4 py-6 sm:py-8 w-full">
+        <Card className="w-full">
+          <CardContent className="p-4 sm:p-6 text-center">
+            <h2 className="text-lg sm:text-xl font-semibold mb-2">Assessment not found</h2>
+            <p className="text-sm mb-4">The assessment you're looking for doesn't exist or you don't have access to it.</p>
             <Button onClick={() => navigate("/skill-assessments")}>
               Back to Assessments
             </Button>
@@ -106,7 +106,7 @@ export default function TakeSkillAssessment() {
   }
 
   return (
-    <div className="container py-4 md:py-6 space-y-4 md:space-y-6 overflow-hidden">
+    <div className="container px-4 py-3 sm:py-4 md:py-6 space-y-3 sm:space-y-4 md:space-y-6 overflow-hidden w-full">
       <AssessmentHeader 
         title={assessment.title}
         timeRemaining={timeRemaining}
@@ -114,7 +114,7 @@ export default function TakeSkillAssessment() {
       />
 
       {/* Mobile progress bar - visible only on mobile */}
-      <div className={`${isMobile ? 'block' : 'hidden'} sticky top-0 z-10 bg-background pt-2 pb-3 -mx-4 px-4 border-b`}>
+      <div className={`${isMobile ? 'block' : 'hidden'} sticky top-0 z-10 bg-background pt-2 pb-3 -mx-4 px-4 border-b w-full`}>
         <MobileProgressBar 
           progress={progress} 
           currentQuestion={currentQuestionIndex + 1}
@@ -123,7 +123,7 @@ export default function TakeSkillAssessment() {
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="w-full">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
             {error}
@@ -131,10 +131,10 @@ export default function TakeSkillAssessment() {
         </Alert>
       )}
 
-      <div className="md:grid md:grid-cols-4 gap-6">
+      <div className="md:grid md:grid-cols-4 gap-4 sm:gap-6 w-full">
         {/* Left sidebar with progress - desktop only */}
         <div className="hidden md:block">
-          <Card className="sticky top-24">
+          <Card className="sticky top-24 w-full">
             <CardContent className="p-4">
               <AssessmentProgressTracker 
                 sections={sections}
@@ -150,7 +150,7 @@ export default function TakeSkillAssessment() {
         
         {/* Main content */}
         <div 
-          className="md:col-span-3 space-y-4 md:space-y-6 touch-manipulation relative"
+          className="md:col-span-3 space-y-3 sm:space-y-4 md:space-y-6 touch-manipulation relative w-full"
           {...(isTouch ? swipeHandlers : {})}
         >
           <AnimatePresence initial={false} custom={getDirection()} mode="wait">
@@ -176,7 +176,7 @@ export default function TakeSkillAssessment() {
             )}
           </AnimatePresence>
               
-          <div className="pb-20 md:pb-0">
+          <div className="pb-20 md:pb-0 w-full">
             <SubmissionControls
               isLastQuestion={isLastQuestion}
               currentQuestionIndex={currentQuestionIndex}
@@ -191,7 +191,7 @@ export default function TakeSkillAssessment() {
           {/* Swipe hint for mobile users - shown only initially */}
           {isMobile && isTouch && (
             <motion.div 
-              className="fixed bottom-28 left-0 right-0 flex justify-center opacity-70 pointer-events-none"
+              className="fixed bottom-28 left-0 right-0 flex justify-center opacity-70 pointer-events-none z-10"
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.7 }}
               transition={{ delay: 1, duration: 0.5 }}

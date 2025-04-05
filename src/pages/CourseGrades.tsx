@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,7 +117,7 @@ export default function CourseGrades() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6 px-4">
+    <div className="container mx-auto py-6 sm:py-8 space-y-4 sm:space-y-6 px-4 w-full max-w-full">
       <Button 
         onClick={handleBack} 
         className="mb-4 pl-1 flex items-center touch-manipulation hover:bg-gradient-to-br hover:from-primary-100/80 hover:to-primary-200/80 hover:text-black"
@@ -127,23 +128,23 @@ export default function CourseGrades() {
         <span>Back to Courses</span>
       </Button>
       
-      <h1 className="text-3xl font-bold mb-2">{courseName || "Course"} Grades</h1>
-      <p className="text-muted-foreground mb-6">View your quiz performance for this course</p>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-2">{courseName || "Course"} Grades</h1>
+      <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">View your quiz performance for this course</p>
 
       {courseGrade && (
-        <Card className="bg-primary/5">
+        <Card className="bg-primary/5 w-full">
           <CardHeader>
             <CardTitle>Course Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div>
                 <p className="text-sm text-muted-foreground">Total Quizzes Taken</p>
-                <p className="text-2xl font-bold">{courseGrade.total_quizzes}</p>
+                <p className="text-xl sm:text-2xl font-bold">{courseGrade.total_quizzes}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Course Average</p>
-                <p className="text-2xl font-bold">
+                <p className="text-xl sm:text-2xl font-bold">
                   {courseGrade.average_grade.toFixed(1)}%
                 </p>
               </div>
@@ -153,29 +154,29 @@ export default function CourseGrades() {
       )}
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Quiz History</h2>
+        <h2 className="text-lg sm:text-xl font-semibold">Quiz History</h2>
         {quizScores.length === 0 ? (
-          <Card>
+          <Card className="w-full">
             <CardContent className="py-8 text-center text-muted-foreground">
               No quizzes taken yet
             </CardContent>
           </Card>
         ) : (
           quizScores.map((score) => (
-            <Card key={score.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="py-6">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <Card key={score.id} className="hover:shadow-md transition-shadow w-full">
+              <CardContent className="py-4 sm:py-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4">
                   <div>
                     <h3 className="font-medium">{score.quiz.title}</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Taken on {format(new Date(score.taken_at), 'PPP')}
                     </p>
                   </div>
-                  <div className="text-left md:text-right">
-                    <p className="text-2xl font-bold">
+                  <div className="text-left sm:text-right mt-2 sm:mt-0">
+                    <p className="text-xl sm:text-2xl font-bold">
                       {((score.score / score.max_score) * 100).toFixed(1)}%
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {score.score} / {score.max_score} points
                     </p>
                   </div>

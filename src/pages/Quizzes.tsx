@@ -47,7 +47,7 @@ export default function Quizzes() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-64 w-full">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
@@ -56,7 +56,7 @@ export default function Quizzes() {
   const showEmptyState = totalQuizCount === 0;
 
   return (
-    <div className="container mx-auto py-6 space-y-8">
+    <div className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-8 w-full max-w-full">
       <QuizFilters
         searchTerm={searchTerm}
         selectedCourse={selectedCourse}
@@ -74,7 +74,7 @@ export default function Quizzes() {
       )}
 
       {!showEmptyState && (
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-8 w-full">
           {filteredCourses.map((course) => (
             <CourseQuizSection
               key={course.id}
@@ -87,7 +87,7 @@ export default function Quizzes() {
         </div>
       )}
 
-      <div className="mt-8 pt-4 border-t border-gray-100 dark:border-gray-800">
+      <div className="mt-4 sm:mt-8 pt-4 border-t border-gray-100 dark:border-gray-800">
         <QuizDisclaimer />
       </div>
 

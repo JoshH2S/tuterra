@@ -16,18 +16,18 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="min-h-screen flex flex-col w-full">
+    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
       <SkipToContent />
-      <div className="flex flex-1">
+      <div className="flex flex-1 w-full">
         <MainSidebar />
         <div 
-          className="flex-1 flex flex-col transition-all duration-300 ease-in-out bg-white"
+          className="flex-1 flex flex-col transition-all duration-300 ease-in-out bg-white w-full"
           style={{ 
             marginLeft: isMobile ? 0 : isCollapsed ? "50px" : "200px" 
           }}
         >
           {isMobile ? <MobileHeader /> : <DesktopHeader />}
-          <main id="main-content" className={`flex-1 ${isMobile ? 'px-4 py-4 pb-24' : 'p-6'} overflow-x-hidden`}>
+          <main id="main-content" className={`flex-1 ${isMobile ? 'px-4 py-4 pb-24' : 'p-6'} overflow-x-hidden w-full`}>
             {children}
           </main>
           <Footer />
