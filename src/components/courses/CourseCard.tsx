@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,14 +51,15 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(course.title);
   const [editedDescription, setEditedDescription] = useState(course.description || "");
-  
-  // These would be real in a production app, but we'll mock them for now
-  const completedQuizzes = 7; // This would come from the database in a real app
-  const studentCount = 24;
+  const [courseStats, setCourseStats] = useState({
+    completedQuizzes: 0,
+    studentCount: 0
+  });
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
   
   // Calculate progress value based on completed quizzes out of 10
   const maxQuizzes = 10;
-  const progressValue = Math.min((completedQuizzes / maxQuizzes) * 100, 100);
+  const progressValue = Math.min((courseStats.completedQuizzes / maxQuizzes) * 100, 100);
   
   // Determine expertise level based on progress
   const expertiseLevel = 
@@ -67,6 +68,42 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
     progressValue >= 40 ? "Intermediate" :
     progressValue >= 10 ? "Beginner" : 
     "Novice";
+
+  // Fetch course statistics from the database
+  useEffect(() => {
+    const fetchCourseStats = async () => {
+      try {
+        setIsStatsLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return;
+
+        // Get student count for this course
+        const { count } = await supabase
+          .from('student_courses')
+          .select('*', { count: 'exact', head: true })
+          .eq('course_id', course.id);
+          
+        // Get completed quizzes count
+        const { data: quizScores } = await supabase
+          .from('student_quiz_scores')
+          .select('*')
+          .eq('course_id', course.id)
+          .eq('student_id', user.id);
+
+        setCourseStats({
+          studentCount: count || 0,
+          completedQuizzes: quizScores?.length || 0
+        });
+      } catch (error) {
+        console.error('Error fetching course stats:', error);
+      } finally {
+        setIsStatsLoading(false);
+      }
+    };
+
+    fetchCourseStats();
+  }, [course.id]);
   
   const handleEditCourse = async () => {
     setIsSubmitting(true);
@@ -163,7 +200,7 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
           <div className="flex items-center gap-2 ml-auto">
             <Users className="w-4 h-4 text-gray-500" />
             <span className="text-sm text-gray-600">
-              {studentCount} Students
+              {courseStats.studentCount} Students
             </span>
           </div>
         </div>
@@ -172,9 +209,18 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-sm font-medium text-gray-700">Course Mastery</span>
-            <span className="text-sm text-gray-600">{expertiseLevel} ({completedQuizzes}/{maxQuizzes} quizzes)</span>
+            <span className="text-sm text-gray-600">{expertiseLevel} ({courseStats.completedQuizzes}/{maxQuizzes} quizzes)</span>
           </div>
-          <Progress value={progressValue} className="h-2" />
+          <Progress 
+            value={progressValue} 
+            className="h-2"
+            indicatorClassName={cn(
+              progressValue >= 100 ? "bg-green-600" :
+              progressValue >= 70 ? "bg-blue-600" :
+              progressValue >= 40 ? "bg-yellow-500" :
+              progressValue >= 10 ? "bg-orange-500" : "bg-gray-400"
+            )}
+          />
         </div>
 
         {/* Quick Actions */}
