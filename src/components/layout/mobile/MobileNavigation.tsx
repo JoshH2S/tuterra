@@ -53,7 +53,7 @@ export function MobileNavigation() {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="fixed bottom-0 left-0 right-0 bg-gradient-to-br from-primary-100/80 to-primary-200/80 backdrop-blur-lg border-t z-50 lg:hidden safe-area-bottom w-full"
       >
-        <nav className="flex items-center justify-around py-1.5 w-full">
+        <nav className="flex items-center justify-around p-2 w-full">
           {navItems.map((item) => (
             <Link 
               key={item.path}
@@ -83,7 +83,7 @@ export function MobileNavigation() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="touch-manipulation h-11 w-11 sm:h-13 sm:w-13 rounded-full flex items-center justify-center bg-white/20 shadow-sm border border-gray-200/30 active:scale-95 transition-transform"
+                className="touch-manipulation h-12 w-12 sm:h-14 sm:w-14 rounded-full flex items-center justify-center bg-white/20 shadow-sm border border-gray-200/30 active:scale-95 transition-transform"
               >
                 <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 <span className="sr-only">Menu</span>
@@ -107,7 +107,7 @@ export function MobileNavigation() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="fixed bottom-22 right-4 flex flex-col gap-2 z-50 lg:hidden"
+          className="fixed bottom-24 right-4 flex flex-col gap-2 z-50 lg:hidden"
         >
           <QuickActionButtons />
           
@@ -120,7 +120,7 @@ export function MobileNavigation() {
                 exit={{ opacity: 0, scale: 0.8, y: 20 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="touch-manipulation h-11 w-11 sm:h-13 sm:w-13 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center border border-gray-200/30 active:scale-95 transition-transform"
+                className="touch-manipulation h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg flex items-center justify-center border border-gray-200/30 active:scale-95 transition-transform"
               >
                 <ChevronUp className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </motion.button>
