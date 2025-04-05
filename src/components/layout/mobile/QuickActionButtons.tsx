@@ -50,7 +50,7 @@ export function QuickActionButtons() {
             asChild
           >
             <Link to={action.path}>
-              <action.icon className="h-6 w-6" />
+              <action.icon className="h-6 w-6 text-muted-foreground" />
               <span className="sr-only">{action.label}</span>
             </Link>
           </Button>
