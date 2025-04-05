@@ -14,21 +14,38 @@ interface PerformanceOverviewProps {
 export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) => {
   const isMobile = useIsMobile();
   
-  // Calculate the weighted average score based on completed quizzes
-  const totalCompletedQuizzes = performance.reduce((acc, curr) => acc + curr.completed_quizzes, 0);
+  // Data validation
+  if (!Array.isArray(performance)) {
+    return <div>Invalid performance data</div>;
+  }
+
+  if (performance.some(p => typeof p.average_score !== 'number')) {
+    return <div>Invalid performance data: Average score must be a number</div>;
+  }
+  
+  // Calculate the weighted average score based on completed quizzes with null check
+  const totalCompletedQuizzes = performance.reduce((acc, curr) => acc + (curr.completed_quizzes || 0), 0);
   const averageScore = totalCompletedQuizzes > 0
-    ? performance.reduce((acc, curr) => acc + (curr.average_score * curr.completed_quizzes), 0) / totalCompletedQuizzes
+    ? performance.reduce((acc, curr) => acc + ((curr.average_score || 0) * (curr.completed_quizzes || 0)), 0) / totalCompletedQuizzes
     : 0;
 
-  const totalQuizzes = performance.reduce((acc, curr) => acc + curr.completed_quizzes, 0);
+  const totalQuizzes = performance.reduce((acc, curr) => acc + (curr.completed_quizzes || 0), 0);
+  
+  // Improved error handling for completion rate
   const totalCompletionRate = performance.length > 0
-    ? (performance.reduce((acc, curr) => acc + ((curr.completed_quizzes / curr.total_quizzes) * 100), 0) / performance.length)
+    ? (performance.reduce((acc, curr) => {
+        const rate = (curr.total_quizzes || 0) > 0 
+          ? (((curr.completed_quizzes || 0) / (curr.total_quizzes || 1)) * 100)
+          : 0;
+        return acc + rate;
+      }, 0) / performance.length)
     : 0;
 
+  // Proper null checks for course titles
   const chartData = performance.map(p => ({
-    course: p.course_title || 'Unnamed Course',
-    score: p.average_score,
-    quizzes: p.completed_quizzes,
+    course: p.course_title || p.courses?.title || 'Unnamed Course',
+    score: p.average_score || 0,
+    quizzes: p.completed_quizzes || 0,
   }));
 
   const chartConfig: ChartConfig = {
@@ -133,7 +150,9 @@ export const PerformanceOverview = ({ performance }: PerformanceOverviewProps) =
       </PremiumContentCard>
 
       {performance.map((p, index) => {
-        const completionRate = (p.completed_quizzes / p.total_quizzes) * 100;
+        if (!p.total_quizzes) return null;
+        
+        const completionRate = ((p.completed_quizzes || 0) / p.total_quizzes) * 100;
         let alert;
 
         if (completionRate < 50) {
