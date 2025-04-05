@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 // Define proper types for our data
 export type AssessmentResult = {
@@ -38,6 +38,7 @@ export type Assessment = {
 export const useAssessmentResults = (resultId: string | undefined) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
@@ -246,6 +247,40 @@ export const useAssessmentResults = (resultId: string | undefined) => {
     }
   };
 
+  const handleRetakeAssessment = () => {
+    if (!assessment) return;
+    
+    try {
+      // Navigate to take the assessment again
+      navigate(`/take-skill-assessment/${assessment.id}`);
+      
+      // Track retake action if user is logged in
+      if (user) {
+        supabase.from('user_feature_interactions').insert({
+          user_id: user.id,
+          feature: 'skill-assessment-retake',
+          action: 'retake',
+          metadata: { 
+            assessment_id: assessment.id,
+            result_id: result?.id
+          },
+          timestamp: new Date().toISOString()
+        }).then(response => {
+          if (response.error) {
+            console.error("Error tracking assessment retake:", response.error);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error navigating to assessment:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem starting the assessment.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     result,
     assessment,
@@ -255,6 +290,7 @@ export const useAssessmentResults = (resultId: string | undefined) => {
     benchmarks,
     exportPdfLoading,
     handleExportPdf,
-    handleShareResults
+    handleShareResults,
+    handleRetakeAssessment
   };
 };
