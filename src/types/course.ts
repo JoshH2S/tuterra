@@ -6,6 +6,7 @@ export interface Course {
   user_id: string;
   created_at?: string;
   updated_at?: string;
+  status?: 'active' | 'archived';
 }
 
 export interface CourseMaterial {
@@ -26,4 +27,10 @@ export interface StudentCourse {
   enrolled_at: string;
   last_accessed: string;
   status: 'active' | 'completed' | 'dropped';
+}
+
+export interface CourseCreateData {
+  title: string;
+  code?: string;
+  description?: string;
 }

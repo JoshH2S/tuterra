@@ -12,21 +12,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CourseCreateData } from "@/types/course";
+import { Loader } from "lucide-react";
 
 interface CreateCourseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { code: string; title: string; description: string }) => void;
+  onSubmit: (data: CourseCreateData) => Promise<boolean>;
+  isCreating?: boolean;
 }
 
-export const CreateCourseModal = ({ isOpen, onClose, onSubmit }: CreateCourseModalProps) => {
+export const CreateCourseModal = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit,
+  isCreating = false
+}: CreateCourseModalProps) => {
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!title.trim()) {
+      setValidationError("Course title is required");
+      return;
+    }
+    
+    setValidationError("");
     setIsSubmitting(true);
     
     try {
@@ -41,12 +58,15 @@ export const CreateCourseModal = ({ isOpen, onClose, onSubmit }: CreateCourseMod
     setCode("");
     setTitle("");
     setDescription("");
+    setValidationError("");
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
   };
+
+  const isProcessing = isSubmitting || isCreating;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -67,6 +87,7 @@ export const CreateCourseModal = ({ isOpen, onClose, onSubmit }: CreateCourseMod
                 placeholder="e.g. FIN 202" 
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
+                disabled={isProcessing}
               />
             </div>
             
@@ -78,7 +99,12 @@ export const CreateCourseModal = ({ isOpen, onClose, onSubmit }: CreateCourseMod
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
+                disabled={isProcessing}
+                className={validationError ? "border-red-500" : ""}
               />
+              {validationError && (
+                <p className="text-red-500 text-xs mt-1">{validationError}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -88,16 +114,24 @@ export const CreateCourseModal = ({ isOpen, onClose, onSubmit }: CreateCourseMod
                 placeholder="Enter course description..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                disabled={isProcessing}
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" type="button" onClick={handleClose} disabled={isSubmitting}>
+            <Button variant="outline" type="button" onClick={handleClose} disabled={isProcessing}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Course"}
+            <Button type="submit" disabled={isProcessing}>
+              {isProcessing ? (
+                <span className="flex items-center gap-2">
+                  <Loader className="h-4 w-4 animate-spin" />
+                  Creating...
+                </span>
+              ) : (
+                "Create Course"
+              )}
             </Button>
           </DialogFooter>
         </form>

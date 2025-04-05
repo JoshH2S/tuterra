@@ -1,9 +1,10 @@
 
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { CourseCreateData } from "@/types/course";
 
 export const useCourseCreate = () => {
-  const createCourse = async (title: string) => {
+  const createCourse = async (data: CourseCreateData) => {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
@@ -14,15 +15,17 @@ export const useCourseCreate = () => {
       const { error: courseError } = await supabase
         .from('courses')
         .insert({ 
-          title,
-          user_id: user.id
+          title: data.title,
+          description: data.description,
+          user_id: user.id,
+          status: 'active'
         });
 
       if (courseError) throw courseError;
       
       toast({
         title: "Course created",
-        description: `${title} has been created successfully.`,
+        description: `${data.title} has been created successfully.`,
       });
 
       return true;

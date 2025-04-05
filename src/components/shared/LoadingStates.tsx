@@ -1,138 +1,133 @@
-
-import React from "react";
-import { cn } from "@/lib/utils";
-import { useResponsive } from "@/hooks/useResponsive";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Loader } from "lucide-react";
+import { motion } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-/**
- * SimpleLoadingSkeleton component
- * - Minimal loading state for mobile
- * - Touch-friendly sizing and spacing
- */
-export function SimpleLoadingSkeleton() {
-  return (
-    <div className="space-y-2">
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded" />
-      <div className="space-y-1">
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
-      </div>
-    </div>
-  );
-}
-
-/**
- * DetailedLoadingSkeleton component
- * - Enhanced loading state for desktop
- * - More complex placeholder structure
- */
-export function DetailedLoadingSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
-        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-10" />
-      </div>
-      <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-4" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-        </div>
-        <div className="flex gap-2">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-4" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
-        </div>
-        <div className="flex gap-2">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-4" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/6" />
-        </div>
-      </div>
-      <div className="h-[150px] bg-gray-200 dark:bg-gray-700 rounded mt-4" />
-    </div>
-  );
-}
-
-/**
- * LoadingChart component
- * - Adaptive loading state for chart placeholders
- */
-export function LoadingChart() {
-  const { isDesktop } = useResponsive();
-  
-  return (
-    <Card className={isDesktop ? "p-6" : "p-4"}>
-      <div className="animate-pulse">
-        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-8" />
-        <div className={`bg-gray-200 dark:bg-gray-700 rounded ${isDesktop ? "h-[300px]" : "h-[200px]"}`} />
-      </div>
-    </Card>
-  );
-}
-
-/**
- * LoadingCard component
- * - Adaptive loading state for content cards
- */
 export function LoadingCard() {
-  const { isDesktop } = useResponsive();
+  const isMobile = useIsMobile();
   
   return (
-    <Card className={isDesktop ? "p-6" : "p-4"}>
-      <div className="animate-pulse">
-        {isDesktop ? <DetailedLoadingSkeleton /> : <SimpleLoadingSkeleton />}
+    <Card className={`overflow-hidden ${isMobile ? 'p-4' : 'p-6'}`}>
+      <div className="space-y-4 animate-pulse">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className={`h-8 w-full ${isMobile ? 'mt-2' : 'mt-4'}`} />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-4/6" />
+        </div>
       </div>
     </Card>
   );
 }
 
-/**
- * PullToRefreshLoader component
- * - Mobile-optimized loading indicator for pull-to-refresh actions
- */
-export function PullToRefreshLoader() {
-  return (
-    <div className="flex justify-center items-center h-16 text-primary">
-      <Loader className="h-6 w-6 animate-spin" />
-      <span className="ml-2 text-sm font-medium">Refreshing...</span>
-    </div>
-  );
-}
-
-/**
- * AdaptiveLoading component
- * - Renders appropriate loading state based on device
- * - Optimized for different screen sizes
- */
-export function AdaptiveLoading() {
-  const { isDesktop } = useResponsive();
+export function LoadingChart() {
+  const isMobile = useIsMobile();
   
   return (
-    <div
-      className={cn(
-        "w-full",
-        // Simpler loading state for mobile
-        "space-y-2",
-        // More detailed loading state for desktop
-        "lg:space-y-4"
-      )}
-    >
-      {isDesktop ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <LoadingCard />
-          <LoadingCard />
-          <LoadingChart />
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <LoadingCard />
-          <LoadingCard />
-        </div>
-      )}
+    <Card className={`overflow-hidden ${isMobile ? 'p-4' : 'p-6'}`}>
+      <div className="animate-pulse">
+        <Skeleton className="h-4 w-1/4 mb-4 md:mb-8" />
+        <Skeleton className={`h-[200px] md:h-[300px] w-full ${isMobile ? 'mt-2' : 'mt-4'}`} />
+      </div>
+    </Card>
+  );
+}
+
+export function LoadingSpinner({ size = "default" }: { size?: "small" | "default" | "large" }) {
+  const sizeClasses = {
+    small: "w-4 h-4",
+    default: "w-6 h-6",
+    large: "w-8 h-8"
+  };
+  
+  return (
+    <div className="flex items-center justify-center p-4">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="relative"
+      >
+        <Loader className={`text-primary ${sizeClasses[size]}`} />
+      </motion.div>
     </div>
   );
 }
 
-export default AdaptiveLoading;
+export function FullPageLoader() {
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center gap-4 p-6 rounded-lg bg-white dark:bg-gray-800 shadow-lg"
+      >
+        <LoadingSpinner size="large" />
+        <p className="text-muted-foreground text-sm">Loading...</p>
+      </motion.div>
+    </div>
+  );
+}
+
+export function PullToRefreshIndicator({ visible }: { visible: boolean }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ 
+        opacity: visible ? 1 : 0,
+        y: visible ? 0 : -20
+      }}
+      className="absolute top-0 left-0 right-0 flex justify-center"
+    >
+      <div className="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg">
+        <LoadingSpinner size="small" />
+      </div>
+    </motion.div>
+  );
+}
+
+export function AdaptiveLoading() {
+  const isMobile = useIsMobile();
+  
+  return (
+    <div className="grid gap-6">
+      <div className="flex items-center justify-center p-4">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="relative"
+        >
+          <Loader className={`text-primary ${isMobile ? 'w-8 h-8' : 'w-10 h-10'}`} />
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+export function CourseCardSkeleton() {
+  return (
+    <Card className="overflow-hidden">
+      <div className="p-6 space-y-4 animate-pulse">
+        <Skeleton className="h-5 w-3/4" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-4/6" />
+        </div>
+        <div className="flex justify-between mt-6 pt-4 border-t">
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-9 w-20" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+export function CourseGridSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
+      {Array.from({ length: count }).map((_, index) => (
+        <CourseCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
