@@ -1,11 +1,13 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { AdaptiveLoading } from "@/components/shared/LoadingStates";
 import { toast } from "@/hooks/use-toast";
+import { ChevronLeft } from "lucide-react";
 
 interface QuizScore {
   id: string;
@@ -25,6 +27,7 @@ interface CourseGrade {
 
 export default function CourseGrades() {
   const { id: courseId } = useParams();
+  const navigate = useNavigate();
   const [quizScores, setQuizScores] = useState<QuizScore[]>([]);
   const [courseGrade, setCourseGrade] = useState<CourseGrade>({
     total_quizzes: 0,
@@ -108,12 +111,27 @@ export default function CourseGrades() {
     }
   }, [courseId]);
 
+  const handleBack = () => {
+    navigate('/courses');
+  };
+
   if (isLoading) {
     return <AdaptiveLoading />;
   }
 
   return (
     <div className="container mx-auto py-8 space-y-6 px-4">
+      <Button 
+        variant="ghost" 
+        onClick={handleBack} 
+        className="mb-4 pl-1 flex items-center touch-manipulation"
+        size="sm"
+        aria-label="Back to courses"
+      >
+        <ChevronLeft className="mr-1 h-4 w-4" />
+        <span>Back to Courses</span>
+      </Button>
+      
       <h1 className="text-3xl font-bold mb-2">{courseName || "Course"} Grades</h1>
       <p className="text-muted-foreground mb-6">View your quiz performance for this course</p>
 
