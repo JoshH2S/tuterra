@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +49,6 @@ export default function CourseGrades() {
           return;
         }
 
-        // Fetch course name
         const { data: courseData, error: courseError } = await supabase
           .from('courses')
           .select('title')
@@ -63,7 +61,6 @@ export default function CourseGrades() {
           setCourseName(courseData.title);
         }
 
-        // Fetch individual quiz scores
         const { data: scores, error: scoresError } = await supabase
           .from('student_quiz_scores')
           .select(`
@@ -82,13 +79,12 @@ export default function CourseGrades() {
           throw scoresError;
         }
 
-        // Calculate course average from actual quiz scores
         if (scores && scores.length > 0) {
           const totalScores = scores.reduce((acc, curr) => acc + ((curr.score / curr.max_score) * 100), 0);
           const averageGrade = totalScores / scores.length;
           
           setCourseGrade({
-            total_quizzes: scores.length, // This correctly uses the actual number of completed quizzes
+            total_quizzes: scores.length,
             average_grade: averageGrade
           });
         }
@@ -122,7 +118,6 @@ export default function CourseGrades() {
   return (
     <div className="container mx-auto py-8 space-y-6 px-4">
       <Button 
-        variant="ghost" 
         onClick={handleBack} 
         className="mb-4 pl-1 flex items-center touch-manipulation hover:bg-gradient-to-br hover:from-primary-100/80 hover:to-primary-200/80 hover:text-black"
         size="sm"
