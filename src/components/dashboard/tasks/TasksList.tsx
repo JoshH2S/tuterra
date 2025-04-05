@@ -92,7 +92,7 @@ export function TasksList({
           <Button 
             size="sm" 
             onClick={onCreateSession}
-            className="touch-manipulation px-5 sm:px-8 min-w-[160px] py-2.5 h-auto"
+            className="touch-manipulation px-6 sm:px-10 min-w-[180px] py-3 h-auto"
           >
             <Plus className="h-4 w-4 mr-2" />
             Schedule Study
