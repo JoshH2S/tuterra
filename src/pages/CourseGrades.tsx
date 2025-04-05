@@ -124,13 +124,12 @@ export default function CourseGrades() {
       <Button 
         variant="ghost" 
         onClick={handleBack} 
-        className="mb-4 pl-1 flex items-center touch-manipulation touch-feedback haptic-touch group"
+        className="mb-4 pl-1 flex items-center touch-manipulation"
         size="sm"
         aria-label="Back to courses"
       >
         <ChevronLeft className="mr-1 h-4 w-4" />
         <span>Back to Courses</span>
-        <span className="absolute inset-0 rounded-md opacity-0 group-hover:opacity-100 group-hover:bg-gradient-to-br group-hover:from-primary-100/80 group-hover:to-primary-200/80 transition-all duration-200"></span>
       </Button>
       
       <h1 className="text-3xl font-bold mb-2">{courseName || "Course"} Grades</h1>
