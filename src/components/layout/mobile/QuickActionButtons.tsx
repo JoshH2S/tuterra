@@ -46,7 +46,7 @@ export function QuickActionButtons() {
           <Button
             size="icon"
             variant="default"
-            className="h-14 w-14 rounded-full shadow-lg touch-manipulation bg-gradient-to-br from-primary-400 to-primary-500 text-white border-none active:scale-95 transition-transform"
+            className="h-14 w-14 rounded-full shadow-lg touch-manipulation bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-primary-foreground border-none active:scale-95 transition-transform"
             asChild
           >
             <Link to={action.path}>
