@@ -124,7 +124,7 @@ export default function CourseGrades() {
       <Button 
         variant="ghost" 
         onClick={handleBack} 
-        className="mb-4 pl-1 flex items-center touch-manipulation"
+        className="mb-4 pl-1 flex items-center touch-manipulation hover:bg-gradient-to-br hover:from-primary-100/80 hover:to-primary-200/80 hover:text-black"
         size="sm"
         aria-label="Back to courses"
       >
