@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -51,7 +50,7 @@ export function MobileNavigation() {
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-lg border-t z-50 lg:hidden safe-area-bottom w-full"
+        className="fixed bottom-0 left-0 right-0 bg-gradient-to-br from-primary-100/80 to-primary-200/80 backdrop-blur-lg border-t z-50 lg:hidden safe-area-bottom w-full"
       >
         <nav className="flex items-center justify-around p-4 w-full">
           {navItems.map((item) => (
