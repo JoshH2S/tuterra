@@ -11,7 +11,7 @@ const Index = () => {
   const { isOnline } = useNetworkStatus();
 
   return (
-    <div className="min-h-screen bg-white dark:from-gray-950 dark:to-gray-900 -m-4 md:-m-8 w-full max-w-full overflow-hidden">
+    <div className="min-h-screen bg-white -m-4 md:-m-8 w-full max-w-full overflow-hidden">
       <HeroSection />
       <FeaturesSection />
       <FloatingCards />
