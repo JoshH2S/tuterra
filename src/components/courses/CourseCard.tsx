@@ -53,8 +53,20 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
   const [editedDescription, setEditedDescription] = useState(course.description || "");
   
   // These would be real in a production app, but we'll mock them for now
-  const progressValue = 75;
+  const completedQuizzes = 7; // This would come from the database in a real app
   const studentCount = 24;
+  
+  // Calculate progress value based on completed quizzes out of 10
+  const maxQuizzes = 10;
+  const progressValue = Math.min((completedQuizzes / maxQuizzes) * 100, 100);
+  
+  // Determine expertise level based on progress
+  const expertiseLevel = 
+    progressValue >= 100 ? "Expert" :
+    progressValue >= 70 ? "Advanced" :
+    progressValue >= 40 ? "Intermediate" :
+    progressValue >= 10 ? "Beginner" : 
+    "Novice";
   
   const handleEditCourse = async () => {
     setIsSubmitting(true);
@@ -159,8 +171,8 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
         {/* Progress Bar */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-gray-700">Progress</span>
-            <span className="text-sm text-gray-600">{progressValue}%</span>
+            <span className="text-sm font-medium text-gray-700">Course Mastery</span>
+            <span className="text-sm text-gray-600">{expertiseLevel} ({completedQuizzes}/{maxQuizzes} quizzes)</span>
           </div>
           <Progress value={progressValue} className="h-2" />
         </div>
