@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { CheckCircle, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import Image from "react-optimized-image";
 
 const advantages = [
   "📰 Live News-Based Quiz & Case Study Generator - Stay relevant with automatically generated, course-aligned quizzes and case studies from real-time global news events—unique to Tuterra.",
@@ -25,12 +26,32 @@ const features = [
   { name: "Engagement", tuterra: "High", coursera: "Medium-High", skillshare: "High (Creative)", magicschool: "Low" },
 ];
 
-// Platform data
+// Platform data with logos
 const platforms = [
-  { name: "tuterra", title: "Tuterra" },
-  { name: "coursera", title: "Coursera" },
-  { name: "skillshare", title: "Skillshare" },
-  { name: "magicschool", title: "Magic School" },
+  { 
+    name: "tuterra", 
+    title: "Tuterra",
+    logo: "/logos/edu.png",
+    altText: "Tuterra Logo"
+  },
+  { 
+    name: "coursera", 
+    title: "Coursera",
+    logo: "/logos/Coursera.png",
+    altText: "Coursera Logo"
+  },
+  { 
+    name: "skillshare", 
+    title: "Skillshare",
+    logo: "/logos/Skillshare.png",
+    altText: "Skillshare Logo"
+  },
+  { 
+    name: "magicschool", 
+    title: "Magic School",
+    logo: "/logos/Magic School.webp",
+    altText: "Magic School Logo"
+  }
 ];
 
 export function ComparisonSection() {
@@ -61,67 +82,93 @@ export function ComparisonSection() {
           >
             <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm overflow-hidden rounded-xl">
               <CardContent className="p-0 overflow-x-auto">
-                <div className="w-full min-w-[768px]">
-                  {/* Feature Comparison Table */}
-                  <div className="w-full">
-                    {/* Table Header with Platform Names */}
-                    <div className="flex border-b">
-                      <div className="w-1/3 py-4 px-6 font-bold text-xl text-blue-600">
-                        Feature Comparison
-                      </div>
-                      <div className="flex w-2/3">
-                        {platforms.map((platform, idx) => (
-                          <div 
-                            key={platform.name} 
-                            className="flex-1 p-4 text-center font-semibold flex flex-col items-center justify-center"
-                          >
-                            <div className="w-10 h-10 mb-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-bold">
-                              {idx + 1}
-                            </div>
-                            <span>{platform.title}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* Feature Rows */}
-                    {features.map((feature, index) => (
-                      <div 
-                        key={feature.name} 
-                        className={cn(
-                          "flex items-stretch border-b",
-                          index % 2 === 0 ? "bg-blue-50/50" : "bg-white"
-                        )}
-                      >
-                        <div className="w-1/3 py-6 px-6 flex items-center">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-blue-600"></div>
-                            <span className="font-medium">{feature.name}</span>
-                          </div>
+                <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                  <div className="min-w-[768px] md:w-full">
+                    {/* Feature Comparison Table */}
+                    <div className="w-full">
+                      {/* Table Header with Platform Names */}
+                      <div className="flex border-b">
+                        <div className="w-1/3 py-4 px-6 font-bold text-xl text-blue-600">
+                          Feature Comparison
                         </div>
                         <div className="flex w-2/3">
-                          {platforms.map((platform) => {
-                            const value = feature[platform.name as keyof typeof feature];
-                            return (
-                              <div 
-                                key={`${feature.name}-${platform.name}`} 
-                                className="flex-1 p-4 text-center flex items-center justify-center"
-                              >
-                                {typeof value === 'boolean' ? (
-                                  value ? (
-                                    <CheckCircle className="h-6 w-6 text-green-500" />
+                          {platforms.map((platform, idx) => (
+                            <div 
+                              key={platform.name} 
+                              className="flex-1 relative comparison-column"
+                            >
+                              <div className="p-4 flex flex-col items-center">
+                                <div className="w-24 h-16 flex items-center justify-center">
+                                  {platform.logo ? (
+                                    <img
+                                      src={platform.logo}
+                                      alt={platform.altText}
+                                      className="object-contain max-h-full max-w-full"
+                                      onError={(e) => {
+                                        // Fallback if image fails to load
+                                        e.currentTarget.src = '/placeholder.svg';
+                                        e.currentTarget.alt = `${platform.title} (logo unavailable)`;
+                                      }}
+                                    />
                                   ) : (
-                                    <X className="h-6 w-6 text-red-500" />
-                                  )
-                                ) : (
-                                  <span className="text-sm">{value}</span>
-                                )}
+                                    <div className="h-10 w-full flex items-center justify-center bg-gray-100 rounded">
+                                      {platform.title}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="w-8 h-8 mt-2 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-blue-800 font-semibold">
+                                  {idx + 1}
+                                </div>
                               </div>
-                            );
-                          })}
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
+                      
+                      {/* Feature Rows */}
+                      {features.map((feature, index) => (
+                        <div 
+                          key={feature.name} 
+                          className={cn(
+                            "flex items-stretch border-b",
+                            index % 2 === 0 ? "bg-blue-50/50" : "bg-white"
+                          )}
+                        >
+                          <div className="w-1/3 py-6 px-6 flex items-center">
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-2 rounded-full bg-blue-600"></div>
+                              <span className="font-medium">{feature.name}</span>
+                            </div>
+                          </div>
+                          <div className="flex w-2/3">
+                            {platforms.map((platform) => {
+                              const value = feature[platform.name as keyof typeof feature];
+                              return (
+                                <div 
+                                  key={`${feature.name}-${platform.name}`} 
+                                  className="flex-1 p-4 feature-cell flex items-center justify-center"
+                                >
+                                  {typeof value === 'boolean' ? (
+                                    <div className={cn(
+                                      "w-8 h-8 rounded-full flex items-center justify-center",
+                                      value 
+                                        ? "bg-green-100 text-green-600" 
+                                        : "bg-red-100 text-red-600"
+                                    )}>
+                                      {value ? <CheckCircle className="h-5 w-5" /> : <X className="h-5 w-5" />}
+                                    </div>
+                                  ) : (
+                                    <span className="px-4 py-1.5 rounded-full bg-white/90 text-sm">
+                                      {value}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </CardContent>
