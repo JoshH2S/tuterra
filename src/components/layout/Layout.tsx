@@ -12,7 +12,6 @@ import { SkipToContent } from "@/components/ui/skip-to-content";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
   const isMobile = useIsMobile();
 
   return (
@@ -23,7 +22,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <div 
           className="flex-1 flex flex-col transition-all duration-300 ease-in-out bg-white w-full"
           style={{ 
-            marginLeft: isMobile ? 0 : isCollapsed ? "50px" : "200px" 
+            marginLeft: isMobile ? 0 : "200px"  // Always use the full sidebar width
           }}
         >
           {isMobile ? <MobileHeader /> : <DesktopHeader />}

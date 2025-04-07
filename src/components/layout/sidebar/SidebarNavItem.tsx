@@ -11,16 +11,16 @@ interface SidebarNavItemProps {
   icon: LucideIcon;
   label: string;
   isActive?: boolean;
-  isCollapsed?: boolean;
+  isCollapsed?: boolean; // Keep for backwards compatibility
   onClick: () => void;
-  path?: string; // Add path prop to match what's being passed from SidebarNavigation
+  path?: string; 
 }
 
 export const SidebarNavItem = ({ 
   icon: Icon, 
   label, 
   isActive = false,
-  isCollapsed = false,
+  isCollapsed = false, // This will always be false now
   onClick,
   path
 }: SidebarNavItemProps) => {
@@ -39,10 +39,7 @@ export const SidebarNavItem = ({
       )}
     >
       <motion.div
-        className={cn(
-          "relative z-10 flex items-center",
-          isCollapsed ? "justify-center w-full" : "mr-2"
-        )}
+        className="relative z-10 flex items-center mr-2"
         whileTap={{ scale: 0.95 }}
       >
         <Icon className={cn(
@@ -53,18 +50,14 @@ export const SidebarNavItem = ({
         )} />
       </motion.div>
       
-      {/* Always show text for active items, even when sidebar is collapsed */}
-      {(!isCollapsed || (isCollapsed && isActive)) && (
-        <span className={cn(
-          "text-transparent bg-clip-text transition-colors z-10",
-          isActive
-            ? "bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500"
-            : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 hover:from-gray-800 hover:to-gray-700 dark:hover:from-gray-300 dark:hover:to-gray-400",
-          isCollapsed && isActive && "absolute left-16 bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-md whitespace-nowrap"
-        )}>
-          {label}
-        </span>
-      )}
+      <span className={cn(
+        "text-transparent bg-clip-text transition-colors z-10",
+        isActive
+          ? "bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500"
+          : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 hover:from-gray-800 hover:to-gray-700 dark:hover:from-gray-300 dark:hover:to-gray-400"
+      )}>
+        {label}
+      </span>
       
       {/* Active highlight with gradient matching course card */}
       {isActive && (
@@ -75,7 +68,7 @@ export const SidebarNavItem = ({
         />
       )}
       
-      {/* Hover highlight with full width - make sure this div covers the full area */}
+      {/* Hover highlight with full width */}
       <div 
         className={cn(
           "absolute inset-0 rounded-lg bg-transparent transition-colors duration-200",
@@ -89,18 +82,7 @@ export const SidebarNavItem = ({
     <SidebarMenuItem>
       <motion.div variants={itemVariants}>
         <SidebarMenuButton asChild>
-          {isCollapsed && !isActive ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {itemContent}
-              </TooltipTrigger>
-              <TooltipContent side="right" align="center">
-                {label}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            itemContent
-          )}
+          {itemContent}
         </SidebarMenuButton>
       </motion.div>
     </SidebarMenuItem>
