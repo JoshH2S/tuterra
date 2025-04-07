@@ -2,68 +2,49 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, X } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from "recharts";
+import { CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Image from "react-optimized-image";
+
+const comparisonData = [
+  { category: "Assignments", traditional: 65, eduportal: 92 },
+  { category: "Quizzes", traditional: 72, eduportal: 88 },
+  { category: "Engagement", traditional: 58, eduportal: 95 },
+  { category: "Progress", traditional: 70, eduportal: 90 },
+  { category: "Feedback", traditional: 62, eduportal: 94 }
+];
+
+const chartConfig = {
+  traditional: {
+    label: "Traditional LMS",
+    color: "url(#traditionalGradient)"
+  },
+  eduportal: {
+    label: "EduPortal",
+    color: "url(#eduportalGradient)"
+  }
+};
 
 const advantages = [
-  "📰 Live News-Based Quiz & Case Study Generator - Stay relevant with automatically generated, course-aligned quizzes and case studies from real-time global news events—unique to Tuterra.",
-  "🎤 Interview Simulator for Career Readiness - Practice real, industry-specific interview questions and receive guided feedback—not just certificates, but confidence.",
-  "📊 Intelligent Analytics & Personalized Feedback - Visual dashboards show real-time performance and offer AI-powered recommendations to help users improve where it matters most.",
-  "🧰 All-in-One Education-to-Employment Platform - Combines course planning, tutoring, assessments, real-world prep, and analytics—no need for multiple tools or subscriptions.",
-  "💡 Student-Centered Learning Flow - Lesson plans, quizzes, and projects are generated directly from textbook content, creating personalized study tools instantly.",
-  "📈 High Engagement, Real Outcomes - Gamified tracking, live scenarios, and news-driven content mean users stay engaged—and exit job-ready."
-];
-
-// Feature comparison data
-const features = [
-  { name: "Live News Integration", tuterra: true, coursera: false, skillshare: false, magicschool: false },
-  { name: "Mobile UI", tuterra: true, coursera: true, skillshare: true, magicschool: true },
-  { name: "AI-Powered Feedback", tuterra: true, coursera: "Basic-auto quizzes", skillshare: false, magicschool: "Prompt-based feedback" },
-  { name: "Job Interview Prep", tuterra: true, coursera: "Rare", skillshare: false, magicschool: false },
-  { name: "Career-Prep Tools", tuterra: "Strong", coursera: "Medium", skillshare: "Weak", magicschool: "Low" },
-  { name: "Engagement", tuterra: "High", coursera: "Medium-High", skillshare: "High (Creative)", magicschool: "Low" },
-];
-
-// Platform data with logos
-const platforms = [
-  { 
-    name: "tuterra", 
-    title: "Tuterra",
-    logo: "/logos/edu.png",
-    altText: "Tuterra Logo"
-  },
-  { 
-    name: "coursera", 
-    title: "Coursera",
-    logo: "/logos/Coursera.png",
-    altText: "Coursera Logo"
-  },
-  { 
-    name: "skillshare", 
-    title: "Skillshare",
-    logo: "/logos/Skillshare.png",
-    altText: "Skillshare Logo"
-  },
-  { 
-    name: "magicschool", 
-    title: "Magic School",
-    logo: "/logos/Magic School.webp",
-    altText: "Magic School Logo"
-  }
+  "Interactive learning experiences with 37% higher engagement rates",
+  "Personalized feedback system that adapts to individual learning styles",
+  "Real-time progress tracking with actionable insights",
+  "Seamless integration with existing educational tools and platforms",
+  "AI-powered recommendations based on learning patterns and preferences"
 ];
 
 export function ComparisonSection() {
   return (
-    <section className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <section className="py-20 bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="text-center mb-16"
         >
           <h2 className="text-3xl font-bold mb-4 gradient-text">
             Why Choose EduPortal?
@@ -73,103 +54,70 @@ export function ComparisonSection() {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 items-start gap-8">
+        <div className="grid lg:grid-cols-2 items-center gap-8">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm overflow-hidden rounded-xl">
-              <CardContent className="p-0 overflow-x-auto">
-                <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-                  <div className="min-w-[768px] md:w-full">
-                    {/* Feature Comparison Table */}
-                    <div className="w-full">
-                      {/* Table Header with Platform Names */}
-                      <div className="flex border-b">
-                        <div className="w-1/3 py-4 px-6 font-bold text-xl text-blue-600">
-                          Feature Comparison
-                        </div>
-                        <div className="flex w-2/3">
-                          {platforms.map((platform, idx) => (
-                            <div 
-                              key={platform.name} 
-                              className="flex-1 relative comparison-column"
-                            >
-                              <div className="p-4 flex flex-col items-center">
-                                <div className="w-24 h-16 flex items-center justify-center">
-                                  {platform.logo ? (
-                                    <img
-                                      src={platform.logo}
-                                      alt={platform.altText}
-                                      className="object-contain max-h-full max-w-full"
-                                      onError={(e) => {
-                                        // Fallback if image fails to load
-                                        e.currentTarget.src = '/placeholder.svg';
-                                        e.currentTarget.alt = `${platform.title} (logo unavailable)`;
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="h-10 w-full flex items-center justify-center bg-gray-100 rounded">
-                                      {platform.title}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="w-8 h-8 mt-2 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-blue-800 font-semibold">
-                                  {idx + 1}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Feature Rows */}
-                      {features.map((feature, index) => (
-                        <div 
-                          key={feature.name} 
-                          className={cn(
-                            "flex items-stretch border-b",
-                            index % 2 === 0 ? "bg-blue-50/50" : "bg-white"
-                          )}
-                        >
-                          <div className="w-1/3 py-6 px-6 flex items-center">
-                            <div className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-blue-600"></div>
-                              <span className="font-medium">{feature.name}</span>
-                            </div>
-                          </div>
-                          <div className="flex w-2/3">
-                            {platforms.map((platform) => {
-                              const value = feature[platform.name as keyof typeof feature];
-                              return (
-                                <div 
-                                  key={`${feature.name}-${platform.name}`} 
-                                  className="flex-1 p-4 feature-cell flex items-center justify-center"
-                                >
-                                  {typeof value === 'boolean' ? (
-                                    <div className={cn(
-                                      "w-8 h-8 rounded-full flex items-center justify-center",
-                                      value 
-                                        ? "bg-green-100 text-green-600" 
-                                        : "bg-red-100 text-red-600"
-                                    )}>
-                                      {value ? <CheckCircle className="h-5 w-5" /> : <X className="h-5 w-5" />}
-                                    </div>
-                                  ) : (
-                                    <span className="px-4 py-1.5 rounded-full bg-white/90 text-sm">
-                                      {value}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+              <CardHeader className="pb-0">
+                <CardTitle className="text-2xl font-bold">Performance Comparison</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="h-[300px] w-full">
+                  <ChartContainer
+                    config={chartConfig}
+                    className="h-full w-full"
+                  >
+                    <BarChart
+                      data={comparisonData}
+                      margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+                    >
+                      <defs>
+                        <linearGradient id="eduportalGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#091747" />
+                          <stop offset="100%" stopColor="var(--chart-gradient-end)" />
+                        </linearGradient>
+                        <linearGradient id="traditionalGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#091747" stopOpacity="0.6" />
+                          <stop offset="100%" stopColor="var(--chart-gradient-end)" stopOpacity="0.6" />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} vertical={false} />
+                      <XAxis 
+                        dataKey="category" 
+                        axisLine={false} 
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: 'var(--color-foreground, currentColor)', opacity: 0.8 }}
+                        dy={10}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 12, fill: 'var(--color-foreground, currentColor)', opacity: 0.6 }}
+                        dx={-10}
+                      />
+                      <ChartTooltip
+                        content={<ChartTooltipContent />}
+                      />
+                      <Bar 
+                        dataKey="traditional" 
+                        fill="url(#traditionalGradient)" 
+                        name="Traditional LMS" 
+                        radius={[4, 4, 0, 0]}
+                        barSize={20}
+                      />
+                      <Bar 
+                        dataKey="eduportal" 
+                        fill="url(#eduportalGradient)" 
+                        name="EduPortal" 
+                        radius={[4, 4, 0, 0]}
+                        barSize={20}
+                      />
+                    </BarChart>
+                  </ChartContainer>
                 </div>
               </CardContent>
             </Card>
@@ -192,26 +140,20 @@ export function ComparisonSection() {
 
             <div>
               <h4 className="text-xl font-semibold mb-4">Key Advantages:</h4>
-              <ul className="space-y-4">
-                {advantages.map((advantage, index) => {
-                  const [emoji, title, description] = advantage.split(' - ');
-                  return (
-                    <motion.li 
-                      key={index}
-                      initial={{ opacity: 0, x: 20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      className="flex items-start gap-3"
-                    >
-                      <div className="text-lg flex-shrink-0 mt-0.5">{emoji}</div>
-                      <div>
-                        <span className="font-medium text-blue-700 dark:text-blue-400">{title}</span>
-                        <p className="text-gray-700 dark:text-gray-200 mt-1">{description}</p>
-                      </div>
-                    </motion.li>
-                  );
-                })}
+              <ul className="space-y-3">
+                {advantages.map((advantage, index) => (
+                  <motion.li 
+                    key={index}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className="flex items-start gap-3"
+                  >
+                    <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 dark:text-gray-200">{advantage}</span>
+                  </motion.li>
+                ))}
               </ul>
             </div>
 
