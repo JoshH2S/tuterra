@@ -64,7 +64,7 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
       <Button 
         variant="ghost" 
         size="sm" 
-        className="mt-2 justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 w-full"
+        className="mt-2 justify-start text-black hover:text-gray-700 hover:bg-red-50 dark:hover:bg-red-950/20 w-full h-8"
         onClick={signOut}
       >
         <LogOut className="h-4 w-4 mr-2" />
