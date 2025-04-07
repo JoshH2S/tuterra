@@ -2,7 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, XCircle, Check } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const platforms = [
@@ -60,12 +60,12 @@ const features = [
 ];
 
 const advantages = [
-  "AI-generated quizzes and case studies powered by real-time news for industry-aligned learning",
-  "Interactive interview simulator with role-specific questions and real-time feedback to boost confidence",
-  "Dynamic analytics dashboard with personalized performance insights and improvement pathways",
-  "Comprehensive all-in-one platform covering learning, tutoring, assessments, and career readiness",
-  "Textbook-to-tool pipeline that instantly converts content into customized lessons, quizzes, and projects",
-  "Gamified learning experiences and real-world scenarios proven to drive higher engagement and career readiness"
+  "📰 Live News-Based Quiz & Case Study Generator - Stay relevant with automatically generated, course-aligned quizzes and case studies from real-time global news events—unique to Tuterra.",
+  "🎤 Interview Simulator for Career Readiness - Practice real, industry-specific interview questions and receive guided feedback—not just certificates, but confidence.",
+  "📊 Intelligent Analytics & Personalized Feedback - Visual dashboards show real-time performance and offer AI-powered recommendations to help users improve where it matters most.",
+  "🧰 All-in-One Education-to-Employment Platform - Combines course planning, tutoring, assessments, real-world prep, and analytics—no need for multiple tools or subscriptions.",
+  "💡 Student-Centered Learning Flow - Lesson plans, quizzes, and projects are generated directly from textbook content, creating personalized study tools instantly.",
+  "📈 High Engagement, Real Outcomes - Gamified tracking, live scenarios, and news-driven content mean users stay engaged—and exit job-ready."
 ];
 
 export function ComparisonSection() {
@@ -165,7 +165,7 @@ export function ComparisonSection() {
 
             <div>
               <h4 className="text-xl font-semibold mb-4">Key Advantages:</h4>
-              <ul className="space-y-3 touch-manipulation">
+              <ul className="space-y-3">
                 {advantages.map((advantage, index) => (
                   <motion.li 
                     key={index}
@@ -175,16 +175,7 @@ export function ComparisonSection() {
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                     className="flex items-start gap-3"
                   >
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Check className="h-4 w-4 text-blue-600" />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <span className="inline-block py-1 px-2 bg-blue-500 text-white rounded-md mb-1">
-                        {advantage}
-                      </span>
-                    </div>
+                    <span className="text-gray-700 dark:text-gray-200">{advantage}</span>
                   </motion.li>
                 ))}
               </ul>
