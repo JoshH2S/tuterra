@@ -2,37 +2,70 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from "recharts";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const comparisonData = [
-  { category: "Assignments", traditional: 65, eduportal: 92 },
-  { category: "Quizzes", traditional: 72, eduportal: 88 },
-  { category: "Engagement", traditional: 58, eduportal: 95 },
-  { category: "Progress", traditional: 70, eduportal: 90 },
-  { category: "Feedback", traditional: 62, eduportal: 94 }
+const platforms = [
+  {
+    id: 1,
+    name: "Tuterra",
+    logo: "/lovable-uploads/5abc5bdf-f0f2-4773-844c-b174f2e2b884.png",
+    logoAlt: "Tuterra Logo"
+  },
+  {
+    id: 2,
+    name: "Coursera",
+    logo: "/lovable-uploads/cfcdbcb8-21ea-4d0f-beae-4368ad873520.png",
+    logoAlt: "Coursera Logo"
+  },
+  {
+    id: 3,
+    name: "Skillshare",
+    logo: "/lovable-uploads/c74dcaa0-03f0-4ace-83cb-ad0b944f15dd.png",
+    logoAlt: "Skillshare Logo"
+  },
+  {
+    id: 4,
+    name: "Magic School",
+    logo: "/lovable-uploads/9c384236-998d-4be7-8fce-38625409b005.png",
+    logoAlt: "Magic School Logo"
+  }
 ];
 
-const chartConfig = {
-  traditional: {
-    label: "Traditional LMS",
-    color: "url(#traditionalGradient)"
+const features = [
+  {
+    name: "Live News Integration",
+    values: [true, false, false, false]
   },
-  eduportal: {
-    label: "EduPortal",
-    color: "url(#eduportalGradient)"
+  {
+    name: "Mobile UI",
+    values: [true, true, true, true]
+  },
+  {
+    name: "AI-Powered Feedback",
+    values: [true, "Basic-auto quizzes", false, "Prompt-based feedback"]
+  },
+  {
+    name: "Job Interview Prep",
+    values: [true, "Rare", false, false]
+  },
+  {
+    name: "Career-Prep Tools",
+    values: ["Strong", "Medium", "Weak", "Low"]
+  },
+  {
+    name: "Engagement",
+    values: ["High", "Medium-High", "High (Creative)", "Low"]
   }
-};
+];
 
 const advantages = [
-  "Interactive learning experiences with 37% higher engagement rates",
-  "Personalized feedback system that adapts to individual learning styles",
-  "Real-time progress tracking with actionable insights",
-  "Seamless integration with existing educational tools and platforms",
-  "AI-powered recommendations based on learning patterns and preferences"
+  "📰 Live News-Based Quiz & Case Study Generator - Stay relevant with automatically generated, course-aligned quizzes and case studies from real-time global news events—unique to Tuterra.",
+  "🎤 Interview Simulator for Career Readiness - Practice real, industry-specific interview questions and receive guided feedback—not just certificates, but confidence.",
+  "📊 Intelligent Analytics & Personalized Feedback - Visual dashboards show real-time performance and offer AI-powered recommendations to help users improve where it matters most.",
+  "🧰 All-in-One Education-to-Employment Platform - Combines course planning, tutoring, assessments, real-world prep, and analytics—no need for multiple tools or subscriptions.",
+  "💡 Student-Centered Learning Flow - Lesson plans, quizzes, and projects are generated directly from textbook content, creating personalized study tools instantly.",
+  "📈 High Engagement, Real Outcomes - Gamified tracking, live scenarios, and news-driven content mean users stay engaged—and exit job-ready."
 ];
 
 export function ComparisonSection() {
@@ -47,7 +80,7 @@ export function ComparisonSection() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl font-bold mb-4 gradient-text">
-            Why Choose EduPortal?
+            Feature Comparison
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             See how our modern approach outperforms traditional learning management systems
@@ -61,66 +94,58 @@ export function ComparisonSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <Card className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-              <CardHeader className="pb-0">
-                <CardTitle className="text-2xl font-bold">Performance Comparison</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="h-[300px] w-full">
-                  <ChartContainer
-                    config={chartConfig}
-                    className="h-full w-full"
-                  >
-                    <BarChart
-                      data={comparisonData}
-                      margin={{ top: 10, right: 10, left: 10, bottom: 30 }}
+            <div className="w-full overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="min-w-[768px] md:w-full">
+                {/* Platform Headers */}
+                <div className="grid comparison-grid gap-4 mb-6">
+                  <div /> {/* Empty space for feature names */}
+                  {platforms.map((platform) => (
+                    <div 
+                      key={platform.id}
+                      className="rounded-t-2xl bg-blue-100/80 dark:bg-blue-900/20 p-4 text-center"
                     >
-                      <defs>
-                        <linearGradient id="eduportalGradient" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#091747" />
-                          <stop offset="100%" stopColor="var(--chart-gradient-end)" />
-                        </linearGradient>
-                        <linearGradient id="traditionalGradient" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#091747" stopOpacity="0.6" />
-                          <stop offset="100%" stopColor="var(--chart-gradient-end)" stopOpacity="0.6" />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} vertical={false} />
-                      <XAxis 
-                        dataKey="category" 
-                        axisLine={false} 
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: 'var(--color-foreground, currentColor)', opacity: 0.8 }}
-                        dy={10}
+                      <img
+                        src={platform.logo}
+                        alt={platform.logoAlt}
+                        className="mx-auto mb-2 h-10 object-contain"
                       />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fontSize: 12, fill: 'var(--color-foreground, currentColor)', opacity: 0.6 }}
-                        dx={-10}
-                      />
-                      <ChartTooltip
-                        content={<ChartTooltipContent />}
-                      />
-                      <Bar 
-                        dataKey="traditional" 
-                        fill="url(#traditionalGradient)" 
-                        name="Traditional LMS" 
-                        radius={[4, 4, 0, 0]}
-                        barSize={20}
-                      />
-                      <Bar 
-                        dataKey="eduportal" 
-                        fill="url(#eduportalGradient)" 
-                        name="EduPortal" 
-                        radius={[4, 4, 0, 0]}
-                        barSize={20}
-                      />
-                    </BarChart>
-                  </ChartContainer>
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mx-auto">
+                        <span className="text-blue-600 font-semibold">{platform.id}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Feature Rows */}
+                {features.map((feature, index) => (
+                  <div 
+                    key={feature.name}
+                    className="grid comparison-grid gap-4 mb-4"
+                  >
+                    <div className="flex items-center">
+                      <span className="w-2 h-2 bg-blue-600 rounded-full mr-2" />
+                      <span className="font-medium">{feature.name}</span>
+                    </div>
+                    {feature.values.map((value, i) => (
+                      <div 
+                        key={i}
+                        className="bg-blue-100/50 dark:bg-blue-900/10 p-4 flex items-center justify-center text-center feature-cell"
+                      >
+                        {typeof value === 'boolean' ? (
+                          value ? (
+                            <CheckCircle className="w-6 h-6 text-green-500" />
+                          ) : (
+                            <XCircle className="w-6 h-6 text-red-500" />
+                          )
+                        ) : (
+                          <span className="text-sm">{value}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
           </motion.div>
 
           <motion.div
@@ -133,7 +158,7 @@ export function ComparisonSection() {
             <div>
               <h3 className="text-2xl font-bold mb-4">Educational Excellence, Reimagined</h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                EduPortal consistently outperforms traditional learning management systems across all key metrics, 
+                Tuterra consistently outperforms traditional learning management systems across all key metrics, 
                 offering a more engaging, effective, and personalized educational experience.
               </p>
             </div>
@@ -150,7 +175,6 @@ export function ComparisonSection() {
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                     className="flex items-start gap-3"
                   >
-                    <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                     <span className="text-gray-700 dark:text-gray-200">{advantage}</span>
                   </motion.li>
                 ))}
@@ -159,7 +183,7 @@ export function ComparisonSection() {
 
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
               <p className="text-blue-700 dark:text-blue-300 font-medium">
-                Students using EduPortal show an average improvement of 27% in course performance compared to traditional systems.
+                Students using Tuterra show an average improvement of 27% in course performance compared to traditional systems.
               </p>
             </div>
           </motion.div>
