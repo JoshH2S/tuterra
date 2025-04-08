@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { navigationItems } from "@/components/layout/sidebar/SidebarNavigation";
 import { NavItem } from "@/components/layout/sidebar/NavItem";
 import { TeamSwitcher } from "@/components/layout/sidebar/TeamSwitcher";
-import { UserProfile } from "@/components/layout/sidebar/UserProfile";
+import { SidebarUserProfile } from "@/components/layout/sidebar/SidebarUserProfile";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function ModernSidebar() {
@@ -112,7 +112,7 @@ export function ModernSidebar() {
 
         {/* User profile section */}
         <div className="mt-auto border-t border-slate-200 p-2 dark:border-slate-800">
-          <UserProfile isCollapsed={isCollapsed} />
+          <SidebarUserProfile isCollapsed={isCollapsed} />
         </div>
       </div>
     </motion.div>
