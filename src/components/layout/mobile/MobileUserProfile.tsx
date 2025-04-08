@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 interface MobileUserProfileProps {
   onClose?: () => void;
@@ -15,6 +16,7 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,6 +24,9 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        setUserId(user.id);
+        setAvatarUrl(user.user_metadata?.avatar_url || "");
 
         const { data, error } = await supabase
           .from('profiles')
@@ -34,7 +39,10 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
         if (data) {
           setFirstName(data.first_name || "");
           setLastName(data.last_name || "");
-          setAvatarUrl(data.avatar_url || "");
+          // If avatarUrl wasn't set from metadata, try from profile
+          if (!user.user_metadata?.avatar_url) {
+            setAvatarUrl(data.avatar_url || "");
+          }
         }
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -51,6 +59,9 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
         setFirstName("");
         setLastName("");
         setAvatarUrl("");
+        setUserId(null);
+      } else if (event === 'USER_UPDATED' && session?.user) {
+        setAvatarUrl(session.user.user_metadata?.avatar_url || "");
       }
     });
 
@@ -58,6 +69,35 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Subscribe to profile changes for real-time avatar updates
+  useEffect(() => {
+    if (!userId) return;
+    
+    const channel = supabase
+      .channel('mobile-profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${userId}`
+        },
+        (payload: { new: { avatar_url: string | null, first_name: string, last_name: string } }) => {
+          if (payload.new.avatar_url) {
+            setAvatarUrl(payload.new.avatar_url);
+          }
+          setFirstName(payload.new.first_name || "");
+          setLastName(payload.new.last_name || "");
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [userId]);
 
   const handleLogout = async () => {
     if (onClose) onClose();
