@@ -19,7 +19,7 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`
     : user?.email || 'User';
   
-  // Use avatar_url from user_metadata for consistency with profile uploads
+  // Use avatar_url from user_metadata for consistency
   const avatarUrl = user?.user_metadata?.avatar_url;
   const initials = displayName.slice(0, 2).toUpperCase();
   

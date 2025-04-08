@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -76,12 +75,20 @@ export const useProfileManagement = () => {
         .from('avatars')
         .getPublicUrl(filePath);
 
-      const { error: updateError } = await supabase
+      // First update the profiles table
+      const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      if (profileUpdateError) throw profileUpdateError;
+
+      // Then update the user metadata
+      const { error: userUpdateError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl }
+      });
+
+      if (userUpdateError) throw userUpdateError;
 
       setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
       toast({
@@ -108,7 +115,8 @@ export const useProfileManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      // Update profile in database
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
           first_name: formData.firstName,
@@ -117,7 +125,17 @@ export const useProfileManagement = () => {
         })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Also update user metadata to keep things in sync
+      const { error: userUpdateError } = await supabase.auth.updateUser({
+        data: {
+          first_name: formData.firstName,
+          last_name: formData.lastName
+        }
+      });
+
+      if (userUpdateError) throw userUpdateError;
 
       toast({
         title: "Success",
