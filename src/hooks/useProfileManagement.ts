@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -52,9 +53,7 @@ export const useProfileManagement = () => {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      if (!e.target.files || e.target.files.length === 0) {
-        return;
-      }
+      if (!e.target.files || e.target.files.length === 0) return;
 
       setUploadingAvatar(true);
       const file = e.target.files[0];
@@ -65,32 +64,34 @@ export const useProfileManagement = () => {
 
       const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
       
+      // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // First update the profiles table
-      const { error: profileUpdateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user.id);
+      // Update both profile and user metadata
+      const [{ error: profileError }, { error: userError }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .update({ avatar_url: publicUrl })
+          .eq('id', user.id),
+        supabase.auth.updateUser({
+          data: { avatar_url: publicUrl }
+        })
+      ]);
 
-      if (profileUpdateError) throw profileUpdateError;
-
-      // Then update the user metadata
-      const { error: userUpdateError } = await supabase.auth.updateUser({
-        data: { avatar_url: publicUrl }
-      });
-
-      if (userUpdateError) throw userUpdateError;
+      if (profileError) throw profileError;
+      if (userError) throw userError;
 
       setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
+      
       toast({
         title: "Success",
         description: "Profile picture updated successfully",

@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from "react";
 import { User, Sparkles, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
@@ -6,6 +7,8 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { SubscriptionBadge } from "@/components/ai-tutor/SubscriptionBadge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 interface SidebarUserProfileProps {
   isCollapsed?: boolean;
@@ -14,15 +17,52 @@ interface SidebarUserProfileProps {
 export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfileProps) => {
   const { user, signOut } = useAuth();
   const { subscription } = useSubscription();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
   const displayName = user?.user_metadata?.first_name
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`
     : user?.email || 'User';
   
-  // Use avatar_url from user_metadata for consistency
-  const avatarUrl = user?.user_metadata?.avatar_url;
   const initials = displayName.slice(0, 2).toUpperCase();
-  
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Initial avatar URL from user metadata
+    setAvatarUrl(user.user_metadata?.avatar_url || null);
+
+    // Subscribe to profile changes
+    const channel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`
+        },
+        (payload: { new: { avatar_url: string | null } }) => {
+          setAvatarUrl(payload.new.avatar_url);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to user metadata changes
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        if (event === 'USER_UPDATED') {
+          setAvatarUrl(session?.user?.user_metadata?.avatar_url || null);
+        }
+      }
+    );
+
+    return () => {
+      channel.unsubscribe();
+      authSubscription.unsubscribe();
+    };
+  }, [user]);
+
   return (
     <div className="flex flex-col w-full">
       <div className="flex items-center gap-2 px-2 py-1.5">
