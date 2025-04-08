@@ -27,11 +27,13 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
     <div className="flex flex-col w-full">
       <div className="flex items-center gap-2 px-2 py-1.5">
         <Avatar className="h-9 w-9">
-          <AvatarImage 
-            src={avatarUrl} 
-            alt="User avatar" 
-            className="object-cover"
-          />
+          {avatarUrl && (
+            <AvatarImage 
+              src={avatarUrl} 
+              alt={`${displayName}'s avatar`}
+              className="object-cover w-full h-full"
+            />
+          )}
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
         {!isCollapsed && (
