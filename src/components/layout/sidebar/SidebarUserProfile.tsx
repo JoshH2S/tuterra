@@ -24,7 +24,7 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
   
   return (
     <div className="flex flex-col w-full">
-      <div className="flex items-center gap-2 px-2 py-1.5 cursor-pointer" onClick={signOut}>
+      <div className="flex items-center gap-2 px-2 py-1.5">
         <Avatar className="h-9 w-9">
           <AvatarImage 
             src={avatarUrl} 
@@ -40,7 +40,6 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
                 {displayName}
               </span>
               <SubscriptionBadge tier={subscription.tier} className="h-5 px-1.5 py-0" />
-              <LogOut className="h-4 w-4 text-black" />
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-2">
               {subscription.tier === "free" ? (
@@ -57,6 +56,16 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
                 </>
               )}
             </div>
+            {/* Logout button positioned below plan information */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mt-1.5 h-7 px-2 flex items-center justify-start text-black hover:bg-gray-100" 
+              onClick={signOut}
+            >
+              <LogOut className="h-3.5 w-3.5 mr-1.5" />
+              <span className="text-xs">Logout</span>
+            </Button>
           </div>
         )}
       </div>
