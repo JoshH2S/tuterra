@@ -2,12 +2,15 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface QuizzesEmptyStateProps {
   onCreateQuiz: () => void;
 }
 
 export function QuizzesEmptyState({ onCreateQuiz }: QuizzesEmptyStateProps) {
+  const navigate = useNavigate();
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -26,7 +29,7 @@ export function QuizzesEmptyState({ onCreateQuiz }: QuizzesEmptyStateProps) {
         Create your first quiz to start assessing student knowledge.
       </p>
       
-      <Button onClick={onCreateQuiz}>
+      <Button onClick={onCreateQuiz} className="touch-manipulation">
         <Plus className="w-4 h-4 mr-2" />
         Create Your First Quiz
       </Button>

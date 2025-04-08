@@ -13,7 +13,7 @@ interface QuizFiltersProps {
   setSelectedCourse: (value: string) => void;
   setSelectedStatus: (value: string) => void;
   handleCreateQuiz: () => void;
-  refreshQuizzes?: () => void; // Add refresh function prop
+  refreshQuizzes?: () => void; 
 }
 
 export function QuizFilters({
@@ -51,15 +51,27 @@ export function QuizFilters({
 
         <div className="flex items-center gap-3">
           {refreshQuizzes && (
-            <Button variant="outline" onClick={refreshQuizzes} size="icon" title="Refresh quizzes">
+            <Button 
+              variant="outline" 
+              onClick={refreshQuizzes} 
+              size="icon" 
+              title="Refresh quizzes"
+              className="touch-manipulation"
+            >
               <RefreshCw className="w-4 h-4" />
             </Button>
           )}
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            className="touch-manipulation"
+          >
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </Button>
-          <Button onClick={handleCreateQuiz}>
+          <Button 
+            onClick={handleCreateQuiz}
+            className="touch-manipulation"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create Quiz
           </Button>
