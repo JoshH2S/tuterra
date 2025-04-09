@@ -69,8 +69,14 @@ export function QuizFilters({
             Filter
           </Button>
           <Button 
-            onClick={handleCreateQuiz}
-            className="touch-manipulation"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Create Quiz button clicked');
+              handleCreateQuiz();
+            }}
+            className="touch-manipulation relative z-10"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Quiz

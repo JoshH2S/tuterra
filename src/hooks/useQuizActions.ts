@@ -39,6 +39,8 @@ export const useQuizActions = () => {
   };
 
   const handleCreateQuiz = () => {
+    console.log('Navigation triggered to quiz generation');
+    // Try with leading slash, which should work based on the routes configuration
     navigate('/quiz-generation');
   };
 

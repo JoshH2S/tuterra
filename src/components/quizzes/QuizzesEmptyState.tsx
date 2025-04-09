@@ -29,7 +29,16 @@ export function QuizzesEmptyState({ onCreateQuiz }: QuizzesEmptyStateProps) {
         Create your first quiz to start assessing student knowledge.
       </p>
       
-      <Button onClick={onCreateQuiz} className="touch-manipulation">
+      <Button 
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Create First Quiz button clicked');
+          onCreateQuiz();
+        }}
+        className="touch-manipulation relative z-10"
+      >
         <Plus className="w-4 h-4 mr-2" />
         Create Your First Quiz
       </Button>
