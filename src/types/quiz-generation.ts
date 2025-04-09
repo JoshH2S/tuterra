@@ -28,6 +28,7 @@ export interface QuizSettings {
 
 export const CONTENT_LIMITS = {
   MAX_CONTENT_LENGTH: 50 * 1024 * 1024, // 50MB
+  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB for file uploads
   MAX_CHARACTERS: 50_000,
   WARNING_THRESHOLD: 25_000
 };

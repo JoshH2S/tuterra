@@ -40,7 +40,7 @@ export const useQuizActions = () => {
 
   const handleCreateQuiz = () => {
     console.log('Navigation triggered to quiz generation');
-    // Try with leading slash, which should work based on the routes configuration
+    // Fix: use the absolute path that matches the route configuration in QuizRoutes.tsx
     navigate('/quiz-generation');
   };
 

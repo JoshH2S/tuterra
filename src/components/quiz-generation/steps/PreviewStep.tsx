@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,12 +55,28 @@ export const PreviewStep = ({
         <div className="space-y-6">
           <QuizSummary questions={questions} />
           <div className="space-y-4">
-            {questions.slice(0, 3).map((question, index) => (
-              <QuizQuestionItem
-                key={index}
-                question={question}
-                index={index}
-              />
+            {questions.map((question, index) => (
+              <div key={index} className="border-b border-gray-200 dark:border-gray-700 py-4">
+                <h3 className="font-medium">Question {index + 1}</h3>
+                <p className="mt-2">{question.question}</p>
+                <div className="mt-2 space-y-2">
+                  {Object.entries(question.options).map(([key, value]) => (
+                    <div key={key} className="flex items-start">
+                      <div className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full border ${
+                        question.correctAnswer === key ? 'bg-primary text-white border-primary' : 'border-gray-300'
+                      }`}>
+                        {key}
+                      </div>
+                      <span className="ml-2">{value}</span>
+                    </div>
+                  ))}
+                </div>
+                {isCaseStudyQuestion(question) && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    <span className="font-medium">Case Study:</span> {question.caseStudy}
+                  </div>
+                )}
+              </div>
             ))}
             {questions.length > 3 && (
               <p className="text-center text-gray-500 mt-4">
@@ -98,7 +113,6 @@ interface QuizSummaryProps {
 }
 
 const QuizSummary = ({ questions }: QuizSummaryProps) => {
-  // Group questions by topic
   const topicCounts = questions.reduce((acc, question) => {
     acc[question.topic] = (acc[question.topic] || 0) + 1;
     return acc;
@@ -126,4 +140,8 @@ const QuizSummary = ({ questions }: QuizSummaryProps) => {
       </CardContent>
     </Card>
   );
+};
+
+const isCaseStudyQuestion = (question: any): question is CaseStudyQuestion => {
+  return question.caseStudy !== undefined;
 };

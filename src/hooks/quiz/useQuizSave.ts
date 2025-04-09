@@ -1,48 +1,41 @@
 
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Question } from "@/types/quiz-generation";
 import { toast } from "@/components/ui/use-toast";
-
-// Define the valid difficulty types to match the database enum
-type QuestionDifficulty = "beginner" | "intermediate" | "advanced" | "expert";
+import { Question } from "@/types/quiz-generation";
+import { useNavigate } from "react-router-dom";
 
 export const useQuizSave = () => {
+  const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [quizId, setQuizId] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+
   const saveQuizToDatabase = async (
-    questions: Question[], 
-    topics: { description: string }[], 
+    questions: Question[],
+    title: string,
     duration: number,
-    title: string = "Untitled Quiz", // Default title if none provided
     courseId?: string
   ) => {
     try {
-      console.log("Starting saveQuizToDatabase with:", { 
-        questionCount: questions.length, 
-        topicCount: topics.length, 
-        duration,
-        title,
-        courseId
-      });
-
+      setIsProcessing(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.error("No active session found during quiz save");
+        navigate('/auth');
         return { success: false, quizId: null };
       }
 
       // Create the quiz with title, user_id, and duration
-      const quizData: any = {
-        title: title, // Use the provided title or default
-        user_id: session.user.id, // Changed from teacher_id to user_id
-        duration_minutes: duration,
-        published: false // Add explicit published flag
+      const quizData = {
+        title: title || `Quiz - ${new Date().toLocaleDateString()}`,
+        user_id: session.user.id,
+        duration_minutes: duration
       };
 
       // Only add course_id if it exists
       if (courseId) {
-        quizData.course_id = courseId;
+        Object.assign(quizData, { course_id: courseId });
       }
-
-      console.log("Inserting quiz with data:", quizData);
 
       const { data: quiz, error: quizError } = await supabase
         .from('quizzes')
@@ -50,67 +43,45 @@ export const useQuizSave = () => {
         .select()
         .single();
 
-      if (quizError) {
-        console.error("Error inserting quiz:", quizError);
-        throw quizError;
-      }
+      if (quizError) throw quizError;
 
-      console.log("Quiz saved successfully with ID:", quiz.id);
-
-      // Map questions to the database schema
+      // Insert all questions
       const questionsToInsert = questions.map(q => ({
         quiz_id: quiz.id,
         question: q.question,
         correct_answer: q.correctAnswer,
         topic: q.topic,
         points: q.points,
-        options: q.options,
-        difficulty: mapDifficultyToDatabase(q.difficulty) as QuestionDifficulty
+        options: q.options
       }));
-
-      console.log(`Inserting ${questionsToInsert.length} quiz questions for quiz ID: ${quiz.id}`);
 
       const { error: questionsError } = await supabase
         .from('quiz_questions')
         .insert(questionsToInsert);
 
-      if (questionsError) {
-        console.error("Error inserting quiz questions:", questionsError);
-        throw questionsError;
-      }
+      if (questionsError) throw questionsError;
 
-      toast({
-        title: "Success",
-        description: "Quiz saved successfully!",
-      });
+      setQuizId(quiz.id);
       
       return { success: true, quizId: quiz.id };
     } catch (error) {
       console.error('Error saving quiz:', error);
+      setError(error instanceof Error ? error : new Error(String(error)));
       toast({
         title: "Error",
         description: "Failed to save quiz. Please try again.",
         variant: "destructive",
       });
       return { success: false, quizId: null };
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  // Helper function to map our difficulty levels to database values
-  const mapDifficultyToDatabase = (difficulty: string): QuestionDifficulty => {
-    switch (difficulty) {
-      case "middle_school":
-        return "beginner";
-      case "high_school":
-        return "intermediate";
-      case "university":
-        return "advanced";
-      case "post_graduate":
-        return "expert";
-      default:
-        return "intermediate";
-    }
+  return {
+    isProcessing,
+    quizId,
+    error,
+    saveQuizToDatabase
   };
-
-  return { saveQuizToDatabase };
 };

@@ -202,7 +202,7 @@ const QuizGeneration = () => {
         progress={{
           ...generationProgress,
           error: error?.message,
-          details: error?.details
+          details: error instanceof Error ? (error as any).details || 'An error occurred during generation' : 'Unknown error'
         }}
         onRetry={handleRetryGeneration}
       />
