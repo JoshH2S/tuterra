@@ -8,8 +8,9 @@ import { splitContentIntoChunks } from "./content-processor.ts";
 import { generateQuizFromChunks } from "./question-generator.ts";
 import { validateAndNormalizeQuestions } from "./question-validator.ts";
 
-// Get OpenAI API key from environment
+// Get API keys from environment
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const deepSeekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -34,6 +35,10 @@ serve(async (req) => {
       throw new Error('Invalid topics format');
     }
     
+    // Log available API keys (without showing the actual keys)
+    console.log(`OpenAI API key available: ${!!openAIApiKey}`);
+    console.log(`DeepSeek API key available: ${!!deepSeekApiKey}`);
+    
     // Trim content to maximum length
     const trimmedContent = content.slice(0, LIMITS.MAX_FILE_SIZE);
     console.log(`Processing request with content length: ${trimmedContent.length}`);
@@ -49,7 +54,8 @@ serve(async (req) => {
     const chunks = splitContentIntoChunks(trimmedContent, topics);
     
     // Generate questions from chunks
-    const generatedQuestions = await generateQuizFromChunks(chunks, difficulty, openAIApiKey);
+    const { questions: generatedQuestions, modelsUsed, stemDetected } = 
+      await generateQuizFromChunks(chunks, difficulty, openAIApiKey, deepSeekApiKey);
     
     // Validate and normalize questions
     const validatedQuestions = validateAndNormalizeQuestions(generatedQuestions, difficulty);
@@ -81,7 +87,9 @@ serve(async (req) => {
         topics: topics.map((t: Topic) => t.description),
         difficulty,
         totalPoints: finalQuestions.reduce((sum, q) => sum + q.points, 0),
-        estimatedDuration: Math.max(15, finalQuestions.length)
+        estimatedDuration: Math.max(15, finalQuestions.length),
+        modelsUsed: Array.from(modelsUsed),
+        stemTopicsDetected: stemDetected
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

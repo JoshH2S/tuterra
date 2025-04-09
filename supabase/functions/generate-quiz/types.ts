@@ -35,6 +35,9 @@ export interface Question {
   difficulty: QuestionDifficulty;
   conceptTested: string;
   learningObjective: string;
+  formula?: string; // Optional LaTeX formula for STEM questions
+  visualizationPrompt?: string; // Optional description for visualization
+  generatedBy?: string; // Which model generated this question
   [key: string]: any; // For additional properties
 }
 
@@ -43,9 +46,13 @@ export interface QuizMetadata {
   difficulty: QuestionDifficulty;
   totalPoints: number;
   estimatedDuration: number;
+  modelsUsed?: string[]; // Track which models were used
+  stemTopicsDetected?: boolean; // Whether STEM topics were detected
 }
 
 export interface QuizResponse {
   quizQuestions: Question[];
   metadata: QuizMetadata;
 }
+
+export type ModelType = "openai" | "deepseek";

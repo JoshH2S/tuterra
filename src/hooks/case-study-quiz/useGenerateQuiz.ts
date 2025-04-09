@@ -19,11 +19,29 @@ export const useGenerateQuiz = () => {
   const [newsSources, setNewsSources] = useState<NewsSource[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [quizMetadata, setQuizMetadata] = useState<QuizMetadata | null>(null);
-  const [quizId, setQuizId] = useState<string | null>(null); // Add state for quiz ID
+  const [quizId, setQuizId] = useState<string | null>(null);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState({
+    stage: 'preparing' as 'preparing' | 'analyzing' | 'generating' | 'saving' | 'complete' | 'error',
+    percentComplete: 0,
+    message: 'Preparing to generate quiz...'
+  });
   const { saveQuizToDatabase } = useQuizSave();
   const { checkCredits, decrementCredits } = useUserCredits();
   const { subscription } = useSubscription();
+
+  // Check if a topic is STEM-related
+  const isSTEMTopic = (topic: string): boolean => {
+    const stemKeywords = [
+      "math", "mathematics", "algebra", "calculus", "geometry", "trigonometry",
+      "physics", "chemistry", "biology", "computer science", "cs", "programming",
+      "engineering", "statistics", "probability", "economics", "data science",
+      "machine learning", "artificial intelligence", "quantum", "algorithm"
+    ];
+    
+    const lowerTopic = topic.toLowerCase();
+    return stemKeywords.some(keyword => lowerTopic.includes(keyword));
+  };
 
   const generateQuiz = async (
     topics: Topic[],
@@ -58,7 +76,14 @@ export const useGenerateQuiz = () => {
     setNewsSources([]);
     setError(null);
     setQuizMetadata(null);
-    setQuizId(null); // Reset quiz ID
+    setQuizId(null);
+    
+    // Initialize generation progress
+    setGenerationProgress({
+      stage: 'preparing',
+      percentComplete: 5,
+      message: 'Preparing to generate quiz...'
+    });
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -72,7 +97,24 @@ export const useGenerateQuiz = () => {
         .eq('id', session.user.id)
         .single();
 
+      // Check if we're dealing with STEM topics
+      const hasStemTopics = topics.some(topic => isSTEMTopic(topic.description));
+      console.log("STEM topics detected:", hasStemTopics);
+      
+      setGenerationProgress({
+        stage: 'analyzing',
+        percentComplete: 15,
+        message: `Analyzing ${hasStemTopics ? 'STEM' : ''} topics and gathering news sources...`
+      });
+
       console.log("Sending request to generate case study quiz with topics:", topics);
+      
+      // Update progress as we begin the generation
+      setGenerationProgress({
+        stage: 'generating',
+        percentComplete: 30,
+        message: `Generating ${hasStemTopics ? 'STEM-enhanced' : ''} case study questions...`
+      });
       
       const response = await fetch(
         'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-case-study-quiz',
@@ -88,7 +130,7 @@ export const useGenerateQuiz = () => {
             difficulty,
             teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
             school: teacherData?.school,
-            tier: subscription.tier, // Send subscription tier to backend
+            tier: subscription.tier,
           }),
         }
       );
@@ -96,11 +138,22 @@ export const useGenerateQuiz = () => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Error response:", errorData);
+        setGenerationProgress({
+          stage: 'error',
+          percentComplete: 0,
+          message: `Failed to generate quiz: ${errorData.error || 'Unknown error'}`
+        });
         throw new Error(`Failed to generate quiz: ${errorData.error || 'Unknown error'}`);
       }
 
       const data = await response.json();
       console.log("Received quiz data:", data);
+      
+      setGenerationProgress({
+        stage: 'saving',
+        percentComplete: 75,
+        message: `Questions generated successfully. Saving quiz...`
+      });
       
       if (!data.quizQuestions || !Array.isArray(data.quizQuestions)) {
         throw new Error("Invalid quiz data received from server");
@@ -119,7 +172,7 @@ export const useGenerateQuiz = () => {
         topic: q.topic || '',
         points: q.points || 1,
         explanation: q.explanation || '',
-        difficulty: difficulty, // Ensure difficulty is set
+        difficulty: difficulty,
         
         // Include case study data if available
         ...(q.caseStudy ? {
@@ -132,7 +185,16 @@ export const useGenerateQuiz = () => {
         } : {}),
         
         // Include analysis type if available
-        ...(q.analysisType ? { analysisType: q.analysisType } : {})
+        ...(q.analysisType ? { analysisType: q.analysisType } : {}),
+        
+        // Include formula if available (for STEM questions)
+        ...(q.formula ? { formula: q.formula } : {}),
+        
+        // Include visualization prompt if available (for STEM questions)
+        ...(q.visualizationPrompt ? { visualizationPrompt: q.visualizationPrompt } : {}),
+        
+        // Include model information
+        ...(q.generatedBy ? { generatedBy: q.generatedBy } : {})
       }));
       
       setQuizQuestions(validatedQuestions);
@@ -144,24 +206,27 @@ export const useGenerateQuiz = () => {
       
       // Store quiz metadata
       if (data.metadata) {
-        setQuizMetadata({
+        const enhancedMetadata = {
           courseId: data.metadata.courseId || selectedCourseId,
           difficulty: difficulty,
           topics: data.metadata.topics || topics.map(t => t.description),
           totalPoints: data.metadata.totalPoints || validatedQuestions.reduce((sum, q) => sum + q.points, 0),
-          estimatedDuration: data.metadata.estimatedDuration || 30
-        });
+          estimatedDuration: data.metadata.estimatedDuration || 30,
+          stemTopicsDetected: data.metadata.stemTopicsDetected || hasStemTopics,
+          modelUsed: data.metadata.modelUsed || 'openai',
+        };
+        
+        setQuizMetadata(enhancedMetadata);
       }
 
-      // Generate a default title based on topics
-      const defaultTitle = `Case Study: ${topics[0].description}${topics.length > 1 ? ' & More' : ''}`;
+      // Generate a default title based on topics and model used
+      const modelInfo = data.metadata?.modelUsed === 'deepseek' ? 'STEM-Enhanced ' : '';
+      const defaultTitle = `${modelInfo}Case Study: ${topics[0].description}${topics.length > 1 ? ' & More' : ''}`;
 
       // Save quiz to database using the shared hook
       try {
         const estimatedDuration = data.metadata?.estimatedDuration || 30;
         
-        // Looking at the signature of saveQuizToDatabase in useQuizSave.ts, 
-        // it expects (questions, title, duration, courseId?) format
         const { success, quizId } = await saveQuizToDatabase(
           validatedQuestions,
           defaultTitle,
@@ -171,19 +236,31 @@ export const useGenerateQuiz = () => {
 
         if (success && quizId) {
           console.log("Quiz saved with ID:", quizId);
-          setQuizId(quizId); // Store the quiz ID
+          setQuizId(quizId);
           
           // Decrement credits for free users only
           if (subscription.tier === 'free') {
             await decrementCredits('quiz_credits');
           }
           
+          setGenerationProgress({
+            stage: 'complete',
+            percentComplete: 100,
+            message: `Quiz generated and saved successfully!`
+          });
+          
           toast({
             title: "Success",
-            description: "Case study quiz generated and saved successfully!",
+            description: `${modelInfo}Case study quiz generated and saved successfully!`,
           });
         } else {
           console.error("No quiz ID returned from saveQuizToDatabase");
+          
+          setGenerationProgress({
+            stage: 'error',
+            percentComplete: 75,
+            message: `Quiz generated but could not be saved completely. Try again.`
+          });
           
           toast({
             title: "Warning",
@@ -193,7 +270,12 @@ export const useGenerateQuiz = () => {
         }
       } catch (saveError) {
         console.error("Error saving quiz to database:", saveError);
-        // We don't throw here as we want to show the generated quiz even if saving fails
+        setGenerationProgress({
+          stage: 'error',
+          percentComplete: 75,
+          message: `Quiz generated but couldn't be saved. Database error.`
+        });
+        
         toast({
           title: "Warning",
           description: "Quiz generated but couldn't be saved. Try again later.",
@@ -210,6 +292,12 @@ export const useGenerateQuiz = () => {
       
       setError(errorMessage);
       
+      setGenerationProgress({
+        stage: 'error',
+        percentComplete: 0,
+        message: errorMessage
+      });
+      
       toast({
         title: "Error",
         description: errorMessage,
@@ -221,15 +309,27 @@ export const useGenerateQuiz = () => {
     }
   };
 
+  // Method to handle retry when an error occurs
+  const handleRetry = () => {
+    setGenerationProgress({
+      stage: 'preparing',
+      percentComplete: 0,
+      message: 'Ready to try again'
+    });
+    setError(null);
+  };
+
   return {
     isGenerating,
     quizQuestions,
     newsSources,
     quizMetadata,
-    quizId, // Return the quiz ID
+    quizId,
     error,
     showUpgradePrompt,
     setShowUpgradePrompt,
-    generateQuiz
+    generateQuiz,
+    generationProgress,
+    handleRetry
   };
 };

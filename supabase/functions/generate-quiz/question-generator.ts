@@ -1,21 +1,34 @@
-
-import { ContentChunk, Question, QuestionDifficulty } from "./types.ts";
-import { generatePromptForChunk } from "./prompt-generator.ts";
+import { ContentChunk, Question, QuestionDifficulty, ModelType } from "./types.ts";
+import { generatePromptForChunk, containsSTEMTopics } from "./prompt-generator.ts";
 import { cleanupJSONContent } from "./utils.ts";
 
 /**
- * Generates quiz questions by sending requests to OpenAI API for each content chunk
- * @param chunks Array of content chunks
- * @param difficulty Target difficulty level
- * @param openAIApiKey OpenAI API key
- * @returns Array of generated questions
+ * Selects the appropriate model based on content and available API keys
+ */
+function selectModelForChunk(chunk: ContentChunk, openAIApiKey: string, deepSeekApiKey: string | null): ModelType {
+  // If we have STEM topics and a DeepSeek API key, use DeepSeek
+  if (containsSTEMTopics(chunk) && deepSeekApiKey) {
+    console.log("Using DeepSeek model for STEM topics");
+    return "deepseek";
+  }
+  
+  // Otherwise default to OpenAI
+  console.log("Using OpenAI model");
+  return "openai";
+}
+
+/**
+ * Generates quiz questions by sending requests to AI APIs based on content type
  */
 export async function generateQuizFromChunks(
   chunks: ContentChunk[], 
   difficulty: string,
-  openAIApiKey: string
-): Promise<Question[]> {
+  openAIApiKey: string,
+  deepSeekApiKey: string | null = null
+): Promise<{ questions: Question[], modelsUsed: Set<string>, stemDetected: boolean }> {
   const allQuestions: Question[] = [];
+  const modelsUsed = new Set<string>();
+  let stemDetected = false;
   let processedChunks = 0;
   
   // Track questions generated per topic
@@ -25,51 +38,60 @@ export async function generateQuizFromChunks(
     try {
       console.log(`Processing chunk ${++processedChunks} of ${chunks.length}`);
       
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          temperature: 0.3,
-          max_tokens: 2000,
-          messages: [
-            {
-              role: 'system',
-              content: 'Generate multiple-choice questions in valid JSON format. Each question must belong to one of the specified topics and follow the exact format requested. It is CRITICAL that you generate EXACTLY the number of questions requested for each topic - no more, no less.'
-            },
-            {
-              role: 'user',
-              content: generatePromptForChunk(chunk, difficulty)
-            }
-          ],
-        }),
-      });
-
-      const result = await response.json();
-      
-      if (!result.choices || !result.choices[0] || !result.choices[0].message) {
-        console.error("Invalid response from OpenAI:", result);
-        throw new Error("Invalid response from OpenAI");
+      // Check if this chunk contains STEM topics
+      const hasSTEM = containsSTEMTopics(chunk);
+      if (hasSTEM) {
+        stemDetected = true;
       }
       
-      const cleanedContent = cleanupJSONContent(result.choices[0].message.content);
+      // Select the model to use for this chunk
+      const modelType = selectModelForChunk(chunk, openAIApiKey, deepSeekApiKey);
+      modelsUsed.add(modelType);
+      
+      // Generate the prompt
+      const prompt = generatePromptForChunk(chunk, difficulty);
+      
+      let result;
+      
+      // Call the appropriate API based on the selected model
+      if (modelType === "deepseek" && deepSeekApiKey) {
+        result = await callDeepSeekAPI(prompt, deepSeekApiKey);
+      } else {
+        result = await callOpenAIAPI(prompt, openAIApiKey);
+      }
+      
+      if (!result.choices || !result.choices[0]) {
+        console.error("Invalid response from AI API:", result);
+        throw new Error("Invalid response from AI API");
+      }
+      
+      const responseContent = modelType === "deepseek" 
+        ? result.choices[0].text 
+        : result.choices[0].message.content;
+      
+      const cleanedContent = cleanupJSONContent(responseContent);
       
       try {
         const questions = JSON.parse(cleanedContent);
         console.log(`Successfully received response for chunk at index ${chunk.startIndex}`);
         
+        // Add metadata about which model generated each question
+        const questionsWithModelInfo = questions.map((q: Question) => ({
+          ...q,
+          generatedBy: modelType
+        }));
+        
         // Validate that we got the right number of questions for each topic
         const topicCounts: Record<string, number> = {};
-        questions.forEach((q: Question) => {
+        questionsWithModelInfo.forEach((q: Question) => {
           topicCounts[q.topic] = (topicCounts[q.topic] || 0) + 1;
           questionsPerTopic[q.topic] = (questionsPerTopic[q.topic] || 0) + 1;
         });
         
         console.log("Topic distribution in response:", topicCounts);
-        allQuestions.push(...questions);
+        console.log("Model used:", modelType);
+        
+        allQuestions.push(...questionsWithModelInfo);
       } catch (parseError) {
         console.error("Failed to parse response:", parseError);
         console.error("Cleaned content that failed to parse:", cleanedContent);
@@ -83,6 +105,63 @@ export async function generateQuizFromChunks(
 
   console.log(`Generated a total of ${allQuestions.length} questions`);
   console.log(`Final distribution of questions by topic:`, questionsPerTopic);
+  console.log(`Models used: ${Array.from(modelsUsed).join(', ')}`);
+  console.log(`STEM topics detected: ${stemDetected}`);
   
-  return allQuestions;
+  return { 
+    questions: allQuestions, 
+    modelsUsed, 
+    stemDetected 
+  };
+}
+
+/**
+ * Calls the OpenAI API with the given prompt
+ */
+async function callOpenAIAPI(prompt: string, apiKey: string) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      temperature: 0.3,
+      max_tokens: 2000,
+      messages: [
+        {
+          role: 'system',
+          content: 'Generate multiple-choice questions in valid JSON format. Each question must belong to one of the specified topics and follow the exact format requested. It is CRITICAL that you generate EXACTLY the number of questions requested for each topic - no more, no less.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+    }),
+  });
+
+  return await response.json();
+}
+
+/**
+ * Calls the DeepSeek API with the given prompt
+ */
+async function callDeepSeekAPI(prompt: string, apiKey: string) {
+  const response = await fetch('https://api.deepseek.com/v1/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'deepseek-coder',
+      prompt: `Generate multiple-choice questions in valid JSON format for STEM subjects. Follow these instructions carefully: ${prompt}`,
+      temperature: 0.3,
+      max_tokens: 2000,
+    }),
+  });
+
+  return await response.json();
 }
