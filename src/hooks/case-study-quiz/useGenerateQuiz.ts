@@ -160,15 +160,13 @@ export const useGenerateQuiz = () => {
       try {
         const estimatedDuration = data.metadata?.estimatedDuration || 30;
         
-        // Fix: Pass the topics in the correct format - we need to extract just the descriptions
-        const topicDescriptions = topics.map(topic => ({ description: topic.description }));
-        
-        // Adjust the arguments to match the function signature
+        // Looking at the signature of saveQuizToDatabase in useQuizSave.ts, 
+        // it expects (questions, title, duration, courseId?) format
         const { success, quizId } = await saveQuizToDatabase(
-          validatedQuestions, 
-          topicDescriptions, 
+          validatedQuestions,
+          defaultTitle,
           estimatedDuration,
-          defaultTitle // Add a default title
+          selectedCourseId === 'none' ? undefined : selectedCourseId
         );
 
         if (success && quizId) {
