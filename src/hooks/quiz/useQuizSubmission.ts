@@ -1,129 +1,178 @@
 
 import { useState } from "react";
-import { useQuizAPI } from "./useQuizAPI";
-import { useQuizSave } from "./useQuizSave";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { Topic, Question, CONTENT_LIMITS } from "@/types/quiz-generation";
+import { Question, Topic } from "@/types/quiz-generation";
 import { QuestionDifficulty } from "@/types/quiz";
-
-interface SubmissionError {
-  message: string;
-  details?: string;
-}
+import { useNavigate } from "react-router-dom";
 
 export const useQuizSubmission = () => {
+  const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [quizId, setQuizId] = useState<string | null>(null);
-  const [error, setError] = useState<SubmissionError | null>(null);
-  const { generateQuiz } = useQuizAPI();
-  const { saveQuizToDatabase } = useQuizSave();
+  const [error, setError] = useState<Error | null>(null);
+
+  const saveQuizToDatabase = async (
+    questions: Question[],
+    title: string,
+    duration: number,
+    courseId?: string
+  ) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return { success: false, quizId: null };
+      }
+
+      // Create the quiz with title, user_id, and duration
+      const quizData = {
+        title: title || `Quiz - ${new Date().toLocaleDateString()}`,
+        user_id: session.user.id,
+        duration_minutes: duration
+      };
+
+      // Only add course_id if it exists
+      if (courseId) {
+        Object.assign(quizData, { course_id: courseId });
+      }
+
+      const { data: quiz, error: quizError } = await supabase
+        .from('quizzes')
+        .insert(quizData)
+        .select()
+        .single();
+
+      if (quizError) throw quizError;
+
+      // Insert all questions
+      const questionsToInsert = questions.map(q => ({
+        quiz_id: quiz.id,
+        question: q.question,
+        correct_answer: q.correctAnswer,
+        topic: q.topic,
+        points: q.points,
+        options: q.options
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('quiz_questions')
+        .insert(questionsToInsert);
+
+      if (questionsError) throw questionsError;
+
+      setQuizId(quiz.id);
+      
+      return { success: true, quizId: quiz.id };
+    } catch (error) {
+      console.error('Error saving quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save quiz. Please try again.",
+        variant: "destructive",
+      });
+      return { success: false, quizId: null };
+    }
+  };
 
   const handleSubmit = async (
-    fileContent: string,
+    content: string,
     topics: Topic[],
     difficulty: QuestionDifficulty,
     title: string,
     duration: number,
     courseId?: string
   ) => {
-    if (!fileContent) {
-      toast({
-        title: "Error",
-        description: "Please select a file first",
-        variant: "destructive",
-      });
-      return { questions: null, quizId: null, error: { message: "No file content provided" } };
+    if (!content) {
+      return { error: new Error("No content provided") };
     }
 
     if (topics.some(topic => !topic.description)) {
-      toast({
-        title: "Error",
-        description: "Please fill out all topics",
-        variant: "destructive",
-      });
-      return { questions: null, quizId: null, error: { message: "Topics incomplete" } };
+      return { error: new Error("Please fill out all topics") };
     }
 
     setIsProcessing(true);
     setQuizQuestions([]);
-    setQuizId(null);
     setError(null);
 
     try {
-      const trimmedContent = fileContent.slice(0, CONTENT_LIMITS.MAX_CHARACTERS);
-      
-      // Pass the topics with numQuestions to make sure it respects the requested count
-      const filteredTopics = topics.filter(t => !!t.description);
-      console.log("Generating quiz with topics:", filteredTopics);
-      
-      const generatedQuestions = await generateQuiz(trimmedContent, filteredTopics, difficulty);
-      setQuizQuestions(generatedQuestions);
-      
-      // Use the provided title or generate a default one
-      const quizTitle = title.trim() ? title : `Quiz on ${filteredTopics.map(t => t.description).join(", ")}`;
-      
-      // Explicitly pass the courseId if available - this was missing or inconsistently applied
-      const { success, quizId } = await saveQuizToDatabase(
-        generatedQuestions, 
-        filteredTopics, 
-        duration, 
-        quizTitle, 
-        courseId || undefined  // Make sure we pass undefined if courseId is empty string
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/auth');
+        return { error: new Error("Not authenticated") };
+      }
+
+      const { data: teacherData } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, school')
+        .eq('id', session.user.id)
+        .single();
+
+      const response = await fetch(
+        'https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-quiz',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            content,
+            topics,
+            difficulty,
+            teacherName: teacherData ? `${teacherData.first_name} ${teacherData.last_name}` : undefined,
+            school: teacherData?.school,
+          }),
+        }
       );
+
+      if (!response.ok) {
+        throw new Error('Failed to generate quiz');
+      }
+
+      const data = await response.json();
+      setQuizQuestions(data.quizQuestions);
       
-      if (success && quizId) {
-        setQuizId(quizId);
-        
+      // Save the generated quiz to the database
+      const saveResult = await saveQuizToDatabase(
+        data.quizQuestions,
+        title,
+        duration,
+        courseId
+      );
+
+      if (saveResult.success) {
         toast({
           title: "Success",
           description: "Quiz generated and saved successfully!",
         });
-        
-        return { questions: generatedQuestions, quizId, error: null };
-      } else {
-        throw new Error("Failed to save quiz to database");
-      }
-    } catch (err) {
-      console.error('Error processing quiz:', err);
-      
-      const errorMessage = err instanceof Error ? err.message : "Failed to generate quiz";
-      let errorDetails: string | undefined = undefined;
-      
-      if (err instanceof Error) {
-        const anyErr = err as any;
-        errorDetails = anyErr.details || anyErr.errorDetails || JSON.stringify(err);
       }
       
-      const errorObj = { 
-        message: errorMessage, 
-        details: errorDetails 
-      };
-      
-      setError(errorObj);
-      
+      return { success: true, quizId: saveResult.quizId };
+    } catch (error) {
+      console.error('Error processing quiz:', error);
+      setError(error instanceof Error ? error : new Error(String(error)));
       toast({
         title: "Error",
         description: "Failed to generate quiz. Please try again.",
         variant: "destructive",
       });
-      
-      return { questions: null, quizId: null, error: errorObj };
+      return { error };
     } finally {
       setIsProcessing(false);
     }
   };
 
   const retrySubmission = async (
-    fileContent: string,
+    content: string,
     topics: Topic[],
     difficulty: QuestionDifficulty,
     title: string,
     duration: number,
     courseId?: string
   ) => {
-    setError(null);
-    return handleSubmit(fileContent, topics, difficulty, title, duration, courseId);
+    return handleSubmit(content, topics, difficulty, title, duration, courseId);
   };
 
   return {
@@ -132,6 +181,6 @@ export const useQuizSubmission = () => {
     quizId,
     error,
     handleSubmit,
-    retrySubmission,
+    retrySubmission
   };
 };

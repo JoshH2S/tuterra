@@ -17,7 +17,6 @@ export interface Question {
   correctAnswer: string;
   topic: string;
   points: number;
-  difficulty: QuestionDifficulty;
 }
 
 export interface QuizSettings {
@@ -28,8 +27,7 @@ export interface QuizSettings {
 }
 
 export const CONTENT_LIMITS = {
-  MAX_CHARACTERS: 75_000,
-  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB
-  OPTIMAL_CHUNK_SIZE: 8_000,
-  WARNING_THRESHOLD: 50_000
+  MAX_CONTENT_LENGTH: 50 * 1024 * 1024, // 50MB
+  MAX_CHARACTERS: 50_000,
+  WARNING_THRESHOLD: 25_000
 };

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Topic } from "@/hooks/useQuizGeneration";
+import { Topic } from "@/types/quiz-generation";
 
 export const useQuizTopics = () => {
   const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
@@ -13,19 +13,23 @@ export const useQuizTopics = () => {
     const newTopics = [...topics];
     newTopics[index] = {
       ...newTopics[index],
-      [field]: value
+      [field]: field === 'numQuestions' ? Number(value) : value
     };
     setTopics(newTopics);
   };
 
-  const validateTopics = () => {
-    return !topics.some(topic => !topic.description);
+  const removeTopic = (index: number) => {
+    if (topics.length > 1) {
+      const newTopics = [...topics];
+      newTopics.splice(index, 1);
+      setTopics(newTopics);
+    }
   };
 
   return {
     topics,
     addTopic,
     updateTopic,
-    validateTopics,
+    removeTopic,
   };
 };

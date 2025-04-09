@@ -1,11 +1,11 @@
 
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
-import { Topic, Question, CONTENT_LIMITS } from "@/types/quiz-generation";
+import { Topic, Question } from "@/types/quiz-generation";
 import { QuestionDifficulty } from "@/types/quiz";
 import { useQuizSubmission } from "./useQuizSubmission";
 import { useQuizFileUpload } from "./useQuizFileUpload";
+import { useQuizTopics } from "./useQuizTopics";
+import { useQuizSettings } from "./useQuizSettings";
 import { useUserCredits } from "@/hooks/useUserCredits";
 
 export interface GenerationProgress {
@@ -15,26 +15,28 @@ export interface GenerationProgress {
 }
 
 export const useQuizGeneration = () => {
-  const navigate = useNavigate();
-  const { id: courseId } = useParams();
-  const [title, setTitle] = useState<string>("");
-  const [topics, setTopics] = useState<Topic[]>([{ description: "", numQuestions: 3 }]);
-  const [duration, setDuration] = useState<number>(15);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>(courseId || "");
-  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("university");
-  const [generationProgress, setGenerationProgress] = useState<GenerationProgress>({
-    stage: 'idle',
-    percent: 0,
-    message: ''
-  });
-  const [showUpgradePrompt, setShowUpgradePrompt] = useState<boolean>(false);
+  const { 
+    title, 
+    duration, 
+    selectedCourseId, 
+    difficulty,
+    setTitle,
+    setDuration,
+    setSelectedCourseId,
+    setDifficulty 
+  } = useQuizSettings();
   
-  const { credits, decrementCredits, checkCredits } = useUserCredits();
+  const {
+    topics,
+    addTopic,
+    updateTopic,
+    removeTopic
+  } = useQuizTopics();
+  
   const { 
     selectedFile, 
     contentLength, 
-    handleFileSelect, 
-    processFile 
+    handleFileSelect 
   } = useQuizFileUpload();
   
   const {
@@ -46,30 +48,27 @@ export const useQuizGeneration = () => {
     retrySubmission
   } = useQuizSubmission();
 
-  const addTopic = () => {
-    setTopics([...topics, { description: "", numQuestions: 3 }]);
-  };
+  const [generationProgress, setGenerationProgress] = useState<GenerationProgress>({
+    stage: 'idle',
+    percent: 0,
+    message: ''
+  });
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState<boolean>(false);
+  
+  const { checkCredits, decrementCredits } = useUserCredits();
 
-  const updateTopic = (index: number, field: keyof Topic, value: string | number) => {
-    const newTopics = [...topics];
-    newTopics[index] = {
-      ...newTopics[index],
-      [field]: field === 'numQuestions' ? Number(value) : value
-    };
-    setTopics(newTopics);
-  };
-
-  const removeTopic = (index: number) => {
-    if (topics.length > 1) {
-      const newTopics = [...topics];
-      newTopics.splice(index, 1);
-      setTopics(newTopics);
-    } else {
-      toast({
-        title: "Cannot remove",
-        description: "You need at least one topic",
-        variant: "destructive",
-      });
+  const processFile = async () => {
+    if (!selectedFile) return null;
+    try {
+      const content = await selectedFile.text();
+      return {
+        content: content,
+        wasContentTrimmed: false,
+        originalLength: content.length
+      };
+    } catch (error) {
+      console.error("Error processing file:", error);
+      return null;
     }
   };
 
@@ -77,11 +76,6 @@ export const useQuizGeneration = () => {
     // Check if user has enough credits
     if (!checkCredits('quiz_credits')) {
       setShowUpgradePrompt(true);
-      toast({
-        title: "No credits remaining",
-        description: "You have used all your free quiz credits. Please upgrade to continue.",
-        variant: "destructive",
-      });
       return;
     }
 
@@ -110,7 +104,7 @@ export const useQuizGeneration = () => {
         message: 'Generating quiz questions based on your topics...'
       });
 
-      const effectiveCourseId = selectedCourseId || courseId;
+      const effectiveCourseId = selectedCourseId;
       
       // Submit quiz for generation
       const result = await submitQuiz(
@@ -158,24 +152,11 @@ export const useQuizGeneration = () => {
         percent: 100,
         message: 'An error occurred during quiz generation'
       });
-      
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate quiz",
-        variant: "destructive",
-      });
     }
   };
 
   const handleRetry = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "Error",
-        description: "File is missing. Please select a file again.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!selectedFile) return;
 
     // Reset progress and start again
     setGenerationProgress({
@@ -197,7 +178,7 @@ export const useQuizGeneration = () => {
         message: 'Regenerating quiz questions...'
       });
 
-      const effectiveCourseId = selectedCourseId || courseId;
+      const effectiveCourseId = selectedCourseId;
       
       await retrySubmission(
         processedFile.content,
@@ -230,12 +211,6 @@ export const useQuizGeneration = () => {
         stage: 'error',
         percent: 100,
         message: 'An error occurred during quiz regeneration'
-      });
-      
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to regenerate quiz",
-        variant: "destructive",
       });
     }
   };
