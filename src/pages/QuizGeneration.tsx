@@ -104,6 +104,19 @@ const QuizGeneration = () => {
     }
   };
 
+  // Map the internal stage types to the types expected by QuizGenerationModal
+  const mapStageType = (stage: 'preparing' | 'analyzing' | 'generating' | 'saving' | 'complete' | 'error'): 
+    'idle' | 'analyzing' | 'generating' | 'saving' | 'error' => {
+    switch (stage) {
+      case 'preparing':
+        return 'idle';
+      case 'complete':
+        return 'generating'; // Use generating for the complete state too
+      default:
+        return stage as 'analyzing' | 'generating' | 'saving' | 'error';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
@@ -201,7 +214,7 @@ const QuizGeneration = () => {
       <QuizGenerationModal
         isOpen={isProcessing || (!!error && generationProgress.stage === 'error')}
         progress={{
-          stage: generationProgress.stage,
+          stage: mapStageType(generationProgress.stage),
           percent: generationProgress.percentComplete,
           message: generationProgress.message,
           error: error?.message,

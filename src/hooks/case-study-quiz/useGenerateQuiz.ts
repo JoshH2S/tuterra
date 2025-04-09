@@ -159,10 +159,14 @@ export const useGenerateQuiz = () => {
       // Save quiz to database using the shared hook
       try {
         const estimatedDuration = data.metadata?.estimatedDuration || 30;
+        
+        // Fix: Pass the topics in the correct format - we need to extract just the descriptions
+        const topicDescriptions = topics.map(topic => ({ description: topic.description }));
+        
         // Adjust the arguments to match the function signature
         const { success, quizId } = await saveQuizToDatabase(
           validatedQuestions, 
-          topics, 
+          topicDescriptions, 
           estimatedDuration,
           defaultTitle // Add a default title
         );
