@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import { Calendar, Users } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Course } from "@/types/course";
 import { supabase } from "@/integrations/supabase/client";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -53,12 +53,6 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
         
         if (!user) return;
 
-        // Get student count for this course
-        const { count } = await supabase
-          .from('student_courses')
-          .select('*', { count: 'exact', head: true })
-          .eq('course_id', course.id);
-          
         // Get completed quizzes count
         const { data: quizScores } = await supabase
           .from('student_quiz_scores')
@@ -67,7 +61,7 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
           .eq('student_id', user.id);
 
         setCourseStats({
-          studentCount: count || 0,
+          studentCount: 0, // We're keeping this in the state but not displaying it
           completedQuizzes: quizScores?.length || 0
         });
       } catch (error) {
@@ -153,19 +147,14 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
       <CourseCardHeader course={course} />
 
       <div className="p-4">
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center mb-4">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
             <span className="text-sm text-gray-600">
               Created {format(new Date(course.created_at || new Date()), 'MMM d, yyyy')}
             </span>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
-            <Users className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">
-              {courseStats.studentCount} Students
-            </span>
-          </div>
+          {/* Removed the Students count section that was here */}
         </div>
 
         <CourseMasterySection 
