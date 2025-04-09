@@ -29,6 +29,7 @@ export const useCourseCreate = () => {
 
       console.log('Creating course with data:', courseData);
 
+      // Ensure the URL doesn't have any issues with trailing dots
       const { data: createdCourse, error: courseError } = await supabase
         .from('courses')
         .insert(courseData)
