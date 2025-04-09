@@ -47,7 +47,12 @@ export const CreateCourseModal = ({
     setIsSubmitting(true);
     
     try {
-      // Include the code field in the submission
+      console.log("Submitting course data:", { 
+        code: code.trim() || undefined, 
+        title: title.trim(), 
+        description: description.trim() || undefined 
+      });
+      
       const success = await onSubmit({ 
         code: code.trim() || undefined, 
         title: title.trim(), 
@@ -58,6 +63,8 @@ export const CreateCourseModal = ({
         resetForm();
         onClose();
       }
+    } catch (error) {
+      console.error("Error submitting course:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,7 +86,7 @@ export const CreateCourseModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Course</DialogTitle>
           <DialogDescription>
