@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,15 +47,15 @@ export const CreateCourseModal = ({
     
     try {
       console.log("Submitting course data:", { 
-        code: code.trim() || undefined, 
         title: title.trim(), 
-        description: description.trim() || undefined 
+        description: description.trim() || undefined,
+        code: code.trim() || undefined
       });
       
       const success = await onSubmit({ 
-        code: code.trim() || undefined, 
         title: title.trim(), 
-        description: description.trim() || undefined 
+        description: description.trim() || undefined,
+        code: code.trim() || undefined
       });
       
       if (success) {
@@ -105,6 +104,9 @@ export const CreateCourseModal = ({
                 onChange={(e) => setCode(e.target.value)}
                 disabled={isProcessing}
               />
+              <p className="text-xs text-muted-foreground">
+                Optional: Add a course code for reference
+              </p>
             </div>
             
             <div className="space-y-2">
@@ -136,10 +138,20 @@ export const CreateCourseModal = ({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" type="button" onClick={handleClose} disabled={isProcessing}>
+            <Button 
+              variant="outline" 
+              type="button" 
+              onClick={handleClose} 
+              disabled={isProcessing}
+              className="touch-manipulation"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isProcessing}>
+            <Button 
+              type="submit" 
+              disabled={isProcessing}
+              className="touch-manipulation"
+            >
               {isProcessing ? (
                 <span className="flex items-center gap-2">
                   <Loader className="h-4 w-4 animate-spin" />

@@ -32,6 +32,8 @@ export interface StudentCourse {
 
 export interface CourseCreateData {
   title: string;
-  code?: string;
   description?: string;
+  // Note: code is kept in the type but not used for database insertion
+  // as it's not in the courses table schema
+  code?: string;
 }

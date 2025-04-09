@@ -18,18 +18,17 @@ export const useCourseCreate = () => {
         return false;
       }
 
-      // Create a course object with all required fields
+      // Create a course object with only the fields that exist in the database
       const courseData = { 
         title: data.title,
         user_id: user.id,
-        // Add optional fields only if they exist
-        ...(data.description ? { description: data.description } : {}),
-        ...(data.code ? { code: data.code } : {})
+        // Only add description if it exists
+        ...(data.description ? { description: data.description } : {})
+        // Removed code field as it doesn't exist in the database schema
       };
 
       console.log('Creating course with data:', courseData);
 
-      // Ensure the URL doesn't have any issues with trailing dots
       const { data: createdCourse, error: courseError } = await supabase
         .from('courses')
         .insert(courseData)
