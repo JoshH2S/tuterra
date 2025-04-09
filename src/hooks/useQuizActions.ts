@@ -40,8 +40,8 @@ export const useQuizActions = () => {
 
   const handleCreateQuiz = () => {
     console.log('Navigation triggered to quiz generation');
-    // Fix: use the absolute path that matches the route configuration in QuizRoutes.tsx
-    navigate('/quiz-generation');
+    // Fix: use the correct path that matches the route configuration in QuizRoutes.tsx
+    navigate('/quizzes/quiz-generation');
   };
 
   return {
