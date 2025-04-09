@@ -66,14 +66,21 @@ export const useQuizGeneration = () => {
   const handleRetry = () => {
     if (selectedFile && selectedCourseId) {
       updateGenerationProgress('preparing', 0, 'Preparing your quiz...');
-      return retrySubmission(
-        selectedFile.text(),
-        topics,
-        difficulty,
-        title,
-        duration,
-        selectedCourseId === 'none' ? undefined : selectedCourseId
-      );
+      // First get the text content and then pass it
+      selectedFile.text().then(fileContent => {
+        return retrySubmission(
+          fileContent,
+          topics,
+          difficulty,
+          title,
+          duration,
+          selectedCourseId === 'none' ? undefined : selectedCourseId
+        );
+      }).catch(error => {
+        console.error("Error reading file text:", error);
+        return { error: new Error("Failed to read file content") };
+      });
+      return { success: true };
     }
     return { error: new Error("Missing required data for retry") };
   };
@@ -99,26 +106,32 @@ export const useQuizGeneration = () => {
 
     updateGenerationProgress('preparing', 10, 'Preparing your quiz...');
     
-    const fileContent = await selectedFile.text();
-    
-    updateGenerationProgress('analyzing', 30, 'Analyzing content...');
-    
-    const result = await handleSubmit(
-      fileContent,
-      topics,
-      difficulty,
-      title,
-      duration,
-      selectedCourseId === 'none' ? undefined : selectedCourseId
-    );
-    
-    if (result.error) {
+    try {
+      const fileContent = await selectedFile.text();
+      
+      updateGenerationProgress('analyzing', 30, 'Analyzing content...');
+      
+      const result = await handleSubmit(
+        fileContent,
+        topics,
+        difficulty,
+        title,
+        duration,
+        selectedCourseId === 'none' ? undefined : selectedCourseId
+      );
+      
+      if (result.error) {
+        updateGenerationProgress('error', 100, 'Error generating quiz');
+      } else {
+        updateGenerationProgress('complete', 100, 'Quiz generated successfully!');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error generating quiz:", error);
       updateGenerationProgress('error', 100, 'Error generating quiz');
-    } else {
-      updateGenerationProgress('complete', 100, 'Quiz generated successfully!');
+      return { error: error instanceof Error ? error : new Error(String(error)) };
     }
-    
-    return result;
   };
 
   return {

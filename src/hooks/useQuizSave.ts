@@ -70,7 +70,7 @@ export const useQuizSave = () => {
         topic: q.topic,
         points: q.points,
         options: q.options,
-        difficulty: mapDifficultyToDatabase(q.difficulty) as QuestionDifficulty
+        difficulty: q.difficulty ? mapDifficultyToDatabase(q.difficulty) : 'intermediate' as QuestionDifficulty
       }));
 
       console.log(`Inserting ${questionsToInsert.length} quiz questions for quiz ID: ${quiz.id}`);

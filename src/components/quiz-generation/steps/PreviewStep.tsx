@@ -1,8 +1,9 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QuizDurationInput } from "@/components/quiz-generation/QuizDurationInput";
-import { Question } from "@/types/quiz-generation";
+import { Question, CaseStudyQuestion, isCaseStudyQuestion } from "@/types/quiz-generation";
 import { QuizQuestionItem } from "@/components/quiz-generation/QuizQuestionItem";
 import { QuizTitleInput } from "@/components/quiz-generation/QuizTitleInput";
 
@@ -73,7 +74,7 @@ export const PreviewStep = ({
                 </div>
                 {isCaseStudyQuestion(question) && (
                   <div className="mt-2 text-sm text-gray-500">
-                    <span className="font-medium">Case Study:</span> {question.caseStudy}
+                    <span className="font-medium">Case Study:</span> {question.caseStudy.context}
                   </div>
                 )}
               </div>
@@ -140,8 +141,4 @@ const QuizSummary = ({ questions }: QuizSummaryProps) => {
       </CardContent>
     </Card>
   );
-};
-
-const isCaseStudyQuestion = (question: any): question is CaseStudyQuestion => {
-  return question.caseStudy !== undefined;
 };

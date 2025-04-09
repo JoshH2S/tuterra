@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -200,7 +201,9 @@ const QuizGeneration = () => {
       <QuizGenerationModal
         isOpen={isProcessing || (!!error && generationProgress.stage === 'error')}
         progress={{
-          ...generationProgress,
+          stage: generationProgress.stage,
+          percent: generationProgress.percentComplete,
+          message: generationProgress.message,
           error: error?.message,
           details: error instanceof Error ? (error as any).details || 'An error occurred during generation' : 'Unknown error'
         }}
