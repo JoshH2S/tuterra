@@ -13,7 +13,7 @@ export const QuizNavigationLinks = () => {
           className="w-full bg-primary-300 hover:bg-primary-400 text-black"
         >
           <FileText className="w-4 h-4 mr-2" />
-          Case Study Quiz
+          Create a Case Study Quiz
         </Button>
       </Link>
       
