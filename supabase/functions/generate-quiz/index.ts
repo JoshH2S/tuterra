@@ -19,6 +19,22 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Add a simple health check endpoint
+  const url = new URL(req.url);
+  if (url.pathname.endsWith('/health')) {
+    console.log("Health check received");
+    return new Response(JSON.stringify({ 
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      apiKeys: {
+        openAI: !!openAIApiKey,
+        deepSeek: !!deepSeekApiKey
+      }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     console.log("Quiz generation request received");
     
