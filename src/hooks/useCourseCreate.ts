@@ -12,16 +12,23 @@ export const useCourseCreate = () => {
         throw new Error('User not authenticated');
       }
 
+      // Create a course object with all required fields
+      const courseData = { 
+        title: data.title,
+        user_id: user.id,
+        // Add optional fields only if they exist
+        ...(data.description ? { description: data.description } : {}),
+        ...(data.code ? { code: data.code } : {})
+      };
+
       const { error: courseError } = await supabase
         .from('courses')
-        .insert({ 
-          title: data.title,
-          description: data.description,
-          user_id: user.id,
-          status: 'active'
-        });
+        .insert(courseData);
 
-      if (courseError) throw courseError;
+      if (courseError) {
+        console.error('Course creation error:', courseError);
+        throw courseError;
+      }
       
       toast({
         title: "Course created",

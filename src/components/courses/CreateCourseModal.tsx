@@ -47,8 +47,17 @@ export const CreateCourseModal = ({
     setIsSubmitting(true);
     
     try {
-      await onSubmit({ code, title, description });
-      resetForm();
+      // Include the code field in the submission
+      const success = await onSubmit({ 
+        code: code.trim() || undefined, 
+        title: title.trim(), 
+        description: description.trim() || undefined 
+      });
+      
+      if (success) {
+        resetForm();
+        onClose();
+      }
     } finally {
       setIsSubmitting(false);
     }
