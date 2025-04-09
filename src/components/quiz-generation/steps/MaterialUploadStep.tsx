@@ -15,6 +15,7 @@ interface MaterialUploadStepProps {
   isProcessing?: boolean;
   processingProgress?: number;
   processingError?: string | null;
+  fileError?: string | null;
 }
 
 export const MaterialUploadStep = ({ 
@@ -23,7 +24,8 @@ export const MaterialUploadStep = ({
   contentLength,
   isProcessing = false,
   processingProgress = 0,
-  processingError = null
+  processingError = null,
+  fileError = null
 }: MaterialUploadStepProps) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -63,9 +65,18 @@ export const MaterialUploadStep = ({
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2">Course Material</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Upload your course material to generate questions from (max {(CONTENT_LIMITS.MAX_CHARACTERS).toLocaleString()} characters)
+          Upload your course material to generate questions from (max {(CONTENT_LIMITS.MAX_CHARACTERS).toLocaleString()} characters, approximately {Math.round(CONTENT_LIMITS.MAX_CHARACTERS / 6).toLocaleString()} words)
         </p>
       </div>
+
+      {fileError && (
+        <div className="mb-4">
+          <div className="flex items-center p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+            <AlertCircle className="flex-shrink-0 w-4 h-4 mr-2" />
+            <span className="font-medium">{fileError}</span>
+          </div>
+        </div>
+      )}
 
       {!selectedFile ? (
         <motion.div
@@ -92,6 +103,9 @@ export const MaterialUploadStep = ({
           </h3>
           <p className="text-sm text-gray-500 max-w-md mx-auto">
             Upload your lecture notes, textbook chapters, or any course material to generate relevant quiz questions
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Maximum file size: {(CONTENT_LIMITS.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)}MB
           </p>
           <Button className="mt-4 md:hidden">Browse Files</Button>
         </motion.div>

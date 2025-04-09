@@ -9,7 +9,7 @@ export const useQuizFile = () => {
 
   const validateFile = (file: File): boolean => {
     if (file.size > CONTENT_LIMITS.MAX_FILE_SIZE) {
-      setFileError(`File too large. Maximum size is ${CONTENT_LIMITS.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      setFileError(`File too large. Maximum size is ${CONTENT_LIMITS.MAX_FILE_SIZE / (1024 * 1024)}MB (approximately ${Math.round(CONTENT_LIMITS.MAX_CHARACTERS / 6)} words)`);
       return false;
     }
     setFileError(null);

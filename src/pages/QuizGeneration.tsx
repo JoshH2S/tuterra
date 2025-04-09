@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -46,6 +45,7 @@ const QuizGeneration = () => {
     setDuration,
     setSelectedCourseId,
     setDifficulty,
+    fileError,
   } = useQuizGeneration();
 
   const { createTemplate } = useCourseTemplates();
@@ -104,14 +104,13 @@ const QuizGeneration = () => {
     }
   };
 
-  // Map the internal stage types to the types expected by QuizGenerationModal
   const mapStageType = (stage: 'preparing' | 'analyzing' | 'generating' | 'saving' | 'complete' | 'error'): 
     'idle' | 'analyzing' | 'generating' | 'saving' | 'error' => {
     switch (stage) {
       case 'preparing':
         return 'idle';
       case 'complete':
-        return 'generating'; // Use generating for the complete state too
+        return 'generating';
       default:
         return stage as 'analyzing' | 'generating' | 'saving' | 'error';
     }
@@ -154,6 +153,7 @@ const QuizGeneration = () => {
                   selectedFile={selectedFile}
                   handleFileSelect={handleFileSelect}
                   contentLength={contentLength}
+                  fileError={fileError}
                 />
               </StepContainer>
             )}

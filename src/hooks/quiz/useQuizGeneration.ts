@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { QuestionDifficulty } from "@/types/quiz";
 import { Topic, Question, QuizSettings } from "@/types/quiz-generation";
-import { useQuizFileUpload } from "./useQuizFileUpload";
+import { useQuizFile } from "./useQuizFile";
 import { useQuizTopics } from "./useQuizTopics";
 import { useQuizSettings } from "./useQuizSettings";
 import { useQuizSubmission } from "./useQuizSubmission";
@@ -26,7 +26,7 @@ export const useQuizGeneration = () => {
   });
   
   // Use the refactored hooks
-  const { selectedFile, contentLength, handleFileSelect } = useQuizFileUpload();
+  const { selectedFile, contentLength, fileError, handleFileSelect } = useQuizFile();
   
   const { 
     topics, 
@@ -147,6 +147,7 @@ export const useQuizGeneration = () => {
     difficulty,
     generationProgress,
     error,
+    fileError,
     handleRetry,
     setTitle,
     handleFileSelect,
