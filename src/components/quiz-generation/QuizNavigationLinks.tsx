@@ -8,7 +8,10 @@ export const QuizNavigationLinks = () => {
   return (
     <div className="flex flex-col sm:flex-row w-full justify-center gap-4 mt-6 mb-4">
       <Link to="/quizzes/case-study-quiz" className="w-full sm:w-auto">
-        <Button variant="outline" className="w-full">
+        <Button 
+          variant="default" 
+          className="w-full bg-primary-300 hover:bg-primary-400 text-black"
+        >
           <FileText className="w-4 h-4 mr-2" />
           Case Study Quiz
         </Button>
