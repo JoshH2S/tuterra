@@ -11,14 +11,14 @@ export const useQuizActions = () => {
     for (const courseId in quizzesByCourse) {
       const quiz = quizzesByCourse[courseId].find(q => q.id === quizId);
       if (quiz && quiz.latest_response) {
-        navigate(`/quiz-results/${quiz.latest_response.id}`);
+        navigate(`/quizzes/quiz-results/${quiz.latest_response.id}`);
         return;
       }
     }
   };
 
   const handleStartQuiz = (quizId: string) => {
-    // Update path to include the parent route 'quizzes'
+    // Use the correct path with parent route 'quizzes'
     navigate(`/quizzes/take-quiz/${quizId}`);
   };
 
@@ -34,7 +34,7 @@ export const useQuizActions = () => {
 
   const handleRetakeConfirm = () => {
     if (confirmRetakeQuiz) {
-      // Update path to include the parent route 'quizzes'
+      // Use the correct path with parent route 'quizzes'
       navigate(`/quizzes/take-quiz/${confirmRetakeQuiz.id}`);
       setConfirmRetakeQuiz(null);
     }
@@ -42,7 +42,7 @@ export const useQuizActions = () => {
 
   const handleCreateQuiz = () => {
     console.log('Navigation triggered to quiz generation');
-    // Fix: use the correct path that matches the route configuration in QuizRoutes.tsx
+    // Use the correct path for quiz generation
     navigate('/quizzes/quiz-generation');
   };
 

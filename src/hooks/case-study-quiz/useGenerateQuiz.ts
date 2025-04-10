@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -30,7 +29,6 @@ export const useGenerateQuiz = () => {
   const { checkCredits, decrementCredits } = useUserCredits();
   const { subscription } = useSubscription();
 
-  // Check if a topic is STEM-related
   const isSTEMTopic = (topic: string): boolean => {
     const stemKeywords = [
       "math", "mathematics", "algebra", "calculus", "geometry", "trigonometry",
@@ -57,7 +55,6 @@ export const useGenerateQuiz = () => {
       return false;
     }
 
-    // Check for credits if user is on free plan
     if (subscription.tier === 'free') {
       const hasCredits = await checkCredits('quiz_credits');
       if (!hasCredits) {
@@ -78,7 +75,6 @@ export const useGenerateQuiz = () => {
     setQuizMetadata(null);
     setQuizId(null);
     
-    // Initialize generation progress
     setGenerationProgress({
       stage: 'preparing',
       percentComplete: 5,
@@ -97,7 +93,6 @@ export const useGenerateQuiz = () => {
         .eq('id', session.user.id)
         .single();
 
-      // Check if we're dealing with STEM topics
       const hasStemTopics = topics.some(topic => isSTEMTopic(topic.description));
       console.log("STEM topics detected:", hasStemTopics);
       
@@ -109,7 +104,6 @@ export const useGenerateQuiz = () => {
 
       console.log("Sending request to generate case study quiz with topics:", topics);
       
-      // Update progress as we begin the generation
       setGenerationProgress({
         stage: 'generating',
         percentComplete: 30,
@@ -159,7 +153,6 @@ export const useGenerateQuiz = () => {
         throw new Error("Invalid quiz data received from server");
       }
       
-      // Validate and normalize question data
       const validatedQuestions = data.quizQuestions.map((q: any) => ({
         question: q.question || '',
         options: {
@@ -174,7 +167,6 @@ export const useGenerateQuiz = () => {
         explanation: q.explanation || '',
         difficulty: difficulty,
         
-        // Include case study data if available
         ...(q.caseStudy ? {
           caseStudy: {
             source: q.caseStudy.source || '',
@@ -184,46 +176,36 @@ export const useGenerateQuiz = () => {
           }
         } : {}),
         
-        // Include analysis type if available
         ...(q.analysisType ? { analysisType: q.analysisType } : {}),
         
-        // Include formula if available (for STEM questions)
         ...(q.formula ? { formula: q.formula } : {}),
         
-        // Include visualization prompt if available (for STEM questions)
         ...(q.visualizationPrompt ? { visualizationPrompt: q.visualizationPrompt } : {}),
         
-        // Include model information
         ...(q.generatedBy ? { generatedBy: q.generatedBy } : {})
       }));
       
       setQuizQuestions(validatedQuestions);
       
-      // Store news sources if available
       if (data.metadata && Array.isArray(data.metadata.newsSourcesUsed)) {
         setNewsSources(data.metadata.newsSourcesUsed);
       }
       
-      // Store quiz metadata
-      if (data.metadata) {
-        const enhancedMetadata = {
-          courseId: data.metadata.courseId || selectedCourseId,
-          difficulty: difficulty,
-          topics: data.metadata.topics || topics.map(t => t.description),
-          totalPoints: data.metadata.totalPoints || validatedQuestions.reduce((sum, q) => sum + q.points, 0),
-          estimatedDuration: data.metadata.estimatedDuration || 30,
-          stemTopicsDetected: data.metadata.stemTopicsDetected || hasStemTopics,
-          modelUsed: data.metadata.modelUsed || 'openai',
-        };
-        
-        setQuizMetadata(enhancedMetadata);
-      }
+      const enhancedMetadata = {
+        courseId: data.metadata.courseId || selectedCourseId,
+        difficulty: difficulty,
+        topics: data.metadata.topics || topics.map(t => t.description),
+        totalPoints: data.metadata.totalPoints || validatedQuestions.reduce((sum, q) => sum + q.points, 0),
+        estimatedDuration: data.metadata.estimatedDuration || 30,
+        stemTopicsDetected: data.metadata.stemTopicsDetected || hasStemTopics,
+        modelUsed: data.metadata.modelUsed || 'openai',
+      };
+      
+      setQuizMetadata(enhancedMetadata);
 
-      // Generate a default title based on topics and model used
       const modelInfo = data.metadata?.modelUsed === 'deepseek' ? 'STEM-Enhanced ' : '';
       const defaultTitle = `${modelInfo}Case Study: ${topics[0].description}${topics.length > 1 ? ' & More' : ''}`;
 
-      // Save quiz to database using the shared hook
       try {
         const estimatedDuration = data.metadata?.estimatedDuration || 30;
         
@@ -238,7 +220,6 @@ export const useGenerateQuiz = () => {
           console.log("Quiz saved with ID:", quizId);
           setQuizId(quizId);
           
-          // Decrement credits for free users only
           if (subscription.tier === 'free') {
             await decrementCredits('quiz_credits');
           }
@@ -309,7 +290,6 @@ export const useGenerateQuiz = () => {
     }
   };
 
-  // Method to handle retry when an error occurs
   const handleRetry = () => {
     setGenerationProgress({
       stage: 'preparing',
