@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,7 +13,6 @@ import {
   ScrollText,
   Users,
   FileQuestion,
-  CreditCard,
   LucideIcon
 } from "lucide-react";
 
@@ -48,7 +46,7 @@ export const navigationItems: NavigationItem[] = [
   },
   { 
     icon: FileQuestion, 
-    label: "Assessments", 
+    label: "Skill Assessments", 
     path: "/assessments" 
   },
   { 
@@ -60,11 +58,6 @@ export const navigationItems: NavigationItem[] = [
     icon: BrainCircuit, 
     label: "Interview Simulator", 
     path: "/interview-simulator" 
-  },
-  { 
-    icon: CreditCard, 
-    label: "Pricing", 
-    path: "/pricing" 
   },
   { 
     icon: UserRoundCog, 
