@@ -18,6 +18,42 @@ function selectModelForChunk(chunk: ContentChunk, openAIApiKey: string, deepSeek
 }
 
 /**
+ * Shuffles the options of a quiz question while preserving the correct answer
+ * @param question The original question with options
+ * @returns A new question object with shuffled options and updated correctAnswer
+ */
+function shuffleQuestionOptions(question: Question): Question {
+  if (!question.options || !question.correctAnswer) {
+    return question;
+  }
+
+  // Store the correct answer text
+  const correctAnswerText = question.options[question.correctAnswer];
+  
+  // Get all option entries and shuffle them
+  const optionEntries = Object.entries(question.options);
+  const shuffledEntries = [...optionEntries].sort(() => Math.random() - 0.5);
+  
+  // Create new options object with shuffled entries
+  const shuffledOptions: Record<string, string> = {};
+  shuffledEntries.forEach(([key, value], index) => {
+    const newKey = String.fromCharCode(65 + index); // 'A', 'B', 'C', 'D'
+    shuffledOptions[newKey] = value;
+    
+    // Update correct answer if this is the correct option
+    if (value === correctAnswerText) {
+      question.correctAnswer = newKey;
+    }
+  });
+  
+  // Return new question with shuffled options
+  return {
+    ...question,
+    options: shuffledOptions
+  };
+}
+
+/**
  * Generates quiz questions by sending requests to AI APIs based on content type
  */
 export async function generateQuizFromChunks(
@@ -108,8 +144,12 @@ export async function generateQuizFromChunks(
   console.log(`Models used: ${Array.from(modelsUsed).join(', ')}`);
   console.log(`STEM topics detected: ${stemDetected}`);
   
+  // Shuffle options for all questions
+  const shuffledQuestions = allQuestions.map(q => shuffleQuestionOptions(q));
+  console.log(`Shuffled options for all ${shuffledQuestions.length} questions`);
+  
   return { 
-    questions: allQuestions, 
+    questions: shuffledQuestions, 
     modelsUsed, 
     stemDetected 
   };

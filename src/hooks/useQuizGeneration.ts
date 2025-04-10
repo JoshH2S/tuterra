@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { shuffleQuestionsOptions } from "@/utils/quiz-helpers";
 
 export interface Topic {
   description: string;
@@ -61,14 +61,12 @@ export const useQuizGeneration = () => {
         return;
       }
 
-      // Create the quiz with title, user_id, and duration
       const quizData = {
         title: `Quiz for ${topics.map(t => t.description).join(", ")}`,
         user_id: session.user.id,
         duration_minutes: duration
       };
 
-      // Only add course_id if it exists
       if (courseId) {
         Object.assign(quizData, { course_id: courseId });
       }
@@ -81,7 +79,6 @@ export const useQuizGeneration = () => {
 
       if (quizError) throw quizError;
 
-      // Insert all questions
       const questionsToInsert = questions.map(q => ({
         quiz_id: quiz.id,
         question: q.question,
@@ -171,10 +168,11 @@ export const useQuizGeneration = () => {
       }
 
       const data = await response.json();
-      setQuizQuestions(data.quizQuestions);
       
-      // Save the generated quiz to the database
-      await saveQuizToDatabase(data.quizQuestions);
+      const shuffledQuestions = shuffleQuestionsOptions(data.quizQuestions);
+      setQuizQuestions(shuffledQuestions);
+      
+      await saveQuizToDatabase(shuffledQuestions);
 
       toast({
         title: "Success",

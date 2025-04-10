@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -10,6 +9,40 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+/**
+ * Shuffles the options of a quiz question while preserving the correct answer
+ */
+function shuffleQuestionOptions(question: any): any {
+  if (!question.options || !question.correctAnswer) {
+    return question;
+  }
+
+  // Store the correct answer text
+  const correctAnswerText = question.options[question.correctAnswer];
+  
+  // Get all option entries and shuffle them
+  const optionEntries = Object.entries(question.options);
+  const shuffledEntries = [...optionEntries].sort(() => Math.random() - 0.5);
+  
+  // Create new options object with shuffled entries
+  const shuffledOptions: Record<string, string> = {};
+  shuffledEntries.forEach(([key, value], index) => {
+    const newKey = String.fromCharCode(65 + index); // 'A', 'B', 'C', 'D'
+    shuffledOptions[newKey] = value;
+    
+    // Update correct answer if this is the correct option
+    if (value === correctAnswerText) {
+      question.correctAnswer = newKey;
+    }
+  });
+  
+  // Return new question with shuffled options
+  return {
+    ...question,
+    options: shuffledOptions
+  };
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -144,15 +177,19 @@ serve(async (req) => {
         generatedBy: useDeepSeek ? 'deepseek' : 'openai'
       }));
 
+      // Shuffle options for all questions
+      const shuffledQuestions = questionsWithModel.map((q: any) => shuffleQuestionOptions(q));
+      console.log(`Shuffled options for all ${shuffledQuestions.length} questions`);
+
       // Calculate total points
-      const totalPoints = questionsWithModel.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
+      const totalPoints = shuffledQuestions.reduce((sum: number, q: any) => sum + (q.points || 1), 0);
       
       // Estimate duration (avg 1 min per question)
-      const estimatedDuration = questionsWithModel.length * 1;
+      const estimatedDuration = shuffledQuestions.length * 1;
 
       return new Response(
         JSON.stringify({ 
-          quizQuestions: questionsWithModel,
+          quizQuestions: shuffledQuestions,
           metadata: {
             courseId,
             difficulty,

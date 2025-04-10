@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -9,6 +8,7 @@ import { useQuizMetadata } from "./useQuizMetadata";
 import { useGenerationProgress, GenerationStage } from "./useGenerationProgress";
 import { useQuizCredits } from "./useQuizCredits";
 import { isSTEMTopic } from "./utils/stemTopicDetector";
+import { shuffleQuestionsOptions } from "@/utils/quiz-helpers";
 
 export const useGenerateQuiz = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -147,7 +147,10 @@ export const useGenerateQuiz = () => {
   ) => {
     // Validate and process questions
     const validatedQuestions = validateQuestions(data.quizQuestions, difficulty);
-    setQuizQuestions(validatedQuestions);
+    
+    // Shuffle options for all questions
+    const shuffledQuestions = shuffleQuestionsOptions(validatedQuestions);
+    setQuizQuestions(shuffledQuestions);
     
     // Process news sources if available
     if (data.metadata && Array.isArray(data.metadata.newsSourcesUsed)) {
@@ -155,11 +158,11 @@ export const useGenerateQuiz = () => {
     }
     
     // Create enhanced metadata
-    const enhancedMetadata = createEnhancedMetadata(data, selectedCourseId, difficulty, topics, validatedQuestions, hasStemTopics);
+    const enhancedMetadata = createEnhancedMetadata(data, selectedCourseId, difficulty, topics, shuffledQuestions, hasStemTopics);
     setQuizMetadata(enhancedMetadata);
 
-    // Save quiz to database
-    await saveGeneratedQuiz(validatedQuestions, data, selectedCourseId, enhancedMetadata);
+    // Save quiz to database with shuffled options
+    await saveGeneratedQuiz(shuffledQuestions, data, selectedCourseId, enhancedMetadata);
   };
 
   const validateQuestions = (quizQuestions: any[], difficulty: QuestionDifficulty): Question[] => {
