@@ -26,6 +26,7 @@ export interface Question {
     url?: string;
   };
   analysisType?: string;
+  conceptTested?: string;
 }
 
 export interface CaseStudyQuestion extends Question {
@@ -54,4 +55,8 @@ export const CONTENT_LIMITS = {
 
 export const isCaseStudyQuestion = (question: Question): question is CaseStudyQuestion => {
   return question.caseStudy !== undefined;
+};
+
+export const isRegularQuestion = (question: Question): boolean => {
+  return !isCaseStudyQuestion(question);
 };

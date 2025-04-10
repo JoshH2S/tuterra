@@ -2,9 +2,8 @@
 import { 
   Question, 
   CaseStudyQuestion, 
-  isRegularQuestion, 
   isCaseStudyQuestion 
-} from "@/types/quiz";
+} from "@/types/quiz-generation";
 import { DifficultyBadge } from "./DifficultyBadge";
 import { QuestionExplanation } from "./QuestionExplanation";
 import { ExternalLink } from "lucide-react";
@@ -120,7 +119,7 @@ export const QuizQuestionItem = ({ question, index, showAnswers = false }: QuizQ
             <span>{question.points || 1} points</span>
             
             {/* Only show concept information for regular questions */}
-            {isRegularQuestion(question) && question.conceptTested && (
+            {!isCaseStudy && question.conceptTested && (
               <>
                 <span className="hidden sm:inline">•</span>
                 <span>Concept: {question.conceptTested}</span>

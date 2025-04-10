@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { StepHeader } from "@/components/quiz-generation/StepHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Eye, Loader2, Wand2 } from "lucide-react";
 import { Question } from "@/types/quiz";
 import { EmptyState } from "@/components/quiz-generation/EmptyState";
