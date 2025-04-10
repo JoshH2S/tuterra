@@ -19,10 +19,10 @@ export function shuffleQuestionOptions(question: Question): Question {
   const shuffledEntries = [...optionEntries].sort(() => Math.random() - 0.5);
   
   // Create new options object with shuffled entries
-  const shuffledOptions: Record<string, string> = {};
+  const newOptions: Record<string, string> = {};
   shuffledEntries.forEach(([key, value], index) => {
     const newKey = String.fromCharCode(65 + index); // 'A', 'B', 'C', 'D'
-    shuffledOptions[newKey] = value;
+    newOptions[newKey] = value;
     
     // Update correct answer if this is the correct option
     if (value === correctAnswerText) {
@@ -33,7 +33,7 @@ export function shuffleQuestionOptions(question: Question): Question {
   // Return new question with shuffled options
   return {
     ...question,
-    options: shuffledOptions,
+    options: newOptions as Question['options'],
     correctAnswer: question.correctAnswer
   };
 }

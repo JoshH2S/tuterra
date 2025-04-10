@@ -49,7 +49,8 @@ function shuffleQuestionOptions(question: Question): Question {
   // Return new question with shuffled options
   return {
     ...question,
-    options: shuffledOptions
+    options: shuffledOptions,
+    correctAnswer: question.correctAnswer
   };
 }
 

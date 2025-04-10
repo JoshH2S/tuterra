@@ -1,7 +1,9 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Topic, Question, QuestionDifficulty, QuizMetadata } from "@/types/quiz";
+import { Topic, Question as QuizQuestion, QuestionDifficulty, QuizMetadata } from "@/types/quiz";
+import { Question as GenerationQuestion } from "@/types/quiz-generation";
 import { useQuizSave } from "@/hooks/quiz/useQuizSave";
 import { useNewsSourcesState } from "./useNewsSourcesState";
 import { useQuizMetadata } from "./useQuizMetadata";
@@ -12,7 +14,7 @@ import { shuffleQuestionsOptions } from "@/utils/quiz-helpers";
 
 export const useGenerateQuiz = () => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const { newsSources, setNewsSources } = useNewsSourcesState();
@@ -145,12 +147,14 @@ export const useGenerateQuiz = () => {
     selectedCourseId: string,
     hasStemTopics: boolean
   ) => {
-    // Validate and process questions
-    const validatedQuestions = validateQuestions(data.quizQuestions, difficulty);
+    // Shuffle options for all questions from the generation type
+    const shuffledGenerationQuestions = shuffleQuestionsOptions(data.quizQuestions as GenerationQuestion[]);
     
-    // Shuffle options for all questions
-    const shuffledQuestions = shuffleQuestionsOptions(validatedQuestions);
-    setQuizQuestions(shuffledQuestions);
+    // Validate and process questions, converting from GenerationQuestion to QuizQuestion
+    const validatedQuestions = validateQuestions(shuffledGenerationQuestions, difficulty);
+    
+    // Set the converted and validated questions
+    setQuizQuestions(validatedQuestions);
     
     // Process news sources if available
     if (data.metadata && Array.isArray(data.metadata.newsSourcesUsed)) {
@@ -158,15 +162,15 @@ export const useGenerateQuiz = () => {
     }
     
     // Create enhanced metadata
-    const enhancedMetadata = createEnhancedMetadata(data, selectedCourseId, difficulty, topics, shuffledQuestions, hasStemTopics);
+    const enhancedMetadata = createEnhancedMetadata(data, selectedCourseId, difficulty, topics, validatedQuestions, hasStemTopics);
     setQuizMetadata(enhancedMetadata);
 
     // Save quiz to database with shuffled options
-    await saveGeneratedQuiz(shuffledQuestions, data, selectedCourseId, enhancedMetadata);
+    await saveGeneratedQuiz(validatedQuestions, data, selectedCourseId, enhancedMetadata);
   };
 
-  const validateQuestions = (quizQuestions: any[], difficulty: QuestionDifficulty): Question[] => {
-    return quizQuestions.map((q: any) => ({
+  const validateQuestions = (quizQuestions: GenerationQuestion[], difficulty: QuestionDifficulty): QuizQuestion[] => {
+    return quizQuestions.map((q: GenerationQuestion) => ({
       question: q.question || '',
       options: {
         A: q.options?.A || '',
@@ -201,7 +205,7 @@ export const useGenerateQuiz = () => {
     selectedCourseId: string, 
     difficulty: QuestionDifficulty, 
     topics: Topic[],
-    validatedQuestions: Question[],
+    validatedQuestions: QuizQuestion[],
     hasStemTopics: boolean
   ): QuizMetadata => {
     return {
@@ -216,7 +220,7 @@ export const useGenerateQuiz = () => {
   };
 
   const saveGeneratedQuiz = async (
-    validatedQuestions: Question[], 
+    validatedQuestions: QuizQuestion[], 
     data: any, 
     selectedCourseId: string,
     enhancedMetadata: QuizMetadata
