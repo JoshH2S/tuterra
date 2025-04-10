@@ -4,7 +4,7 @@ import { StepHeader } from "@/components/quiz-generation/StepHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Eye, Loader2, Wand2 } from "lucide-react";
-import { Question } from "@/types/quiz";
+import { Question, isCaseStudyQuestion, isRegularQuestion } from "@/types/quiz";
 import { EmptyState } from "@/components/quiz-generation/EmptyState";
 import { Quiz } from "@/components/quiz-generation/QuizOutput";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -52,6 +52,10 @@ export const QuizPreviewStep = ({
   // Determine which questions to display
   const displayQuestions = showAllQuestions ? validQuestions : validQuestions.slice(0, 5);
   const hiddenQuestionsCount = validQuestions.length - 5;
+
+  // Count question types for summary
+  const caseStudyCount = validQuestions.filter(isCaseStudyQuestion).length;
+  const regularCount = validQuestions.filter(isRegularQuestion).length;
 
   // Create a wrapper function for the publish button
   const onPublish: MouseEventHandler<HTMLButtonElement> = () => {
@@ -102,6 +106,33 @@ export const QuizPreviewStep = ({
                   className="w-full"
                 />
               </div>
+              
+              {/* Quiz summary section */}
+              {validQuestions.length > 0 && (
+                <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                  <h4 className="font-medium mb-2">Quiz Summary</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Total Questions:</span>
+                      <span className="font-medium">{validQuestions.length}</span>
+                    </div>
+                    
+                    {/* Show question type breakdown if both types exist */}
+                    {caseStudyCount > 0 && regularCount > 0 && (
+                      <>
+                        <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                          <span>Case Study Questions:</span>
+                          <span>{caseStudyCount}</span>
+                        </div>
+                        <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                          <span>Regular Questions:</span>
+                          <span>{regularCount}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
               
               <div className="flex items-center space-x-2 py-2">
                 <Checkbox 
