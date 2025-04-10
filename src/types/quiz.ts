@@ -1,4 +1,3 @@
-
 export type QuestionDifficulty = 'middle_school' | 'high_school' | 'university' | 'post_graduate';
 
 export interface Topic {
@@ -58,6 +57,8 @@ export interface QuizMetadata {
   topics: string[];
   totalPoints: number;
   estimatedDuration: number;
+  stemTopicsDetected?: boolean;
+  modelUsed?: string;
 }
 
 export const DIFFICULTY_COLORS = {
