@@ -1,3 +1,4 @@
+
 export type QuestionDifficulty = 'middle_school' | 'high_school' | 'university' | 'post_graduate';
 
 export interface Topic {
@@ -22,6 +23,9 @@ export interface BaseQuestion {
 
 export interface Question extends BaseQuestion {
   difficulty: QuestionDifficulty;
+  formula?: string; // Optional LaTeX formula for STEM questions
+  visualizationPrompt?: string; // Optional description for visualization
+  generatedBy?: string; // Which model generated this question
 }
 
 export interface CaseStudyQuestion extends BaseQuestion {
@@ -33,12 +37,18 @@ export interface CaseStudyQuestion extends BaseQuestion {
     url?: string;
   };
   analysisType: "critical_thinking" | "application" | "evaluation" | "synthesis";
+  formula?: string; // Optional LaTeX formula for STEM questions
+  visualizationPrompt?: string; // Optional description for visualization
+  generatedBy?: string; // Which model generated this question
 }
 
 export interface RegularQuestion extends BaseQuestion {
   difficulty: QuestionDifficulty;
   conceptTested: string;
   learningObjective: string;
+  formula?: string; // Optional LaTeX formula for STEM questions
+  visualizationPrompt?: string; // Optional description for visualization
+  generatedBy?: string; // Which model generated this question
 }
 
 // Type guard to check if a question is a RegularQuestion

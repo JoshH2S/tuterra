@@ -27,6 +27,9 @@ export interface Question {
   };
   analysisType?: string;
   conceptTested?: string;
+  formula?: string; // Optional LaTeX formula for STEM questions
+  visualizationPrompt?: string; // Optional description for visualization
+  generatedBy?: string; // Which model generated this question
 }
 
 export interface CaseStudyQuestion extends Question {
