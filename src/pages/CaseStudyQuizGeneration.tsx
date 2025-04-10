@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Book, 
@@ -6,7 +5,7 @@ import {
   Newspaper, 
   Eye 
 } from "lucide-react";
-import { Question, QuestionDifficulty, Topic } from "@/types/quiz";
+import { QuestionDifficulty, Topic } from "@/types/quiz";
 import { StepContainer } from "@/components/quiz-generation/StepContainer";
 import { CourseSetupStep } from "@/components/case-study-quiz/steps/CourseSetupStep";
 import { TopicsSetupStep } from "@/components/case-study-quiz/steps/TopicsSetupStep";
@@ -102,7 +101,6 @@ const CaseStudyQuizGeneration = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Floating Header with Progress */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4">
           <div className="h-16 flex items-center justify-between">
@@ -186,7 +184,6 @@ const CaseStudyQuizGeneration = () => {
             )}
           </AnimatePresence>
 
-          {/* Navigation */}
           <NavigationFooter
             currentStep={step}
             totalSteps={4}
@@ -197,14 +194,12 @@ const CaseStudyQuizGeneration = () => {
             onGenerate={step === 4 ? handleGenerateClick : undefined}
           />
           
-          {/* Add disclaimer at the bottom of the page */}
           <div className="mt-8">
             <QuizDisclaimer />
           </div>
         </div>
       </main>
       
-      {/* Generate Quiz Confirmation Dialog */}
       <GenerateQuizDialog
         open={showGenerateDialog}
         onOpenChange={setShowGenerateDialog}
