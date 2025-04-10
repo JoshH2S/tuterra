@@ -27,6 +27,11 @@ export const PreviewStep = ({
   isProcessing 
 }: PreviewStepProps) => {
   const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
+  const [showAllQuestions, setShowAllQuestions] = useState(false);
+
+  // Determine which questions to display based on showAllQuestions
+  const displayQuestions = showAllQuestions ? questions : questions.slice(0, 5);
+  const hiddenQuestionsCount = questions.length - 5;
 
   return (
     <div className="space-y-6">
@@ -58,7 +63,7 @@ export const PreviewStep = ({
         <div className="space-y-6">
           <QuizSummary questions={questions} />
           <div className="space-y-4">
-            {questions.slice(0, 6).map((question, index) => (
+            {displayQuestions.map((question, index) => (
               <Card key={index} className="overflow-hidden">
                 <CardContent className="p-4 sm:p-6">
                   <h3 className="font-medium">Question {index + 1}</h3>
@@ -83,10 +88,21 @@ export const PreviewStep = ({
                 </CardContent>
               </Card>
             ))}
-            {questions.length > 6 && (
-              <p className="text-center text-gray-500 mt-4">
-                + {questions.length - 6} more questions
-              </p>
+            
+            {/* Show "See More" button only if there are more than 5 questions */}
+            {questions.length > 5 && (
+              <div className="flex flex-col items-center mt-4">
+                <p className="text-center text-gray-500 mb-2">
+                  {showAllQuestions ? 'Showing all questions' : `+ ${hiddenQuestionsCount} more question${hiddenQuestionsCount !== 1 ? 's' : ''}`}
+                </p>
+                <Button 
+                  onClick={() => setShowAllQuestions(!showAllQuestions)} 
+                  variant="outline"
+                  size="sm"
+                >
+                  {showAllQuestions ? 'Show Less' : 'Show All Questions'}
+                </Button>
+              </div>
             )}
           </div>
           <div className="flex justify-center mt-4">

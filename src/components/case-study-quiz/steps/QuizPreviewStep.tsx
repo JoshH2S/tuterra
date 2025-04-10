@@ -39,14 +39,19 @@ export const QuizPreviewStep = ({
   // Ensure we always have a valid array of questions
   const validQuestions = Array.isArray(questions) ? questions : [];
   
-  // State for showing answers
+  // State for showing answers and controlling question display
   const [showAnswers, setShowAnswers] = useState(false);
+  const [showAllQuestions, setShowAllQuestions] = useState(false);
   
   // Use the quiz publishing hook
   const { handlePublish, isPublishing } = useQuizPublishing();
 
   // Add state for the generate dialog
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+
+  // Determine which questions to display
+  const displayQuestions = showAllQuestions ? validQuestions : validQuestions.slice(0, 5);
+  const hiddenQuestionsCount = validQuestions.length - 5;
 
   // Create a wrapper function for the publish button
   const onPublish: MouseEventHandler<HTMLButtonElement> = () => {
@@ -113,7 +118,26 @@ export const QuizPreviewStep = ({
               </div>
               
               <h3 className="text-lg font-semibold mb-4">Quiz Preview</h3>
-              <Quiz questions={validQuestions} showAnswers={showAnswers} />
+              
+              {/* Show limited questions with option to see more */}
+              <div className="space-y-4">
+                <Quiz questions={displayQuestions} showAnswers={showAnswers} />
+                
+                {validQuestions.length > 5 && (
+                  <div className="flex flex-col items-center mt-4">
+                    <p className="text-center text-gray-500 mb-2">
+                      {showAllQuestions ? 'Showing all questions' : `+ ${hiddenQuestionsCount} more question${hiddenQuestionsCount !== 1 ? 's' : ''}`}
+                    </p>
+                    <Button 
+                      onClick={() => setShowAllQuestions(!showAllQuestions)} 
+                      variant="outline"
+                      size="sm"
+                    >
+                      {showAllQuestions ? 'Show Less' : 'Show All Questions'}
+                    </Button>
+                  </div>
+                )}
+              </div>
               
               {/* Add publish button after quiz is displayed */}
               <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-3 items-center">
