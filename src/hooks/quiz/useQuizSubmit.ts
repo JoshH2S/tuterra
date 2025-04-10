@@ -3,6 +3,7 @@ import { useState } from "react";
 import { QuizQuestion } from "./quizTypes";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 export const useQuizSubmit = (
   quizId: string,
@@ -10,6 +11,7 @@ export const useQuizSubmit = (
   onQuizSubmitted: () => void
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmitQuiz = async (selectedAnswers: Record<number, string>) => {
     if (!quizId) {
@@ -24,6 +26,8 @@ export const useQuizSubmit = (
     setIsSubmitting(true);
 
     try {
+      console.log("Submitting quiz:", { quizId, selectedAnswers });
+      
       // Calculate the score
       let correctAnswers = 0;
       const questionResponses = questions.map((question, index) => {
@@ -35,9 +39,10 @@ export const useQuizSubmit = (
         }
         
         return {
-          question_id: question.id,
+          question_id: question.id || `question_${index}`,
           student_answer: userAnswer,
           is_correct: isCorrect,
+          topic: question.topic || "general"
         };
       });
 
@@ -50,7 +55,7 @@ export const useQuizSubmit = (
         throw new Error("User not authenticated");
       }
 
-      const { error } = await supabase.from("quiz_responses").insert({
+      const responseData = {
         quiz_id: quizId,
         student_id: userData.user.id,
         score: Math.round(score),
@@ -58,17 +63,31 @@ export const useQuizSubmit = (
         total_questions: questions.length,
         question_responses: questionResponses,
         completed_at: new Date().toISOString(),
-      });
+      };
+
+      console.log("Inserting quiz response:", responseData);
+
+      const { data, error } = await supabase
+        .from("quiz_responses")
+        .insert(responseData)
+        .select()
+        .single();
 
       if (error) {
+        console.error("Supabase error details:", error);
         throw error;
       }
+
+      console.log("Quiz response saved successfully:", data);
 
       toast({
         title: "Quiz Submitted",
         description: `Your score: ${Math.round(score)}%`,
       });
 
+      // Navigate to quiz results page with the response ID
+      navigate(`/quizzes/quiz-results/${data.id}`);
+      
       // Call the callback function to notify parent components
       onQuizSubmitted();
     } catch (error) {

@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 import { QuizQuestionCard } from "./QuizQuestionCard";
 import { QuizNavigation } from "./QuizNavigation";
@@ -35,7 +34,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
   onQuizSubmitted,
   onExitQuiz
 }) => {
-  const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [showExitDialog, setShowExitDialog] = useState(false);
