@@ -34,5 +34,8 @@ export const useQuizFile = () => {
     contentLength,
     fileError,
     handleFileSelect,
+    setSelectedFile,
+    setContentLength,
+    setFileError
   };
 };

@@ -13,7 +13,7 @@ export const useQuizTopics = () => {
     const newTopics = [...topics];
     newTopics[index] = {
       ...newTopics[index],
-      [field]: field === 'numQuestions' ? Number(value) : value
+      [field]: value
     };
     setTopics(newTopics);
   };
@@ -28,8 +28,9 @@ export const useQuizTopics = () => {
 
   return {
     topics,
+    setTopics,
     addTopic,
     updateTopic,
-    removeTopic,
+    removeTopic
   };
 };
