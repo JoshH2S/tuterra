@@ -18,7 +18,8 @@ export const useQuizActions = () => {
   };
 
   const handleStartQuiz = (quizId: string) => {
-    navigate(`/take-quiz/${quizId}`);
+    // Update path to include the parent route 'quizzes'
+    navigate(`/quizzes/take-quiz/${quizId}`);
   };
 
   const handleRetakeQuiz = (quizId: string, quizzesByCourse: Record<string, Quiz[]>) => {
@@ -33,7 +34,8 @@ export const useQuizActions = () => {
 
   const handleRetakeConfirm = () => {
     if (confirmRetakeQuiz) {
-      navigate(`/take-quiz/${confirmRetakeQuiz.id}`);
+      // Update path to include the parent route 'quizzes'
+      navigate(`/quizzes/take-quiz/${confirmRetakeQuiz.id}`);
       setConfirmRetakeQuiz(null);
     }
   };
