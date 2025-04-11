@@ -23,11 +23,15 @@ export const useQuizzesProcessor = (
             quiz
           });
 
+          // Determine quiz status
+          let status: 'not_attempted' | 'in_progress' | 'completed' = 'not_attempted';
+          if (latestResponse) {
+            status = latestResponse.completed_at ? 'completed' : 'in_progress';
+          }
+
           // Match the score calculation from the quiz results page
-          // In quiz results, the score is displayed directly from the response score field
           let scorePercentage = 0;
           if (latestResponse && latestResponse.total_questions > 0) {
-            // Use the score directly as stored in the response
             scorePercentage = latestResponse.score;
           }
             
@@ -39,7 +43,7 @@ export const useQuizzesProcessor = (
             previousScore: scorePercentage,
             attemptNumber: latestResponse?.attempt_number || 0,
             totalQuestions: latestResponse?.total_questions || quiz.question_count || 10,
-            status: latestResponse ? 'completed' : 'not_attempted',
+            status,
             allowRetake: quiz.allow_retakes
           };
         });

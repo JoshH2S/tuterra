@@ -6,26 +6,47 @@ import { useState, useEffect } from "react";
  * based on screen width and touch capabilities
  * @returns boolean indicating if the device is mobile
  */
-export function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(false);
+export function useIsMobile(breakpoint = 768): boolean {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < breakpoint);
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [breakpoint]);
+
+  return isMobile;
+}
+
+/**
+ * Hook to detect if the current device supports touch
+ * @returns boolean indicating if the device supports touch
+ */
+export function useTouchDevice(): boolean {
+  const [isTouch, setIsTouch] = useState(false);
   
   useEffect(() => {
-    // Function to check if device is mobile
-    const checkMobile = () => {
-      const isMobileWidth = window.innerWidth <= 768;
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      setIsMobile(isMobileWidth && isTouchDevice);
-    };
+    if (typeof window === "undefined") return;
     
-    // Check on mount
-    checkMobile();
+    // Check if device supports touch
+    const isTouchDevice = 
+      'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0 ||
+      (navigator as any).msMaxTouchPoints > 0;
     
-    // Add event listener for resize
-    window.addEventListener('resize', checkMobile);
-    
-    // Clean up event listener
-    return () => window.removeEventListener('resize', checkMobile);
+    setIsTouch(isTouchDevice);
   }, []);
   
-  return isMobile;
+  return isTouch;
 }

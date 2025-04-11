@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { AdaptiveLoading } from "@/components/shared/LoadingStates";
 import { toast } from "@/hooks/use-toast";
 import { ChevronLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QuizScore {
   id: string;
@@ -35,6 +36,7 @@ export default function CourseGrades() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [courseName, setCourseName] = useState("");
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchGrades = async () => {
@@ -62,35 +64,66 @@ export default function CourseGrades() {
           setCourseName(courseData.title);
         }
 
-        const { data: scores, error: scoresError } = await supabase
-          .from('student_quiz_scores')
+        // Get quiz responses directly to ensure we have the most accurate data
+        const { data: responses, error: responsesError } = await supabase
+          .from('quiz_responses')
           .select(`
             id,
             quiz_id,
             score,
-            max_score,
-            taken_at,
-            quiz:quizzes(title)
+            total_questions,
+            completed_at,
+            quizzes(
+              title,
+              course_id
+            )
           `)
           .eq('student_id', user.id)
-          .eq('course_id', courseId)
-          .order('taken_at', { ascending: false });
+          .neq('completed_at', null) // Only completed quizzes
+          .order('completed_at', { ascending: false });
 
-        if (scoresError) {
-          throw scoresError;
+        if (responsesError) {
+          throw responsesError;
         }
 
-        if (scores && scores.length > 0) {
-          const totalScores = scores.reduce((acc, curr) => acc + ((curr.score / curr.max_score) * 100), 0);
-          const averageGrade = totalScores / scores.length;
+        // Filter to only include quizzes from the current course
+        const courseResponses = responses?.filter(
+          r => r.quizzes && r.quizzes.course_id === courseId
+        ) || [];
+        
+        if (courseResponses.length > 0) {
+          // Calculate average grade
+          const totalScores = courseResponses.reduce(
+            (acc, curr) => acc + ((curr.score / 100) * 100), 
+            0
+          );
+          const averageGrade = totalScores / courseResponses.length;
           
           setCourseGrade({
-            total_quizzes: scores.length,
+            total_quizzes: courseResponses.length,
             average_grade: averageGrade
           });
-        }
 
-        setQuizScores(scores || []);
+          // Format the data for display
+          const formattedScores = courseResponses.map(response => ({
+            id: response.id,
+            quiz_id: response.quiz_id,
+            score: response.score,
+            max_score: 100, // Scores are stored as percentages
+            taken_at: response.completed_at || new Date().toISOString(),
+            quiz: {
+              title: response.quizzes?.title || 'Unknown Quiz'
+            }
+          }));
+
+          setQuizScores(formattedScores);
+        } else {
+          setCourseGrade({
+            total_quizzes: 0,
+            average_grade: 0
+          });
+          setQuizScores([]);
+        }
       } catch (error) {
         console.error('Error fetching grades:', error);
         toast({
@@ -163,7 +196,10 @@ export default function CourseGrades() {
           </Card>
         ) : (
           quizScores.map((score) => (
-            <Card key={score.id} className="hover:shadow-md transition-shadow w-full">
+            <Card 
+              key={score.id} 
+              className="hover:shadow-md transition-shadow w-full touch-manipulation"
+            >
               <CardContent className="py-4 sm:py-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4">
                   <div>
