@@ -1,17 +1,19 @@
-
 import { motion } from "framer-motion";
-
 export function DashboardPreview() {
-  return (
-    <section className="py-20 bg-white dark:bg-gray-800">
+  return <section className="py-20 bg-white dark:bg-gray-800">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
+          <motion.div initial={{
+          opacity: 0,
+          x: -20
+        }} whileInView={{
+          opacity: 1,
+          x: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.8
+        }}>
             <h2 className="text-3xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
               Powerful Dashboard for Enhanced Learning
             </h2>
@@ -32,22 +34,21 @@ export function DashboardPreview() {
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="relative"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          x: 20
+        }} whileInView={{
+          opacity: 1,
+          x: 0
+        }} viewport={{
+          once: true
+        }} transition={{
+          duration: 0.8
+        }} className="relative">
             <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl transform rotate-2 opacity-70 dark:opacity-50 -z-10" />
-            <img 
-              src="/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png" 
-              alt="Dashboard Preview" 
-              className="relative rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-full h-auto"
-            />
+            <img alt="Dashboard Preview" className="relative rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 w-full h-auto" src="/lovable-uploads/d88b3ac6-4f44-4e30-b4d8-32d7190ea211.png" />
           </motion.div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }
