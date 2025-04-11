@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useQuizzesFetch } from "@/hooks/useQuizzesFetch";
 
 export const useQuizPublishing = () => {
   const navigate = useNavigate();
   const [isPublishing, setIsPublishing] = useState(false);
+  const { fetchQuizzes } = useQuizzesFetch();
 
   const handlePublish = async (quizId: string, duration: number = 30, title?: string) => {
     if (!quizId) {
@@ -50,7 +52,10 @@ export const useQuizPublishing = () => {
         description: "Quiz published successfully! Users can now take this quiz.",
       });
 
-      // Navigate to quizzes page after publishing and force a refresh
+      // First fetch the latest quizzes 
+      await fetchQuizzes();
+      
+      // Then navigate to quizzes page with replace to prevent going back to the creation page
       navigate('/quizzes', { replace: true });
       return true;
     } catch (error) {

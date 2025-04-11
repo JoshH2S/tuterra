@@ -12,12 +12,13 @@ export function QuizProgress({ current, total }: QuizProgressProps) {
   
   return (
     <div className="w-full max-w-xs">
-      <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+      <div className="h-3 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ 
-            width: `${progressPercentage}%`
+            width: `${progressPercentage}%` 
           }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
           className="h-full bg-gradient-to-r from-primary to-primary/80"
         />
       </div>
