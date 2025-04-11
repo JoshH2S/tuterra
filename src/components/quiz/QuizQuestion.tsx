@@ -52,10 +52,21 @@ export function QuizQuestion({
   // Track touch swipe for mobile navigation
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
+  
+  // Hide the swipe hint after 3 seconds
+  useState(() => {
+    if (showSwipeHint) {
+      const timer = setTimeout(() => setShowSwipeHint(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  });
   
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
     setTouchEnd(null);
+    // Hide the hint once user starts touching
+    setShowSwipeHint(false);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -98,6 +109,18 @@ export function QuizQuestion({
           </div>
         </div>
       </div>
+
+      {/* Swipe hint for mobile users */}
+      {showSwipeHint && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="fixed top-20 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm z-20"
+        >
+          Swipe left/right to navigate questions
+        </motion.div>
+      )}
 
       {/* Question Content */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 mt-16">
