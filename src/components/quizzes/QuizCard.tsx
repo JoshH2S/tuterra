@@ -30,6 +30,16 @@ interface QuizCardProps {
   onRetakeQuiz: (quizId: string) => void;
 }
 
+// Define interface for quiz progress
+interface QuizProgress {
+  id?: string;
+  quiz_id: string;
+  student_id: string;
+  current_question_index: number;
+  selected_answers: Record<number, string>;
+  time_remaining: number | null;
+}
+
 export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: QuizCardProps) {
   // Only show score if there's a valid attempt
   const hasAttempted = quiz.status === 'completed' && quiz.attemptNumber > 0;
@@ -46,14 +56,14 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
       
       if (!userId) return;
       
-      const { data: progress } = await supabase
+      const { data: progressData } = await supabase
         .from('quiz_progress')
         .select('id')
         .eq('quiz_id', quiz.id)
         .eq('student_id', userId)
-        .maybeSingle();
+        .maybeSingle() as { data: { id: string } | null, error: any };
         
-      setHasSavedProgress(!!progress);
+      setHasSavedProgress(!!progressData);
     };
     
     checkSavedProgress();

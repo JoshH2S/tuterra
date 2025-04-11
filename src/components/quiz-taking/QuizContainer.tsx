@@ -19,10 +19,16 @@ interface Quiz {
   quiz_questions: QuizQuestion[];
 }
 
+// Define interface for quiz progress
 interface QuizProgress {
+  id?: string;
+  quiz_id: string;
+  student_id: string;
   current_question_index: number;
   selected_answers: Record<number, string>;
   time_remaining: number | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const QuizContainer = () => {
@@ -49,19 +55,21 @@ export const QuizContainer = () => {
       
       if (userId) {
         // Check for saved progress in quiz_progress table
-        const { data: progress, error: progressError } = await supabase
+        const { data: progressData, error: progressError } = await supabase
           .from('quiz_progress')
           .select('*')
           .eq('quiz_id', id)
           .eq('student_id', userId)
-          .maybeSingle();
+          .maybeSingle() as { data: QuizProgress | null, error: any };
           
-        if (progress) {
-          console.log("Found saved progress:", progress);
+        if (progressData) {
+          console.log("Found saved progress:", progressData);
           setSavedProgress({
-            current_question_index: progress.current_question_index,
-            selected_answers: progress.selected_answers,
-            time_remaining: progress.time_remaining
+            quiz_id: progressData.quiz_id,
+            student_id: progressData.student_id,
+            current_question_index: progressData.current_question_index,
+            selected_answers: progressData.selected_answers,
+            time_remaining: progressData.time_remaining
           });
           
           // Show resume dialog instead of start dialog
@@ -151,7 +159,7 @@ export const QuizContainer = () => {
       }
       
       console.log("Saving quiz progress...");
-      const progressData = {
+      const progressData: QuizProgress = {
         quiz_id: quizId,
         student_id: userId,
         current_question_index: currentQuestionIndex,
@@ -161,7 +169,7 @@ export const QuizContainer = () => {
       
       const { error } = await supabase
         .from('quiz_progress')
-        .upsert(progressData, { onConflict: 'quiz_id,student_id' });
+        .upsert(progressData, { onConflict: 'quiz_id,student_id' }) as { error: any };
         
       if (error) {
         console.error("Error saving quiz progress:", error);
@@ -192,7 +200,7 @@ export const QuizContainer = () => {
         .from('quiz_progress')
         .delete()
         .eq('quiz_id', quizId)
-        .eq('student_id', userId);
+        .eq('student_id', userId) as { error: any };
         
       if (error) {
         console.error("Error deleting saved progress:", error);
