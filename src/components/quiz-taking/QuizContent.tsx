@@ -2,16 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 import { QuizQuestionCard } from "./QuizQuestionCard";
-import { QuizNavigation } from "./QuizNavigation";
-import { QuizSubmitButton } from "./QuizSubmitButton";
 import { QuizHeader } from "./QuizHeader";
 import { QuizExitDialog } from "./QuizExitDialog";
-import { QuizFooter } from "./QuizFooter";
 import { QuizContentWrapper } from "./QuizContentWrapper";
 import { useQuizSubmit } from "@/hooks/quiz/useQuizSubmit";
 import { useExplanationGeneration } from "@/hooks/quiz/useExplanationGeneration";
 import { toast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface QuizContentProps {
   quizId: string;
@@ -107,8 +105,20 @@ const QuizContent: React.FC<QuizContentProps> = ({
     // Generate explanation for this answer
     generateExplanation(currentQuestion, answer, isCorrect);
     
-    // Show feedback
-    setShowFeedback(true);
+    // Auto-navigate to next question after answer if not on last question
+    if (currentQuestionIndex < questions.length - 1 && !showFeedback) {
+      // Give a slight delay to show the selection before moving
+      setTimeout(() => {
+        updateCurrentQuestionIndex(currentQuestionIndex + 1);
+      }, 300);
+    } else if (currentQuestionIndex === questions.length - 1) {
+      // On the last question, show a toast suggesting to submit
+      toast({
+        title: "All questions answered",
+        description: "You can now submit the quiz or review your answers.",
+        duration: 3000,
+      });
+    }
     
     // Save progress after selecting an answer
     if (onSaveProgress) {
@@ -194,74 +204,47 @@ const QuizContent: React.FC<QuizContentProps> = ({
   return (
     <>
       <QuizContentWrapper onExitClick={handleExitClick}>
-        <QuizHeader 
-          title={quiz.title} 
-          timeRemaining={timeRemaining}
-          onTimeUp={submitQuiz}
-        />
-        
-        <div className="text-center my-4">
-          <p className="text-sm font-medium">
-            Question {currentQuestionIndex + 1} of {questions.length}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {answeredQuestionsCount} of {questions.length} questions answered
-          </p>
-        </div>
-        
-        <QuizQuestionCard
-          question={currentQuestion}
-          currentIndex={currentQuestionIndex}
-          totalQuestions={questions.length}
-          selectedAnswer={selectedAnswers[currentQuestionIndex]}
-          onAnswerSelect={handleSelectAnswer}
-          onNext={handleNextQuestion}
-          onPrevious={handlePreviousQuestion}
-          onJumpToQuestion={handleJumpToQuestion}
-          showFeedback={showFeedback}
-          explanations={explanations}
-          isGeneratingExplanation={isGenerating}
-          timeRemaining={timeRemaining}
-          answeredQuestions={Object.keys(selectedAnswers).map(key => parseInt(key))}
-        />
-        
-        {showFeedback && (
-          <div className="mt-6 flex justify-end">
-            <button 
-              onClick={handleNextQuestion} 
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md shadow-sm transition-colors"
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          <QuizHeader 
+            title={quiz.title} 
+            timeRemaining={timeRemaining}
+            onTimeUp={submitQuiz}
+          />
+          
+          <QuizQuestionCard
+            question={currentQuestion}
+            currentIndex={currentQuestionIndex}
+            totalQuestions={questions.length}
+            selectedAnswer={selectedAnswers[currentQuestionIndex]}
+            onAnswerSelect={handleSelectAnswer}
+            onNext={handleNextQuestion}
+            onPrevious={handlePreviousQuestion}
+            onJumpToQuestion={handleJumpToQuestion}
+            showFeedback={showFeedback}
+            explanations={explanations}
+            isGeneratingExplanation={isGenerating}
+            timeRemaining={timeRemaining}
+            answeredQuestions={Object.keys(selectedAnswers).map(key => parseInt(key))}
+          />
+          
+          {/* Submit button at the bottom */}
+          <div className="mt-10 flex justify-center">
+            <Button
+              className="px-8 py-2"
+              onClick={submitQuiz}
+              disabled={answeredQuestionsCount === 0 || isSubmitting || validatingSubmission}
             >
-              {isLastQuestion ? 'Submit Quiz' : 'Next Question'}
-            </button>
+              {isSubmitting || validatingSubmission ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Quiz'
+              )}
+            </Button>
           </div>
-        )}
-        
-        {!showFeedback && (
-          <>
-            <QuizNavigation
-              currentQuestion={currentQuestionIndex + 1}
-              totalQuestions={questions.length}
-              onNext={handleNextQuestion}
-              onPrevious={handlePreviousQuestion}
-            />
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mt-8">
-              <div className="text-sm text-muted-foreground">
-                {answeredQuestionsCount === questions.length 
-                  ? "All questions answered" 
-                  : `${questions.length - answeredQuestionsCount} questions remaining`}
-              </div>
-              
-              <QuizSubmitButton
-                isSubmitting={isSubmitting || validatingSubmission}
-                onSubmit={submitQuiz}
-                isLastQuestion={isLastQuestion}
-              />
-            </div>
-          </>
-        )}
-        
-        <QuizFooter />
+        </div>
       </QuizContentWrapper>
       
       <QuizExitDialog
