@@ -909,6 +909,47 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_progress: {
+        Row: {
+          created_at: string
+          current_question_index: number
+          id: string
+          quiz_id: string
+          selected_answers: Json
+          student_id: string
+          time_remaining: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_question_index?: number
+          id?: string
+          quiz_id: string
+          selected_answers?: Json
+          student_id: string
+          time_remaining?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_question_index?: number
+          id?: string
+          quiz_id?: string
+          selected_answers?: Json
+          student_id?: string
+          time_remaining?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_progress_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_questions: {
         Row: {
           correct_answer: string

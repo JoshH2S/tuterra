@@ -1,5 +1,6 @@
 
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -8,8 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Clock, FileText, MoreVertical, User } from "lucide-react";
+import { Clock, FileText, MoreVertical, User, BookMarked, Play } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuizCardProps {
   quiz: {
@@ -31,9 +33,31 @@ interface QuizCardProps {
 export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: QuizCardProps) {
   // Only show score if there's a valid attempt
   const hasAttempted = quiz.status === 'completed' && quiz.attemptNumber > 0;
+  const [hasSavedProgress, setHasSavedProgress] = useState(false);
   
   // Ensure the score is a valid percentage between 0-100
   const normalizedScore = hasAttempted ? Math.min(Math.max(0, quiz.previousScore), 100) : 0;
+  
+  // Check if the user has saved progress for this quiz
+  useEffect(() => {
+    const checkSavedProgress = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      
+      if (!userId) return;
+      
+      const { data: progress } = await supabase
+        .from('quiz_progress')
+        .select('id')
+        .eq('quiz_id', quiz.id)
+        .eq('student_id', userId)
+        .maybeSingle();
+        
+      setHasSavedProgress(!!progress);
+    };
+    
+    checkSavedProgress();
+  }, [quiz.id]);
   
   return (
     <motion.div
@@ -132,7 +156,22 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
               className="w-full"
               onClick={() => onStartQuiz(quiz.id)}
             >
-              {quiz.status === 'in_progress' ? 'Continue Quiz' : 'Start Quiz'}
+              {hasSavedProgress ? (
+                <>
+                  <BookMarked className="w-4 h-4 mr-2" />
+                  Resume Quiz
+                </>
+              ) : quiz.status === 'in_progress' ? (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Continue Quiz
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Start Quiz
+                </>
+              )}
             </Button>
           )}
         </div>

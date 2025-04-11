@@ -25,6 +25,11 @@ interface QuizContentProps {
   setTimeRemaining: React.Dispatch<React.SetStateAction<number | null>>;
   onQuizSubmitted: () => void;
   onExitQuiz: () => void;
+  initialQuestionIndex?: number;
+  initialSelectedAnswers?: Record<number, string>;
+  setCurrentQuestionIndex?: React.Dispatch<React.SetStateAction<number>>;
+  setSelectedAnswers?: React.Dispatch<React.SetStateAction<Record<number, string>>>;
+  onSaveProgress?: () => Promise<void>;
 }
 
 const QuizContent: React.FC<QuizContentProps> = ({ 
@@ -34,14 +39,34 @@ const QuizContent: React.FC<QuizContentProps> = ({
   timeRemaining,
   setTimeRemaining,
   onQuizSubmitted,
-  onExitQuiz
+  onExitQuiz,
+  initialQuestionIndex = 0,
+  initialSelectedAnswers = {},
+  setCurrentQuestionIndex,
+  setSelectedAnswers,
+  onSaveProgress
 }) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const [currentQuestionIndex, setCurrentQuestionIndexLocal] = useState(initialQuestionIndex);
+  const [selectedAnswers, setSelectedAnswersLocal] = useState<Record<number, string>>(initialSelectedAnswers);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [timerActive, setTimerActive] = useState(true);
   const [showFeedback, setShowFeedback] = useState(false);
   const [validatingSubmission, setValidatingSubmission] = useState(false);
+  
+  // Use either the prop setters or local state setters
+  const updateCurrentQuestionIndex = (index: number) => {
+    setCurrentQuestionIndexLocal(index);
+    if (setCurrentQuestionIndex) {
+      setCurrentQuestionIndex(index);
+    }
+  };
+  
+  const updateSelectedAnswers = (answers: Record<number, string>) => {
+    setSelectedAnswersLocal(answers);
+    if (setSelectedAnswers) {
+      setSelectedAnswers(answers);
+    }
+  };
   
   const { explanations, isGenerating, generateExplanation } = useExplanationGeneration();
   
@@ -52,47 +77,49 @@ const QuizContent: React.FC<QuizContentProps> = ({
     onQuizSubmitted
   });
   
+  // Set up an interval to save progress periodically
   useEffect(() => {
-    // Save progress to localStorage
-    if (Object.keys(selectedAnswers).length > 0) {
-      localStorage.setItem(`quiz_progress_${quizId}`, JSON.stringify(selectedAnswers));
-    }
-  }, [selectedAnswers, quizId]);
-  
-  useEffect(() => {
-    // Load saved progress from localStorage
-    const savedProgress = localStorage.getItem(`quiz_progress_${quizId}`);
-    if (savedProgress) {
-      try {
-        const parsed = JSON.parse(savedProgress);
-        setSelectedAnswers(parsed);
-      } catch (error) {
-        console.error("Error parsing saved quiz progress:", error);
-      }
-    }
-  }, [quizId]);
+    if (!onSaveProgress) return;
+    
+    // Only save if there are selected answers
+    if (Object.keys(selectedAnswers).length === 0) return;
+    
+    const intervalId = setInterval(() => {
+      console.log("Auto-saving quiz progress...");
+      onSaveProgress();
+    }, 30000); // Save every 30 seconds
+    
+    return () => clearInterval(intervalId);
+  }, [selectedAnswers, onSaveProgress]);
   
   const handleSelectAnswer = async (answer: string) => {
     const currentQuestion = questions[currentQuestionIndex];
     const isCorrect = answer === currentQuestion.correct_answer;
     
     // Store the answer
-    setSelectedAnswers(prev => ({
-      ...prev,
+    const updatedAnswers = {
+      ...selectedAnswers,
       [currentQuestionIndex]: answer
-    }));
+    };
+    
+    updateSelectedAnswers(updatedAnswers);
     
     // Generate explanation for this answer
     generateExplanation(currentQuestion, answer, isCorrect);
     
     // Show feedback
     setShowFeedback(true);
+    
+    // Save progress after selecting an answer
+    if (onSaveProgress) {
+      onSaveProgress();
+    }
   };
 
   const handleNextQuestion = () => {
     setShowFeedback(false);
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      updateCurrentQuestionIndex(currentQuestionIndex + 1);
     } else if (isLastQuestion) {
       // If on the last question and user clicks Next after seeing feedback, submit the quiz
       submitQuiz();
@@ -102,16 +129,21 @@ const QuizContent: React.FC<QuizContentProps> = ({
   const handlePreviousQuestion = () => {
     setShowFeedback(false);
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      updateCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
   
   const handleJumpToQuestion = (index: number) => {
     setShowFeedback(false);
-    setCurrentQuestionIndex(index);
+    updateCurrentQuestionIndex(index);
   };
   
-  const handleExitClick = () => {
+  const handleExitClick = async () => {
+    // Save progress before showing exit dialog
+    if (onSaveProgress) {
+      await onSaveProgress();
+    }
+    
     setShowExitDialog(true);
     setTimerActive(false); // Pause timer while dialog is open
   };
@@ -142,8 +174,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
   const submitQuiz = () => {
     if (validateSubmission()) {
       handleSubmitQuiz(selectedAnswers);
-      // Clear saved progress after submission
-      localStorage.removeItem(`quiz_progress_${quizId}`);
     }
   };
 
