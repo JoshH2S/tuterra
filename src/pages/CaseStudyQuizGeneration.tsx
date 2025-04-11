@@ -190,6 +190,7 @@ const CaseStudyQuizGeneration = () => {
                   error={error}
                   onGenerate={handleGenerateClick}
                   quizId={quizId}
+                  newsSources={newsSources}
                 />
               </StepContainer>
             )}
