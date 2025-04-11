@@ -23,7 +23,10 @@ export function QuestionContent({
   totalQuestions,
   selectedAnswer,
   answeredQuestions,
-  onAnswerSelect
+  onAnswerSelect,
+  onNext,
+  onPrevious,
+  onJumpToQuestion
 }: QuestionContentProps) {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
