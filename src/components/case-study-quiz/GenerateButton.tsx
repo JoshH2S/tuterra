@@ -23,9 +23,16 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            onClick={onClick}
-            disabled={disabled}
-            className="w-full touch-manipulation"
+            onClick={(e) => {
+              // Prevent double clicks and ensure single click handling
+              e.preventDefault();
+              if (!disabled && !isGenerating) {
+                console.log("Generate button clicked");
+                onClick();
+              }
+            }}
+            disabled={disabled || isGenerating}
+            className="w-full touch-manipulation active:scale-95 transition-transform"
           >
             {isGenerating ? (
               <>

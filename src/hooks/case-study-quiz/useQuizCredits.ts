@@ -9,34 +9,44 @@ export const useQuizCredits = () => {
   const { checkCredits, decrementCredits, credits } = useUserCredits();
   const { subscription } = useSubscription();
 
+  // Track if we've already shown the credit validation toast to avoid duplicates
+  const [hasShownCreditToast, setHasShownCreditToast] = useState(false);
+
   const validateCredits = async (): Promise<boolean> => {
     if (subscription.tier === 'free') {
       const hasCredits = await checkCredits('quiz_credits');
       
       if (!hasCredits) {
         setShowUpgradePrompt(true);
-        toast({
-          title: "No credits remaining",
-          description: "You have used all your free quiz credits. Please upgrade to continue.",
-          variant: "destructive",
-        });
+        if (!hasShownCreditToast) {
+          toast({
+            title: "No credits remaining",
+            description: "You have used all your free quiz credits. Please upgrade to continue.",
+            variant: "destructive",
+          });
+          setHasShownCreditToast(true);
+        }
         return false;
       }
       
       // Add info toast about remaining credits
-      if (credits?.quiz_credits) {
+      if (credits?.quiz_credits && !hasShownCreditToast) {
         const remainingAfterUse = credits.quiz_credits - 1;
         toast({
           title: "Credit Usage",
           description: `You have ${remainingAfterUse} quiz ${remainingAfterUse === 1 ? 'credit' : 'credits'} remaining after this use.`,
           variant: "default",
         });
+        setHasShownCreditToast(true);
       }
     }
     return true;
   };
 
   const useCredit = async () => {
+    // Reset the toast flag when actually using a credit
+    setHasShownCreditToast(false);
+    
     if (subscription.tier === 'free') {
       return await decrementCredits('quiz_credits');
     }

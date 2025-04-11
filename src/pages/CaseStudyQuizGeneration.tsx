@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Book, 
@@ -81,11 +82,21 @@ const CaseStudyQuizGeneration = () => {
   };
 
   const handleGenerateClick = () => {
-    setShowGenerateDialog(true);
+    // Only show the dialog if not already generating
+    if (!isGenerating) {
+      setShowGenerateDialog(true);
+    }
   };
 
   const handleGenerate = async () => {
     try {
+      // Close the dialog immediately to prevent double-showing
+      setShowGenerateDialog(false);
+      
+      // Add a short delay to ensure UI updates before starting generation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Generate the quiz
       await generateQuiz(topics, selectedCourseId, difficulty);
     } catch (err) {
       console.error("Error in handleGenerate:", err);
@@ -200,10 +211,14 @@ const CaseStudyQuizGeneration = () => {
         </div>
       </main>
       
+      {/* Use key to force re-render when dialog is reopened */}
       <GenerateQuizDialog
+        key={`generate-dialog-${showGenerateDialog}`}
         open={showGenerateDialog}
         onOpenChange={setShowGenerateDialog}
         onConfirm={handleGenerate}
+        topicsCount={topics.filter(t => !!t.description).length}
+        questionsCount={topics.reduce((sum, t) => sum + t.numQuestions, 0)}
       />
     </div>
   );

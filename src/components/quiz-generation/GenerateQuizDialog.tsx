@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import { useEffect } from "react";
 
 interface GenerateQuizDialogProps {
   open: boolean;
@@ -25,6 +26,21 @@ export function GenerateQuizDialog({
   topicsCount = 0,
   questionsCount = 0,
 }: GenerateQuizDialogProps) {
+  // Track if confirmation has been clicked to prevent double-showing
+  const handleConfirm = () => {
+    onConfirm();
+    // Close the dialog immediately after confirmation to prevent reopening
+    onOpenChange(false);
+  };
+
+  // If dialog is closed by escape key or clicking outside, ensure we clean up
+  useEffect(() => {
+    if (!open) {
+      // No cleanup needed, just ensure we respect the closed state
+      console.log("Quiz generation dialog closed");
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -49,13 +65,17 @@ export function GenerateQuizDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="ghost" 
+            onClick={() => onOpenChange(false)}
+            className="touch-manipulation"
+          >
             Cancel
           </Button>
-          <Button onClick={() => {
-            onConfirm();
-            onOpenChange(false);
-          }}>
+          <Button 
+            onClick={handleConfirm}
+            className="touch-manipulation"
+          >
             I Understand, Continue
           </Button>
         </DialogFooter>

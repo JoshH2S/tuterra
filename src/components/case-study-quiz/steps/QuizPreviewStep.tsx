@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { MouseEventHandler } from "react";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
-import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface QuizPreviewStepProps {
@@ -46,9 +45,6 @@ export const QuizPreviewStep = ({
   // Use the quiz publishing hook
   const { handlePublish, isPublishing } = useQuizPublishing();
 
-  // Add state for the generate dialog
-  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-
   // Determine which questions to display
   const displayQuestions = showAllQuestions ? validQuestions : validQuestions.slice(0, 5);
   const hiddenQuestionsCount = validQuestions.length - 5;
@@ -69,11 +65,6 @@ export const QuizPreviewStep = ({
         variant: "destructive",
       });
     }
-  };
-
-  // Add a handler for the generate button that shows dialog first
-  const handleGenerateClick = () => {
-    setShowGenerateDialog(true);
   };
 
   return (
@@ -211,10 +202,10 @@ export const QuizPreviewStep = ({
               description="Click generate to create your case study quiz based on current news stories"
               action={
                 <Button
-                  onClick={handleGenerateClick}
+                  onClick={onGenerate}
                   disabled={isGenerating}
                   size="lg"
-                  className="mt-2 w-full sm:w-auto"
+                  className="mt-2 w-full sm:w-auto touch-manipulation"
                 >
                   {isGenerating ? (
                     <>
@@ -234,13 +225,6 @@ export const QuizPreviewStep = ({
           </CardContent>
         </Card>
       )}
-
-      {/* Generate Quiz Confirmation Dialog */}
-      <GenerateQuizDialog
-        open={showGenerateDialog}
-        onOpenChange={setShowGenerateDialog}
-        onConfirm={onGenerate}
-      />
     </div>
   );
 };
