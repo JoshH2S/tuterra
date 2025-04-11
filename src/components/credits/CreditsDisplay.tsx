@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 interface CreditsDisplayProps {
   showUpgradeButton?: boolean;
@@ -20,6 +21,12 @@ export const CreditsDisplay = ({
 }: CreditsDisplayProps) => {
   const { credits, loading, error, fetchUserCredits } = useUserCredits();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (error) {
+      console.error("CreditsDisplay error:", error);
+    }
+  }, [error]);
 
   const handleRetry = () => {
     if (onRetry) {
@@ -117,7 +124,7 @@ export const CreditsDisplay = ({
           ))}
 
           {allCreditsUsed && showUpgradeButton && (
-            <Button className="w-full mt-4" size="lg" onClick={handleUpgrade}>
+            <Button className="w-full mt-4 touch-manipulation" size="lg" onClick={handleUpgrade}>
               Upgrade to Continue
             </Button>
           )}

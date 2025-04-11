@@ -9,9 +9,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CreditsDisplay } from "./CreditsDisplay";
+import { useEffect } from "react";
 
 export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
-  const { credits, loading, error } = useUserCredits();
+  const { credits, loading, error, fetchUserCredits } = useUserCredits();
+
+  useEffect(() => {
+    if (error) {
+      console.error("CreditsBadge error:", error);
+    }
+  }, [error]);
 
   if (loading) {
     return (
@@ -24,9 +31,9 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
 
   if (error && !credits) {
     return (
-      <Badge variant="destructive" className="ml-2 gap-1">
+      <Badge variant="destructive" className="ml-2 gap-1 cursor-pointer touch-manipulation" onClick={() => fetchUserCredits()}>
         <AlertCircle className="h-3 w-3" />
-        <span>Error</span>
+        <span>Retry</span>
       </Badge>
     );
   }

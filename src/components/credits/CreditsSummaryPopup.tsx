@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { CreditsDisplay } from "@/components/credits/CreditsDisplay";
 import {
@@ -14,12 +14,21 @@ import { Coins } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
 import { useUserCredits } from "@/hooks/useUserCredits";
+import { useAuth } from "@/hooks/useAuth";
 
 export function CreditsSummaryPopup() {
   const { subscription } = useSubscription();
-  const { fetchUserCredits } = useUserCredits();
+  const { fetchUserCredits, loading, error } = useUserCredits();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (user && subscription.tier === 'free') {
+      // Initial fetch when component mounts
+      fetchUserCredits();
+    }
+  }, [user, subscription.tier]);
 
   // Only show for free tier users
   if (subscription.tier !== 'free') {
@@ -45,6 +54,7 @@ export function CreditsSummaryPopup() {
           variant="outline" 
           size="sm" 
           className="gap-1.5 h-8 touch-manipulation"
+          onClick={() => console.log("Free Credits button clicked")}
         >
           <Coins className="h-3.5 w-3.5" />
           <span>Free Credits</span>
