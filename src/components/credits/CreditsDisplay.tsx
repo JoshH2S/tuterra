@@ -52,7 +52,7 @@ export const CreditsDisplay = ({
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription className="space-y-2">
-          <p>{error || "Failed to create default credits"}</p>
+          <p>{error || "Unable to load your credits information"}</p>
           <Button 
             variant="outline" 
             size="sm" 
@@ -68,10 +68,10 @@ export const CreditsDisplay = ({
   }
 
   const creditsItems = [
-    { label: "Quizzes", value: credits.quiz_credits || 0, total: 5 },
-    { label: "Interview Simulations", value: credits.interview_credits || 0, total: 1 },
-    { label: "Skill Assessments", value: credits.assessment_credits || 0, total: 1 },
-    { label: "AI Tutor Messages", value: credits.tutor_message_credits || 0, total: 5 },
+    { label: "Quizzes", value: credits.quiz_credits, total: 5 },
+    { label: "Interview Simulations", value: credits.interview_credits, total: 1 },
+    { label: "Skill Assessments", value: credits.assessment_credits, total: 1 },
+    { label: "AI Tutor Messages", value: credits.tutor_message_credits, total: 5 },
   ];
 
   const allCreditsUsed = creditsItems.every(item => item.value === 0);

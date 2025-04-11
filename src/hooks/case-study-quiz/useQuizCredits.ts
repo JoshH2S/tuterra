@@ -20,49 +20,42 @@ export const useQuizCredits = () => {
   }, [fetchUserCredits, subscription.tier]);
 
   const validateCredits = async (): Promise<boolean> => {
-    if (subscription.tier !== 'free') {
-      return true; // Premium users don't need credits
-    }
-    
-    // Always fetch the latest credits before checking
-    await fetchUserCredits();
-    
-    // If credits are still loading or null, we can't validate
-    if (loading || !credits) {
-      console.log("Credits still loading or unavailable, deferring validation");
-      toast({
-        title: "Loading credits",
-        description: "Please wait while we verify your available credits.",
-      });
-      return false;
-    }
-    
-    const hasCredits = checkCredits('quiz_credits');
-    
-    if (!hasCredits) {
-      setShowUpgradePrompt(true);
-      if (!hasShownCreditToast) {
+    if (subscription.tier === 'free') {
+      // Always fetch the latest credits before checking
+      const freshCredits = await fetchUserCredits();
+      
+      // If credits are still loading or null, we can't validate
+      if (loading || !freshCredits) {
+        console.log("Credits still loading or unavailable, deferring validation");
+        return false;
+      }
+      
+      const hasCredits = checkCredits('quiz_credits');
+      
+      if (!hasCredits) {
+        setShowUpgradePrompt(true);
+        if (!hasShownCreditToast) {
+          toast({
+            title: "No credits remaining",
+            description: "You have used all your free quiz credits. Please upgrade to continue.",
+            variant: "destructive",
+          });
+          setHasShownCreditToast(true);
+        }
+        return false;
+      }
+      
+      // Add info toast about remaining credits
+      if (freshCredits?.quiz_credits && !hasShownCreditToast) {
+        const remainingAfterUse = freshCredits.quiz_credits - 1;
         toast({
-          title: "No credits remaining",
-          description: "You have used all your free quiz credits. Please upgrade to continue.",
-          variant: "destructive",
+          title: "Credit Usage",
+          description: `You have ${remainingAfterUse} quiz ${remainingAfterUse === 1 ? 'credit' : 'credits'} remaining after this use.`,
+          variant: "default",
         });
         setHasShownCreditToast(true);
       }
-      return false;
     }
-    
-    // Add info toast about remaining credits
-    if (credits?.quiz_credits && !hasShownCreditToast) {
-      const remainingAfterUse = credits.quiz_credits - 1;
-      toast({
-        title: "Credit Usage",
-        description: `You have ${remainingAfterUse} quiz ${remainingAfterUse === 1 ? 'credit' : 'credits'} remaining after this use.`,
-        variant: "default",
-      });
-      setHasShownCreditToast(true);
-    }
-    
     return true;
   };
 
@@ -75,17 +68,19 @@ export const useQuizCredits = () => {
       return true;
     }
     
-    // Make sure we have fresh data
-    await fetchUserCredits();
-    
     // Check if credits data is available before proceeding
     if (!credits) {
-      toast({
-        title: "Error",
-        description: "Unable to verify available credits. Please try again.",
-        variant: "destructive",
-      });
-      return false;
+      // Fetch credits first if not available
+      await fetchUserCredits();
+      // If still no credits after fetching, we can't proceed
+      if (!credits) {
+        toast({
+          title: "Error",
+          description: "Unable to verify available credits. Please try again.",
+          variant: "destructive",
+        });
+        return false;
+      }
     }
     
     // Decrement the quiz credit
@@ -103,7 +98,7 @@ export const useQuizCredits = () => {
     if (loading || !credits) {
       return 0; // Explicitly return 0 when loading or no data yet
     }
-    return credits.quiz_credits || 0;
+    return credits.quiz_credits;
   };
 
   return {

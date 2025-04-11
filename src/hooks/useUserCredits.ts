@@ -34,57 +34,63 @@ export const useUserCredits = () => {
       
       console.log('Fetching credits for user:', user.id);
       
-      // First try to get existing credits
-      const { data: existingCredits, error: fetchError } = await supabase
+      // Using 'any' to bypass the type checking since we know user_credits exists in the database
+      const { data, error: fetchError } = await (supabase as any)
         .from('user_credits')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (fetchError) {
-        console.error('Supabase fetch error:', fetchError);
+        console.error('Supabase error:', fetchError);
         throw fetchError;
       }
 
-      console.log('Credits data from Supabase:', existingCredits);
+      console.log('Credits data from Supabase:', data);
 
-      // If credits exist, use them
-      if (existingCredits) {
-        console.log('Found existing credits:', existingCredits);
-        setCredits(existingCredits as UserCredits);
-        setLoading(false);
-        return existingCredits;
-      }
-      
-      // If no credits found, create default credits
-      console.log('No credits found, creating default credits');
-      
-      const defaultCredits = {
-        user_id: user.id,
-        quiz_credits: 5,
-        interview_credits: 1,
-        assessment_credits: 1,
-        tutor_message_credits: 5
-      };
-      
-      const { data: newCredits, error: insertError } = await supabase
-        .from('user_credits')
-        .insert(defaultCredits)
-        .select()
-        .single();
+      // If no data is found, create a fallback with default values
+      if (!data) {
+        console.log('No credits found, creating default credits');
         
-      if (insertError) {
-        console.error('Error creating default credits:', insertError);
-        throw insertError;
+        // Try to create default credits for the user
+        try {
+          const { data: newCredits, error: insertError } = await (supabase as any)
+            .from('user_credits')
+            .insert({
+              user_id: user.id,
+              quiz_credits: 5,
+              interview_credits: 1,
+              assessment_credits: 1,
+              tutor_message_credits: 5
+            })
+            .select('*')
+            .single();
+            
+          if (insertError) {
+            console.error('Error creating default credits:', insertError);
+            throw insertError;
+          }
+          
+          if (newCredits) {
+            console.log('Created new credits record:', newCredits);
+            setCredits(newCredits as UserCredits);
+            setLoading(false);
+            return newCredits;
+          }
+        } catch (insertErr) {
+          console.error('Failed to create default credits:', insertErr);
+          setError('Failed to create default credits');
+          setLoading(false);
+          return null;
+        }
+      } else {
+        console.log('Found existing credits:', data);
+        setCredits(data as UserCredits);
+        setLoading(false);
+        return data;
       }
-      
-      console.log('Created new credits record:', newCredits);
-      setCredits(newCredits as UserCredits);
-      setLoading(false);
-      return newCredits;
-      
     } catch (err) {
-      console.error('Error in useUserCredits hook:', err);
+      console.error('Error fetching user credits:', err);
       setError('Failed to load your available credits');
       setLoading(false);
       return null;
@@ -106,7 +112,8 @@ export const useUserCredits = () => {
 
       console.log(`Decrementing ${creditType} for user ${user.id}`);
 
-      const { error } = await supabase
+      // Using 'any' to bypass the type checking
+      const { error } = await (supabase as any)
         .from('user_credits')
         .update({ [creditType]: credits[creditType] - 1 })
         .eq('user_id', user.id);

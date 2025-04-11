@@ -40,10 +40,10 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
 
   // Calculate total remaining credits from actual data
   const totalCredits = 
-    (credits.quiz_credits || 0) + 
-    (credits.interview_credits || 0) + 
-    (credits.assessment_credits || 0) + 
-    (credits.tutor_message_credits || 0);
+    credits.quiz_credits + 
+    credits.interview_credits + 
+    credits.assessment_credits + 
+    credits.tutor_message_credits;
 
   // Calculate maximum possible credits 
   const maxCredits = 12; // 5 + 1 + 1 + 5
