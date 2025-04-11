@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -245,7 +246,7 @@ async function getOpenAIContent(prompt: string) {
       messages: [
         { 
           role: 'system', 
-          content: 'You are an expert at creating case study based quizzes that focus on analysis and critical thinking using REAL news stories as context. Always cite the source and date of the news article in your case studies.'
+          content: 'You are an expert at creating case study based quizzes that focus on analysis and critical thinking using REAL news stories as context. Always cite the source and date of the news article in your case studies. Use actual company names instead of generic placeholders like "Company X" or "Company Y" to make examples realistic and applicable to the real world.'
         },
         { role: 'user', content: prompt }
       ],
@@ -281,6 +282,7 @@ function generateCaseStudyPrompt(
        - Present a complex real-world scenario
        - Connect explicitly to ${topics.map(t => t.description).join(", ")}
        - Match ${difficulty} education level
+       - Use REAL company names (like "Microsoft", "Apple", "Amazon") instead of generic placeholders (like "Company X")
 
     QUESTION REQUIREMENTS:
     For each case study, create questions that:
@@ -296,12 +298,14 @@ function generateCaseStudyPrompt(
        - Four distinct, plausible options
        - One clearly correct answer
        - Detailed explanation of the correct answer
+       - IMPORTANT: Always use real company names, not generic terms
 
     3. Ensure questions:
        - Use clear, concise language
        - Avoid ambiguity
        - Test understanding, not memorization
        - Include real-world implications
+       - Refer to actual companies and organizations by their real names
 
     TECHNICAL REQUIREMENTS:
     Return a JSON array where each question has:
@@ -351,6 +355,7 @@ function generateSTEMCaseStudyPrompt(
        - Connect explicitly to ${topics.map(t => t.description).join(", ")}
        - Match ${difficulty} education level
        - Include mathematical or scientific concepts where relevant
+       - Use REAL company names (like "SpaceX", "Tesla", "Boston Dynamics") instead of generic placeholders (like "Company X")
 
     QUESTION REQUIREMENTS:
     For each case study, create questions that:
@@ -366,6 +371,7 @@ function generateSTEMCaseStudyPrompt(
        - Four distinct, technically accurate options
        - One clearly correct answer
        - Detailed step-by-step explanation of the solution
+       - IMPORTANT: Always use real company names, not generic terms
 
     3. STEM-specific enhancements:
        - Use LaTeX notation for equations ($...$ for inline, $$...$$ for display)
@@ -373,6 +379,7 @@ function generateSTEMCaseStudyPrompt(
        - Provide step-by-step solutions with all calculations shown
        - Include visualization descriptions for complex concepts
        - Format code properly for programming questions
+       - Refer to actual tech companies and organizations by their real names
 
     TECHNICAL REQUIREMENTS:
     Return a JSON array where each question has:
