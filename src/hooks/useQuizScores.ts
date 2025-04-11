@@ -72,7 +72,7 @@ export function useQuizScores(courseId: string | undefined) {
             )
           `)
           .eq('student_id', user.id)
-          .neq('completed_at', null) // Only completed quizzes
+          .not('completed_at', 'is', null) // Using 'is' operator instead of 'eq' for null checks
           .order('completed_at', { ascending: false });
 
         if (responsesError) {

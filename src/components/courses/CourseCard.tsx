@@ -73,7 +73,7 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
               )
             `)
             .eq('student_id', user.id)
-            .neq('completed_at', null) // Only completed quizzes
+            .not('completed_at', 'is', null) // Using 'is' operator instead of 'eq' for null checks
         ]);
 
         // Count completed quizzes from quiz_responses for this course
