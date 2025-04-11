@@ -12,11 +12,14 @@ interface GenerateButtonProps {
 }
 
 export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButtonProps) => {
-  const { credits } = useUserCredits();
+  const { credits, loading } = useUserCredits();
   const { subscription } = useSubscription();
   
   const isFreeUser = subscription.tier === 'free';
-  const remainingCredits = credits?.quiz_credits || 0;
+  const remainingCredits = !loading && credits ? credits.quiz_credits : 0;
+  const tooltipText = loading 
+    ? "Loading credit information..." 
+    : `You have ${remainingCredits} free quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining.`;
 
   return (
     <TooltipProvider>
@@ -46,7 +49,7 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
         </TooltipTrigger>
         {isFreeUser && (
           <TooltipContent>
-            <p>You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining.</p>
+            <p>{tooltipText}</p>
           </TooltipContent>
         )}
       </Tooltip>

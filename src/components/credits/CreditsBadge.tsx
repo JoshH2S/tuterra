@@ -24,12 +24,12 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     return (
       <Badge variant="outline" className="ml-2 gap-1">
         <Loader2 className="h-3 w-3 animate-spin" />
-        <span>Credits</span>
+        <span>Loading</span>
       </Badge>
     );
   }
 
-  if (error && !credits) {
+  if (error || !credits) {
     return (
       <Badge variant="destructive" className="ml-2 gap-1 cursor-pointer touch-manipulation" onClick={() => fetchUserCredits()}>
         <AlertCircle className="h-3 w-3" />
@@ -38,22 +38,15 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     );
   }
 
-  // Ensure we have fallback values if credits is somehow null
-  const safeCredits = credits || {
-    quiz_credits: 5, // Updated from previous value to 5
-    interview_credits: 1,
-    assessment_credits: 1,
-    tutor_message_credits: 5
-  };
-
-  // Calculate total remaining credits
+  // Calculate total remaining credits from actual data
   const totalCredits = 
-    safeCredits.quiz_credits + 
-    safeCredits.interview_credits + 
-    safeCredits.assessment_credits + 
-    safeCredits.tutor_message_credits;
+    credits.quiz_credits + 
+    credits.interview_credits + 
+    credits.assessment_credits + 
+    credits.tutor_message_credits;
 
-  const maxCredits = 12; // 5 + 1 + 1 + 5 (updated from previous total)
+  // Calculate maximum possible credits 
+  const maxCredits = 12; // 5 + 1 + 1 + 5
   const percentage = Math.floor((totalCredits / maxCredits) * 100);
 
   // Determine color based on remaining credits

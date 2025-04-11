@@ -25,7 +25,7 @@ export const useUserCredits = () => {
     if (!user) {
       setLoading(false);
       console.log('No user found, cannot fetch credits');
-      return;
+      return null;
     }
 
     try {
@@ -50,7 +50,7 @@ export const useUserCredits = () => {
 
       // If no data is found, create a fallback with default values
       if (!data) {
-        console.log('No credits found, using fallback values');
+        console.log('No credits found, creating default credits');
         
         // Try to create default credits for the user
         try {
@@ -58,7 +58,7 @@ export const useUserCredits = () => {
             .from('user_credits')
             .insert({
               user_id: user.id,
-              quiz_credits: 5, // Updated from the previous value to 5
+              quiz_credits: 5,
               interview_credits: 1,
               assessment_credits: 1,
               tutor_message_credits: 5
@@ -74,51 +74,28 @@ export const useUserCredits = () => {
           if (newCredits) {
             console.log('Created new credits record:', newCredits);
             setCredits(newCredits as UserCredits);
-          } else {
-            // Fallback if insert doesn't return data
-            useDefaultCredits(user.id);
+            setLoading(false);
+            return newCredits;
           }
         } catch (insertErr) {
           console.error('Failed to create default credits:', insertErr);
-          // Use fallback values if insert fails
-          useDefaultCredits(user.id);
+          setError('Failed to create default credits');
+          setLoading(false);
+          return null;
         }
       } else {
         console.log('Found existing credits:', data);
         setCredits(data as UserCredits);
+        setLoading(false);
+        return data;
       }
     } catch (err) {
       console.error('Error fetching user credits:', err);
       setError('Failed to load your available credits');
-      
-      // Provide fallback credits so UI doesn't break
-      useDefaultCredits(user?.id || 'unknown');
-      
-      // Only show toast if it's a real error, not just missing data
-      if (err instanceof Error && err.message !== 'No data found') {
-        toast({
-          title: "Error",
-          description: "Failed to load your available credits. Using default values.",
-          variant: "destructive",
-        });
-      }
-    } finally {
       setLoading(false);
+      return null;
     }
   }, [user]);
-
-  const useDefaultCredits = (userId: string) => {
-    setCredits({
-      id: 'fallback',
-      user_id: userId,
-      quiz_credits: 5, // Updated from the previous value to 5
-      interview_credits: 1,
-      assessment_credits: 1,
-      tutor_message_credits: 5,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-  };
 
   const decrementCredits = async (creditType: 'quiz_credits' | 'interview_credits' | 'assessment_credits' | 'tutor_message_credits') => {
     if (!user || !credits) return false;
@@ -143,13 +120,19 @@ export const useUserCredits = () => {
 
       if (error) throw error;
 
-      // Update local state
+      // Update local state - important for immediate UI feedback
       setCredits({
         ...credits,
         [creditType]: credits[creditType] - 1,
         updated_at: new Date().toISOString(),
       });
 
+      // Show toast with updated credit count
+      toast({
+        title: 'Credit Used',
+        description: `You now have ${credits[creditType] - 1} ${creditType.replace('_', ' ')} remaining.`,
+      });
+      
       console.log(`Successfully decremented ${creditType}, remaining: ${credits[creditType] - 1}`);
       return true;
     } catch (err) {
@@ -163,10 +146,10 @@ export const useUserCredits = () => {
     }
   };
 
-  const checkCredits = (creditType: 'quiz_credits' | 'interview_credits' | 'assessment_credits' | 'tutor_message_credits'): boolean => {
+  const checkCredits = useCallback((creditType: 'quiz_credits' | 'interview_credits' | 'assessment_credits' | 'tutor_message_credits'): boolean => {
     if (!credits) return false;
     return credits[creditType] > 0;
-  };
+  }, [credits]);
 
   useEffect(() => {
     if (user) {
