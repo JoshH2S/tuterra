@@ -2,12 +2,16 @@
 import { useState, useMemo } from "react";
 import { ProcessedCourse } from "@/types/quiz-display";
 
-export const useQuizzesFilter = (processedCourses: ProcessedCourse[]) => {
+export const useQuizzesFilter = (processedCourses: ProcessedCourse[] = []) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   const filteredCourses = useMemo(() => {
+    if (!processedCourses || !Array.isArray(processedCourses)) {
+      return [];
+    }
+    
     return processedCourses
       .map(course => {
         const filteredQuizzes = course.quizzes.filter(quiz => {
@@ -34,6 +38,10 @@ export const useQuizzesFilter = (processedCourses: ProcessedCourse[]) => {
   }, [processedCourses, searchTerm, selectedCourse, selectedStatus]);
 
   const totalQuizCount = useMemo(() => {
+    if (!processedCourses || !Array.isArray(processedCourses)) {
+      return 0;
+    }
+    
     return processedCourses.reduce(
       (total, course) => total + course.quizzes.length, 
       0

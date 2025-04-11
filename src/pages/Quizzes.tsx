@@ -19,7 +19,7 @@ export default function Quizzes() {
   const isMobile = useIsMobile();
   
   const { quizzesByCourse, loading, fetchQuizzes } = useQuizzesFetch();
-  const { processedCourses } = useQuizzesProcessor(courses, quizzesByCourse);
+  const { processedCourses = [] } = useQuizzesProcessor(courses, quizzesByCourse);
   const {
     searchTerm,
     setSearchTerm,
@@ -53,7 +53,8 @@ export default function Quizzes() {
     );
   }
 
-  const showEmptyState = totalQuizCount === 0;
+  // Check if we have courses and quizzes
+  const showEmptyState = !totalQuizCount || totalQuizCount === 0;
 
   return (
     <div className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-8 w-full max-w-full">
@@ -61,7 +62,7 @@ export default function Quizzes() {
         searchTerm={searchTerm}
         selectedCourse={selectedCourse}
         selectedStatus={selectedStatus}
-        courses={courses}
+        courses={courses || []}
         setSearchTerm={setSearchTerm}
         setSelectedCourse={setSelectedCourse}
         setSelectedStatus={setSelectedStatus}
@@ -73,7 +74,7 @@ export default function Quizzes() {
         <QuizzesEmptyState onCreateQuiz={handleCreateQuiz} />
       )}
 
-      {!showEmptyState && (
+      {!showEmptyState && filteredCourses && filteredCourses.length > 0 && (
         <div className="space-y-4 sm:space-y-8 w-full">
           {filteredCourses.map((course) => (
             <CourseQuizSection
@@ -98,6 +99,7 @@ export default function Quizzes() {
             if (!open) setConfirmRetakeQuiz(null);
           }}
           onConfirm={handleRetakeConfirm}
+          onClose={() => setConfirmRetakeQuiz(null)}
           quizTitle={confirmRetakeQuiz.title}
           previousScore={confirmRetakeQuiz.latest_response ? 
             confirmRetakeQuiz.latest_response.score : 

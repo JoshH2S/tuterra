@@ -5,8 +5,8 @@ import { ProcessedCourse, ProcessedQuiz, QuizzesByCourse } from "@/types/quiz-di
 import { supabase } from "@/integrations/supabase/client";
 
 export const useQuizzesProcessor = (
-  courses: Course[], 
-  quizzesByCourse: QuizzesByCourse
+  courses: Course[] = [], 
+  quizzesByCourse: QuizzesByCourse = {}
 ) => {
   const [processedCourses, setProcessedCourses] = useState<ProcessedCourse[]>([]);
 
@@ -54,7 +54,12 @@ export const useQuizzesProcessor = (
   }, []);
 
   useEffect(() => {
-    if (courses.length > 0 && Object.keys(quizzesByCourse).length > 0) {
+    if (!Array.isArray(courses) || !courses.length || !quizzesByCourse || Object.keys(quizzesByCourse).length === 0) {
+      setProcessedCourses([]);
+      return;
+    }
+
+    try {
       const completedQuizzes: { quizId: string; courseId: string; score: number; totalQuestions: number }[] = [];
       
       const processed = courses.map(course => {
@@ -120,6 +125,9 @@ export const useQuizzesProcessor = (
       if (completedQuizzes.length > 0) {
         syncCompletedQuizzes(completedQuizzes);
       }
+    } catch (error) {
+      console.error('Error processing courses and quizzes:', error);
+      setProcessedCourses([]);
     }
   }, [courses, quizzesByCourse, syncCompletedQuizzes]);
 
