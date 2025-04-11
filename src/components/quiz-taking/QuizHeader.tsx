@@ -13,16 +13,18 @@ export const QuizHeader = ({ title, timeRemaining, onTimeUp }: QuizHeaderProps) 
   const isMobile = useIsMobile();
   
   return (
-    <div className="flex items-center justify-between mb-6">
+    <CardHeader className={`
+      flex flex-col sm:flex-row items-start sm:items-center justify-between
+      ${isMobile ? 'p-3 space-y-2 sm:space-y-0' : ''}
+    `}>
+      <CardTitle className={`${isMobile ? 'text-lg' : ''} gradient-text`}>
+        {title}
+      </CardTitle>
       <QuizTimer 
         timeRemaining={timeRemaining} 
         onTimeUp={onTimeUp}
         active={true}
       />
-      
-      <CardTitle className={`${isMobile ? 'text-base' : 'text-lg'} text-primary hidden sm:block`}>
-        {title}
-      </CardTitle>
-    </div>
+    </CardHeader>
   );
 };
