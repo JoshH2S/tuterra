@@ -43,10 +43,12 @@ export const useQuizSubmit = ({ quizId, questions, onQuizSubmitted }: QuizSubmit
       
       if (!userId) {
         toast({
-          title: "Error",
-          description: "You must be logged in to submit a quiz",
+          title: "Authentication Required",
+          description: "You must be logged in to submit a quiz. Please sign in and try again.",
           variant: "destructive",
         });
+        // Navigate to authentication page
+        navigate('/auth');
         return;
       }
       
