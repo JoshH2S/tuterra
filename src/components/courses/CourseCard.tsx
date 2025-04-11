@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -186,7 +185,6 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
               Created {format(new Date(course.created_at || new Date()), 'MMM d, yyyy')}
             </span>
           </div>
-          {/* Removed the Students count section that was here */}
         </div>
 
         <CourseMasterySection 
