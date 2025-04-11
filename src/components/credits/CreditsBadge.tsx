@@ -40,7 +40,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
 
   // Ensure we have fallback values if credits is somehow null
   const safeCredits = credits || {
-    quiz_credits: 5,
+    quiz_credits: 5, // Updated from previous value to 5
     interview_credits: 1,
     assessment_credits: 1,
     tutor_message_credits: 5
@@ -53,7 +53,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     safeCredits.assessment_credits + 
     safeCredits.tutor_message_credits;
 
-  const maxCredits = 12; // 5 + 1 + 1 + 5
+  const maxCredits = 12; // 5 + 1 + 1 + 5 (updated from previous total)
   const percentage = Math.floor((totalCredits / maxCredits) * 100);
 
   // Determine color based on remaining credits

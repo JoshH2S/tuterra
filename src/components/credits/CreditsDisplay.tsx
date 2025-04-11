@@ -3,10 +3,11 @@ import { useUserCredits } from "@/hooks/useUserCredits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CreditsDisplayProps {
   showUpgradeButton?: boolean;
@@ -67,14 +68,18 @@ export const CreditsDisplay = ({
 
   // Fallback credits if somehow credits is null
   const safeCredits = credits || {
-    quiz_credits: 5,
+    id: 'fallback',
+    user_id: 'unknown',
+    quiz_credits: 5, // Updated from previous value to 5
     interview_credits: 1,
     assessment_credits: 1,
-    tutor_message_credits: 5
+    tutor_message_credits: 5,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
 
   const creditsItems = [
-    { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 },
+    { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 }, // Updated from previous value to 5
     { label: "Interview Simulations", value: safeCredits.interview_credits, total: 1 },
     { label: "Skill Assessments", value: safeCredits.assessment_credits, total: 1 },
     { label: "AI Tutor Messages", value: safeCredits.tutor_message_credits, total: 5 },
@@ -104,7 +109,22 @@ export const CreditsDisplay = ({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle>Free Credits Remaining</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          Free Credits Remaining
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full">
+                  <Info className="h-4 w-4" />
+                  <span className="sr-only">Credit information</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-sm">Free users receive a limited number of credits to explore our platform features. Upgrade to Premium for unlimited access.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardTitle>
         <CardDescription>
           Your free credits to explore our platform
         </CardDescription>

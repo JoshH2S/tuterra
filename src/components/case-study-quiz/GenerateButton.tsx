@@ -1,6 +1,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUserCredits } from "@/hooks/useUserCredits";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface GenerateButtonProps {
   onClick: () => void;
@@ -9,20 +12,37 @@ interface GenerateButtonProps {
 }
 
 export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButtonProps) => {
+  const { credits } = useUserCredits();
+  const { subscription } = useSubscription();
+  
+  const isFreeUser = subscription.tier === 'free';
+  const remainingCredits = credits?.quiz_credits || 0;
+
   return (
-    <Button
-      onClick={onClick}
-      disabled={disabled}
-      className="w-full"
-    >
-      {isGenerating ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating Quiz...
-        </>
-      ) : (
-        'Generate Quiz'
-      )}
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={onClick}
+            disabled={disabled}
+            className="w-full touch-manipulation"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Quiz...
+              </>
+            ) : (
+              'Generate Quiz'
+            )}
+          </Button>
+        </TooltipTrigger>
+        {isFreeUser && (
+          <TooltipContent>
+            <p>You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining.</p>
+          </TooltipContent>
+        )}
+      </Tooltip>
+    </TooltipProvider>
   );
 };

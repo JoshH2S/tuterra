@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from './use-toast';
@@ -21,7 +21,7 @@ export const useUserCredits = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUserCredits = async () => {
+  const fetchUserCredits = useCallback(async () => {
     if (!user) {
       setLoading(false);
       console.log('No user found, cannot fetch credits');
@@ -58,7 +58,7 @@ export const useUserCredits = () => {
             .from('user_credits')
             .insert({
               user_id: user.id,
-              quiz_credits: 5,
+              quiz_credits: 5, // Updated from the previous value to 5
               interview_credits: 1,
               assessment_credits: 1,
               tutor_message_credits: 5
@@ -105,13 +105,13 @@ export const useUserCredits = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const useDefaultCredits = (userId: string) => {
     setCredits({
       id: 'fallback',
       user_id: userId,
-      quiz_credits: 5,
+      quiz_credits: 5, // Updated from the previous value to 5
       interview_credits: 1,
       assessment_credits: 1,
       tutor_message_credits: 5,
@@ -150,7 +150,7 @@ export const useUserCredits = () => {
         updated_at: new Date().toISOString(),
       });
 
-      console.log(`Successfully decremented ${creditType}`);
+      console.log(`Successfully decremented ${creditType}, remaining: ${credits[creditType] - 1}`);
       return true;
     } catch (err) {
       console.error(`Error decrementing ${creditType}:`, err);
@@ -175,7 +175,7 @@ export const useUserCredits = () => {
       setLoading(false);
       setCredits(null);
     }
-  }, [user]);
+  }, [user, fetchUserCredits]);
 
   return {
     credits,

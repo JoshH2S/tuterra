@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export function CreditsSummaryPopup() {
   const { subscription } = useSubscription();
-  const { fetchUserCredits, loading, error } = useUserCredits();
+  const { fetchUserCredits, loading, error, credits } = useUserCredits();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +28,7 @@ export function CreditsSummaryPopup() {
       // Initial fetch when component mounts
       fetchUserCredits();
     }
-  }, [user, subscription.tier]);
+  }, [user, subscription.tier, fetchUserCredits]);
 
   // Only show for free tier users
   if (subscription.tier !== 'free') {
@@ -46,6 +46,16 @@ export function CreditsSummaryPopup() {
   const handleRetry = () => {
     fetchUserCredits();
   };
+
+  // Log credits information for debugging purposes
+  if (credits) {
+    console.log("Current credits state:", {
+      quiz_credits: credits.quiz_credits,
+      interview_credits: credits.interview_credits,
+      assessment_credits: credits.assessment_credits,
+      tutor_message_credits: credits.tutor_message_credits
+    });
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
