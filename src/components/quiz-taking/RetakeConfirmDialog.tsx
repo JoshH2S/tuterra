@@ -12,8 +12,7 @@ import {
 
 interface RetakeConfirmDialogProps {
   open: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   quizTitle: string;
   previousScore?: number;
@@ -22,18 +21,12 @@ interface RetakeConfirmDialogProps {
 export function RetakeConfirmDialog({
   open,
   onOpenChange,
-  onClose,
   onConfirm,
   quizTitle,
   previousScore,
 }: RetakeConfirmDialogProps) {
-  const handleOpenChange = (open: boolean) => {
-    if (!open) onClose();
-    if (onOpenChange) onOpenChange(open);
-  };
-
   return (
-    <AlertDialog open={open} onOpenChange={handleOpenChange}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle>Retake Quiz?</AlertDialogTitle>
@@ -54,7 +47,7 @@ export function RetakeConfirmDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>
             Retake Quiz
           </AlertDialogAction>

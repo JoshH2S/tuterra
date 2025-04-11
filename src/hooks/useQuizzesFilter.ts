@@ -1,38 +1,53 @@
 
 import { useState, useMemo } from "react";
-import { Course } from "@/types/course";
 import { ProcessedCourse } from "@/types/quiz-display";
 
-interface FilterOptions {
-  status: string[];
-  course: string[];
-}
+export const useQuizzesFilter = (processedCourses: ProcessedCourse[]) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
 
-export const useQuizzesFilter = () => {
-  const [selectedFilters, setSelectedFilters] = useState<FilterOptions>({
-    status: [],
-    course: []
-  });
+  const filteredCourses = useMemo(() => {
+    return processedCourses
+      .map(course => {
+        const filteredQuizzes = course.quizzes.filter(quiz => {
+          const matchesSearch = searchTerm === "" || 
+            quiz.title.toLowerCase().includes(searchTerm.toLowerCase());
+          
+          const matchesStatus = selectedStatus === "all" || 
+            (selectedStatus === "not_attempted" && quiz.status === "not_attempted") ||
+            (selectedStatus === "in_progress" && quiz.status === "in_progress") ||
+            (selectedStatus === "completed" && quiz.status === "completed");
+          
+          return matchesSearch && matchesStatus;
+        });
+        
+        return {
+          ...course,
+          quizzes: filteredQuizzes
+        };
+      })
+      .filter(course => {
+        return course.quizzes.length > 0 && 
+          (selectedCourse === "all" || course.id === selectedCourse);
+      });
+  }, [processedCourses, searchTerm, selectedCourse, selectedStatus]);
 
-  const updateFilter = (type: 'status' | 'course', values: string[]) => {
-    setSelectedFilters(prev => ({
-      ...prev,
-      [type]: values
-    }));
-  };
-
-  const filterOptions = {
-    status: [
-      { value: 'not_attempted', label: 'Not Attempted' },
-      { value: 'in_progress', label: 'In Progress' },
-      { value: 'completed', label: 'Completed' }
-    ],
-    courses: [] // Will be populated from actual course data
-  };
+  const totalQuizCount = useMemo(() => {
+    return processedCourses.reduce(
+      (total, course) => total + course.quizzes.length, 
+      0
+    );
+  }, [processedCourses]);
 
   return {
-    filterOptions,
-    selectedFilters,
-    updateFilter
+    searchTerm,
+    setSearchTerm,
+    selectedCourse,
+    setSelectedCourse,
+    selectedStatus,
+    setSelectedStatus,
+    filteredCourses,
+    totalQuizCount
   };
 };

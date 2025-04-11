@@ -25,7 +25,6 @@ interface QuizContentProps {
   setTimeRemaining: React.Dispatch<React.SetStateAction<number | null>>;
   onQuizSubmitted: () => void;
   onExitQuiz: () => void;
-  savedProgress?: Record<number, string> | null;
 }
 
 const QuizContent: React.FC<QuizContentProps> = ({ 
@@ -35,8 +34,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
   timeRemaining,
   setTimeRemaining,
   onQuizSubmitted,
-  onExitQuiz,
-  savedProgress
+  onExitQuiz
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
@@ -54,40 +52,25 @@ const QuizContent: React.FC<QuizContentProps> = ({
     onQuizSubmitted
   });
   
-  // Initialize with saved progress if available
   useEffect(() => {
-    if (savedProgress) {
-      setSelectedAnswers(savedProgress);
-      toast({
-        title: "Quiz Progress Restored",
-        description: "Your previous progress has been loaded.",
-      });
-    }
-  }, [savedProgress]);
-  
-  useEffect(() => {
-    // Save progress to localStorage whenever answers change
+    // Save progress to localStorage
     if (Object.keys(selectedAnswers).length > 0) {
       localStorage.setItem(`quiz_progress_${quizId}`, JSON.stringify(selectedAnswers));
     }
   }, [selectedAnswers, quizId]);
   
-  // Handle browser beforeunload event to warn user
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Only prompt if quiz is in progress
-      if (Object.keys(selectedAnswers).length > 0 && !isSubmitting) {
-        e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-        return e.returnValue;
+    // Load saved progress from localStorage
+    const savedProgress = localStorage.getItem(`quiz_progress_${quizId}`);
+    if (savedProgress) {
+      try {
+        const parsed = JSON.parse(savedProgress);
+        setSelectedAnswers(parsed);
+      } catch (error) {
+        console.error("Error parsing saved quiz progress:", error);
       }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [selectedAnswers, isSubmitting]);
+    }
+  }, [quizId]);
   
   const handleSelectAnswer = async (answer: string) => {
     const currentQuestion = questions[currentQuestionIndex];
