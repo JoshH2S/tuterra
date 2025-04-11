@@ -54,10 +54,10 @@ export function CreditsSummaryPopup() {
           variant="outline" 
           size="sm" 
           className="gap-1.5 h-8 touch-manipulation"
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault(); // Prevent double triggers
             console.log("Free Credits button clicked");
-            // Ensure we have the latest data when opening the popup
-            fetchUserCredits();
+            // Don't set isOpen here - let DialogTrigger handle it
           }}
         >
           <Coins className="h-3.5 w-3.5" />

@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useEffect } from "react";
 
 interface GenerateButtonProps {
   onClick: () => void;
@@ -12,8 +13,15 @@ interface GenerateButtonProps {
 }
 
 export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButtonProps) => {
-  const { credits, loading } = useUserCredits();
+  const { credits, loading, fetchUserCredits } = useUserCredits();
   const { subscription } = useSubscription();
+  
+  // Ensure we have fresh credits data
+  useEffect(() => {
+    if (subscription.tier === 'free') {
+      fetchUserCredits();
+    }
+  }, [subscription.tier, fetchUserCredits]);
   
   const isFreeUser = subscription.tier === 'free';
   const remainingCredits = !loading && credits ? credits.quiz_credits : 0;
