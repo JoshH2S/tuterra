@@ -8,8 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Clock, FileText, MoreVertical, User } from "lucide-react";
+import { Clock, FileText, MoreVertical, User, Play, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useEffect, useState } from "react";
 
 interface QuizCardProps {
   quiz: {
@@ -29,6 +30,14 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: QuizCardProps) {
+  const [hasInProgressSave, setHasInProgressSave] = useState(false);
+  
+  // Check for saved quiz progress in localStorage
+  useEffect(() => {
+    const savedProgress = localStorage.getItem(`quiz_progress_${quiz.id}`);
+    setHasInProgressSave(!!savedProgress);
+  }, [quiz.id]);
+  
   // Only show score if there's a valid attempt
   const hasAttempted = quiz.status === 'completed' && quiz.attemptNumber > 0;
   
@@ -46,11 +55,11 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
           <Badge
             variant={
               quiz.status === 'completed' ? 'default' :
-              quiz.status === 'in_progress' ? 'secondary' : 'outline'
+              quiz.status === 'in_progress' || hasInProgressSave ? 'secondary' : 'outline'
             }
           >
-            {quiz.status === 'not_attempted' ? 'Not Attempted' :
-             quiz.status === 'in_progress' ? 'In Progress' : 'Completed'}
+            {quiz.status === 'not_attempted' && !hasInProgressSave ? 'Not Attempted' :
+             quiz.status === 'in_progress' || hasInProgressSave ? 'In Progress' : 'Completed'}
           </Badge>
           
           <DropdownMenu>
@@ -123,6 +132,7 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
                   className="flex-1"
                   onClick={() => onRetakeQuiz(quiz.id)}
                 >
+                  <RotateCcw className="w-4 h-4 mr-2" />
                   Retake Quiz
                 </Button>
               )}
@@ -132,7 +142,8 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
               className="w-full"
               onClick={() => onStartQuiz(quiz.id)}
             >
-              {quiz.status === 'in_progress' ? 'Continue Quiz' : 'Start Quiz'}
+              <Play className="w-4 h-4 mr-2" />
+              {hasInProgressSave ? 'Resume Quiz' : quiz.status === 'in_progress' ? 'Continue Quiz' : 'Start Quiz'}
             </Button>
           )}
         </div>

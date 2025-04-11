@@ -1,52 +1,73 @@
 
-import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { QuizCard } from "@/components/quizzes/QuizCard";
-import { ProcessedCourse, ProcessedQuiz } from "@/types/quiz-display";
+import { useMemo } from "react";
+import { QuizCard } from "./QuizCard";
 
 interface CourseQuizSectionProps {
-  course: ProcessedCourse;
+  courseTitle: string;
+  quizzes: {
+    id: string;
+    title: string;
+    creator: string;
+    duration: string;
+    previousScore: number;
+    attemptNumber: number;
+    totalQuestions: number;
+    status: 'not_attempted' | 'in_progress' | 'completed';
+    allowRetake?: boolean;
+  }[];
   onViewResults: (quizId: string) => void;
   onStartQuiz: (quizId: string) => void;
   onRetakeQuiz: (quizId: string) => void;
+  hasQuizProgress: (quizId: string) => boolean;
 }
 
-export function CourseQuizSection({ 
-  course, 
-  onViewResults, 
-  onStartQuiz, 
-  onRetakeQuiz 
+export function CourseQuizSection({
+  courseTitle,
+  quizzes,
+  onViewResults,
+  onStartQuiz,
+  onRetakeQuiz,
+  hasQuizProgress
 }: CourseQuizSectionProps) {
-  const navigate = useNavigate();
-
+  
+  // Sort quizzes by status: completed > in_progress > not_attempted
+  const sortedQuizzes = useMemo(() => {
+    const statusOrder = {
+      'in_progress': 1,
+      'completed': 2,
+      'not_attempted': 3
+    };
+    
+    return [...quizzes].sort((a, b) => {
+      const aStatus = a.status;
+      const bStatus = b.status;
+      
+      return statusOrder[aStatus] - statusOrder[bStatus];
+    });
+  }, [quizzes]);
+  
   return (
-    <section key={course.id} className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {course.title || course.id}
-        </h2>
-        <Button 
-          variant="ghost" 
-          className="text-sm text-gray-500"
-          onClick={() => navigate(`/courses/${course.id}/grades`)}
-        >
-          View All
-          <ChevronRight className="w-4 h-4 ml-1" />
-        </Button>
-      </div>
-
+    <div className="my-8">
+      <h2 className="text-xl font-semibold mb-4">{courseTitle}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {course.quizzes.map((quiz) => (
-          <QuizCard 
-            key={quiz.id} 
-            quiz={quiz}
-            onViewResults={onViewResults}
-            onStartQuiz={onStartQuiz}
-            onRetakeQuiz={onRetakeQuiz}
-          />
-        ))}
+        {sortedQuizzes.map(quiz => {
+          // Update quiz status to in_progress if there's saved progress
+          const updatedQuiz = {
+            ...quiz,
+            status: hasQuizProgress(quiz.id) && quiz.status !== 'completed' ? 'in_progress' : quiz.status
+          };
+          
+          return (
+            <QuizCard
+              key={quiz.id}
+              quiz={updatedQuiz}
+              onViewResults={onViewResults}
+              onStartQuiz={onStartQuiz}
+              onRetakeQuiz={onRetakeQuiz}
+            />
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
 }

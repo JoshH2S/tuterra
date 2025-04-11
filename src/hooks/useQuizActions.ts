@@ -1,11 +1,28 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Quiz } from "@/types/quiz-display";
 
 export const useQuizActions = () => {
   const [confirmRetakeQuiz, setConfirmRetakeQuiz] = useState<Quiz | null>(null);
+  const [quizzesWithProgress, setQuizzesWithProgress] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+
+  // Check localStorage for any quizzes with saved progress
+  useEffect(() => {
+    const progressQuizIds = new Set<string>();
+    
+    // Find all quiz_progress_* items in localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('quiz_progress_')) {
+        const quizId = key.replace('quiz_progress_', '');
+        progressQuizIds.add(quizId);
+      }
+    }
+    
+    setQuizzesWithProgress(progressQuizIds);
+  }, []);
 
   const handleViewResults = (quizId: string, quizzesByCourse: Record<string, Quiz[]>) => {
     for (const courseId in quizzesByCourse) {
@@ -46,6 +63,10 @@ export const useQuizActions = () => {
     navigate('/quizzes/quiz-generation');
   };
 
+  const hasQuizProgress = (quizId: string) => {
+    return quizzesWithProgress.has(quizId);
+  };
+
   return {
     confirmRetakeQuiz,
     setConfirmRetakeQuiz,
@@ -53,6 +74,7 @@ export const useQuizActions = () => {
     handleStartQuiz,
     handleRetakeQuiz,
     handleRetakeConfirm,
-    handleCreateQuiz
+    handleCreateQuiz,
+    hasQuizProgress
   };
 };

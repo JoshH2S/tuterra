@@ -10,6 +10,7 @@ import { QuizError } from "./QuizError";
 import { QuizEmpty } from "./QuizEmpty";
 import QuizContent from "./QuizContent";
 import { QuizStartDialog } from "./QuizStartDialog";
+import { ResumeQuizDialog } from "./ResumeQuizDialog";
 
 interface Quiz {
   id: string;
@@ -25,8 +26,10 @@ export const QuizContainer = () => {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizId, setQuizId] = useState<string>("");
   const [showStartDialog, setShowStartDialog] = useState(true);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [savedProgress, setSavedProgress] = useState<Record<number, string> | null>(null);
 
   const { data: quiz, isLoading: isLoadingQuiz, error: quizError } = useQuery({
     queryKey: ['quiz', id],
@@ -36,8 +39,22 @@ export const QuizContainer = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData?.session?.user?.id;
       
+      // Check localStorage for saved progress
+      const localStorageProgress = localStorage.getItem(`quiz_progress_${id}`);
+      if (localStorageProgress) {
+        try {
+          const parsedProgress = JSON.parse(localStorageProgress);
+          setSavedProgress(parsedProgress);
+          // If there's saved progress, we'll show the resume dialog instead of start dialog
+          setShowStartDialog(false);
+          setShowResumeDialog(true);
+        } catch (error) {
+          console.error("Error parsing saved quiz progress:", error);
+        }
+      }
+      
       if (userId) {
-        const { data: savedProgress } = await supabase
+        const { data: savedProgressFromDB } = await supabase
           .from('quiz_responses')
           .select('*')
           .eq('quiz_id', id)
@@ -47,14 +64,14 @@ export const QuizContainer = () => {
           .limit(1)
           .maybeSingle();
           
-        if (savedProgress) {
+        if (savedProgressFromDB && !localStorageProgress) {
           toast({
-            title: "Quiz Progress Restored",
-            description: "Your previous quiz progress has been loaded.",
+            title: "Quiz Progress Found",
+            description: "You have an unfinished attempt for this quiz.",
           });
-          // If there's saved progress, we can skip the start dialog
+          // If there's saved progress, we'll show the resume dialog instead of start dialog
           setShowStartDialog(false);
-          setQuizStarted(true);
+          setShowResumeDialog(true);
         }
       }
       
@@ -102,10 +119,23 @@ export const QuizContainer = () => {
 
   const handleStartQuiz = () => {
     setShowStartDialog(false);
+    setShowResumeDialog(false);
     setQuizStarted(true);
     // Set the initial time remaining when the quiz starts
     if (quiz && quiz.duration_minutes) {
       console.log(`Setting timer to ${quiz.duration_minutes} minutes`);
+      setTimeRemaining(quiz.duration_minutes * 60);
+    }
+    // Clear any saved progress when starting fresh
+    localStorage.removeItem(`quiz_progress_${id}`);
+    setSavedProgress(null);
+  };
+  
+  const handleResumeQuiz = () => {
+    setShowResumeDialog(false);
+    setQuizStarted(true);
+    // Set the timer - we could calculate remaining time here if needed
+    if (quiz && quiz.duration_minutes) {
       setTimeRemaining(quiz.duration_minutes * 60);
     }
   };
@@ -139,6 +169,20 @@ export const QuizContainer = () => {
         onStart={handleStartQuiz}
       />
       
+      <ResumeQuizDialog
+        open={showResumeDialog}
+        onClose={() => {
+          if (!quizStarted) {
+            navigate('/quizzes');
+          } else {
+            setShowResumeDialog(false);
+          }
+        }}
+        onResume={handleResumeQuiz}
+        onRestart={handleStartQuiz}
+        quizTitle={quiz.title}
+      />
+      
       {(quizStarted || !showStartDialog) && (
         <QuizContent 
           quizId={quizId}
@@ -148,6 +192,7 @@ export const QuizContainer = () => {
           setTimeRemaining={setTimeRemaining}
           onQuizSubmitted={() => setQuizSubmitted(true)}
           onExitQuiz={() => navigate('/quizzes')}
+          savedProgress={savedProgress}
         />
       )}
     </>
