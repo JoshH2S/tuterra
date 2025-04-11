@@ -47,6 +47,16 @@ export function CreditsSummaryPopup() {
     fetchUserCredits();
   };
 
+  // Log credits information for debugging purposes
+  if (credits) {
+    console.log("Current credits state:", {
+      quiz_credits: credits.quiz_credits,
+      interview_credits: credits.interview_credits,
+      assessment_credits: credits.assessment_credits,
+      tutor_message_credits: credits.tutor_message_credits
+    });
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -54,11 +64,7 @@ export function CreditsSummaryPopup() {
           variant="outline" 
           size="sm" 
           className="gap-1.5 h-8 touch-manipulation"
-          onClick={() => {
-            console.log("Free Credits button clicked");
-            // Ensure we have the latest data when opening the popup
-            fetchUserCredits();
-          }}
+          onClick={() => console.log("Free Credits button clicked")}
         >
           <Coins className="h-3.5 w-3.5" />
           <span>Free Credits</span>

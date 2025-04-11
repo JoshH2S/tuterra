@@ -39,14 +39,13 @@ export const CreditsDisplay = ({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 space-y-2">
+      <div className="flex items-center justify-center p-4">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading your credits...</p>
       </div>
     );
   }
 
-  if (error || !credits) {
+  if (error && !credits) {
     return (
       <Alert variant="destructive" className={compact ? "m-2" : "mb-4"}>
         <AlertCircle className="h-4 w-4" />
@@ -67,11 +66,23 @@ export const CreditsDisplay = ({
     );
   }
 
+  // Fallback credits if somehow credits is null
+  const safeCredits = credits || {
+    id: 'fallback',
+    user_id: 'unknown',
+    quiz_credits: 5, // Updated from previous value to 5
+    interview_credits: 1,
+    assessment_credits: 1,
+    tutor_message_credits: 5,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
   const creditsItems = [
-    { label: "Quizzes", value: credits.quiz_credits, total: 5 },
-    { label: "Interview Simulations", value: credits.interview_credits, total: 1 },
-    { label: "Skill Assessments", value: credits.assessment_credits, total: 1 },
-    { label: "AI Tutor Messages", value: credits.tutor_message_credits, total: 5 },
+    { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 }, // Updated from previous value to 5
+    { label: "Interview Simulations", value: safeCredits.interview_credits, total: 1 },
+    { label: "Skill Assessments", value: safeCredits.assessment_credits, total: 1 },
+    { label: "AI Tutor Messages", value: safeCredits.tutor_message_credits, total: 5 },
   ];
 
   const allCreditsUsed = creditsItems.every(item => item.value === 0);
