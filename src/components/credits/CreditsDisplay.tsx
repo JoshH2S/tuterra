@@ -35,7 +35,7 @@ export const CreditsDisplay = ({ showUpgradeButton = true, compact = false }: Cr
   }
 
   const creditsItems = [
-    { label: "Quizzes", value: credits.quiz_credits, total: 2 },
+    { label: "Quizzes", value: credits.quiz_credits, total: 5 },
     { label: "Interview Simulations", value: credits.interview_credits, total: 1 },
     { label: "Skill Assessments", value: credits.assessment_credits, total: 1 },
     { label: "AI Tutor Messages", value: credits.tutor_message_credits, total: 5 },
