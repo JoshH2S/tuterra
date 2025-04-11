@@ -44,7 +44,7 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
     progressValue >= 10 ? "Beginner" : 
     "Novice";
 
-  // Fetch course statistics from the database
+  // Fetch course statistics from the database, using both quiz_responses and student_quiz_scores
   useEffect(() => {
     const fetchCourseStats = async () => {
       try {
@@ -53,16 +53,48 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
         
         if (!user) return;
 
-        // Get completed quizzes count
-        const { data: quizScores } = await supabase
-          .from('student_quiz_scores')
-          .select('*')
-          .eq('course_id', course.id)
-          .eq('student_id', user.id);
+        // Fetch from both tables and get the most complete picture
+        const [quizScoresResult, quizResponsesResult] = await Promise.all([
+          // Get completed quizzes from student_quiz_scores
+          supabase
+            .from('student_quiz_scores')
+            .select('id')
+            .eq('course_id', course.id)
+            .eq('student_id', user.id),
+          
+          // Get completed quizzes from quiz_responses
+          supabase
+            .from('quiz_responses')
+            .select(`
+              id,
+              quiz_id,
+              completed_at,
+              quizzes(
+                course_id
+              )
+            `)
+            .eq('student_id', user.id)
+            .neq('completed_at', null) // Only completed quizzes
+        ]);
+
+        // Count completed quizzes from quiz_responses for this course
+        const completedFromResponses = quizResponsesResult.data
+          ? quizResponsesResult.data.filter(r => 
+              r.quizzes && r.quizzes.course_id === course.id
+            ).length
+          : 0;
+
+        // Count from student_quiz_scores
+        const completedFromScores = quizScoresResult.data
+          ? quizScoresResult.data.length
+          : 0;
+
+        // Use the highest count from either source
+        const completedQuizzes = Math.max(completedFromResponses, completedFromScores);
 
         setCourseStats({
           studentCount: 0, // We're keeping this in the state but not displaying it
-          completedQuizzes: quizScores?.length || 0
+          completedQuizzes: completedQuizzes
         });
       } catch (error) {
         console.error('Error fetching course stats:', error);
@@ -73,7 +105,7 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
 
     fetchCourseStats();
   }, [course.id]);
-  
+
   const handleEditCourse = async () => {
     setIsSubmitting(true);
     try {
