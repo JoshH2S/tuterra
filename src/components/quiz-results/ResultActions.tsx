@@ -39,6 +39,7 @@ export function ResultActions({ quizId, quizTitle, allowRetakes, previousScore }
           <RetakeConfirmDialog
             open={confirmOpen}
             onOpenChange={setConfirmOpen}
+            onClose={() => setConfirmOpen(false)}
             onConfirm={handleRetakeConfirm}
             quizTitle={quizTitle}
             previousScore={previousScore}
