@@ -10,6 +10,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Question {
@@ -40,11 +41,19 @@ export const QuestionDisplay = ({
   const isMobile = useIsMobile();
   
   return (
-    <Card className="transition-all">
+    <Card className="shadow-md transition-all border-gray-200 dark:border-gray-700">
       <CardHeader className={isMobile ? "px-4 py-4" : ""}>
+        <div className="mb-3">
+          <Progress value={progress} className="h-2" />
+          <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+            <span>Question {questionIndex + 1} of {totalQuestions}</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+        </div>
+        
         <CardTitle className="flex items-center gap-2 text-xl">
-          <span className="hidden md:inline">Question {questionIndex + 1} of {totalQuestions}</span>
-          <span className="md:hidden">Question {questionIndex + 1}</span>
+          <span className="hidden md:inline">Question {questionIndex + 1}</span>
+          <span className="md:hidden">Q{questionIndex + 1}</span>
           {question.skill && (
             <motion.span 
               className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded"

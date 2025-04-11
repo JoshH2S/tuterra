@@ -130,4 +130,4 @@ export const QuizQuestionItem = ({ question, index, showAnswers = false }: QuizQ
       </div>
     </div>
   );
-};
+}

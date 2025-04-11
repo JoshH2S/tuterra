@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface QuestionContentProps {
   question: QuizQuestion;
@@ -32,12 +33,18 @@ export function QuestionContent({
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
   const [swipeDistance, setSwipeDistance] = useState<number>(0);
   const [swipeInProgress, setSwipeInProgress] = useState(false);
+  const [swipeHintVisible, setSwipeHintVisible] = useState(true);
 
-  // Enhanced touch gesture handling
+  // Enhanced touch gesture handling with visual feedback
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
     setTouchEndX(null);
     setSwipeInProgress(true);
+    
+    // Hide the swipe hint after first interaction
+    if (swipeHintVisible) {
+      setSwipeHintVisible(false);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -64,10 +71,28 @@ export function QuestionContent({
       // Left swipe (next question)
       if (diff > 0 && onNext) {
         onNext();
+        
+        // Add haptic feedback if supported
+        if ('vibrate' in navigator) {
+          try {
+            navigator.vibrate(10);
+          } catch (e) {
+            // Vibration API not supported or disabled
+          }
+        }
       }
       // Right swipe (previous question)
       else if (diff < 0 && onPrevious) {
         onPrevious();
+        
+        // Add haptic feedback if supported
+        if ('vibrate' in navigator) {
+          try {
+            navigator.vibrate(10);
+          } catch (e) {
+            // Vibration API not supported or disabled
+          }
+        }
       }
     }
     
@@ -80,22 +105,13 @@ export function QuestionContent({
 
   // Visual feedback based on swipe
   const swipeAnimation = {
-    x: swipeInProgress ? -swipeDistance * 0.2 : 0,
+    x: swipeInProgress ? -swipeDistance * 0.3 : 0,
     opacity: swipeInProgress ? (Math.abs(swipeDistance) > 100 ? 0.7 : 1) : 1,
     transition: { duration: swipeInProgress ? 0 : 0.3 }
   };
 
-  // Add haptic feedback if supported
-  useEffect(() => {
-    if (swipeInProgress && Math.abs(swipeDistance) > 50 && 'vibrate' in navigator) {
-      // Subtle vibration for swipe feedback
-      try {
-        navigator.vibrate(5);
-      } catch (e) {
-        // Vibration API not supported or disabled
-      }
-    }
-  }, [swipeDistance, swipeInProgress]);
+  // Progress calculation
+  const progressPercentage = ((currentIndex + 1) / totalQuestions) * 100;
 
   return (
     <motion.div 
@@ -107,11 +123,20 @@ export function QuestionContent({
       onTouchEnd={handleTouchEnd}
       className="w-full touch-manipulation"
     >
+      {/* Progress indicator */}
+      <div className="px-6 pt-5">
+        <div className="flex justify-between items-center mb-1 text-sm text-muted-foreground">
+          <span>Question {currentIndex + 1} of {totalQuestions}</span>
+          <span>{Math.round(progressPercentage)}%</span>
+        </div>
+        <Progress value={progressPercentage} className="h-2" indicatorClassName="bg-gradient-to-r from-primary to-primary/80" />
+      </div>
+      
       <motion.div
         animate={swipeAnimation}
         className="w-full"
       >
-        <Card className="p-6 shadow-md">
+        <CardContent className="p-6">
           <div className="mb-6">
             <h3 className="text-lg md:text-xl font-semibold mb-4">
               {question.question}
@@ -123,12 +148,11 @@ export function QuestionContent({
                   key={key}
                   onClick={() => onAnswerSelect(key)}
                   className={`
-                    p-4 rounded-lg border cursor-pointer transition-all
+                    p-4 rounded-lg border transition-all touch-manipulation
                     ${selectedAnswer === key 
                       ? 'bg-primary/10 border-primary shadow-sm' 
                       : 'bg-card hover:bg-accent/10 border-border'}
                     flex items-center
-                    touch-manipulation
                   `}
                 >
                   <div className={`
@@ -142,13 +166,13 @@ export function QuestionContent({
               ))}
             </div>
           </div>
-        </Card>
+        </CardContent>
       </motion.div>
       
-      {/* Swipe indicator */}
-      {swipeInProgress && Math.abs(swipeDistance) > 20 && (
-        <div className="fixed bottom-4 left-0 right-0 flex justify-center text-sm text-muted-foreground animate-pulse">
-          {swipeDistance > 0 ? 'Swipe left for next question' : 'Swipe right for previous question'}
+      {/* Swipe indicator for first-time users */}
+      {swipeHintVisible && (
+        <div className="text-center pb-4 text-xs text-muted-foreground animate-pulse">
+          <span>Swipe left/right to navigate questions</span>
         </div>
       )}
     </motion.div>

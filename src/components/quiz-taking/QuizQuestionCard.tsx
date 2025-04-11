@@ -4,6 +4,7 @@ import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 import { QuestionLoading } from "./question-card/QuestionLoading";
 import { QuestionFeedback } from "./question-card/QuestionFeedback";
 import { QuestionContent } from "./question-card/QuestionContent";
+import { Card } from "@/components/ui/card";
 
 interface QuizQuestionCardProps {
   question: QuizQuestion;
@@ -42,32 +43,33 @@ export function QuizQuestionCard({
     return <QuestionLoading />;
   }
 
-  // Add mobile-first design with touch-friendly interface
   return (
-    <div className="space-y-6">
-      {showFeedback && selectedAnswer ? (
-        <QuestionFeedback 
-          question={question}
-          selectedAnswer={selectedAnswer}
-          explanations={explanations}
-          isGeneratingExplanation={isGeneratingExplanation}
-          expandedFeedback={expandedFeedback}
-          onToggleFeedback={() => setExpandedFeedback(!expandedFeedback)}
-        />
-      ) : (
-        <QuestionContent
-          question={question}
-          currentIndex={currentIndex}
-          totalQuestions={totalQuestions}
-          selectedAnswer={selectedAnswer}
-          answeredQuestions={answeredQuestions}
-          timeRemaining={timeRemaining}
-          onAnswerSelect={onAnswerSelect}
-          onNext={onNext}
-          onPrevious={onPrevious}
-          onJumpToQuestion={onJumpToQuestion}
-        />
-      )}
-    </div>
+    <Card className="w-full overflow-hidden shadow-md border border-gray-200 dark:border-gray-800 rounded-xl">
+      <div className="space-y-6">
+        {showFeedback && selectedAnswer ? (
+          <QuestionFeedback 
+            question={question}
+            selectedAnswer={selectedAnswer}
+            explanations={explanations}
+            isGeneratingExplanation={isGeneratingExplanation}
+            expandedFeedback={expandedFeedback}
+            onToggleFeedback={() => setExpandedFeedback(!expandedFeedback)}
+          />
+        ) : (
+          <QuestionContent
+            question={question}
+            currentIndex={currentIndex}
+            totalQuestions={totalQuestions}
+            selectedAnswer={selectedAnswer}
+            answeredQuestions={answeredQuestions}
+            timeRemaining={timeRemaining}
+            onAnswerSelect={onAnswerSelect}
+            onNext={onNext}
+            onPrevious={onPrevious}
+            onJumpToQuestion={onJumpToQuestion}
+          />
+        )}
+      </div>
+    </Card>
   );
 }
