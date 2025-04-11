@@ -4,38 +4,31 @@ import { Select } from "@/components/ui/select-simple";
 import { Button } from "@/components/ui/button";
 import { Course } from "@/types/course";
 
+interface FilterOptions {
+  status: Array<{ value: string; label: string }>;
+  courses: Array<{ value: string; label: string }>;
+}
+
+interface FilterValues {
+  status: string[];
+  course: string[];
+}
+
 interface QuizFiltersProps {
-  searchTerm: string;
-  selectedCourse: string;
-  selectedStatus: string;
-  courses: Course[];
-  setSearchTerm: (value: string) => void;
-  setSelectedCourse: (value: string) => void;
-  setSelectedStatus: (value: string) => void;
+  filterOptions: FilterOptions;
+  selectedFilters: FilterValues;
+  onFilterChange: (type: 'status' | 'course', values: string[]) => void;
   handleCreateQuiz: () => void;
-  refreshQuizzes?: () => void; 
+  refreshQuizzes?: () => void;
 }
 
 export function QuizFilters({
-  searchTerm,
-  selectedCourse,
-  selectedStatus,
-  courses,
-  setSearchTerm,
-  setSelectedCourse,
-  setSelectedStatus,
+  filterOptions,
+  selectedFilters,
+  onFilterChange,
   handleCreateQuiz,
   refreshQuizzes
 }: QuizFiltersProps) {
-  // Build course options for the select dropdown
-  const courseOptions = [
-    { label: 'All Courses', value: 'all' },
-    ...courses.map(course => ({
-      label: course.title || course.id,
-      value: course.id
-    }))
-  ];
-
   return (
     <>
       {/* Page Header */}
@@ -92,16 +85,17 @@ export function QuizFilters({
             type="text"
             placeholder="Search quizzes..."
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         
         <Select
           placeholder="Course"
-          options={courseOptions}
-          value={selectedCourse}
-          onChange={(e) => setSelectedCourse(e.target.value)}
+          options={[
+            { label: 'All Courses', value: 'all' },
+            ...(filterOptions.courses || [])
+          ]}
+          value={selectedFilters.course.length ? selectedFilters.course[0] : 'all'}
+          onChange={(e) => onFilterChange('course', e.target.value ? [e.target.value] : [])}
           className="w-full md:w-48"
         />
         
@@ -109,12 +103,10 @@ export function QuizFilters({
           placeholder="Status"
           options={[
             { label: 'All Status', value: 'all' },
-            { label: 'Not Attempted', value: 'not_attempted' },
-            { label: 'In Progress', value: 'in_progress' },
-            { label: 'Completed', value: 'completed' }
+            ...(filterOptions.status || [])
           ]}
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
+          value={selectedFilters.status.length ? selectedFilters.status[0] : 'all'}
+          onChange={(e) => onFilterChange('status', e.target.value ? [e.target.value] : [])}
           className="w-full md:w-48"
         />
       </div>

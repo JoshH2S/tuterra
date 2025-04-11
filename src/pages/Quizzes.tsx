@@ -12,9 +12,9 @@ import { RetakeConfirmDialog } from "@/components/quiz-taking/RetakeConfirmDialo
 import { ProcessedQuiz } from "@/types/quiz-display";
 
 export default function Quizzes() {
-  const { quizzes, isLoading, error, refetchQuizzes } = useQuizzesFetch();
+  const { quizzesByCourse, loading, fetchQuizzes } = useQuizzesFetch();
   const { filterOptions, selectedFilters, updateFilter } = useQuizzesFilter();
-  const { processedCourses, quizzesByCourse } = useQuizzesProcessor(quizzes);
+  const { processedCourses } = useQuizzesProcessor([], quizzesByCourse);
   const {
     confirmRetakeQuiz,
     setConfirmRetakeQuiz,
@@ -57,12 +57,8 @@ export default function Quizzes() {
     }, [] as typeof processedCourses);
   }, [processedCourses, selectedFilters, hasQuizProgress]);
 
-  if (isLoading) {
+  if (loading) {
     return <AdaptiveLoading />;
-  }
-
-  if (error) {
-    return <div className="container py-12">Error loading quizzes: {error.message}</div>;
   }
 
   if (!processedCourses.length) {
@@ -85,6 +81,8 @@ export default function Quizzes() {
           filterOptions={filterOptions}
           selectedFilters={selectedFilters}
           onFilterChange={updateFilter}
+          handleCreateQuiz={handleCreateQuiz}
+          refreshQuizzes={fetchQuizzes}
         />
       </div>
 

@@ -23,7 +23,7 @@ interface CourseQuizSectionProps {
 
 export function CourseQuizSection({
   courseTitle,
-  quizzes,
+  quizzes = [], // Provide default empty array
   onViewResults,
   onStartQuiz,
   onRetakeQuiz,
@@ -32,6 +32,8 @@ export function CourseQuizSection({
   
   // Sort quizzes by status: completed > in_progress > not_attempted
   const sortedQuizzes = useMemo(() => {
+    if (!quizzes || !Array.isArray(quizzes)) return [];
+    
     const statusOrder = {
       'in_progress': 1,
       'completed': 2,
