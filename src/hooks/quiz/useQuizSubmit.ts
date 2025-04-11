@@ -92,7 +92,7 @@ export const useQuizSubmit = ({ quizId, questions, onQuizSubmitted }: QuizSubmit
         }
       });
       
-      // Create quiz response
+      // Create quiz response - ensure it exactly matches the table structure
       const responseData = {
         quiz_id: quizId,
         student_id: userId,
@@ -101,10 +101,12 @@ export const useQuizSubmit = ({ quizId, questions, onQuizSubmitted }: QuizSubmit
         total_questions: questions.length,
         topic_performance: topicPerformance,
         completed_at: new Date().toISOString(),
-        total_points: totalPoints
+        start_time: new Date().toISOString(), // Set start_time if not tracking actual start
+        attempt_number: 1, // Default to 1 if not tracking attempts
+        ai_feedback: null // Will be generated later or can be initialized with empty structure
       };
 
-      console.log("Inserting quiz response data:", JSON.stringify(responseData, null, 2));
+      console.log("Submitting quiz response to Supabase:", JSON.stringify(responseData, null, 2));
 
       // Insert the response data into the database
       const { data: response, error } = await supabase
