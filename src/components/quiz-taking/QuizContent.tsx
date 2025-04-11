@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 import { QuizQuestionCard } from "./QuizQuestionCard";
 import { QuizNavigation } from "./QuizNavigation";
@@ -10,6 +10,8 @@ import { QuizFooter } from "./QuizFooter";
 import { QuizContentWrapper } from "./QuizContentWrapper";
 import { useQuizSubmit } from "@/hooks/quiz/useQuizSubmit";
 import { useExplanationGeneration } from "@/hooks/quiz/useExplanationGeneration";
+import { toast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface QuizContentProps {
   quizId: string;
@@ -39,6 +41,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [timerActive, setTimerActive] = useState(true);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [validatingSubmission, setValidatingSubmission] = useState(false);
   
   const { explanations, isGenerating, generateExplanation } = useExplanationGeneration();
   
@@ -48,6 +51,26 @@ const QuizContent: React.FC<QuizContentProps> = ({
     questions,
     onQuizSubmitted
   });
+  
+  useEffect(() => {
+    // Save progress to localStorage
+    if (Object.keys(selectedAnswers).length > 0) {
+      localStorage.setItem(`quiz_progress_${quizId}`, JSON.stringify(selectedAnswers));
+    }
+  }, [selectedAnswers, quizId]);
+  
+  useEffect(() => {
+    // Load saved progress from localStorage
+    const savedProgress = localStorage.getItem(`quiz_progress_${quizId}`);
+    if (savedProgress) {
+      try {
+        const parsed = JSON.parse(savedProgress);
+        setSelectedAnswers(parsed);
+      } catch (error) {
+        console.error("Error parsing saved quiz progress:", error);
+      }
+    }
+  }, [quizId]);
   
   const handleSelectAnswer = async (answer: string) => {
     const currentQuestion = questions[currentQuestionIndex];
@@ -98,14 +121,41 @@ const QuizContent: React.FC<QuizContentProps> = ({
     setTimerActive(true); // Resume timer when dialog is closed
   };
 
+  const validateSubmission = () => {
+    setValidatingSubmission(true);
+    
+    // Check if the user has answered at least one question
+    if (Object.keys(selectedAnswers).length === 0) {
+      toast({
+        title: "Cannot submit quiz",
+        description: "Please answer at least one question before submitting.",
+        variant: "destructive",
+      });
+      setValidatingSubmission(false);
+      return false;
+    }
+    
+    setValidatingSubmission(false);
+    return true;
+  };
+
   const submitQuiz = () => {
-    handleSubmitQuiz(selectedAnswers);
+    if (validateSubmission()) {
+      handleSubmitQuiz(selectedAnswers);
+      // Clear saved progress after submission
+      localStorage.removeItem(`quiz_progress_${quizId}`);
+    }
   };
 
   const currentQuestion = questions[currentQuestionIndex];
   
   if (!currentQuestion) {
-    return <div>Question not found</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading questions...</span>
+      </div>
+    );
   }
 
   const answeredQuestionsCount = Object.keys(selectedAnswers).length;
@@ -123,6 +173,9 @@ const QuizContent: React.FC<QuizContentProps> = ({
         <div className="text-center my-4">
           <p className="text-sm font-medium">
             Question {currentQuestionIndex + 1} of {questions.length}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {answeredQuestionsCount} of {questions.length} questions answered
           </p>
         </div>
         
@@ -146,7 +199,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
           <div className="mt-6 flex justify-end">
             <button 
               onClick={handleNextQuestion} 
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md shadow"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md shadow-sm transition-colors"
             >
               {isLastQuestion ? 'Submit Quiz' : 'Next Question'}
             </button>
@@ -162,9 +215,15 @@ const QuizContent: React.FC<QuizContentProps> = ({
               onPrevious={handlePreviousQuestion}
             />
             
-            <div className="mt-8 flex justify-end">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mt-8">
+              <div className="text-sm text-muted-foreground">
+                {answeredQuestionsCount === questions.length 
+                  ? "All questions answered" 
+                  : `${questions.length - answeredQuestionsCount} questions remaining`}
+              </div>
+              
               <QuizSubmitButton
-                isSubmitting={isSubmitting}
+                isSubmitting={isSubmitting || validatingSubmission}
                 onSubmit={submitQuiz}
                 isLastQuestion={isLastQuestion}
               />

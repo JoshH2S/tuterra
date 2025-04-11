@@ -42,6 +42,7 @@ export function QuizQuestionCard({
     return <QuestionLoading />;
   }
 
+  // Add mobile-first design with touch-friendly interface
   return (
     <div className="space-y-6">
       {showFeedback && selectedAnswer ? (

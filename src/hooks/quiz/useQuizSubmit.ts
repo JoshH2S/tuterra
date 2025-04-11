@@ -32,7 +32,13 @@ export const useQuizSubmit = ({ quizId, questions, onQuizSubmitted }: QuizSubmit
       console.log("Submitting quiz:", { quizId, selectedAnswers, questionCount: questions.length });
       
       // Get user session
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        throw new Error("Failed to get user session");
+      }
+      
       const userId = sessionData?.session?.user?.id;
       
       if (!userId) {
@@ -98,7 +104,7 @@ export const useQuizSubmit = ({ quizId, questions, onQuizSubmitted }: QuizSubmit
         total_points: totalPoints
       };
 
-      console.log("Inserting quiz response:", responseData);
+      console.log("Inserting quiz response data:", JSON.stringify(responseData, null, 2));
 
       // Insert the response data into the database
       const { data: response, error } = await supabase
@@ -109,6 +115,9 @@ export const useQuizSubmit = ({ quizId, questions, onQuizSubmitted }: QuizSubmit
       
       if (error) {
         console.error("Supabase error details:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+        console.error("Error details:", error.details);
         throw error;
       }
 
@@ -121,12 +130,17 @@ export const useQuizSubmit = ({ quizId, questions, onQuizSubmitted }: QuizSubmit
           quiz_response_id: response.id
         }));
         
+        console.log("Inserting question responses:", JSON.stringify(questionResponsesWithId, null, 2));
+        
         const { error: questionsError } = await supabase
           .from('question_responses')
           .insert(questionResponsesWithId);
           
         if (questionsError) {
           console.error("Error saving question responses:", questionsError);
+          console.error("Error code:", questionsError.code);
+          console.error("Error message:", questionsError.message);
+          console.error("Error details:", questionsError.details);
         }
       }
 

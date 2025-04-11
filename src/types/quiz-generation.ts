@@ -64,3 +64,17 @@ export const isCaseStudyQuestion = (question: Question): question is CaseStudyQu
 export const isRegularQuestion = (question: Question): boolean => {
   return !isCaseStudyQuestion(question);
 };
+
+// Utility function to safely convert a question to Supabase-compatible format
+export const toSupabaseQuestionFormat = (question: Question) => {
+  return {
+    id: question.id,
+    question: question.question,
+    options: question.options,
+    correct_answer: question.correctAnswer,
+    topic: question.topic,
+    points: question.points || 1,
+    difficulty: question.difficulty || 'intermediate',
+    explanation: question.explanation
+  };
+};
