@@ -42,11 +42,12 @@ const QuizContent: React.FC<QuizContentProps> = ({
   
   const { explanations, isGenerating, generateExplanation } = useExplanationGeneration();
   
-  const { isSubmitting, handleSubmitQuiz } = useQuizSubmit(
+  // Use the updated useQuizSubmit hook with object parameter
+  const { isSubmitting, handleSubmitQuiz } = useQuizSubmit({
     quizId,
     questions,
     onQuizSubmitted
-  );
+  });
   
   const handleSelectAnswer = async (answer: string) => {
     const currentQuestion = questions[currentQuestionIndex];

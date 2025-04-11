@@ -1,15 +1,18 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { QuizQuestion } from "./quizTypes";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { Question } from "@/types/quiz-generation";
 
-export const useQuizSubmit = (
-  quizId: string,
-  questions: QuizQuestion[],
-  onQuizSubmitted: () => void
-) => {
+interface QuizSubmitParams {
+  quizId: string;
+  questions: QuizQuestion[] | Question[];
+  onQuizSubmitted?: () => void;
+}
+
+export const useQuizSubmit = ({ quizId, questions, onQuizSubmitted }: QuizSubmitParams) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -26,16 +29,37 @@ export const useQuizSubmit = (
     setIsSubmitting(true);
 
     try {
-      console.log("Submitting quiz:", { quizId, selectedAnswers });
+      console.log("Submitting quiz:", { quizId, selectedAnswers, questionCount: questions.length });
       
-      // Calculate the score
+      // Get user session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      
+      if (!userId) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to submit a quiz",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Calculate score and prepare response data
       let correctAnswers = 0;
+      let totalPoints = 0;
+      
+      // Handle different question formats (from different question types)
       const questionResponses = questions.map((question, index) => {
         const userAnswer = selectedAnswers[index] || "";
-        const isCorrect = userAnswer === question.correct_answer;
+        const correctAnswer = 'correct_answer' in question 
+          ? question.correct_answer 
+          : ('correctAnswer' in question ? question.correctAnswer : "");
+          
+        const isCorrect = userAnswer === correctAnswer;
         
         if (isCorrect) {
-          correctAnswers += 1;
+          correctAnswers++;
+          totalPoints += question.points || 1;
         }
         
         return {
@@ -46,50 +70,78 @@ export const useQuizSubmit = (
         };
       });
 
-      const score = (correctAnswers / questions.length) * 100;
-
-      // Save the quiz response to the database
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const score = Math.round((correctAnswers / questions.length) * 100);
       
-      if (userError || !userData.user) {
-        throw new Error("User not authenticated");
-      }
-
+      // Prepare topic performance data
+      const topicPerformance: Record<string, { correct: number; total: number }> = {};
+      
+      questionResponses.forEach(response => {
+        const topic = response.topic;
+        if (!topicPerformance[topic]) {
+          topicPerformance[topic] = { correct: 0, total: 0 };
+        }
+        topicPerformance[topic].total += 1;
+        if (response.is_correct) {
+          topicPerformance[topic].correct += 1;
+        }
+      });
+      
+      // Create quiz response
       const responseData = {
         quiz_id: quizId,
-        student_id: userData.user.id,
-        score: Math.round(score),
+        student_id: userId,
+        score,
         correct_answers: correctAnswers,
         total_questions: questions.length,
-        question_responses: questionResponses,
+        topic_performance: topicPerformance,
         completed_at: new Date().toISOString(),
+        total_points: totalPoints
       };
 
       console.log("Inserting quiz response:", responseData);
 
-      const { data, error } = await supabase
-        .from("quiz_responses")
+      // Insert the response data into the database
+      const { data: response, error } = await supabase
+        .from('quiz_responses')
         .insert(responseData)
         .select()
         .single();
-
+      
       if (error) {
         console.error("Supabase error details:", error);
         throw error;
       }
 
-      console.log("Quiz response saved successfully:", data);
+      console.log("Quiz response saved successfully:", response);
+
+      // Insert individual question responses
+      if (response?.id) {
+        const questionResponsesWithId = questionResponses.map(qr => ({
+          ...qr,
+          quiz_response_id: response.id
+        }));
+        
+        const { error: questionsError } = await supabase
+          .from('question_responses')
+          .insert(questionResponsesWithId);
+          
+        if (questionsError) {
+          console.error("Error saving question responses:", questionsError);
+        }
+      }
 
       toast({
         title: "Quiz Submitted",
-        description: `Your score: ${Math.round(score)}%`,
+        description: `Your score: ${score}%`,
       });
 
-      // Navigate to quiz results page with the response ID
-      navigate(`/quizzes/quiz-results/${data.id}`);
+      // Call the callback function to notify parent components if provided
+      if (onQuizSubmitted) {
+        onQuizSubmitted();
+      }
       
-      // Call the callback function to notify parent components
-      onQuizSubmitted();
+      // Navigate to quiz results page with the response ID
+      navigate(`/quizzes/quiz-results/${response.id}`);
     } catch (error) {
       console.error("Error submitting quiz:", error);
       toast({

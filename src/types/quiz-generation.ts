@@ -7,6 +7,7 @@ export interface Topic {
 }
 
 export interface Question {
+  id?: string;
   question: string;
   options: {
     A: string;
