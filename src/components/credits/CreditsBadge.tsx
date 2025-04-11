@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { CreditsDisplay } from "./CreditsDisplay";
 
-export const CreditsBadge = () => {
+export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
   const { credits, loading } = useUserCredits();
 
   if (loading) {
@@ -31,7 +31,7 @@ export const CreditsBadge = () => {
     credits.assessment_credits + 
     credits.tutor_message_credits;
 
-  const maxCredits = 9; // 2 + 1 + 1 + 5
+  const maxCredits = 12; // 5 + 1 + 1 + 5
   const percentage = Math.floor((totalCredits / maxCredits) * 100);
 
   // Determine color based on remaining credits
@@ -40,6 +40,15 @@ export const CreditsBadge = () => {
     badgeVariant = "destructive";
   } else if (percentage > 25 && percentage < 75) {
     badgeVariant = "default";
+  }
+
+  if (showFull) {
+    return (
+      <Badge variant={badgeVariant} className="gap-1">
+        <Coins className="h-3 w-3" />
+        <span>{totalCredits} credits left</span>
+      </Badge>
+    );
   }
 
   return (
@@ -57,4 +66,4 @@ export const CreditsBadge = () => {
       </Tooltip>
     </TooltipProvider>
   );
-};
+}

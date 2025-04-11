@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, Bell, Search, CreditCard } from "lucide-react";
+import { Menu, Bell, Search, CreditCard, Coins } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { MobileSearch } from "./MobileSearch";
@@ -9,6 +9,8 @@ import { MobileMenu } from "./MobileMenu";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { CreditsBadge } from "@/components/credits/CreditsBadge";
+import { CreditsSummaryPopup } from "@/components/credits/CreditsSummaryPopup";
 
 export function MobileHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -47,15 +49,18 @@ export function MobileHeader() {
           
           <div className="flex items-center space-x-2">
             {subscription?.tier === 'free' && (
-              <Button
-                variant="default"
-                size="sm"
-                className="text-xs h-8 px-3"
-                onClick={handleUpgradeClick}
-              >
-                <CreditCard className="h-3.5 w-3.5 mr-1" />
-                Upgrade
-              </Button>
+              <>
+                <CreditsSummaryPopup />
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="text-xs h-8 px-3"
+                  onClick={handleUpgradeClick}
+                >
+                  <CreditCard className="h-3.5 w-3.5 mr-1" />
+                  Upgrade
+                </Button>
+              </>
             )}
             
             <motion.button

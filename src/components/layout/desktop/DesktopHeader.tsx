@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CreditCard } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { CreditsSummaryPopup } from "@/components/credits/CreditsSummaryPopup";
 
 export function DesktopHeader() {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ export function DesktopHeader() {
         </div>
         
         <div className="flex items-center gap-4">
+          <CreditsSummaryPopup />
+          
           {subscription?.tier === 'free' && (
             <Button
               variant="default"
