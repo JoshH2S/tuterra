@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -11,6 +12,7 @@ import { CourseMasterySection } from "./course-card/CourseMasterySection";
 import { CourseQuickActions } from "./course-card/CourseQuickActions";
 import { CourseEditDialog } from "./course-card/CourseEditDialog";
 import { CourseDeleteDialog } from "./course-card/CourseDeleteDialog";
+import { StudentPerformance } from "@/types/student";
 
 interface CourseCardProps {
   course: Course;
@@ -25,15 +27,13 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(course.title);
   const [editedDescription, setEditedDescription] = useState(course.description || "");
-  const [courseStats, setCourseStats] = useState({
-    completedQuizzes: 0,
-    studentCount: 0
-  });
-  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [performanceData, setPerformanceData] = useState<StudentPerformance | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Calculate progress value based on completed quizzes out of 10
   const maxQuizzes = 10;
-  const progressValue = Math.min((courseStats.completedQuizzes / maxQuizzes) * 100, 100);
+  const completedQuizzes = performanceData?.completed_quizzes || 0;
+  const progressValue = Math.min((completedQuizzes / maxQuizzes) * 100, 100);
   
   // Determine expertise level based on progress
   const expertiseLevel = 
@@ -43,67 +43,101 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
     progressValue >= 10 ? "Beginner" : 
     "Novice";
 
-  // Fetch course statistics from the database, using both quiz_responses and student_quiz_scores
+  // Fetch course performance from the student_performance table
   useEffect(() => {
-    const fetchCourseStats = async () => {
+    const fetchCoursePerformance = async () => {
       try {
-        setIsStatsLoading(true);
+        setIsLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) return;
 
-        // Fetch from both tables and get the most complete picture
-        const [quizScoresResult, quizResponsesResult] = await Promise.all([
-          // Get completed quizzes from student_quiz_scores
-          supabase
-            .from('student_quiz_scores')
-            .select('id')
-            .eq('course_id', course.id)
-            .eq('student_id', user.id),
-          
-          // Get completed quizzes from quiz_responses
-          supabase
+        // Fetch performance data for this course
+        const { data: performanceData, error: performanceError } = await supabase
+          .from('student_performance')
+          .select(`
+            id,
+            student_id,
+            course_id,
+            total_quizzes,
+            completed_quizzes,
+            average_score,
+            last_activity,
+            strengths,
+            areas_for_improvement,
+            courses(
+              title
+            )
+          `)
+          .eq('student_id', user.id)
+          .eq('course_id', course.id)
+          .maybeSingle();
+
+        if (performanceError && performanceError.code !== 'PGRST116') { // Not found is ok
+          console.error('Error fetching performance:', performanceError);
+        }
+
+        if (performanceData) {
+          setPerformanceData(performanceData);
+        } else {
+          // If no performance data found, check quiz_responses as a fallback
+          const { data: responses, error: responsesError } = await supabase
             .from('quiz_responses')
             .select(`
               id,
               quiz_id,
+              score,
+              total_questions,
               completed_at,
               quizzes(
                 course_id
               )
             `)
             .eq('student_id', user.id)
-            .not('completed_at', 'is', null) // Using 'is' operator instead of 'eq' for null checks
-        ]);
+            .not('completed_at', 'is', null)
+            .order('completed_at', { ascending: false });
 
-        // Count completed quizzes from quiz_responses for this course
-        const completedFromResponses = quizResponsesResult.data
-          ? quizResponsesResult.data.filter(r => 
-              r.quizzes && r.quizzes.course_id === course.id
-            ).length
-          : 0;
-
-        // Count from student_quiz_scores
-        const completedFromScores = quizScoresResult.data
-          ? quizScoresResult.data.length
-          : 0;
-
-        // Use the highest count from either source
-        const completedQuizzes = Math.max(completedFromResponses, completedFromScores);
-
-        setCourseStats({
-          studentCount: 0, // We're keeping this in the state but not displaying it
-          completedQuizzes: completedQuizzes
-        });
+          if (responsesError) {
+            console.error('Error fetching quiz responses:', responsesError);
+          } else {
+            // Filter responses for this course
+            const courseResponses = responses?.filter(
+              r => r.quizzes && r.quizzes.course_id === course.id
+            ) || [];
+            
+            if (courseResponses.length > 0) {
+              // Calculate average score
+              const totalScore = courseResponses.reduce((acc, curr) => acc + curr.score, 0);
+              const avgScore = courseResponses.length > 0 ? totalScore / courseResponses.length : 0;
+              
+              // Create performance object
+              const syntheticPerformance: StudentPerformance = {
+                id: 'synthetic',
+                student_id: user.id,
+                course_id: course.id,
+                total_quizzes: courseResponses.length,
+                completed_quizzes: courseResponses.length,
+                average_score: avgScore,
+                last_activity: courseResponses[0].completed_at,
+                course_title: course.title,
+                courses: { title: course.title }
+              };
+              
+              setPerformanceData(syntheticPerformance);
+            } else {
+              setPerformanceData(null);
+            }
+          }
+        }
       } catch (error) {
-        console.error('Error fetching course stats:', error);
+        console.error('Error fetching course performance:', error);
       } finally {
-        setIsStatsLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchCourseStats();
-  }, [course.id]);
+    fetchCoursePerformance();
+  }, [course.id, course.title]);
 
   const handleEditCourse = async () => {
     setIsSubmitting(true);
@@ -188,7 +222,7 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
         </div>
 
         <CourseMasterySection 
-          completedQuizzes={courseStats.completedQuizzes}
+          completedQuizzes={completedQuizzes}
           maxQuizzes={maxQuizzes}
           expertiseLevel={expertiseLevel}
           progressValue={progressValue}

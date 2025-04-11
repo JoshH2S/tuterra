@@ -2,31 +2,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-
-interface QuizScore {
-  id: string;
-  quiz_id: string;
-  score: number;
-  max_score: number;
-  taken_at: string;
-  quiz: {
-    title: string;
-  };
-}
-
-interface CourseGrade {
-  total_quizzes: number;
-  average_grade: number;
-}
+import { StudentPerformance } from "@/types/student";
 
 export function useQuizScores(courseId: string | undefined) {
-  const [quizScores, setQuizScores] = useState<QuizScore[]>([]);
-  const [courseGrade, setCourseGrade] = useState<CourseGrade>({
-    total_quizzes: 0,
-    average_grade: 0
-  });
+  const [performance, setPerformance] = useState<StudentPerformance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [courseName, setCourseName] = useState("");
+  const [quizScores, setQuizScores] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchGrades = async () => {
@@ -57,7 +39,33 @@ export function useQuizScores(courseId: string | undefined) {
           setCourseName(courseData.title);
         }
 
-        // Get quiz responses directly to ensure we have the most accurate data
+        // Fetch performance data for this course
+        const { data: performanceData, error: performanceError } = await supabase
+          .from('student_performance')
+          .select(`
+            id,
+            student_id,
+            course_id,
+            total_quizzes,
+            completed_quizzes,
+            average_score,
+            last_activity,
+            strengths,
+            areas_for_improvement,
+            courses(
+              title
+            )
+          `)
+          .eq('student_id', user.id)
+          .eq('course_id', courseId)
+          .single();
+
+        if (performanceError && performanceError.code !== 'PGRST116') { // Not found is ok
+          console.error('Error fetching performance:', performanceError);
+          throw performanceError;
+        }
+
+        // Get quiz responses for detailed quiz history
         const { data: responses, error: responsesError } = await supabase
           .from('quiz_responses')
           .select(`
@@ -73,32 +81,45 @@ export function useQuizScores(courseId: string | undefined) {
           `)
           .eq('student_id', user.id)
           .not('completed_at', 'is', null) // Using 'is' operator instead of 'eq' for null checks
+          .eq('quizzes.course_id', courseId)
           .order('completed_at', { ascending: false });
 
         if (responsesError) {
+          console.error('Error fetching quiz responses:', responsesError);
           throw responsesError;
         }
 
-        // Filter to only include quizzes from the current course
-        const courseResponses = responses?.filter(
-          r => r.quizzes && r.quizzes.course_id === courseId
-        ) || [];
-        
-        if (courseResponses.length > 0) {
-          // Calculate average grade
-          const totalScores = courseResponses.reduce(
-            (acc, curr) => acc + ((curr.score / 100) * 100), 
-            0
-          );
-          const averageGrade = totalScores / courseResponses.length;
+        // Set performance data
+        if (performanceData) {
+          setPerformance(performanceData);
+        } else if (responses && responses.length > 0) {
+          // If no performance entry but we have responses, create performance data
+          // Calculate average score
+          const totalScore = responses.reduce((acc, curr) => acc + curr.score, 0);
+          const avgScore = responses.length > 0 ? totalScore / responses.length : 0;
           
-          setCourseGrade({
-            total_quizzes: courseResponses.length,
-            average_grade: averageGrade
-          });
+          // Create performance object
+          const syntheticPerformance: StudentPerformance = {
+            id: 'synthetic',
+            student_id: user.id,
+            course_id: courseId,
+            total_quizzes: responses.length,
+            completed_quizzes: responses.length,
+            average_score: avgScore,
+            last_activity: responses[0].completed_at,
+            course_title: courseData?.title || 'Unknown Course',
+            courses: courseData ? { title: courseData.title } : undefined
+          };
+          
+          setPerformance(syntheticPerformance);
+        } else {
+          // No performance data or quiz responses
+          setPerformance(null);
+        }
 
-          // Format the data for display
-          const formattedScores = courseResponses.map(response => ({
+        // Format the quiz scores for display
+        if (responses && responses.length > 0) {
+          const formattedScores = responses.map(response => ({
             id: response.id,
             quiz_id: response.quiz_id,
             score: response.score,
@@ -108,13 +129,9 @@ export function useQuizScores(courseId: string | undefined) {
               title: response.quizzes?.title || 'Unknown Quiz'
             }
           }));
-
+          
           setQuizScores(formattedScores);
         } else {
-          setCourseGrade({
-            total_quizzes: 0,
-            average_grade: 0
-          });
           setQuizScores([]);
         }
       } catch (error) {
@@ -133,8 +150,8 @@ export function useQuizScores(courseId: string | undefined) {
   }, [courseId]);
 
   return {
+    performance,
     quizScores,
-    courseGrade,
     isLoading,
     courseName
   };
