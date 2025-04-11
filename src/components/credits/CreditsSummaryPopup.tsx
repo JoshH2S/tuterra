@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { CreditsDisplay } from "@/components/credits/CreditsDisplay";
 import {
@@ -12,18 +13,33 @@ import { Button } from "@/components/ui/button";
 import { Coins } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
+import { useUserCredits } from "@/hooks/useUserCredits";
 
 export function CreditsSummaryPopup() {
   const { subscription } = useSubscription();
+  const { fetchUserCredits } = useUserCredits();
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
 
   // Only show for free tier users
   if (subscription.tier !== 'free') {
     return null;
   }
 
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      // Refresh credits data when opening the dialog
+      fetchUserCredits();
+    }
+    setIsOpen(open);
+  };
+
+  const handleRetry = () => {
+    fetchUserCredits();
+  };
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
@@ -40,7 +56,11 @@ export function CreditsSummaryPopup() {
           <DialogTitle className="text-center">Your Free Credits</DialogTitle>
         </DialogHeader>
         <div className="py-4">
-          <CreditsDisplay compact={false} showUpgradeButton={true} />
+          <CreditsDisplay 
+            compact={false} 
+            showUpgradeButton={true} 
+            onRetry={handleRetry}
+          />
         </div>
       </DialogContent>
     </Dialog>

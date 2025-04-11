@@ -3,16 +3,31 @@ import { useUserCredits } from "@/hooks/useUserCredits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useNavigate } from "react-router-dom";
 
 interface CreditsDisplayProps {
   showUpgradeButton?: boolean;
   compact?: boolean;
+  onRetry?: () => void;
 }
 
-export const CreditsDisplay = ({ showUpgradeButton = true, compact = false }: CreditsDisplayProps) => {
-  const { credits, loading, error } = useUserCredits();
+export const CreditsDisplay = ({ 
+  showUpgradeButton = true, 
+  compact = false,
+  onRetry 
+}: CreditsDisplayProps) => {
+  const { credits, loading, error, fetchUserCredits } = useUserCredits();
+  const navigate = useNavigate();
+
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry();
+    } else {
+      fetchUserCredits();
+    }
+  };
 
   if (loading) {
     return (
@@ -22,26 +37,47 @@ export const CreditsDisplay = ({ showUpgradeButton = true, compact = false }: Cr
     );
   }
 
-  if (error || !credits) {
+  if (error && !credits) {
     return (
-      <Alert variant="destructive" className="mb-4">
+      <Alert variant="destructive" className={compact ? "m-2" : "mb-4"}>
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          {error || "Unable to load your credits information"}
+        <AlertDescription className="space-y-2">
+          <p>{error || "Unable to load your credits information"}</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRetry}
+            className="mt-2 flex items-center gap-1.5 touch-manipulation"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Retry
+          </Button>
         </AlertDescription>
       </Alert>
     );
   }
 
+  // Fallback credits if somehow credits is null
+  const safeCredits = credits || {
+    quiz_credits: 5,
+    interview_credits: 1,
+    assessment_credits: 1,
+    tutor_message_credits: 5
+  };
+
   const creditsItems = [
-    { label: "Quizzes", value: credits.quiz_credits, total: 5 },
-    { label: "Interview Simulations", value: credits.interview_credits, total: 1 },
-    { label: "Skill Assessments", value: credits.assessment_credits, total: 1 },
-    { label: "AI Tutor Messages", value: credits.tutor_message_credits, total: 5 },
+    { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 },
+    { label: "Interview Simulations", value: safeCredits.interview_credits, total: 1 },
+    { label: "Skill Assessments", value: safeCredits.assessment_credits, total: 1 },
+    { label: "AI Tutor Messages", value: safeCredits.tutor_message_credits, total: 5 },
   ];
 
   const allCreditsUsed = creditsItems.every(item => item.value === 0);
+
+  const handleUpgrade = () => {
+    navigate('/pricing');
+  };
 
   if (compact) {
     return (
@@ -81,7 +117,7 @@ export const CreditsDisplay = ({ showUpgradeButton = true, compact = false }: Cr
           ))}
 
           {allCreditsUsed && showUpgradeButton && (
-            <Button className="w-full mt-4" size="lg">
+            <Button className="w-full mt-4" size="lg" onClick={handleUpgrade}>
               Upgrade to Continue
             </Button>
           )}

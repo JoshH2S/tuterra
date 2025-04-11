@@ -29,6 +29,8 @@ export const useUserCredits = () => {
 
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
+      
       // Using 'any' to bypass the type checking since we know user_credits exists in the database
       // This is a workaround since the Supabase types don't include our newly created table
       const { data, error } = await (supabase as any)
@@ -39,16 +41,46 @@ export const useUserCredits = () => {
 
       if (error) throw error;
 
-      setCredits(data as UserCredits);
-      setError(null);
+      // If no data is found, create a fallback with default values
+      if (!data) {
+        console.log('No credits found, using fallback values');
+        setCredits({
+          id: 'fallback',
+          user_id: user.id,
+          quiz_credits: 5,
+          interview_credits: 1,
+          assessment_credits: 1,
+          tutor_message_credits: 5,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      } else {
+        setCredits(data as UserCredits);
+      }
     } catch (err) {
       console.error('Error fetching user credits:', err);
       setError('Failed to load your available credits');
-      toast({
-        title: 'Error',
-        description: 'Failed to load your available credits',
-        variant: 'destructive',
+      
+      // Provide fallback credits so UI doesn't break
+      setCredits({
+        id: 'fallback',
+        user_id: user?.id || 'unknown',
+        quiz_credits: 5,
+        interview_credits: 1,
+        assessment_credits: 1,
+        tutor_message_credits: 5,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
+      
+      // Only show toast if it's a real error, not just missing data
+      if (err instanceof Error && err.message !== 'No data found') {
+        toast({
+          title: "Error",
+          description: "Failed to load your available credits. Using default values.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

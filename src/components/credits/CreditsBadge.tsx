@@ -1,7 +1,7 @@
 
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Loader2 } from "lucide-react";
+import { Coins, Loader2, AlertCircle } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -11,7 +11,7 @@ import {
 import { CreditsDisplay } from "./CreditsDisplay";
 
 export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
-  const { credits, loading } = useUserCredits();
+  const { credits, loading, error } = useUserCredits();
 
   if (loading) {
     return (
@@ -22,14 +22,29 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     );
   }
 
-  if (!credits) return null;
+  if (error && !credits) {
+    return (
+      <Badge variant="destructive" className="ml-2 gap-1">
+        <AlertCircle className="h-3 w-3" />
+        <span>Error</span>
+      </Badge>
+    );
+  }
+
+  // Ensure we have fallback values if credits is somehow null
+  const safeCredits = credits || {
+    quiz_credits: 5,
+    interview_credits: 1,
+    assessment_credits: 1,
+    tutor_message_credits: 5
+  };
 
   // Calculate total remaining credits
   const totalCredits = 
-    credits.quiz_credits + 
-    credits.interview_credits + 
-    credits.assessment_credits + 
-    credits.tutor_message_credits;
+    safeCredits.quiz_credits + 
+    safeCredits.interview_credits + 
+    safeCredits.assessment_credits + 
+    safeCredits.tutor_message_credits;
 
   const maxCredits = 12; // 5 + 1 + 1 + 5
   const percentage = Math.floor((totalCredits / maxCredits) * 100);
@@ -55,7 +70,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     <TooltipProvider>
       <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>
-          <Badge variant={badgeVariant} className="gap-1 cursor-help">
+          <Badge variant={badgeVariant} className="gap-1 cursor-help touch-manipulation">
             <Coins className="h-3 w-3" />
             <span>{totalCredits}</span>
           </Badge>
