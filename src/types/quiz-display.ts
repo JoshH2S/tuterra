@@ -40,6 +40,8 @@ export interface Quiz {
     total_questions: number;
     attempt_number: number;
     student_id: string;
+    // Note: completed_at might exist in the database but isn't included in the fetched data
+    // so we determine completion based on score instead
   };
   question_count?: number;
 }

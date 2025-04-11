@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Course } from "@/types/course";
 import { ProcessedCourse, ProcessedQuiz, QuizzesByCourse } from "@/types/quiz-display";
@@ -24,9 +23,12 @@ export const useQuizzesProcessor = (
           });
 
           // Determine quiz status
+          // Since completed_at doesn't exist in the type, we'll use the score to determine status
           let status: 'not_attempted' | 'in_progress' | 'completed' = 'not_attempted';
           if (latestResponse) {
-            status = latestResponse.completed_at ? 'completed' : 'in_progress';
+            // If there's a response with a score, consider it completed
+            // Otherwise it's in progress
+            status = latestResponse.score > 0 ? 'completed' : 'in_progress';
           }
 
           // Match the score calculation from the quiz results page
