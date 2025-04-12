@@ -67,6 +67,7 @@ export function DashboardPreview() {
             </div>
           </motion.div>
 
+          {/* Carousel section in a separate row */}
           <motion.div 
             initial={{
               opacity: 0,
