@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 import { QuizQuestionCard } from "./QuizQuestionCard";
@@ -53,7 +52,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
   const [showFeedback, setShowFeedback] = useState(false);
   const [validatingSubmission, setValidatingSubmission] = useState(false);
   
-  // Use either the prop setters or local state setters
   const updateCurrentQuestionIndex = (index: number) => {
     setCurrentQuestionIndexLocal(index);
     if (setCurrentQuestionIndex) {
@@ -70,24 +68,21 @@ const QuizContent: React.FC<QuizContentProps> = ({
   
   const { explanations, isGenerating, generateExplanation } = useExplanationGeneration();
   
-  // Use the updated useQuizSubmit hook with object parameter
   const { isSubmitting, handleSubmitQuiz } = useQuizSubmit({
     quizId,
     questions,
     onQuizSubmitted
   });
   
-  // Set up an interval to save progress periodically
   useEffect(() => {
     if (!onSaveProgress) return;
     
-    // Only save if there are selected answers
     if (Object.keys(selectedAnswers).length === 0) return;
     
     const intervalId = setInterval(() => {
       console.log("Auto-saving quiz progress...");
       onSaveProgress();
-    }, 30000); // Save every 30 seconds
+    }, 30000);
     
     return () => clearInterval(intervalId);
   }, [selectedAnswers, onSaveProgress]);
@@ -96,7 +91,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
     const currentQuestion = questions[currentQuestionIndex];
     const isCorrect = answer === currentQuestion.correct_answer;
     
-    // Store the answer
     const updatedAnswers = {
       ...selectedAnswers,
       [currentQuestionIndex]: answer
@@ -104,13 +98,10 @@ const QuizContent: React.FC<QuizContentProps> = ({
     
     updateSelectedAnswers(updatedAnswers);
     
-    // Generate explanation for this answer
     generateExplanation(currentQuestion, answer, isCorrect);
     
-    // Show feedback
     setShowFeedback(true);
     
-    // Save progress after selecting an answer
     if (onSaveProgress) {
       onSaveProgress();
     }
@@ -121,7 +112,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
     if (currentQuestionIndex < questions.length - 1) {
       updateCurrentQuestionIndex(currentQuestionIndex + 1);
     } else if (isLastQuestion) {
-      // If on the last question and user clicks Next after seeing feedback, submit the quiz
       submitQuiz();
     }
   };
@@ -139,24 +129,22 @@ const QuizContent: React.FC<QuizContentProps> = ({
   };
   
   const handleExitClick = async () => {
-    // Save progress before showing exit dialog
     if (onSaveProgress) {
       await onSaveProgress();
     }
     
     setShowExitDialog(true);
-    setTimerActive(false); // Pause timer while dialog is open
+    setTimerActive(false);
   };
   
   const handleExitDialogClose = () => {
     setShowExitDialog(false);
-    setTimerActive(true); // Resume timer when dialog is closed
+    setTimerActive(true);
   };
 
   const validateSubmission = () => {
     setValidatingSubmission(true);
     
-    // Check if the user has answered at least one question
     if (Object.keys(selectedAnswers).length === 0) {
       toast({
         title: "Cannot submit quiz",
@@ -198,6 +186,8 @@ const QuizContent: React.FC<QuizContentProps> = ({
           title={quiz.title} 
           timeRemaining={timeRemaining}
           onTimeUp={submitQuiz}
+          currentQuestion={currentQuestionIndex + 1}
+          totalQuestions={questions.length}
         />
         
         <div className="text-center my-4">

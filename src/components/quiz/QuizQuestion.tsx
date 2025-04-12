@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -95,21 +94,11 @@ export function QuizQuestion({
   
   return (
     <div 
-      className="min-h-[calc(100vh-4rem)] flex flex-col"
+      className="min-h-[calc(100vh-8rem)] flex flex-col pt-16"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Floating Progress Header */}
-      <div className="fixed top-2 sm:top-4 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-3xl z-10">
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-lg">
-          <div className="flex items-center justify-between">
-            <QuizTimer timeRemaining={timeRemaining} />
-            <QuizProgress current={currentQuestion + 1} total={totalQuestions} />
-          </div>
-        </div>
-      </div>
-
       {/* Swipe hint for mobile users */}
       {showSwipeHint && (
         <motion.div 
@@ -123,7 +112,7 @@ export function QuizQuestion({
       )}
 
       {/* Question Content */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 mt-16">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-3xl space-y-6 sm:space-y-8">
           {/* Topic & Difficulty */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -172,7 +161,7 @@ export function QuizQuestion({
       </div>
 
       {/* Navigation Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t">
+      <div className="sticky bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Button 
             variant="ghost" 
