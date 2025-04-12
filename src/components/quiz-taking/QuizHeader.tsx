@@ -58,7 +58,7 @@ export const QuizHeader = ({
       
       {/* Regular CardHeader (non-floating) */}
       <CardHeader className={`
-        flex flex-col sm:flex-row items-start sm:items-center justify-between mt-14
+        flex flex-col sm:flex-row sm:items-center justify-between mt-14
         ${isMobile ? 'p-3 space-y-2 sm:space-y-0' : ''}
       `}>
         <CardTitle className={`${isMobile ? 'text-lg' : ''} gradient-text`}>

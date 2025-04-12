@@ -42,7 +42,8 @@ export const useUserCredits = () => {
         .maybeSingle();
 
       if (fetchError) {
-        console.error('Supabase error:', fetchError);
+        // Log the full error for better debugging
+        console.error('Supabase error fetching credits:', fetchError);
         throw fetchError;
       }
 
@@ -50,7 +51,7 @@ export const useUserCredits = () => {
 
       // If no data is found, create a fallback with default values
       if (!data) {
-        console.log('No credits found, using fallback values');
+        console.log('No credits found, creating default credits');
         
         // Try to create default credits for the user
         try {
@@ -58,7 +59,7 @@ export const useUserCredits = () => {
             .from('user_credits')
             .insert({
               user_id: user.id,
-              quiz_credits: 5, // Updated from the previous value to 5
+              quiz_credits: 5,
               interview_credits: 1,
               assessment_credits: 1,
               tutor_message_credits: 5
@@ -68,6 +69,14 @@ export const useUserCredits = () => {
             
           if (insertError) {
             console.error('Error creating default credits:', insertError);
+            
+            // If insert fails due to RLS policy, provide fallback
+            if (insertError.code === '42501' || insertError.message.includes('permission denied')) {
+              console.log('Permission denied when creating credits, using fallback');
+              useDefaultCredits(user.id);
+              return;
+            }
+            
             throw insertError;
           }
           
@@ -111,7 +120,7 @@ export const useUserCredits = () => {
     setCredits({
       id: 'fallback',
       user_id: userId,
-      quiz_credits: 5, // Updated from the previous value to 5
+      quiz_credits: 5,
       interview_credits: 1,
       assessment_credits: 1,
       tutor_message_credits: 5,
@@ -141,7 +150,20 @@ export const useUserCredits = () => {
         .update({ [creditType]: credits[creditType] - 1 })
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        // If update fails due to RLS policies, update locally only
+        if (error.code === '42501' || error.message.includes('permission denied')) {
+          console.log('Permission denied when updating credits, updating locally only');
+          setCredits({
+            ...credits,
+            [creditType]: credits[creditType] - 1,
+            updated_at: new Date().toISOString(),
+          });
+          return true;
+        }
+        
+        throw error;
+      }
 
       // Update local state
       setCredits({

@@ -18,64 +18,84 @@ export const useQuizCredits = () => {
   }, [fetchUserCredits]);
 
   const validateCredits = async (): Promise<boolean> => {
-    if (subscription.tier === 'free') {
-      // Always fetch the latest credits before checking
-      await fetchUserCredits();
-      const hasCredits = await checkCredits('quiz_credits');
-      
-      if (!hasCredits) {
-        setShowUpgradePrompt(true);
-        if (!hasShownCreditToast) {
+    try {
+      if (subscription.tier === 'free') {
+        // Always fetch the latest credits before checking
+        await fetchUserCredits();
+        const hasCredits = await checkCredits('quiz_credits');
+        
+        if (!hasCredits) {
+          setShowUpgradePrompt(true);
+          if (!hasShownCreditToast) {
+            toast({
+              title: "No credits remaining",
+              description: "You have used all your free quiz credits. Please upgrade to continue.",
+              variant: "destructive",
+            });
+            setHasShownCreditToast(true);
+          }
+          return false;
+        }
+        
+        // Add info toast about remaining credits
+        if (credits?.quiz_credits && !hasShownCreditToast) {
+          const remainingAfterUse = credits.quiz_credits - 1;
           toast({
-            title: "No credits remaining",
-            description: "You have used all your free quiz credits. Please upgrade to continue.",
-            variant: "destructive",
+            title: "Credit Usage",
+            description: `You have ${remainingAfterUse} quiz ${remainingAfterUse === 1 ? 'credit' : 'credits'} remaining after this use.`,
+            variant: "default",
           });
           setHasShownCreditToast(true);
         }
-        return false;
       }
-      
-      // Add info toast about remaining credits
-      if (credits?.quiz_credits && !hasShownCreditToast) {
-        const remainingAfterUse = credits.quiz_credits - 1;
-        toast({
-          title: "Credit Usage",
-          description: `You have ${remainingAfterUse} quiz ${remainingAfterUse === 1 ? 'credit' : 'credits'} remaining after this use.`,
-          variant: "default",
-        });
-        setHasShownCreditToast(true);
-      }
+      return true;
+    } catch (error) {
+      console.error("Error validating credits:", error);
+      toast({
+        title: "Error checking credits",
+        description: "There was a problem validating your credits. Please try again.",
+        variant: "destructive",
+      });
+      return false;
     }
-    return true;
   };
 
   const useCredit = async () => {
-    // Reset the toast flag when actually using a credit
-    setHasShownCreditToast(false);
-    
-    // Always fetch the latest credits before decrementing
-    await fetchUserCredits();
-    
-    if (subscription.tier === 'free') {
-      const success = await decrementCredits('quiz_credits');
+    try {
+      // Reset the toast flag when actually using a credit
+      setHasShownCreditToast(false);
       
-      // Show an accurate toast with remaining credits after successful decrement
-      if (success && credits) {
-        // Refresh credits to get the updated count
-        await fetchUserCredits();
+      // Always fetch the latest credits before decrementing
+      await fetchUserCredits();
+      
+      if (subscription.tier === 'free') {
+        const success = await decrementCredits('quiz_credits');
         
-        const remainingCredits = credits.quiz_credits;
-        toast({
-          title: "Credit Usage",
-          description: `You have ${remainingCredits} quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining after this use.`,
-          variant: "default",
-        });
+        // Show an accurate toast with remaining credits after successful decrement
+        if (success && credits) {
+          // Refresh credits to get the updated count
+          await fetchUserCredits();
+          
+          const remainingCredits = credits.quiz_credits;
+          toast({
+            title: "Credit Usage",
+            description: `You have ${remainingCredits} quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining after this use.`,
+            variant: "default",
+          });
+        }
+        
+        return success;
       }
-      
-      return success;
+      return true;
+    } catch (error) {
+      console.error("Error using credit:", error);
+      toast({
+        title: "Error using credit",
+        description: "There was a problem processing your credit usage. Please try again.",
+        variant: "destructive",
+      });
+      return false;
     }
-    return true;
   };
 
   const getRemainingCredits = () => {

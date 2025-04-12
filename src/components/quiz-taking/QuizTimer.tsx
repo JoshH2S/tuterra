@@ -64,6 +64,7 @@ export const QuizTimer = ({
       <HoverCardTrigger>
         <motion.div 
           whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.98 }}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${getTimerColor()} transition-colors duration-300`}
         >
           <Clock className="w-3.5 h-3.5" />
