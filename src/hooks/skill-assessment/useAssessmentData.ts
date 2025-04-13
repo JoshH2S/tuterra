@@ -93,7 +93,7 @@ export const useAssessmentData = () => {
         
         if (!decrementSuccess) {
           console.log('Failed to decrement credits, continuing in offline mode');
-          // IMPORTANT FIX: Use `isOfflineMode` from useUserCredits instead of local state
+          // We don't need to set isOfflineMode manually, as the useUserCredits hook handles this
           return;
         }
       }
