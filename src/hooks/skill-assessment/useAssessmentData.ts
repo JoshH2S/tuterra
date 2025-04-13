@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,21 +69,21 @@ export const useAssessmentData = () => {
       return;
     }
     
+    // Always fetch latest credits first
+    await fetchUserCredits();
+    
     // Check if user has assessment credits or is in offline mode
-    if (!checkCredits('assessment_credits') && !isOfflineMode) {
-      // Try one more time to fetch credits to ensure we have the latest data
-      await fetchUserCredits();
-      
-      // Second check after refresh
-      if (!checkCredits('assessment_credits') && !isOfflineMode) {
-        setShowUpgradePrompt(true);
-        toast({
-          title: 'No credits remaining',
-          description: 'You have used all your free skill assessment credits. Please upgrade to continue.',
-          variant: 'destructive',
-        });
-        return;
-      }
+    const hasCredits = checkCredits('assessment_credits');
+    
+    // If we don't have credits and we're not in offline mode, show upgrade prompt
+    if (!hasCredits && !isOfflineMode) {
+      setShowUpgradePrompt(true);
+      toast({
+        title: 'No credits remaining',
+        description: 'You have used all your free skill assessment credits. Please upgrade to continue.',
+        variant: 'destructive',
+      });
+      return;
     }
     
     try {
@@ -91,12 +92,8 @@ export const useAssessmentData = () => {
         const decrementSuccess = await decrementCredits('assessment_credits');
         
         if (!decrementSuccess) {
-          toast({
-            title: 'Error',
-            description: 'Failed to use assessment credit',
-            variant: 'destructive',
-          });
-          return;
+          console.log('Failed to decrement credits, continuing in offline mode');
+          setIsOfflineMode(true);
         }
       }
       

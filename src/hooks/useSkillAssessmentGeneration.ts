@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserCredits } from '@/hooks/useUserCredits';
 
 // Types for assessment parameters
 export interface AssessmentParams {
@@ -43,6 +44,7 @@ export const useSkillAssessmentGeneration = () => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { decrementCredits, checkCredits, isOfflineMode, fetchUserCredits } = useUserCredits();
 
   // Track feature interaction (analytics)
   const trackFeatureInteraction = async (feature: string, action: string) => {
@@ -60,11 +62,19 @@ export const useSkillAssessmentGeneration = () => {
     }
   };
 
-  // Check if user can generate an assessment based on their tier
+  // Check if user can generate an assessment based on their tier and credits
   const checkAssessmentAllowance = async () => {
     if (!user) return false;
     
     try {
+      // Always refresh credits first to ensure we have the latest data
+      await fetchUserCredits();
+      
+      // If we're in offline mode, we'll check the local credits
+      if (isOfflineMode) {
+        return await checkCredits('assessment_credits');
+      }
+      
       // Get user's subscription tier from profile
       const { data: profile } = await supabase
         .from('profiles')
@@ -74,6 +84,16 @@ export const useSkillAssessmentGeneration = () => {
       
       const tier = profile?.subscription_tier || 'free';
       
+      // Premium users have unlimited assessments
+      if (tier === 'premium') return true;
+      
+      // For free and pro users, check if they have assessment credits
+      const hasCredits = await checkCredits('assessment_credits');
+      if (!hasCredits) {
+        return false;
+      }
+      
+      // If they have credits, also check monthly limits
       // Get count of assessments created in the current month
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
@@ -87,14 +107,19 @@ export const useSkillAssessmentGeneration = () => {
         
       if (error) throw error;
       
-      // Check limits based on tier - UPDATED: Free tier now gets 2 assessments
-      if (tier === 'premium') return true; // Unlimited
+      // Check limits based on tier - Free tier gets 2 assessments
       if (tier === 'pro' && (count || 0) < 20) return true;
-      if (tier === 'free' && (count || 0) < 2) return true; // Changed from 3 to 2
+      if (tier === 'free' && (count || 0) < 2) return true;
       
       return false;
     } catch (error) {
       console.error('Error checking assessment allowance:', error);
+      
+      // If we encounter an error, fall back to offline mode
+      if (isOfflineMode) {
+        return await checkCredits('assessment_credits');
+      }
+      
       return false;
     }
   };
@@ -115,7 +140,7 @@ export const useSkillAssessmentGeneration = () => {
     if (!canGenerate) {
       toast({
         title: "Assessment limit reached",
-        description: "Upgrade your subscription to generate more assessments",
+        description: "You've either reached your monthly limit or used all your assessment credits. Upgrade your subscription for more.",
         variant: "destructive",
       });
       return null;
@@ -198,6 +223,12 @@ export const useSkillAssessmentGeneration = () => {
           token_usage: response.data.token_usage || 0,
           user_tier: tier,
         });
+        
+        // Decrement the assessment credits after successful generation
+        // Skip decrementing for premium users who have unlimited
+        if (tier !== 'premium') {
+          await decrementCredits('assessment_credits');
+        }
       }
 
       // Track completion

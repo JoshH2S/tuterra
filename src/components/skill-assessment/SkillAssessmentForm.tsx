@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -15,6 +14,7 @@ import { useSkillAssessmentGeneration } from "@/hooks/useSkillAssessmentGenerati
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUserCredits } from "@/hooks/useUserCredits";
 import {
   Select,
   SelectContent,
@@ -53,6 +53,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
   const [userTier, setUserTier] = useState<string>("free");
   const [assessmentsRemaining, setAssessmentsRemaining] = useState<number>(0);
   const { generateAssessment, isGenerating, progress, checkAssessmentAllowance } = useSkillAssessmentGeneration();
+  const { credits, fetchUserCredits } = useUserCredits();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,6 +72,9 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
       if (!user) return;
 
       try {
+        // Fetch latest credits first
+        await fetchUserCredits();
+        
         // Get user's subscription tier
         const { data: profile } = await supabase
           .from('profiles')
@@ -81,7 +85,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
         const tier = profile?.subscription_tier || 'free';
         setUserTier(tier);
         
-        // Calculate remaining assessments
+        // Calculate remaining assessments based on credits and monthly limits
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
@@ -94,21 +98,28 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
           
         if (error) throw error;
         
-        // Set limits based on tier - UPDATED: Free tier now gets 2 assessments
+        // Calculate remaining based on both credits and monthly limits
+        const remainingCredits = credits?.assessment_credits || 0;
+        
+        // Set limits based on tier
         if (tier === 'premium') {
-          setAssessmentsRemaining(Infinity);
+          setAssessmentsRemaining(Infinity); // Unlimited for premium
         } else if (tier === 'pro') {
-          setAssessmentsRemaining(Math.max(0, 20 - (count || 0)));
-        } else {
-          setAssessmentsRemaining(Math.max(0, 2 - (count || 0))); // Changed from 3 to 2
+          const monthlyRemaining = Math.max(0, 20 - (count || 0));
+          setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
+        } else { // Free tier
+          const monthlyRemaining = Math.max(0, 2 - (count || 0)); // 2 per month for free tier
+          setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
         }
       } catch (error) {
         console.error('Error fetching user details:', error);
+        // Fallback to just using credits if we can't get the count
+        setAssessmentsRemaining(credits?.assessment_credits || 0);
       }
     };
 
     getUserDetails();
-  }, [user]);
+  }, [user, credits, fetchUserCredits]);
 
   const showPremiumFeatures = userTier !== 'free';
   const isPremium = userTier === 'premium';
@@ -124,11 +135,12 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
       return;
     }
 
+    // Check first if the user still has credits or monthly allowance
     const canGenerate = await checkAssessmentAllowance();
     if (!canGenerate) {
       toast({
         title: "Assessment limit reached",
-        description: "You have reached your monthly limit for generating assessments. Upgrade your subscription to create more.",
+        description: "You have reached your monthly limit or used all your assessment credits. Upgrade your subscription to create more.",
         variant: "destructive",
       });
       return;
@@ -167,6 +179,9 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
 
       if (error) throw error;
 
+      // Update the remaining assessments count after successful creation
+      setAssessmentsRemaining(prev => Math.max(0, prev - 1));
+      
       toast({
         title: "Assessment created",
         description: "Your skill assessment has been generated successfully",
@@ -399,7 +414,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
         {assessmentsRemaining <= 0 && (
           <div className="mt-2 text-center">
             <p className="text-sm text-muted-foreground">
-              You have reached your monthly limit. 
+              You have reached your monthly limit or used all your credits. 
               <Button variant="link" className="p-0 h-auto ml-1" onClick={() => toast({
                 title: "Upgrade your plan",
                 description: "Premium users can generate unlimited assessments",

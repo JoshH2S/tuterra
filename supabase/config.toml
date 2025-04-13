@@ -12,3 +12,6 @@ verify_jwt = true
 
 [functions.handle-subscription]
 verify_jwt = false
+
+[functions.generate-skill-assessment]
+verify_jwt = true
