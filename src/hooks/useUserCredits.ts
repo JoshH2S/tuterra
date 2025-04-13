@@ -24,6 +24,8 @@ export const useUserCredits = () => {
   const { isOfflineMode: networkOffline, hasConnectionError } = useNetworkStatus();
   const [isOfflineMode, setIsOfflineMode] = useState<boolean>(false);
   const [pendingTransactions, setPendingTransactions] = useState<any[]>([]);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastRetryTime, setLastRetryTime] = useState(0);
 
   // Store pending transactions for later sync
   const addPendingTransaction = useCallback((type: string, data: any) => {
@@ -48,12 +50,39 @@ export const useUserCredits = () => {
     return transaction.id;
   }, []);
 
+  // Create a default credits object with the given user ID
+  const createDefaultCredits = useCallback((userId: string): UserCredits => {
+    return {
+      id: 'local-' + Math.random().toString(36).substring(2, 9),
+      user_id: userId,
+      quiz_credits: 5,
+      interview_credits: 1,
+      assessment_credits: 2,
+      tutor_message_credits: 5,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  }, []);
+
   const fetchUserCredits = useCallback(async () => {
     if (!user) {
       setLoading(false);
       console.log('No user found, cannot fetch credits');
       return;
     }
+
+    // Limit retry attempts to prevent excessive API calls
+    const now = Date.now();
+    if (retryCount > 3 && now - lastRetryTime < 60000) {
+      console.log('Too many retry attempts, using local credits');
+      useLocalCredits(user.id);
+      setLoading(false);
+      return;
+    }
+
+    // If we're explicitly retrying, update the counters
+    setRetryCount(prev => prev + 1);
+    setLastRetryTime(now);
 
     // If we're offline or have connection errors, skip server fetch and use local data
     if (networkOffline || hasConnectionError) {
@@ -106,14 +135,16 @@ export const useUserCredits = () => {
         
         try {
           // Try to create default credits for the user
+          const newCreditsData = createDefaultCredits(user.id);
+          
           const { data: newCredits, error: insertError } = await (supabase as any)
             .from('user_credits')
             .insert({
               user_id: user.id,
-              quiz_credits: 5,
-              interview_credits: 1,
-              assessment_credits: 2, // Updated to match CreditsBadge display
-              tutor_message_credits: 5
+              quiz_credits: newCreditsData.quiz_credits,
+              interview_credits: newCreditsData.interview_credits,
+              assessment_credits: newCreditsData.assessment_credits,
+              tutor_message_credits: newCreditsData.tutor_message_credits
             })
             .select('*')
             .single();
@@ -121,14 +152,32 @@ export const useUserCredits = () => {
           if (insertError) {
             console.error('Error creating default credits:', insertError);
             
-            // If creation fails due to permissions, switch to offline mode
-            const errorIsPermissionDenied = 
-              insertError.code === '42501' || 
-              insertError.message.includes('permission denied') || 
-              (insertError as any).code === 'PGRST301' || 
-              insertError.message.includes('403');
+            // Handle RLS violation errors specifically
+            if (insertError.code === '42501' || insertError.message.includes('violates row-level security policy')) {
+              console.warn('RLS policy error when creating credits, this may be a permissions issue');
+              setIsOfflineMode(true);
+              
+              // Store this attempt as a pending transaction for later
+              addPendingTransaction('createCredits', { 
+                userId: user.id, 
+                credits: newCreditsData 
+              });
+              
+              // Still use local credits
+              useLocalCredits(user.id);
+              
+              // Show a helpful toast that won't confuse users too much
+              toast({
+                title: "Using Offline Mode",
+                description: "Your credits will sync when connection is restored.",
+                variant: "default",
+              });
+              
+              return;
+            }
             
-            if (errorIsPermissionDenied) {
+            // Handle other permission errors
+            if (insertError.message.includes('permission denied')) {
               console.log('Permission denied when creating credits, using offline mode');
               setIsOfflineMode(true);
               useLocalCredits(user.id);
@@ -174,15 +223,15 @@ export const useUserCredits = () => {
       // Only show toast if it's a real error, not just missing data
       if (err instanceof Error && err.message !== 'No data found') {
         toast({
-          title: "Error",
-          description: "Failed to load credits. Using offline mode.",
-          variant: "destructive",
+          title: "Using Offline Mode",
+          description: "Your credits will sync when connection is restored.",
+          variant: "default",
         });
       }
     } finally {
       setLoading(false);
     }
-  }, [user, networkOffline, hasConnectionError]);
+  }, [user, networkOffline, hasConnectionError, retryCount, lastRetryTime, createDefaultCredits, addPendingTransaction]);
 
   // Store credits in local storage for offline use
   const storeLocalCredits = (creditsData: UserCredits) => {
@@ -196,19 +245,6 @@ export const useUserCredits = () => {
 
   // Use local credits when offline or when there's an error
   const useLocalCredits = (userId: string) => {
-    const defaultCredits = {
-      id: 'local-' + Math.random().toString(36).substring(2, 9),
-      user_id: userId,
-      quiz_credits: 5,
-      interview_credits: 1,
-      assessment_credits: 2, // Updated to match CreditsBadge display
-      tutor_message_credits: 5,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    console.log('Using local credits:', defaultCredits);
-    
     // Try to get stored local credits first
     const storedCredits = localStorage.getItem(`local_credits_${userId}`);
     if (storedCredits) {
@@ -222,7 +258,11 @@ export const useUserCredits = () => {
       }
     }
     
+    // Create and use default credits
+    const defaultCredits = createDefaultCredits(userId);
+    console.log('Using default local credits:', defaultCredits);
     setCredits(defaultCredits);
+    
     // Store local credits for later use
     storeLocalCredits(defaultCredits);
   };
@@ -525,6 +565,7 @@ export const useUserCredits = () => {
     checkCredits,
     fetchUserCredits,
     syncCreditsWithServer,
-    pendingTransactions: pendingTransactions.length
+    pendingTransactions: pendingTransactions.length,
+    retryFetch: fetchUserCredits // Add a retry function for explicit refetching
   };
 };

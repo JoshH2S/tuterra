@@ -1,109 +1,147 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-import { useState, useEffect, useCallback } from "react";
-
-/**
- * Enhanced hook for tracking online/offline status
- * with mobile-first design and better error handling
- */
 export const useNetworkStatus = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [hasConnectionError, setHasConnectionError] = useState(false);
-  
-  // Actively check connection by making a small request
-  const checkConnection = useCallback(async () => {
-    try {
-      // Try to fetch a tiny resource to verify connection (using cache to minimize data usage)
-      const response = await fetch('/favicon.ico', { 
-        method: 'HEAD', 
-        cache: 'force-cache',
-        // Small timeout to prevent hanging requests
-        signal: AbortSignal.timeout(3000)
-      });
-      
-      if (response.ok) {
-        setHasConnectionError(false);
-        setIsOnline(true);
-      } else {
-        setHasConnectionError(true);
-      }
-    } catch (error) {
-      console.log("Connection check failed:", error);
-      setHasConnectionError(true);
-      // Don't set offline immediately as browser's online status might still be true
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [hasConnectionError, setHasConnectionError] = useState<boolean>(false);
+  const [isOfflineMode, setIsOfflineMode] = useState<boolean>(false);
+  const [lastHealthCheckTime, setLastHealthCheckTime] = useState<number>(0);
+  const [healthCheckInProgress, setHealthCheckInProgress] = useState<boolean>(false);
+
+  // Function to perform connection health check against Supabase
+  const checkConnection = useCallback(async (): Promise<boolean> => {
+    // Prevent multiple simultaneous checks
+    if (healthCheckInProgress) {
+      return isOnline && !hasConnectionError;
     }
-  }, []);
-  
-  useEffect(() => {
-    // Initial connection check
-    checkConnection();
-    
-    const handleOnline = () => {
-      console.log("Browser reports online status");
-      setIsOnline(true);
-      // Verify with actual request
-      checkConnection();
-    };
-    
-    const handleOffline = () => {
-      console.log("Browser reports offline status");
-      setIsOnline(false);
+
+    // Rate limit health checks
+    const now = Date.now();
+    if (now - lastHealthCheckTime < 10000) { // 10 seconds minimum between checks
+      return isOnline && !hasConnectionError;
+    }
+
+    setHealthCheckInProgress(true);
+    setLastHealthCheckTime(now);
+
+    try {
+      // Use Supabase health check endpoint
+      const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/rest/v1/`, {
+        method: 'HEAD',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5obHNydHVieXZnZ3RreXJoa3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2MzM4OTUsImV4cCI6MjA1NDIwOTg5NX0.rD-VfZhrrSRpo1rfuO1JoKYkNELxUUGdulu4-sI-kdU',
+        },
+        // Set a shorter timeout to avoid long waits
+        signal: AbortSignal.timeout(5000),
+      });
+
+      // Check if response is successful
+      const connectionIsHealthy = response.ok;
+      
+      setHasConnectionError(!connectionIsHealthy);
+      setIsOfflineMode(!navigator.onLine || !connectionIsHealthy);
+      
+      // Store connection state in sessionStorage for cross-tab awareness
+      try {
+        sessionStorage.setItem('connection_status', JSON.stringify({
+          isOnline: navigator.onLine,
+          hasConnectionError: !connectionIsHealthy,
+          isOfflineMode: !navigator.onLine || !connectionIsHealthy,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.error('Error saving connection state to sessionStorage:', e);
+      }
+      
+      return connectionIsHealthy;
+    } catch (error) {
+      console.warn('Connection health check failed:', error);
       setHasConnectionError(true);
-    };
-    
-    // Handle WebSocket errors globally
-    const handleError = (event) => {
-      if (event.target instanceof WebSocket) {
-        console.log("WebSocket connection error detected");
-        setHasConnectionError(true);
+      setIsOfflineMode(true);
+      
+      // Store connection state in sessionStorage
+      try {
+        sessionStorage.setItem('connection_status', JSON.stringify({
+          isOnline: navigator.onLine,
+          hasConnectionError: true,
+          isOfflineMode: true,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.error('Error saving connection state to sessionStorage:', e);
       }
+      
+      return false;
+    } finally {
+      setHealthCheckInProgress(false);
+    }
+  }, [isOnline, hasConnectionError, healthCheckInProgress, lastHealthCheckTime]);
+
+  // Monitor browser's online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('Browser reports online status');
+      setIsOnline(true);
+      // We'll still keep hasConnectionError until verified otherwise
+      // Run a health check to verify actual connectivity
+      setTimeout(() => checkConnection(), 1000);
     };
-    
-    // Handle failed resource loads that might indicate connection issues
-    const handleResourceError = (event) => {
-      // Only consider certain resources critical for connectivity diagnosis
-      if (event.target.tagName === 'SCRIPT' || event.target.tagName === 'IMG') {
-        console.log("Resource failed to load:", event);
-        setHasConnectionError(true);
-      }
+
+    const handleOffline = () => {
+      console.log('Browser reports offline status');
+      setIsOnline(false);
+      setIsOfflineMode(true);
     };
-    
-    // Handle network status changes
+
+    // Check connection initially with a small delay
+    setTimeout(() => checkConnection(), 1000);
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    window.addEventListener('error', handleError, true);
-    window.addEventListener('error', handleResourceError, true);
+
+    // Periodic health check every minute when the tab is active
+    let intervalId: number | null = null;
     
-    // On mobile devices, use the Page Visibility API to check connection when app returns to foreground
-    document.addEventListener('visibilitychange', () => {
+    const setupInterval = () => {
+      intervalId = window.setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          checkConnection();
+        }
+      }, 60000); // Check every minute
+    };
+    
+    setupInterval();
+    
+    // Update interval when visibility changes
+    const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Update online status and check connectivity when page becomes visible again
-        setIsOnline(navigator.onLine);
+        // Run a check immediately when tab becomes visible
         checkConnection();
+        // Clear and restart interval
+        if (intervalId !== null) {
+          clearInterval(intervalId);
+        }
+        setupInterval();
       }
-    });
+    };
     
-    // Periodically check connection when online
-    const intervalId = setInterval(() => {
-      if (navigator.onLine) {
-        checkConnection();
-      }
-    }, 30000); // Every 30 seconds
-    
-    // Clean up event listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('error', handleError, true);
-      window.removeEventListener('error', handleResourceError, true);
-      document.removeEventListener('visibilitychange', () => {});
-      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+      }
     };
   }, [checkConnection]);
-  
+
   return { 
     isOnline, 
-    hasConnectionError,
-    checkConnection, // Export so components can manually check
-    isOfflineMode: !isOnline || hasConnectionError // Simplified status for components
+    hasConnectionError, 
+    isOfflineMode: !isOnline || hasConnectionError,
+    checkConnection,
+    setIsOfflineMode
   };
 };

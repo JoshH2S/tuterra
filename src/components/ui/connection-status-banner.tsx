@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { useNetworkStatus } from '@/hooks/interview/useNetworkStatus';
 import { WifiOff, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useUserCredits } from '@/hooks/useUserCredits';
 
 export const ConnectionStatusBanner = () => {
   const { isOnline, hasConnectionError, checkConnection, isOfflineMode } = useNetworkStatus();
+  const { fetchUserCredits, pendingTransactions } = useUserCredits();
   const [showBanner, setShowBanner] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [dismissedTimestamp, setDismissedTimestamp] = useState<number | null>(null);
@@ -20,6 +22,16 @@ export const ConnectionStatusBanner = () => {
   };
   
   useEffect(() => {
+    // Try to get dismissed timestamp from session storage
+    try {
+      const storedDismissed = sessionStorage.getItem('connectionBannerDismissed');
+      if (storedDismissed) {
+        setDismissedTimestamp(parseInt(storedDismissed, 10));
+      }
+    } catch (e) {
+      console.error('Failed to load banner dismissed state:', e);
+    }
+    
     // Only show the banner if we're offline or have connection errors
     // and we haven't recently dismissed it
     const shouldShow = (isOfflineMode || !isOnline || hasConnectionError) && !hasRecentlyDismissed();
@@ -36,7 +48,16 @@ export const ConnectionStatusBanner = () => {
     setIsRetrying(true);
     
     // Perform connection check
-    await checkConnection();
+    const connectionSuccessful = await checkConnection();
+    
+    if (connectionSuccessful) {
+      // If connection successful, try to fetch credits
+      try {
+        await fetchUserCredits();
+      } catch (e) {
+        console.error('Error fetching credits after connection restored:', e);
+      }
+    }
     
     // Reset retry state after a slight delay for UI feedback
     setTimeout(() => {
@@ -67,23 +88,25 @@ export const ConnectionStatusBanner = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="sticky top-0 z-50 w-full px-4 py-2 touch-manipulation"
+          className="sticky top-0 z-50 w-full px-2 sm:px-4 py-1 touch-manipulation"
         >
-          <Alert variant="destructive" className="flex items-center justify-between px-4 py-2 shadow-md">
-            <div className="flex items-center gap-2">
-              <WifiOff className="h-4 w-4" />
+          <Alert variant="destructive" className="flex flex-col sm:flex-row sm:items-center justify-between px-3 py-2 shadow-md">
+            <div className="flex items-center gap-2 mb-2 sm:mb-0">
+              <WifiOff className="h-4 w-4 flex-shrink-0" />
               <div>
                 <AlertTitle className="text-sm font-medium">Connection Issue</AlertTitle>
                 <AlertDescription className="text-xs">
-                  You're currently in offline mode. Some features may be limited.
+                  {pendingTransactions > 0 
+                    ? `You're in offline mode with ${pendingTransactions} pending ${pendingTransactions === 1 ? 'change' : 'changes'}.`
+                    : "You're currently in offline mode. Some features may be limited."}
                 </AlertDescription>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 ml-6 sm:ml-0">
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="h-8 px-2 text-xs bg-white/10"
+                className="h-8 px-2 text-xs bg-white/10 flex-1 sm:flex-auto active:scale-95 transition-transform"
                 onClick={handleRetry}
                 disabled={isRetrying}
               >
@@ -97,7 +120,7 @@ export const ConnectionStatusBanner = () => {
               <Button 
                 size="sm" 
                 variant="ghost" 
-                className="h-8 px-2 text-xs"
+                className="h-8 px-2 text-xs flex-1 sm:flex-auto active:scale-95 transition-transform"
                 onClick={handleDismiss}
               >
                 Dismiss

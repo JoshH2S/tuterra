@@ -23,7 +23,8 @@ const queryClient = new QueryClient({
       retry: 2, // Retry failed requests twice
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
       meta: {
-        onError: error => {
+        // Use meta instead of onError for error handling
+        errorHandler: (error: Error) => {
           console.error('Query error:', error);
         }
       }
