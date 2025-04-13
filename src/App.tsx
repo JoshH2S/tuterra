@@ -5,6 +5,7 @@ import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
 import { lazyLoad } from "@/utils/lazy-loading";
 import { Toaster } from "@/components/ui/toaster";
+import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
 
 // Lazy load MainLayout
 const MainLayout = lazyLoad(
@@ -19,6 +20,11 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false, // Improves performance by preventing refetches on window focus
       staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 2, // Retry failed requests twice
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+      onError: error => {
+        console.error('Query error:', error);
+      }
     },
   },
 });
@@ -34,6 +40,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ConnectionStatusBanner />
         <Suspense fallback={<AppLoading />}>
           <MainLayout />
         </Suspense>

@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from './use-toast';
+import { useNetworkStatus } from './interview/useNetworkStatus';
 
 export type UserCredits = {
   id: string;
@@ -20,12 +21,46 @@ export const useUserCredits = () => {
   const [credits, setCredits] = useState<UserCredits | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { isOfflineMode: networkOffline, hasConnectionError } = useNetworkStatus();
   const [isOfflineMode, setIsOfflineMode] = useState<boolean>(false);
+  const [pendingTransactions, setPendingTransactions] = useState<any[]>([]);
+
+  // Store pending transactions for later sync
+  const addPendingTransaction = useCallback((type: string, data: any) => {
+    const transaction = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      type,
+      data,
+      timestamp: new Date().toISOString(),
+      status: 'pending'
+    };
+    
+    setPendingTransactions(prev => {
+      const updatedTransactions = [...prev, transaction];
+      try {
+        localStorage.setItem('pendingTransactions', JSON.stringify(updatedTransactions));
+      } catch (e) {
+        console.error('Error storing pending transactions:', e);
+      }
+      return updatedTransactions;
+    });
+    
+    return transaction.id;
+  }, []);
 
   const fetchUserCredits = useCallback(async () => {
     if (!user) {
       setLoading(false);
       console.log('No user found, cannot fetch credits');
+      return;
+    }
+
+    // If we're offline or have connection errors, skip server fetch and use local data
+    if (networkOffline || hasConnectionError) {
+      console.log('Network offline or connection errors, using local credits');
+      setIsOfflineMode(true);
+      useLocalCredits(user.id);
+      setLoading(false);
       return;
     }
 
@@ -77,7 +112,7 @@ export const useUserCredits = () => {
               user_id: user.id,
               quiz_credits: 5,
               interview_credits: 1,
-              assessment_credits: 1,
+              assessment_credits: 2, // Updated to match CreditsBadge display
               tutor_message_credits: 5
             })
             .select('*')
@@ -107,6 +142,9 @@ export const useUserCredits = () => {
             console.log('Created new credits record:', newCredits);
             setCredits(newCredits as UserCredits);
             setIsOfflineMode(false);
+            
+            // Update local cache with server data
+            storeLocalCredits(newCredits);
           } else {
             // Fallback if insert doesn't return data
             useLocalCredits(user.id);
@@ -121,6 +159,9 @@ export const useUserCredits = () => {
         console.log('Found existing credits:', data);
         setCredits(data as UserCredits);
         setIsOfflineMode(false);
+        
+        // Update local cache with server data
+        storeLocalCredits(data);
       }
     } catch (err) {
       console.error('Error fetching user credits:', err);
@@ -141,7 +182,17 @@ export const useUserCredits = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, networkOffline, hasConnectionError]);
+
+  // Store credits in local storage for offline use
+  const storeLocalCredits = (creditsData: UserCredits) => {
+    try {
+      localStorage.setItem(`local_credits_${creditsData.user_id}`, JSON.stringify(creditsData));
+      console.log('Stored credits in local storage:', creditsData);
+    } catch (e) {
+      console.error('Error storing credits locally:', e);
+    }
+  };
 
   // Use local credits when offline or when there's an error
   const useLocalCredits = (userId: string) => {
@@ -150,7 +201,7 @@ export const useUserCredits = () => {
       user_id: userId,
       quiz_credits: 5,
       interview_credits: 1,
-      assessment_credits: 1,
+      assessment_credits: 2, // Updated to match CreditsBadge display
       tutor_message_credits: 5,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -173,11 +224,7 @@ export const useUserCredits = () => {
     
     setCredits(defaultCredits);
     // Store local credits for later use
-    try {
-      localStorage.setItem(`local_credits_${userId}`, JSON.stringify(defaultCredits));
-    } catch (e) {
-      console.error('Error storing local credits:', e);
-    }
+    storeLocalCredits(defaultCredits);
   };
 
   const decrementCredits = async (creditType: 'quiz_credits' | 'interview_credits' | 'assessment_credits' | 'tutor_message_credits') => {
@@ -194,8 +241,9 @@ export const useUserCredits = () => {
       }
 
       // If in offline mode, just update the local state
-      if (isOfflineMode) {
-        console.log(`Offline mode: updating ${creditType} locally only`);
+      if (isOfflineMode || networkOffline || hasConnectionError) {
+        console.log(`Network issue detected: updating ${creditType} locally only`);
+        
         const updatedCredits = {
           ...credits,
           [creditType]: credits[creditType] - 1,
@@ -203,13 +251,16 @@ export const useUserCredits = () => {
         };
         
         setCredits(updatedCredits);
+        storeLocalCredits(updatedCredits);
         
-        // Store updated credits locally
-        try {
-          localStorage.setItem(`local_credits_${user.id}`, JSON.stringify(updatedCredits));
-        } catch (e) {
-          console.error('Error storing updated local credits:', e);
-        }
+        // Add to pending transactions for later sync
+        addPendingTransaction('decrementCredits', { creditType, userId: user.id });
+        
+        toast({
+          title: "Offline Mode",
+          description: "Using offline mode for credits. Changes will sync when you reconnect.",
+          variant: "default",
+        });
         
         return true;
       }
@@ -241,17 +292,14 @@ export const useUserCredits = () => {
           };
           
           setCredits(updatedCredits);
+          storeLocalCredits(updatedCredits);
           
-          // Store updated credits locally
-          try {
-            localStorage.setItem(`local_credits_${user.id}`, JSON.stringify(updatedCredits));
-          } catch (e) {
-            console.error('Error storing updated local credits:', e);
-          }
+          // Add to pending transactions
+          addPendingTransaction('decrementCredits', { creditType, userId: user.id });
           
           toast({
             title: "Offline Mode",
-            description: "Using offline mode for credits. Changes won't sync to server.",
+            description: "Using offline mode for credits. Changes will sync when you reconnect.",
             variant: "default",
           });
           
@@ -262,22 +310,43 @@ export const useUserCredits = () => {
       }
 
       // Update local state
-      setCredits({
+      const updatedCredits = {
         ...credits,
         [creditType]: credits[creditType] - 1,
         updated_at: new Date().toISOString(),
-      });
+      };
+      
+      setCredits(updatedCredits);
+      // Update local storage cache
+      storeLocalCredits(updatedCredits);
 
       console.log(`Successfully decremented ${creditType}, remaining: ${credits[creditType] - 1}`);
       return true;
     } catch (err) {
       console.error(`Error decrementing ${creditType}:`, err);
+      
+      // Fall back to offline mode
+      setIsOfflineMode(true);
+      
+      const updatedCredits = {
+        ...credits,
+        [creditType]: credits[creditType] - 1,
+        updated_at: new Date().toISOString(),
+      };
+      
+      setCredits(updatedCredits);
+      storeLocalCredits(updatedCredits);
+      
+      // Add to pending transactions
+      addPendingTransaction('decrementCredits', { creditType, userId: user.id });
+      
       toast({
-        title: 'Error',
-        description: `Failed to update your ${creditType.replace('_', ' ')}`,
-        variant: 'destructive',
+        title: 'Network Error',
+        description: `Continued in offline mode. Changes will sync when connection is restored.`,
+        variant: 'default',
       });
-      return false;
+      
+      return true;
     }
   };
 
@@ -288,11 +357,15 @@ export const useUserCredits = () => {
 
   // Sync with server when coming back online
   const syncCreditsWithServer = async () => {
-    if (!user || !credits || !isOfflineMode) return;
+    if (!user || !credits || !pendingTransactions.length) return;
     
-    console.log('Attempting to sync local credits with server');
+    // Skip if we're still offline
+    if (networkOffline || hasConnectionError) return;
+    
+    console.log('Attempting to sync pending transactions with server');
     
     try {
+      // Check if we have server-side credits first
       const { data, error } = await (supabase as any)
         .from('user_credits')
         .select('*')
@@ -304,34 +377,78 @@ export const useUserCredits = () => {
         return;
       }
       
-      if (data) {
-        // We're back online - server has a record
-        console.log('Server has credits record, back online');
-        setIsOfflineMode(false);
-        setCredits(data);
-      } else {
-        // Still no record on server, try to create one
-        console.log('No credits on server, trying to create from local data');
-        const { data: newCredits, error: insertError } = await (supabase as any)
-          .from('user_credits')
-          .insert({
-            user_id: user.id,
-            quiz_credits: credits.quiz_credits,
-            interview_credits: credits.interview_credits,
-            assessment_credits: credits.assessment_credits,
-            tutor_message_credits: credits.tutor_message_credits
-          })
-          .select('*')
-          .single();
+      // Process each pending transaction
+      const transactionsToProcess = [...pendingTransactions];
+      let successfulSyncs = 0;
+      
+      for (const transaction of transactionsToProcess) {
+        if (transaction.type === 'decrementCredits') {
+          const { creditType } = transaction.data;
           
-        if (insertError) {
-          console.error('Error creating credits during sync:', insertError);
-          return;
+          // If we have server data, update it
+          if (data) {
+            try {
+              const { error: updateError } = await (supabase as any)
+                .from('user_credits')
+                .update({ 
+                  [creditType]: data[creditType] - 1,
+                  updated_at: new Date().toISOString() 
+                })
+                .eq('user_id', user.id);
+                
+              if (!updateError) {
+                successfulSyncs++;
+                
+                // Remove this transaction from pending
+                setPendingTransactions(prev => 
+                  prev.filter(t => t.id !== transaction.id)
+                );
+              }
+            } catch (e) {
+              console.error('Error syncing transaction:', e);
+            }
+          } else {
+            // No server record, create one with our local data
+            try {
+              const { error: insertError } = await (supabase as any)
+                .from('user_credits')
+                .insert({
+                  user_id: user.id,
+                  ...credits
+                });
+                
+              if (!insertError) {
+                successfulSyncs++;
+                
+                // Remove all transactions since we've synced everything
+                setPendingTransactions([]);
+              }
+            } catch (e) {
+              console.error('Error creating credits during sync:', e);
+            }
+          }
+        }
+      }
+      
+      if (successfulSyncs > 0) {
+        console.log(`Successfully synced ${successfulSyncs} transactions`);
+        setIsOfflineMode(false);
+        
+        // Update local storage
+        try {
+          localStorage.setItem('pendingTransactions', JSON.stringify(pendingTransactions));
+        } catch (e) {
+          console.error('Error updating pending transactions in storage:', e);
         }
         
-        console.log('Successfully created credits on server from local data');
-        setIsOfflineMode(false);
-        setCredits(newCredits);
+        // Refresh credits from server
+        fetchUserCredits();
+        
+        toast({
+          title: "Sync Complete",
+          description: `Successfully synced ${successfulSyncs} offline transactions.`,
+          variant: "default",
+        });
       }
     } catch (err) {
       console.error('Error during credits sync:', err);
@@ -342,6 +459,16 @@ export const useUserCredits = () => {
   useEffect(() => {
     if (user) {
       fetchUserCredits();
+      
+      // Load any pending transactions from storage
+      try {
+        const storedTransactions = localStorage.getItem('pendingTransactions');
+        if (storedTransactions) {
+          setPendingTransactions(JSON.parse(storedTransactions));
+        }
+      } catch (e) {
+        console.error('Error loading pending transactions:', e);
+      }
     } else {
       setLoading(false);
       setCredits(null);
@@ -350,7 +477,10 @@ export const useUserCredits = () => {
     // Setup online/offline detection
     const handleOnline = () => {
       console.log('Browser went online, attempting to sync credits');
-      syncCreditsWithServer();
+      // Give some time for connection to stabilize
+      setTimeout(() => {
+        syncCreditsWithServer();
+      }, 2000);
     };
     
     window.addEventListener('online', handleOnline);
@@ -360,14 +490,41 @@ export const useUserCredits = () => {
     };
   }, [user, fetchUserCredits]);
 
+  // Try to sync anytime offline mode changes
+  useEffect(() => {
+    if (!isOfflineMode && user) {
+      syncCreditsWithServer();
+    }
+  }, [isOfflineMode, user]);
+
+  // Current connection status changed, update our state
+  useEffect(() => {
+    if (networkOffline && !isOfflineMode) {
+      setIsOfflineMode(true);
+    }
+  }, [networkOffline]);
+
+  // Log current credit state on every update
+  useEffect(() => {
+    if (credits) {
+      console.log("Current credits state:", {
+        quiz_credits: credits.quiz_credits,
+        interview_credits: credits.interview_credits,
+        assessment_credits: credits.assessment_credits,
+        tutor_message_credits: credits.tutor_message_credits
+      });
+    }
+  }, [credits]);
+
   return {
     credits,
     loading,
     error,
-    isOfflineMode,
+    isOfflineMode: isOfflineMode || networkOffline || hasConnectionError,
     decrementCredits,
     checkCredits,
     fetchUserCredits,
-    syncCreditsWithServer
+    syncCreditsWithServer,
+    pendingTransactions: pendingTransactions.length
   };
 };

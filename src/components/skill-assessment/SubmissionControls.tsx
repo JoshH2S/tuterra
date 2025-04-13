@@ -1,8 +1,7 @@
 
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Flag, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Progress } from "@/components/ui/progress";
+import { ChevronLeft, ChevronRight, CheckCircle, WifiOff } from "lucide-react";
 
 interface SubmissionControlsProps {
   isLastQuestion: boolean;
@@ -11,7 +10,8 @@ interface SubmissionControlsProps {
   submissionProgress: number;
   onPrevious: () => void;
   onNext: () => void;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void>;
+  isOfflineMode?: boolean;
 }
 
 export const SubmissionControls = ({
@@ -21,76 +21,69 @@ export const SubmissionControls = ({
   submissionProgress,
   onPrevious,
   onNext,
-  onSubmit
+  onSubmit,
+  isOfflineMode
 }: SubmissionControlsProps) => {
-  const isMobile = useIsMobile();
-  
   return (
-    <motion.div 
-      className={`flex justify-between items-center mt-4 touch-manipulation ${isMobile ? 'fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-20' : ''}`}
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <motion.div whileTap={{ scale: 0.95 }}>
+    <div className="flex justify-between items-center mt-6 pt-4 border-t">
+      <div>
         <Button
-          variant="outline"
+          variant="ghost"
+          size="sm"
           onClick={onPrevious}
           disabled={currentQuestionIndex === 0 || isSubmitting}
-          className="h-12 px-3 md:px-4 touch-manipulation"
-          size="lg"
-          aria-label="Previous question"
+          className="flex items-center text-sm"
         >
-          <ChevronLeft className="h-5 w-5 md:mr-2" />
-          <span className="hidden md:inline">Previous</span>
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Previous
         </Button>
-      </motion.div>
+      </div>
 
-      {isLastQuestion ? (
-        <motion.div 
-          whileTap={{ scale: 0.95 }}
-          whileHover={{ scale: 1.03 }}
-          className="flex-1 mx-2 md:flex-none"
-        >
-          <Button 
+      <div className="flex-1 flex justify-center max-w-[200px] mx-auto">
+        {isSubmitting && (
+          <div className="w-full px-2">
+            <Progress value={submissionProgress} className="h-2" />
+            <p className="text-xs text-center mt-1 text-muted-foreground">
+              Submitting...
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex">
+        {!isLastQuestion ? (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onNext}
+            disabled={isSubmitting}
+            className="flex items-center text-sm"
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        ) : (
+          <Button
+            variant="default"
+            size="sm"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="h-12 w-full md:w-auto touch-manipulation"
-            size="lg"
-            aria-label="Finish assessment"
+            className="flex items-center text-sm"
           >
-            {isSubmitting ? (
+            {isOfflineMode ? (
               <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                {submissionProgress > 0 ? `${submissionProgress}%` : 'Submitting...'}
+                <WifiOff className="w-4 h-4 mr-1" />
+                Save Locally
               </>
             ) : (
               <>
-                <Flag className="h-5 w-5 md:mr-2" />
-                <span className="hidden md:inline">Finish Assessment</span>
-                <span className="inline md:hidden">Finish</span>
+                <CheckCircle className="w-4 h-4 mr-1" />
+                Submit
               </>
             )}
           </Button>
-        </motion.div>
-      ) : (
-        <motion.div 
-          whileTap={{ scale: 0.95 }}
-          whileHover={{ scale: 1.03 }}
-          className="flex-1 mx-2 md:flex-none"
-        >
-          <Button 
-            onClick={onNext}
-            className="h-12 px-3 md:px-4 w-full md:w-auto touch-manipulation"
-            size="lg"
-            aria-label="Next question"
-          >
-            <span className="hidden md:inline">Next</span>
-            <span className="inline md:hidden">Next Question</span>
-            <ChevronRight className="h-5 w-5 md:ml-2" />
-          </Button>
-        </motion.div>
-      )}
-    </motion.div>
+        )}
+      </div>
+    </div>
   );
 };

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw, WifiOff } from "lucide-react";
 import { AssessmentProgressTracker } from "@/components/skill-assessment/AssessmentProgress";
 import { AssessmentHeader } from "@/components/skill-assessment/AssessmentHeader";
 import { QuestionDisplay } from "@/components/skill-assessment/QuestionDisplay";
@@ -13,12 +13,15 @@ import { MobileProgressBar } from "@/components/skill-assessment/MobileProgressB
 import { useSwipeable } from "react-swipeable";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile, useTouchDevice } from "@/hooks/use-mobile";
+import { toast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 export default function TakeSkillAssessment() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const isTouch = useTouchDevice();
+  const [isRetrying, setIsRetrying] = useState(false);
   
   const {
     assessment,
@@ -38,7 +41,9 @@ export default function TakeSkillAssessment() {
     handleAnswerChange,
     goToNextQuestion,
     goToPreviousQuestion,
-    handleSubmit
+    handleSubmit,
+    retry: retryLoading,
+    isOfflineMode
   } = useSkillAssessmentTaking(id);
 
   // Enhanced swipe handlers for mobile - with improved options
@@ -80,11 +85,97 @@ export default function TakeSkillAssessment() {
   const getDirection = () => {
     return 1; // Default to right-to-left for new questions
   };
+  
+  // Handle manual retry
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      await retryLoading();
+      toast({
+        title: "Refreshed",
+        description: "Assessment data has been refreshed successfully.",
+        variant: "default",
+      });
+    } catch (err) {
+      toast({
+        title: "Refresh failed",
+        description: "Please check your connection and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+  
+  // Save answers periodically to localStorage for offline recovery
+  useEffect(() => {
+    if (id && answers && answers.length > 0) {
+      try {
+        localStorage.setItem(`assessment_answers_${id}`, JSON.stringify({
+          answers,
+          lastUpdated: new Date().toISOString(),
+          currentQuestionIndex
+        }));
+      } catch (e) {
+        console.error('Error saving answers to localStorage:', e);
+      }
+    }
+  }, [id, answers, currentQuestionIndex]);
 
   if (loading) {
     return (
       <div className="container px-4 py-8 flex justify-center items-center min-h-[60vh] w-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading assessment...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !assessment) {
+    return (
+      <div className="container px-4 py-6 sm:py-8 w-full">
+        <Card className="w-full">
+          <CardContent className="p-4 sm:p-6">
+            <div className="text-center space-y-4">
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Error Loading Assessment</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+              
+              {isOfflineMode ? (
+                <div className="flex items-center justify-center space-x-2 p-4 bg-muted/50 rounded-md mb-4">
+                  <WifiOff className="h-5 w-5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">You appear to be offline. Please check your connection.</p>
+                </div>
+              ) : null}
+              
+              <div className="flex gap-3 justify-center">
+                <Button 
+                  onClick={handleRetry}
+                  disabled={isRetrying}
+                  variant="default"
+                >
+                  {isRetrying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Retrying...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry
+                    </>
+                  )}
+                </Button>
+                <Button onClick={() => navigate("/skill-assessments")} variant="outline">
+                  Back to Assessments
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -122,11 +213,35 @@ export default function TakeSkillAssessment() {
         />
       </div>
 
+      {isOfflineMode && (
+        <Alert variant="default" className="bg-blue-50 border-blue-200 w-full">
+          <WifiOff className="h-4 w-4 text-blue-500" />
+          <AlertTitle className="text-blue-700">Offline Mode</AlertTitle>
+          <AlertDescription className="text-blue-600 text-sm">
+            You're working in offline mode. Your progress will be saved locally and synchronized when you reconnect.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {error && (
         <Alert variant="destructive" className="w-full">
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error}
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button 
+              size="sm" 
+              variant="destructive" 
+              className="h-8 ml-4"
+              onClick={handleRetry}
+              disabled={isRetrying}
+            >
+              {isRetrying ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3 mr-1" />
+              )}
+              Retry
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -185,6 +300,7 @@ export default function TakeSkillAssessment() {
               onPrevious={goToPreviousQuestion}
               onNext={goToNextQuestion}
               onSubmit={handleSubmit}
+              isOfflineMode={isOfflineMode}
             />
           </div>
 
