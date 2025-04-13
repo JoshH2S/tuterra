@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, WifiOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -13,7 +13,7 @@ interface GenerateButtonProps {
 }
 
 export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButtonProps) => {
-  const { credits } = useUserCredits();
+  const { credits, permissionError } = useUserCredits();
   const { subscription } = useSubscription();
   const isMobile = useIsMobile();
   
@@ -44,8 +44,10 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
             'Generate Quiz'
           )}
         </Button>
-        <p className="text-xs text-center text-muted-foreground">
-          You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining.
+        <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
+          {permissionError && <WifiOff className="h-3 w-3 text-amber-500" />}
+          You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining
+          {permissionError && " (offline mode)"}
         </p>
       </div>
     );
@@ -79,7 +81,15 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
         </TooltipTrigger>
         {isFreeUser && (
           <TooltipContent>
-            <p>You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining.</p>
+            <div className="space-y-1">
+              {permissionError && (
+                <div className="text-xs text-amber-500 flex items-center gap-1 mb-1">
+                  <WifiOff className="h-3 w-3" />
+                  <span>Offline mode active</span>
+                </div>
+              )}
+              <p>You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining.</p>
+            </div>
           </TooltipContent>
         )}
       </Tooltip>
