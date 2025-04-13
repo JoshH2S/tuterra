@@ -14,7 +14,7 @@ export const useAssessmentData = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { checkCredits, decrementCredits, permissionError } = useUserCredits();
+  const { checkCredits, decrementCredits } = useUserCredits();
   
   useEffect(() => {
     const fetchAssessment = async () => {
@@ -58,7 +58,7 @@ export const useAssessmentData = () => {
     }
     
     // Check if user has assessment credits
-    if (!checkCredits('assessment_credits') && !permissionError) {
+    if (!checkCredits('assessment_credits')) {
       setShowUpgradePrompt(true);
       toast({
         title: 'No credits remaining',
@@ -70,46 +70,15 @@ export const useAssessmentData = () => {
     
     try {
       // Decrement assessment credits
-      const success = await decrementCredits('assessment_credits');
-      
-      // If offline mode or decrementCredits was successful, proceed
-      if (success || permissionError) {
-        // If in offline mode (permissionError is true), but decrementCredits failed,
-        // we'll still let the user take the assessment
-        if (permissionError && !success) {
-          toast({
-            title: 'Offline Mode',
-            description: 'You can proceed with the assessment in offline mode.',
-            variant: 'default',
-          });
-        }
-        
-        navigate(`/take-assessment/${id}`);
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to start the assessment. Please try again.',
-          variant: 'destructive',
-        });
-      }
+      await decrementCredits('assessment_credits');
+      navigate(`/take-assessment/${id}`);
     } catch (error) {
       console.error('Error starting assessment:', error);
-      
-      // Even in case of error, let the user proceed if we're in offline mode
-      if (permissionError) {
-        toast({
-          title: 'Offline Mode',
-          description: 'You can proceed with the assessment in offline mode.',
-          variant: 'default',
-        });
-        navigate(`/take-assessment/${id}`);
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to start the assessment',
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: 'Error',
+        description: 'Failed to start the assessment',
+        variant: 'destructive',
+      });
     }
   };
   
@@ -119,7 +88,6 @@ export const useAssessmentData = () => {
     error,
     startAssessment,
     showUpgradePrompt,
-    setShowUpgradePrompt,
-    offlineMode: permissionError
+    setShowUpgradePrompt
   };
 };

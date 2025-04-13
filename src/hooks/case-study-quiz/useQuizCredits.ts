@@ -6,7 +6,7 @@ import { toast } from "@/hooks/use-toast";
 
 export const useQuizCredits = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-  const { checkCredits, decrementCredits, credits, fetchUserCredits, permissionError } = useUserCredits();
+  const { checkCredits, decrementCredits, credits, fetchUserCredits } = useUserCredits();
   const { subscription } = useSubscription();
 
   // Track if we've already shown the credit validation toast to avoid duplicates
@@ -38,7 +38,7 @@ export const useQuizCredits = () => {
         }
         
         // Add info toast about remaining credits
-        if (credits?.quiz_credits && !hasShownCreditToast && !permissionError) {
+        if (credits?.quiz_credits && !hasShownCreditToast) {
           const remainingAfterUse = credits.quiz_credits - 1;
           toast({
             title: "Credit Usage",
@@ -51,20 +51,12 @@ export const useQuizCredits = () => {
       return true;
     } catch (error) {
       console.error("Error validating credits:", error);
-      
-      // Even if there's an error checking credits, we'll allow the user to proceed
-      // but show a toast about operating in offline mode
-      if (!hasShownCreditToast) {
-        toast({
-          title: "Offline Mode",
-          description: "Operating in offline mode. Your credits will be tracked locally.",
-          variant: "default",
-        });
-        setHasShownCreditToast(true);
-      }
-      
-      // Always return true to let the user proceed, even if there are backend issues
-      return true;
+      toast({
+        title: "Error checking credits",
+        description: "There was a problem validating your credits. Please try again.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -80,14 +72,14 @@ export const useQuizCredits = () => {
         const success = await decrementCredits('quiz_credits');
         
         // Show an accurate toast with remaining credits after successful decrement
-        if (success && credits && !permissionError) {
+        if (success && credits) {
           // Refresh credits to get the updated count
           await fetchUserCredits();
           
           const remainingCredits = credits.quiz_credits;
           toast({
             title: "Credit Usage",
-            description: `You have ${remainingCredits} quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining.`,
+            description: `You have ${remainingCredits} quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining after this use.`,
             variant: "default",
           });
         }
@@ -97,16 +89,12 @@ export const useQuizCredits = () => {
       return true;
     } catch (error) {
       console.error("Error using credit:", error);
-      
-      // Notify the user about offline mode
       toast({
-        title: "Offline Mode Active",
-        description: "Your credits are being managed locally until connection is restored.",
-        variant: "default",
+        title: "Error using credit",
+        description: "There was a problem processing your credit usage. Please try again.",
+        variant: "destructive",
       });
-      
-      // Let the user proceed despite the error
-      return true;
+      return false;
     }
   };
 
@@ -120,7 +108,6 @@ export const useQuizCredits = () => {
     validateCredits,
     useCredit,
     getRemainingCredits,
-    subscription,
-    offlineMode: permissionError
+    subscription
   };
 };

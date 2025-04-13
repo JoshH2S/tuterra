@@ -15,31 +15,11 @@ export type UserCredits = {
   updated_at: string;
 };
 
-// Default credits values used when API calls fail
-const DEFAULT_CREDITS = {
-  quiz_credits: 5,
-  interview_credits: 1,
-  assessment_credits: 1,
-  tutor_message_credits: 5
-};
-
 export const useUserCredits = () => {
   const { user } = useAuth();
   const [credits, setCredits] = useState<UserCredits | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [permissionError, setPermissionError] = useState<boolean>(false);
-
-  const useDefaultCredits = (userId: string) => {
-    console.log('Using default credits as fallback');
-    setCredits({
-      id: 'fallback',
-      user_id: userId,
-      ...DEFAULT_CREDITS,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-  };
 
   const fetchUserCredits = useCallback(async () => {
     if (!user) {
@@ -50,28 +30,19 @@ export const useUserCredits = () => {
 
     try {
       setLoading(true);
-      setError(null);
-      setPermissionError(false);
+      setError(null); // Clear any previous errors
       
       console.log('Fetching credits for user:', user.id);
       
-      // Try to fetch credits from Supabase
-      const { data, error: fetchError } = await supabase
+      // Using 'any' to bypass the type checking since we know user_credits exists in the database
+      const { data, error: fetchError } = await (supabase as any)
         .from('user_credits')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (fetchError) {
-        // Check if this is a permission error
-        if (fetchError.code === '42501' || fetchError.message.includes('permission denied') || 
-            fetchError.code === '403' || fetchError.status === 403) {
-          console.warn('Permission error fetching credits:', fetchError);
-          setPermissionError(true);
-          useDefaultCredits(user.id);
-          return;
-        }
-        
+        // Log the full error for better debugging
         console.error('Supabase error fetching credits:', fetchError);
         throw fetchError;
       }
@@ -84,21 +55,24 @@ export const useUserCredits = () => {
         
         // Try to create default credits for the user
         try {
-          const { data: newCredits, error: insertError } = await supabase
+          const { data: newCredits, error: insertError } = await (supabase as any)
             .from('user_credits')
             .insert({
               user_id: user.id,
-              ...DEFAULT_CREDITS
+              quiz_credits: 5,
+              interview_credits: 1,
+              assessment_credits: 1,
+              tutor_message_credits: 5
             })
             .select('*')
             .single();
             
           if (insertError) {
-            // If insert fails due to permission issues, use fallback
-            if (insertError.code === '42501' || insertError.code === '403' || 
-                insertError.message.includes('permission denied') || insertError.status === 403) {
-              console.warn('Permission denied when creating credits, using fallback', insertError);
-              setPermissionError(true);
+            console.error('Error creating default credits:', insertError);
+            
+            // If insert fails due to RLS policy, provide fallback
+            if (insertError.code === '42501' || insertError.message.includes('permission denied')) {
+              console.log('Permission denied when creating credits, using fallback');
               useDefaultCredits(user.id);
               return;
             }
@@ -130,17 +104,30 @@ export const useUserCredits = () => {
       useDefaultCredits(user?.id || 'unknown');
       
       // Only show toast if it's a real error, not just missing data
-      if (err instanceof Error && err.message !== 'No data found' && !permissionError) {
+      if (err instanceof Error && err.message !== 'No data found') {
         toast({
-          title: "Limited Functionality",
-          description: "Using offline mode for credits. Some features may be limited.",
-          variant: "default",
+          title: "Error",
+          description: "Failed to load your available credits. Using default values.",
+          variant: "destructive",
         });
       }
     } finally {
       setLoading(false);
     }
-  }, [user, permissionError]);
+  }, [user]);
+
+  const useDefaultCredits = (userId: string) => {
+    setCredits({
+      id: 'fallback',
+      user_id: userId,
+      quiz_credits: 5,
+      interview_credits: 1,
+      assessment_credits: 1,
+      tutor_message_credits: 5,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+  };
 
   const decrementCredits = async (creditType: 'quiz_credits' | 'interview_credits' | 'assessment_credits' | 'tutor_message_credits') => {
     if (!user || !credits) return false;
@@ -157,26 +144,28 @@ export const useUserCredits = () => {
 
       console.log(`Decrementing ${creditType} for user ${user.id}`);
 
-      // Only attempt to update in Supabase if we don't have permission errors
-      if (!permissionError) {
-        const { error } = await supabase
-          .from('user_credits')
-          .update({ [creditType]: credits[creditType] - 1 })
-          .eq('user_id', user.id);
-  
-        if (error) {
-          // If update fails due to RLS policies, update locally only
-          if (error.code === '42501' || error.code === '403' || 
-              error.message.includes('permission denied') || error.status === 403) {
-            console.warn('Permission denied when updating credits, updating locally only', error);
-            setPermissionError(true);
-          } else {
-            throw error;
-          }
+      // Using 'any' to bypass the type checking
+      const { error } = await (supabase as any)
+        .from('user_credits')
+        .update({ [creditType]: credits[creditType] - 1 })
+        .eq('user_id', user.id);
+
+      if (error) {
+        // If update fails due to RLS policies, update locally only
+        if (error.code === '42501' || error.message.includes('permission denied')) {
+          console.log('Permission denied when updating credits, updating locally only');
+          setCredits({
+            ...credits,
+            [creditType]: credits[creditType] - 1,
+            updated_at: new Date().toISOString(),
+          });
+          return true;
         }
+        
+        throw error;
       }
 
-      // Always update local state - especially important if Supabase update failed
+      // Update local state
       setCredits({
         ...credits,
         [creditType]: credits[creditType] - 1,
@@ -187,25 +176,11 @@ export const useUserCredits = () => {
       return true;
     } catch (err) {
       console.error(`Error decrementing ${creditType}:`, err);
-      
-      // Only notify user if it's not a permission error that we can handle silently
-      if (!permissionError) {
-        toast({
-          title: 'Working Offline',
-          description: `Using offline mode for credits. Your usage will be tracked locally.`,
-          variant: 'default',
-        });
-      }
-      
-      // Still update local state so that the user experience isn't interrupted
-      if (credits[creditType] > 0) {
-        setCredits({
-          ...credits,
-          [creditType]: credits[creditType] - 1,
-          updated_at: new Date().toISOString(),
-        });
-        return true;
-      }
+      toast({
+        title: 'Error',
+        description: `Failed to update your ${creditType.replace('_', ' ')}`,
+        variant: 'destructive',
+      });
       return false;
     }
   };
@@ -228,7 +203,6 @@ export const useUserCredits = () => {
     credits,
     loading,
     error,
-    permissionError,
     decrementCredits,
     checkCredits,
     fetchUserCredits,

@@ -3,7 +3,7 @@ import { useUserCredits } from "@/hooks/useUserCredits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, RefreshCw, Info, WifiOff } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -20,7 +20,7 @@ export const CreditsDisplay = ({
   compact = false,
   onRetry 
 }: CreditsDisplayProps) => {
-  const { credits, loading, error, fetchUserCredits, permissionError } = useUserCredits();
+  const { credits, loading, error, fetchUserCredits } = useUserCredits();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export const CreditsDisplay = ({
     );
   }
 
-  if (error && !credits && !permissionError) {
+  if (error && !credits) {
     return (
       <Alert variant="destructive" className={compact ? "m-2" : "mb-4"}>
         <AlertCircle className="h-4 w-4" />
@@ -70,7 +70,7 @@ export const CreditsDisplay = ({
   const safeCredits = credits || {
     id: 'fallback',
     user_id: 'unknown',
-    quiz_credits: 5,
+    quiz_credits: 5, // Updated from previous value to 5
     interview_credits: 1,
     assessment_credits: 1,
     tutor_message_credits: 5,
@@ -79,7 +79,7 @@ export const CreditsDisplay = ({
   };
 
   const creditsItems = [
-    { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 },
+    { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 }, // Updated from previous value to 5
     { label: "Interview Simulations", value: safeCredits.interview_credits, total: 1 },
     { label: "Skill Assessments", value: safeCredits.assessment_credits, total: 1 },
     { label: "AI Tutor Messages", value: safeCredits.tutor_message_credits, total: 5 },
@@ -94,12 +94,6 @@ export const CreditsDisplay = ({
   if (compact) {
     return (
       <div className="space-y-2 p-2">
-        {permissionError && (
-          <div className="text-xs text-amber-500 flex items-center gap-1 mb-2 p-1 bg-amber-500/10 rounded">
-            <WifiOff className="h-3 w-3" />
-            <span>Offline mode - using local credits</span>
-          </div>
-        )}
         {creditsItems.map((item, index) => (
           <div key={index} className="flex items-center justify-between text-xs">
             <span>{item.label}:</span>
@@ -117,21 +111,6 @@ export const CreditsDisplay = ({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           Free Credits Remaining
-          {permissionError && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1 text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded">
-                    <WifiOff className="h-3 w-3" />
-                    <span>Offline Mode</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-sm">Using local credits tracking. Will sync when connection is restored.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -148,11 +127,6 @@ export const CreditsDisplay = ({
         </CardTitle>
         <CardDescription>
           Your free credits to explore our platform
-          {permissionError && (
-            <span className="text-xs block mt-1 text-amber-500">
-              (Credits are being tracked locally due to connection issues)
-            </span>
-          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -172,18 +146,6 @@ export const CreditsDisplay = ({
           {allCreditsUsed && showUpgradeButton && (
             <Button className="w-full mt-4 touch-manipulation" size="lg" onClick={handleUpgrade}>
               Upgrade to Continue
-            </Button>
-          )}
-          
-          {permissionError && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRetry}
-              className="mt-4 w-full flex items-center justify-center gap-1.5 touch-manipulation"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Retry Connection
             </Button>
           )}
         </div>
