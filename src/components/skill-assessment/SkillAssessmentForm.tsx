@@ -94,13 +94,13 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
           
         if (error) throw error;
         
-        // Set limits based on tier
+        // Set limits based on tier - UPDATED: Free tier now gets 2 assessments
         if (tier === 'premium') {
           setAssessmentsRemaining(Infinity);
         } else if (tier === 'pro') {
           setAssessmentsRemaining(Math.max(0, 20 - (count || 0)));
         } else {
-          setAssessmentsRemaining(Math.max(0, 3 - (count || 0)));
+          setAssessmentsRemaining(Math.max(0, 2 - (count || 0))); // Changed from 3 to 2
         }
       } catch (error) {
         console.error('Error fetching user details:', error);

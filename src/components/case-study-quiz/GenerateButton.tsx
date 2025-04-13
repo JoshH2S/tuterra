@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useEffect } from "react";
 
 interface GenerateButtonProps {
   onClick: () => void;
@@ -13,9 +14,14 @@ interface GenerateButtonProps {
 }
 
 export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButtonProps) => {
-  const { credits, isOfflineMode } = useUserCredits();
+  const { credits, isOfflineMode, fetchUserCredits } = useUserCredits();
   const { subscription } = useSubscription();
   const isMobile = useIsMobile();
+  
+  // Fetch the latest credits on mount
+  useEffect(() => {
+    fetchUserCredits();
+  }, [fetchUserCredits]);
   
   const isFreeUser = subscription.tier === 'free';
   const remainingCredits = credits?.quiz_credits || 0;

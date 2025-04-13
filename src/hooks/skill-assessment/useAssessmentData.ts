@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +13,7 @@ export const useAssessmentData = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { checkCredits, decrementCredits, isOfflineMode } = useUserCredits();
+  const { checkCredits, decrementCredits, isOfflineMode, fetchUserCredits } = useUserCredits();
   
   useEffect(() => {
     const fetchAssessment = async () => {
@@ -69,28 +68,36 @@ export const useAssessmentData = () => {
       return;
     }
     
-    // Check if user has assessment credits
-    if (!checkCredits('assessment_credits')) {
-      setShowUpgradePrompt(true);
-      toast({
-        title: 'No credits remaining',
-        description: 'You have used all your free skill assessment credits. Please upgrade to continue.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    try {
-      // Decrement assessment credits
-      const decrementSuccess = await decrementCredits('assessment_credits');
+    // Check if user has assessment credits or is in offline mode
+    if (!checkCredits('assessment_credits') && !isOfflineMode) {
+      // Try one more time to fetch credits to ensure we have the latest data
+      await fetchUserCredits();
       
-      if (!decrementSuccess && !isOfflineMode) {
+      // Second check after refresh
+      if (!checkCredits('assessment_credits') && !isOfflineMode) {
+        setShowUpgradePrompt(true);
         toast({
-          title: 'Error',
-          description: 'Failed to use assessment credit',
+          title: 'No credits remaining',
+          description: 'You have used all your free skill assessment credits. Please upgrade to continue.',
           variant: 'destructive',
         });
         return;
+      }
+    }
+    
+    try {
+      // Decrement assessment credits - skip decrementing if in offline mode
+      if (!isOfflineMode) {
+        const decrementSuccess = await decrementCredits('assessment_credits');
+        
+        if (!decrementSuccess) {
+          toast({
+            title: 'Error',
+            description: 'Failed to use assessment credit',
+            variant: 'destructive',
+          });
+          return;
+        }
       }
       
       // Show different toast messages based on online/offline status

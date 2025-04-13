@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -86,10 +87,10 @@ export const useSkillAssessmentGeneration = () => {
         
       if (error) throw error;
       
-      // Check limits based on tier
+      // Check limits based on tier - UPDATED: Free tier now gets 2 assessments
       if (tier === 'premium') return true; // Unlimited
       if (tier === 'pro' && (count || 0) < 20) return true;
-      if (tier === 'free' && (count || 0) < 3) return true;
+      if (tier === 'free' && (count || 0) < 2) return true; // Changed from 3 to 2
       
       return false;
     } catch (error) {

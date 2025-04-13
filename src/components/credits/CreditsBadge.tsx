@@ -14,6 +14,11 @@ import { useEffect } from "react";
 export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
   const { credits, loading, error, isOfflineMode, fetchUserCredits } = useUserCredits();
 
+  // Fetch credits when the component mounts
+  useEffect(() => {
+    fetchUserCredits();
+  }, [fetchUserCredits]);
+
   useEffect(() => {
     if (error) {
       console.error("CreditsBadge error:", error);
@@ -29,7 +34,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     );
   }
 
-  if (error && !credits) {
+  if (error && !credits && !isOfflineMode) {
     return (
       <Badge 
         variant="destructive" 
@@ -46,7 +51,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
   const safeCredits = credits || {
     quiz_credits: 5,
     interview_credits: 1,
-    assessment_credits: 1,
+    assessment_credits: 2, // Updated to 2 from 1
     tutor_message_credits: 5
   };
 
@@ -57,7 +62,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     safeCredits.assessment_credits + 
     safeCredits.tutor_message_credits;
 
-  const maxCredits = 12; // 5 + 1 + 1 + 5
+  const maxCredits = 13; // 5 + 1 + 2 + 5 (updated to account for 2 assessment credits)
   const percentage = Math.floor((totalCredits / maxCredits) * 100);
 
   // Determine color based on remaining credits
