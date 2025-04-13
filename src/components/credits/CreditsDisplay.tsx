@@ -1,3 +1,4 @@
+
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -93,11 +94,12 @@ export const CreditsDisplay = ({
     navigate('/pricing');
   };
 
+  // Mobile-optimized compact view
   if (compact) {
     return (
       <div className="space-y-2 p-2">
         {isOfflineMode && (
-          <div className="flex items-center gap-2 text-xs text-amber-500 mb-2 p-1 bg-amber-500/10 rounded">
+          <div className="flex items-center gap-2 text-xs text-amber-500 mb-2 p-1 bg-amber-500/10 rounded touch-manipulation">
             <WifiOff className="h-3 w-3" />
             <span>Offline mode - Using local credits</span>
           </div>
@@ -114,23 +116,24 @@ export const CreditsDisplay = ({
     );
   }
 
+  // Full view with responsive design
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           {isOfflineMode ? "Offline Credits" : "Free Credits Remaining"}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full">
+                <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full touch-manipulation">
                   <Info className="h-4 w-4" />
                   <span className="sr-only">Credit information</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-sm">
+              <TooltipContent className="max-w-[200px] sm:max-w-none text-xs sm:text-sm">
+                <p>
                   {isOfflineMode 
-                    ? "Using local credits while offline. Changes won't sync to the server."
+                    ? "Using local credits while offline. Changes won't sync to the server until you're back online."
                     : "Free users receive a limited number of credits to explore our platform features. Upgrade to Premium for unlimited access."}
                 </p>
               </TooltipContent>
@@ -163,12 +166,20 @@ export const CreditsDisplay = ({
                   {item.value}/{item.total}
                 </span>
               </div>
-              <Progress value={(item.value / item.total) * 100} className="h-2" />
+              <Progress 
+                value={(item.value / item.total) * 100} 
+                className="h-2 touch-manipulation"
+                aria-label={`${item.label} credits: ${item.value} out of ${item.total}`}
+              />
             </div>
           ))}
 
           {allCreditsUsed && showUpgradeButton && (
-            <Button className="w-full mt-4 touch-manipulation" size="lg" onClick={handleUpgrade}>
+            <Button 
+              className="w-full mt-4 touch-manipulation active:scale-95 transition-transform"
+              size="lg" 
+              onClick={handleUpgrade}
+            >
               Upgrade to Continue
             </Button>
           )}

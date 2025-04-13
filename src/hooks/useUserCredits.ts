@@ -46,7 +46,7 @@ export const useUserCredits = () => {
         // Log the full error for better debugging
         console.error('Supabase error fetching credits:', fetchError);
         
-        // Check if the error is due to permission issues (403 error code)
+        // Check for specific error codes that indicate permission issues
         const errorIsPermissionDenied = 
           fetchError.code === '42501' || 
           fetchError.message.includes('permission denied') || 
@@ -54,9 +54,9 @@ export const useUserCredits = () => {
           fetchError.message.includes('403');
         
         if (errorIsPermissionDenied) {
-          console.log('Permission denied when fetching credits, using fallback');
+          console.log('Permission denied when fetching credits, using offline mode');
           setIsOfflineMode(true);
-          useDefaultCredits(user.id);
+          useLocalCredits(user.id);
           return;
         }
         
@@ -65,12 +65,12 @@ export const useUserCredits = () => {
 
       console.log('Credits data from Supabase:', data);
 
-      // If no data is found, create a fallback with default values
+      // If no data is found, create a new credits record
       if (!data) {
-        console.log('No credits found, creating default credits');
+        console.log('No credits found for user, attempting to create default credits');
         
-        // Try to create default credits for the user
         try {
+          // Try to create default credits for the user
           const { data: newCredits, error: insertError } = await (supabase as any)
             .from('user_credits')
             .insert({
@@ -86,7 +86,7 @@ export const useUserCredits = () => {
           if (insertError) {
             console.error('Error creating default credits:', insertError);
             
-            // Check for permission denied
+            // If creation fails due to permissions, switch to offline mode
             const errorIsPermissionDenied = 
               insertError.code === '42501' || 
               insertError.message.includes('permission denied') || 
@@ -94,9 +94,9 @@ export const useUserCredits = () => {
               insertError.message.includes('403');
             
             if (errorIsPermissionDenied) {
-              console.log('Permission denied when creating credits, using fallback');
+              console.log('Permission denied when creating credits, using offline mode');
               setIsOfflineMode(true);
-              useDefaultCredits(user.id);
+              useLocalCredits(user.id);
               return;
             }
             
@@ -109,13 +109,12 @@ export const useUserCredits = () => {
             setIsOfflineMode(false);
           } else {
             // Fallback if insert doesn't return data
-            useDefaultCredits(user.id);
+            useLocalCredits(user.id);
             setIsOfflineMode(true);
           }
         } catch (insertErr) {
           console.error('Failed to create default credits:', insertErr);
-          // Use fallback values if insert fails
-          useDefaultCredits(user.id);
+          useLocalCredits(user.id);
           setIsOfflineMode(true);
         }
       } else {
@@ -127,15 +126,15 @@ export const useUserCredits = () => {
       console.error('Error fetching user credits:', err);
       setError('Failed to load your available credits');
       
-      // Provide fallback credits so UI doesn't break
-      useDefaultCredits(user?.id || 'unknown');
+      // Provide fallback credits for UI display
+      useLocalCredits(user?.id || 'unknown');
       setIsOfflineMode(true);
       
       // Only show toast if it's a real error, not just missing data
       if (err instanceof Error && err.message !== 'No data found') {
         toast({
           title: "Error",
-          description: "Failed to load your available credits. Using default values.",
+          description: "Failed to load credits. Using offline mode.",
           variant: "destructive",
         });
       }
@@ -144,9 +143,10 @@ export const useUserCredits = () => {
     }
   }, [user]);
 
-  const useDefaultCredits = (userId: string) => {
+  // Use local credits when offline or when there's an error
+  const useLocalCredits = (userId: string) => {
     const defaultCredits = {
-      id: 'fallback',
+      id: 'local-' + Math.random().toString(36).substring(2, 9),
       user_id: userId,
       quiz_credits: 5,
       interview_credits: 1,
@@ -156,8 +156,28 @@ export const useUserCredits = () => {
       updated_at: new Date().toISOString()
     };
     
-    console.log('Current credits state:', defaultCredits);
+    console.log('Using local credits:', defaultCredits);
+    
+    // Try to get stored local credits first
+    const storedCredits = localStorage.getItem(`local_credits_${userId}`);
+    if (storedCredits) {
+      try {
+        const parsedCredits = JSON.parse(storedCredits);
+        console.log('Using stored local credits:', parsedCredits);
+        setCredits(parsedCredits);
+        return;
+      } catch (e) {
+        console.error('Error parsing stored local credits:', e);
+      }
+    }
+    
     setCredits(defaultCredits);
+    // Store local credits for later use
+    try {
+      localStorage.setItem(`local_credits_${userId}`, JSON.stringify(defaultCredits));
+    } catch (e) {
+      console.error('Error storing local credits:', e);
+    }
   };
 
   const decrementCredits = async (creditType: 'quiz_credits' | 'interview_credits' | 'assessment_credits' | 'tutor_message_credits') => {
@@ -176,24 +196,34 @@ export const useUserCredits = () => {
       // If in offline mode, just update the local state
       if (isOfflineMode) {
         console.log(`Offline mode: updating ${creditType} locally only`);
-        setCredits({
+        const updatedCredits = {
           ...credits,
           [creditType]: credits[creditType] - 1,
           updated_at: new Date().toISOString(),
-        });
+        };
+        
+        setCredits(updatedCredits);
+        
+        // Store updated credits locally
+        try {
+          localStorage.setItem(`local_credits_${user.id}`, JSON.stringify(updatedCredits));
+        } catch (e) {
+          console.error('Error storing updated local credits:', e);
+        }
+        
         return true;
       }
 
       console.log(`Decrementing ${creditType} for user ${user.id}`);
 
-      // Using 'any' to bypass the type checking
+      // Try to update in Supabase
       const { error } = await (supabase as any)
         .from('user_credits')
         .update({ [creditType]: credits[creditType] - 1 })
         .eq('user_id', user.id);
 
       if (error) {
-        // Check for permission denied
+        // Check for permission denied or other errors
         const errorIsPermissionDenied = 
           error.code === '42501' || 
           error.message.includes('permission denied') || 
@@ -203,11 +233,28 @@ export const useUserCredits = () => {
         if (errorIsPermissionDenied) {
           console.log('Permission denied when updating credits, updating locally only');
           setIsOfflineMode(true);
-          setCredits({
+          
+          const updatedCredits = {
             ...credits,
             [creditType]: credits[creditType] - 1,
             updated_at: new Date().toISOString(),
+          };
+          
+          setCredits(updatedCredits);
+          
+          // Store updated credits locally
+          try {
+            localStorage.setItem(`local_credits_${user.id}`, JSON.stringify(updatedCredits));
+          } catch (e) {
+            console.error('Error storing updated local credits:', e);
+          }
+          
+          toast({
+            title: "Offline Mode",
+            description: "Using offline mode for credits. Changes won't sync to server.",
+            variant: "default",
           });
+          
           return true;
         }
         
@@ -239,6 +286,59 @@ export const useUserCredits = () => {
     return credits[creditType] > 0;
   };
 
+  // Sync with server when coming back online
+  const syncCreditsWithServer = async () => {
+    if (!user || !credits || !isOfflineMode) return;
+    
+    console.log('Attempting to sync local credits with server');
+    
+    try {
+      const { data, error } = await (supabase as any)
+        .from('user_credits')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking server credits during sync:', error);
+        return;
+      }
+      
+      if (data) {
+        // We're back online - server has a record
+        console.log('Server has credits record, back online');
+        setIsOfflineMode(false);
+        setCredits(data);
+      } else {
+        // Still no record on server, try to create one
+        console.log('No credits on server, trying to create from local data');
+        const { data: newCredits, error: insertError } = await (supabase as any)
+          .from('user_credits')
+          .insert({
+            user_id: user.id,
+            quiz_credits: credits.quiz_credits,
+            interview_credits: credits.interview_credits,
+            assessment_credits: credits.assessment_credits,
+            tutor_message_credits: credits.tutor_message_credits
+          })
+          .select('*')
+          .single();
+          
+        if (insertError) {
+          console.error('Error creating credits during sync:', insertError);
+          return;
+        }
+        
+        console.log('Successfully created credits on server from local data');
+        setIsOfflineMode(false);
+        setCredits(newCredits);
+      }
+    } catch (err) {
+      console.error('Error during credits sync:', err);
+    }
+  };
+
+  // Initialize credits on first load
   useEffect(() => {
     if (user) {
       fetchUserCredits();
@@ -246,6 +346,18 @@ export const useUserCredits = () => {
       setLoading(false);
       setCredits(null);
     }
+    
+    // Setup online/offline detection
+    const handleOnline = () => {
+      console.log('Browser went online, attempting to sync credits');
+      syncCreditsWithServer();
+    };
+    
+    window.addEventListener('online', handleOnline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
   }, [user, fetchUserCredits]);
 
   return {
@@ -256,5 +368,6 @@ export const useUserCredits = () => {
     decrementCredits,
     checkCredits,
     fetchUserCredits,
+    syncCreditsWithServer
   };
 };

@@ -22,6 +22,8 @@ export const useAssessmentData = () => {
       
       try {
         setLoading(true);
+        setError(null);
+        
         const { data, error } = await supabase
           .from('skill_assessments')
           .select('*')
@@ -29,6 +31,16 @@ export const useAssessmentData = () => {
           .maybeSingle();
           
         if (error) throw error;
+        
+        if (!data) {
+          setError("Assessment not found");
+          toast({
+            title: 'Assessment Not Found',
+            description: 'The requested assessment could not be found',
+            variant: 'destructive',
+          });
+          return;
+        }
         
         setAssessment(data);
       } catch (err) {
@@ -81,13 +93,34 @@ export const useAssessmentData = () => {
         return;
       }
       
-      // If using offline mode with credit deduction success, show a notice
-      if (isOfflineMode && decrementSuccess) {
+      // Show different toast messages based on online/offline status
+      if (isOfflineMode) {
         toast({
           title: 'Offline Mode',
-          description: 'Taking assessment in offline mode. Your usage will not be synchronized with the server.',
+          description: 'Taking assessment in offline mode. Changes will sync when you reconnect.',
           variant: 'default',
         });
+      } else {
+        toast({
+          title: 'Assessment Started',
+          description: 'Good luck with your assessment!',
+          variant: 'default',
+        });
+      }
+      
+      // Store assessment start in local storage for offline mode
+      if (isOfflineMode) {
+        try {
+          const assessmentStarts = JSON.parse(localStorage.getItem('offline_assessment_starts') || '[]');
+          assessmentStarts.push({
+            assessmentId: id,
+            userId: user.id,
+            startTime: new Date().toISOString()
+          });
+          localStorage.setItem('offline_assessment_starts', JSON.stringify(assessmentStarts));
+        } catch (e) {
+          console.error('Error storing assessment start locally:', e);
+        }
       }
       
       navigate(`/take-assessment/${id}`);

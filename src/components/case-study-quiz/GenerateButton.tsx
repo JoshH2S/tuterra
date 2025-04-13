@@ -20,7 +20,7 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
   const isFreeUser = subscription.tier === 'free';
   const remainingCredits = credits?.quiz_credits || 0;
 
-  // Don't show tooltip on mobile devices
+  // Enhanced mobile experience - show credits info directly below button
   if (isMobile && isFreeUser) {
     return (
       <div className="space-y-2">
@@ -34,6 +34,7 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
           }}
           disabled={disabled || isGenerating}
           className="w-full touch-manipulation active:scale-95 transition-transform"
+          aria-label={isGenerating ? "Generating Quiz..." : "Generate Quiz"}
         >
           {isGenerating ? (
             <>
@@ -58,6 +59,7 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
     );
   }
 
+  // Desktop experience with tooltips
   return (
     <TooltipProvider>
       <Tooltip>
@@ -73,10 +75,12 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
             }}
             disabled={disabled || isGenerating}
             className="w-full touch-manipulation active:scale-95 transition-transform"
+            aria-label={isGenerating ? "Generating Quiz..." : "Generate Quiz"}
           >
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span className="sr-only">Loading</span>
                 Generating Quiz...
               </>
             ) : (
@@ -88,7 +92,7 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
           </Button>
         </TooltipTrigger>
         {isFreeUser && (
-          <TooltipContent>
+          <TooltipContent side="top" align="center">
             {isOfflineMode ? (
               <p>Offline mode - Using local credits</p>
             ) : (

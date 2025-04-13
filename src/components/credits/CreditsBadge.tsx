@@ -31,7 +31,11 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
 
   if (error && !credits) {
     return (
-      <Badge variant="destructive" className="ml-2 gap-1 cursor-pointer touch-manipulation" onClick={() => fetchUserCredits()}>
+      <Badge 
+        variant="destructive" 
+        className="ml-2 gap-1 cursor-pointer touch-manipulation active:scale-95 transition-transform" 
+        onClick={() => fetchUserCredits()}
+      >
         <AlertCircle className="h-3 w-3" />
         <span>Retry</span>
       </Badge>
@@ -71,7 +75,10 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
 
   if (showFull) {
     return (
-      <Badge variant={badgeVariant} className="gap-1">
+      <Badge 
+        variant={badgeVariant} 
+        className="gap-1 touch-manipulation active:scale-95 transition-transform"
+      >
         {isOfflineMode ? (
           <WifiOff className="h-3 w-3" />
         ) : (
@@ -86,7 +93,10 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     <TooltipProvider>
       <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>
-          <Badge variant={badgeVariant} className="gap-1 cursor-help touch-manipulation">
+          <Badge 
+            variant={badgeVariant} 
+            className="gap-1 cursor-help touch-manipulation active:scale-95 transition-transform"
+          >
             {isOfflineMode ? (
               <WifiOff className="h-3 w-3" />
             ) : (
