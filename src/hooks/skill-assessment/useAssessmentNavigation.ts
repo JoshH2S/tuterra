@@ -4,13 +4,12 @@ import { QuestionItem } from "./types";
 
 export const useAssessmentNavigation = (questions: QuestionItem[] = []) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
+  const [answers, setAnswers] = useState<Array<string | string[]>>([]);
 
   const handleAnswerChange = (value: string | string[]) => {
-    setAnswers(prev => ({
-      ...prev,
-      [currentQuestionIndex]: value
-    }));
+    const newAnswers = [...answers];
+    newAnswers[currentQuestionIndex] = value;
+    setAnswers(newAnswers);
   };
 
   const goToNextQuestion = () => {

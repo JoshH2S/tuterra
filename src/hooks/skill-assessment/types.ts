@@ -37,7 +37,7 @@ export type AssessmentTakingState = {
   assessment: SkillAssessment | null;
   loading: boolean;
   currentQuestionIndex: number;
-  answers: Record<number, string | string[]>;
+  answers: Array<string | string[]>; // Changed from Record<number, string | string[]> to Array
   timeRemaining: number;
   totalTime: number;
   isSubmitting: boolean;
@@ -51,8 +51,10 @@ export type AssessmentTakingState = {
   handleAnswerChange: (value: string | string[]) => void;
   goToNextQuestion: () => void;
   goToPreviousQuestion: () => void;
-  handleSubmit: () => void;
+  handleSubmit: () => Promise<void>;
   setError: (error: string | null) => void;
+  retry?: () => Promise<void>; // Added missing property
+  isOfflineMode?: boolean; // Added missing property
 };
 
 // Type guards for answers validation
@@ -61,6 +63,11 @@ export const isValidAnswer = (answer: unknown): answer is string | string[] => {
     (Array.isArray(answer) && answer.every(item => typeof item === 'string'));
 };
 
-export const validateAnswers = (answers: Record<number, unknown>): boolean => {
-  return Object.values(answers).every(answer => isValidAnswer(answer));
+export const validateAnswers = (answers: Array<unknown> | Record<number, unknown>): boolean => {
+  // Handle both array and record types
+  if (Array.isArray(answers)) {
+    return answers.every(answer => isValidAnswer(answer));
+  } else {
+    return Object.values(answers).every(answer => isValidAnswer(answer));
+  }
 };

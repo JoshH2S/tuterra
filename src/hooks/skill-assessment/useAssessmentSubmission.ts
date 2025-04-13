@@ -15,7 +15,7 @@ import {
 
 export const useAssessmentSubmission = (
   assessment: SkillAssessment | null,
-  answers: Record<number, string | string[]>,
+  answers: Array<string | string[]>,
   totalTime: number,
   timeRemaining: number,
   userTier: string
@@ -27,10 +27,21 @@ export const useAssessmentSubmission = (
   const [error, setError] = useState<string | null>(null);
   const [submissionProgress, setSubmissionProgress] = useState(0);
 
-  const handleSubmit = async () => {
+  // Convert array answers to record for submission
+  const convertAnswersToRecord = (): Record<number, string | string[]> => {
+    const record: Record<number, string | string[]> = {};
+    answers.forEach((answer, index) => {
+      if (answer !== undefined) {
+        record[index] = answer;
+      }
+    });
+    return record;
+  };
+
+  const handleSubmit = async (): Promise<void> => {
     if (!assessment || !user) {
       setError("Assessment or user information is missing. Please refresh and try again.");
-      return;
+      return Promise.reject(new Error("Assessment or user information is missing"));
     }
     
     setIsSubmitting(true);
@@ -51,7 +62,7 @@ export const useAssessmentSubmission = (
       if (unansweredQuestions.length > 0) {
         setError(`Please answer all questions before submitting. ${unansweredQuestions.length} questions remaining.`);
         setIsSubmitting(false);
-        return;
+        return Promise.reject(new Error("Unanswered questions"));
       }
       
       setSubmissionProgress(30);
@@ -110,11 +121,14 @@ export const useAssessmentSubmission = (
       
       setSubmissionProgress(80);
       
+      // Convert answers array to record for submission
+      const answersRecord = convertAnswersToRecord();
+      
       console.log("Preparing submission with data:", {
         assessment_id: assessment.id,
         user_id: user.id,
         score,
-        answers,
+        answers: answersRecord,
         detailed_results: detailedResults,
         skill_scores: skillScores,
         time_spent: totalTime - timeRemaining,
@@ -130,7 +144,7 @@ export const useAssessmentSubmission = (
           assessment_id: assessment.id,
           user_id: user.id,
           score,
-          answers: answers as Json,
+          answers: answersRecord as Json,
           detailed_results: detailedResults as Json,
           skill_scores: skillScores as Json,
           time_spent: totalTime - timeRemaining,
@@ -175,6 +189,7 @@ export const useAssessmentSubmission = (
       
       // Navigate to results page
       navigate(`/skill-assessment-results/${data.id}`);
+      return Promise.resolve();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       console.error("Error submitting assessment:", error);
@@ -186,7 +201,7 @@ export const useAssessmentSubmission = (
           `failed_submission_${assessment.id}`,
           JSON.stringify({
             assessmentId: assessment.id,
-            answers,
+            answers: convertAnswersToRecord(),
             timestamp: new Date().toISOString(),
             error: errorMessage
           })
@@ -200,6 +215,8 @@ export const useAssessmentSubmission = (
         description: "Failed to submit your answers. Please try again.",
         variant: "destructive",
       });
+      
+      return Promise.reject(error);
     } finally {
       setIsSubmitting(false);
     }

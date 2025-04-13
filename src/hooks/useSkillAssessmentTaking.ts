@@ -6,6 +6,7 @@ import { useAssessmentTimer } from "./skill-assessment/useAssessmentTimer";
 import { useAssessmentNavigation } from "./skill-assessment/useAssessmentNavigation";
 import { useAssessmentSubmission } from "./skill-assessment/useAssessmentSubmission";
 import { AssessmentTakingState, SkillAssessment } from "./skill-assessment/types";
+import { useNetworkStatus } from "./interview/useNetworkStatus";
 
 export const useSkillAssessmentTaking = (assessmentId: string | undefined): AssessmentTakingState => {
   // Local state
@@ -13,15 +14,18 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
   const [error, setError] = useState<string | null>(null);
   const [totalTime, setTotalTime] = useState<number>(0);
   
+  // Network status
+  const { isOfflineMode } = useNetworkStatus();
+  
   // Get assessment data
-  // Pass no arguments here, as useAssessmentData() gets the ID from useParams internally
   const {
     assessment,
     loading,
     error: assessmentError,
     startAssessment,
     showUpgradePrompt,
-    setShowUpgradePrompt
+    setShowUpgradePrompt,
+    retryFetchAssessment
   } = useAssessmentData();
 
   // Sync errors
@@ -76,6 +80,11 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
     handleSubmit
   );
 
+  // Wrap retryFetchAssessment to return a Promise
+  const retry = async (): Promise<void> => {
+    return retryFetchAssessment();
+  };
+
   return {
     assessment,
     loading,
@@ -95,6 +104,8 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
     goToNextQuestion,
     goToPreviousQuestion,
     handleSubmit,
-    setError
+    setError,
+    retry,
+    isOfflineMode
   };
 };

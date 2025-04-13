@@ -157,9 +157,10 @@ export const useAssessmentData = () => {
     }
   }, [id, retryCount, isOfflineMode, getLocalAssessment, storeLocalAssessment]);
 
-  // Manual retry function for users
-  const retryFetchAssessment = useCallback(() => {
-    fetchAssessment(true);
+  // Manual retry function for users - ensure it returns a Promise
+  const retryFetchAssessment = useCallback(async (): Promise<void> => {
+    await fetchAssessment(true);
+    return Promise.resolve();
   }, [fetchAssessment]);
 
   const startAssessment = async () => {
@@ -264,6 +265,6 @@ export const useAssessmentData = () => {
     showUpgradePrompt,
     setShowUpgradePrompt,
     isOfflineMode,
-    retryFetchAssessment
+    retryFetchAssessment  // Make sure this is in the returned object
   };
 };
