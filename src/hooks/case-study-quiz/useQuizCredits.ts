@@ -6,7 +6,7 @@ import { toast } from "@/hooks/use-toast";
 
 export const useQuizCredits = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-  const { checkCredits, decrementCredits, credits, fetchUserCredits } = useUserCredits();
+  const { checkCredits, decrementCredits, credits, fetchUserCredits, isOfflineMode } = useUserCredits();
   const { subscription } = useSubscription();
 
   // Track if we've already shown the credit validation toast to avoid duplicates
@@ -22,6 +22,20 @@ export const useQuizCredits = () => {
       if (subscription.tier === 'free') {
         // Always fetch the latest credits before checking
         await fetchUserCredits();
+        
+        // If we're in offline mode, we'll allow the operation and notify the user
+        if (isOfflineMode) {
+          if (!hasShownCreditToast) {
+            toast({
+              title: "Offline Mode",
+              description: "Using quiz in offline mode with local credits.",
+              variant: "default",
+            });
+            setHasShownCreditToast(true);
+          }
+          return true;
+        }
+        
         const hasCredits = await checkCredits('quiz_credits');
         
         if (!hasCredits) {
@@ -64,6 +78,22 @@ export const useQuizCredits = () => {
     try {
       // Reset the toast flag when actually using a credit
       setHasShownCreditToast(false);
+      
+      // Check if we're in offline mode
+      if (isOfflineMode) {
+        // In offline mode, we just decrement local credits
+        const success = await decrementCredits('quiz_credits');
+        
+        if (success) {
+          toast({
+            title: "Offline Mode",
+            description: "Using quiz credit in offline mode. This won't sync with the server.",
+            variant: "default",
+          });
+        }
+        
+        return success;
+      }
       
       // Always fetch the latest credits before decrementing
       await fetchUserCredits();
@@ -108,6 +138,7 @@ export const useQuizCredits = () => {
     validateCredits,
     useCredit,
     getRemainingCredits,
-    subscription
+    subscription,
+    isOfflineMode
   };
 };

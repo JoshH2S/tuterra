@@ -14,7 +14,7 @@ export const useAssessmentData = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { checkCredits, decrementCredits } = useUserCredits();
+  const { checkCredits, decrementCredits, isOfflineMode } = useUserCredits();
   
   useEffect(() => {
     const fetchAssessment = async () => {
@@ -26,7 +26,7 @@ export const useAssessmentData = () => {
           .from('skill_assessments')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
           
         if (error) throw error;
         
@@ -70,7 +70,26 @@ export const useAssessmentData = () => {
     
     try {
       // Decrement assessment credits
-      await decrementCredits('assessment_credits');
+      const decrementSuccess = await decrementCredits('assessment_credits');
+      
+      if (!decrementSuccess && !isOfflineMode) {
+        toast({
+          title: 'Error',
+          description: 'Failed to use assessment credit',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // If using offline mode with credit deduction success, show a notice
+      if (isOfflineMode && decrementSuccess) {
+        toast({
+          title: 'Offline Mode',
+          description: 'Taking assessment in offline mode. Your usage will not be synchronized with the server.',
+          variant: 'default',
+        });
+      }
+      
       navigate(`/take-assessment/${id}`);
     } catch (error) {
       console.error('Error starting assessment:', error);
@@ -88,6 +107,7 @@ export const useAssessmentData = () => {
     error,
     startAssessment,
     showUpgradePrompt,
-    setShowUpgradePrompt
+    setShowUpgradePrompt,
+    isOfflineMode
   };
 };

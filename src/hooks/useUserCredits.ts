@@ -20,6 +20,7 @@ export const useUserCredits = () => {
   const [credits, setCredits] = useState<UserCredits | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOfflineMode, setIsOfflineMode] = useState<boolean>(false);
 
   const fetchUserCredits = useCallback(async () => {
     if (!user) {
@@ -44,6 +45,21 @@ export const useUserCredits = () => {
       if (fetchError) {
         // Log the full error for better debugging
         console.error('Supabase error fetching credits:', fetchError);
+        
+        // Check if the error is due to permission issues (403 error code)
+        const errorIsPermissionDenied = 
+          fetchError.code === '42501' || 
+          fetchError.message.includes('permission denied') || 
+          (fetchError as any).code === 'PGRST301' || 
+          fetchError.message.includes('403');
+        
+        if (errorIsPermissionDenied) {
+          console.log('Permission denied when fetching credits, using fallback');
+          setIsOfflineMode(true);
+          useDefaultCredits(user.id);
+          return;
+        }
+        
         throw fetchError;
       }
 
@@ -70,9 +86,16 @@ export const useUserCredits = () => {
           if (insertError) {
             console.error('Error creating default credits:', insertError);
             
-            // If insert fails due to RLS policy, provide fallback
-            if (insertError.code === '42501' || insertError.message.includes('permission denied')) {
+            // Check for permission denied
+            const errorIsPermissionDenied = 
+              insertError.code === '42501' || 
+              insertError.message.includes('permission denied') || 
+              (insertError as any).code === 'PGRST301' || 
+              insertError.message.includes('403');
+            
+            if (errorIsPermissionDenied) {
               console.log('Permission denied when creating credits, using fallback');
+              setIsOfflineMode(true);
               useDefaultCredits(user.id);
               return;
             }
@@ -83,18 +106,22 @@ export const useUserCredits = () => {
           if (newCredits) {
             console.log('Created new credits record:', newCredits);
             setCredits(newCredits as UserCredits);
+            setIsOfflineMode(false);
           } else {
             // Fallback if insert doesn't return data
             useDefaultCredits(user.id);
+            setIsOfflineMode(true);
           }
         } catch (insertErr) {
           console.error('Failed to create default credits:', insertErr);
           // Use fallback values if insert fails
           useDefaultCredits(user.id);
+          setIsOfflineMode(true);
         }
       } else {
         console.log('Found existing credits:', data);
         setCredits(data as UserCredits);
+        setIsOfflineMode(false);
       }
     } catch (err) {
       console.error('Error fetching user credits:', err);
@@ -102,6 +129,7 @@ export const useUserCredits = () => {
       
       // Provide fallback credits so UI doesn't break
       useDefaultCredits(user?.id || 'unknown');
+      setIsOfflineMode(true);
       
       // Only show toast if it's a real error, not just missing data
       if (err instanceof Error && err.message !== 'No data found') {
@@ -117,7 +145,7 @@ export const useUserCredits = () => {
   }, [user]);
 
   const useDefaultCredits = (userId: string) => {
-    setCredits({
+    const defaultCredits = {
       id: 'fallback',
       user_id: userId,
       quiz_credits: 5,
@@ -126,7 +154,10 @@ export const useUserCredits = () => {
       tutor_message_credits: 5,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
-    });
+    };
+    
+    console.log('Current credits state:', defaultCredits);
+    setCredits(defaultCredits);
   };
 
   const decrementCredits = async (creditType: 'quiz_credits' | 'interview_credits' | 'assessment_credits' | 'tutor_message_credits') => {
@@ -142,6 +173,17 @@ export const useUserCredits = () => {
         return false;
       }
 
+      // If in offline mode, just update the local state
+      if (isOfflineMode) {
+        console.log(`Offline mode: updating ${creditType} locally only`);
+        setCredits({
+          ...credits,
+          [creditType]: credits[creditType] - 1,
+          updated_at: new Date().toISOString(),
+        });
+        return true;
+      }
+
       console.log(`Decrementing ${creditType} for user ${user.id}`);
 
       // Using 'any' to bypass the type checking
@@ -151,9 +193,16 @@ export const useUserCredits = () => {
         .eq('user_id', user.id);
 
       if (error) {
-        // If update fails due to RLS policies, update locally only
-        if (error.code === '42501' || error.message.includes('permission denied')) {
+        // Check for permission denied
+        const errorIsPermissionDenied = 
+          error.code === '42501' || 
+          error.message.includes('permission denied') || 
+          (error as any).code === 'PGRST301' || 
+          error.message.includes('403');
+        
+        if (errorIsPermissionDenied) {
           console.log('Permission denied when updating credits, updating locally only');
+          setIsOfflineMode(true);
           setCredits({
             ...credits,
             [creditType]: credits[creditType] - 1,
@@ -203,6 +252,7 @@ export const useUserCredits = () => {
     credits,
     loading,
     error,
+    isOfflineMode,
     decrementCredits,
     checkCredits,
     fetchUserCredits,

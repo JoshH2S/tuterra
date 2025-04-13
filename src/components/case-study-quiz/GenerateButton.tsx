@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, WifiOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -13,7 +13,7 @@ interface GenerateButtonProps {
 }
 
 export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButtonProps) => {
-  const { credits } = useUserCredits();
+  const { credits, isOfflineMode } = useUserCredits();
   const { subscription } = useSubscription();
   const isMobile = useIsMobile();
   
@@ -41,11 +41,18 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
               Generating Quiz...
             </>
           ) : (
-            'Generate Quiz'
+            <>
+              {isOfflineMode && <WifiOff className="mr-2 h-4 w-4 text-amber-500" />}
+              Generate Quiz
+            </>
           )}
         </Button>
         <p className="text-xs text-center text-muted-foreground">
-          You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining.
+          {isOfflineMode ? (
+            "Offline mode - Using local credits"
+          ) : (
+            `You have ${remainingCredits} free quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining.`
+          )}
         </p>
       </div>
     );
@@ -73,13 +80,20 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
                 Generating Quiz...
               </>
             ) : (
-              'Generate Quiz'
+              <>
+                {isOfflineMode && <WifiOff className="mr-2 h-4 w-4 text-amber-500" />}
+                Generate Quiz
+              </>
             )}
           </Button>
         </TooltipTrigger>
         {isFreeUser && (
           <TooltipContent>
-            <p>You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining.</p>
+            {isOfflineMode ? (
+              <p>Offline mode - Using local credits</p>
+            ) : (
+              <p>You have {remainingCredits} free quiz {remainingCredits === 1 ? 'credit' : 'credits'} remaining.</p>
+            )}
           </TooltipContent>
         )}
       </Tooltip>
