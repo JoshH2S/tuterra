@@ -1,4 +1,3 @@
-
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -25,7 +24,6 @@ export const CreditsDisplay = ({
   const { credits, loading, error, fetchUserCredits, isOfflineMode: hookIsOfflineMode } = useUserCredits();
   const navigate = useNavigate();
   
-  // Determine if we're in offline mode from props or hook
   const isOfflineMode = propIsOfflineMode !== undefined ? propIsOfflineMode : hookIsOfflineMode;
 
   useEffect(() => {
@@ -71,7 +69,6 @@ export const CreditsDisplay = ({
     );
   }
 
-  // Fallback credits if somehow credits is null
   const safeCredits = credits || {
     id: 'fallback',
     user_id: 'unknown',
@@ -148,7 +145,7 @@ export const CreditsDisplay = ({
       </CardHeader>
       <CardContent>
         {isOfflineMode && (
-          <Alert variant="warning" className="mb-4 bg-amber-500/10 text-amber-700 border-amber-200">
+          <Alert variant="default" className="mb-4 bg-amber-500/10 text-amber-700 border-amber-200">
             <WifiOff className="h-4 w-4" />
             <AlertTitle>Offline Mode Active</AlertTitle>
             <AlertDescription>
