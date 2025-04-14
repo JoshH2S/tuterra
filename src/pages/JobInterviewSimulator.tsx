@@ -54,7 +54,7 @@ const JobInterviewSimulator = () => {
   const usedFallbackQuestions = false;
   const isOnline = navigator.onLine;
 
-  const handleStartInterviewWithParams = (industry: string, role: string, description: string) => {
+  const handleStartInterviewWithParams = async (industry: string, role: string, description: string) => {
     console.log("Starting interview with params:", { 
       industry, 
       role: `'${role}'`, 
@@ -62,50 +62,48 @@ const JobInterviewSimulator = () => {
       description: description.substring(0, 50) + "..." 
     });
     
-    // Set form as submitting to prevent multiple submissions
-    setFormSubmitting(true);
-    
     // Validate inputs before processing
     if (!industry.trim()) {
       console.error("Invalid industry received:", industry);
-      setFormSubmitting(false);
       return;
     }
     
     if (!role || !role.trim()) {
       console.error("Invalid job role received:", role);
-      setFormSubmitting(false);
       return;
     }
+
+    // Set form as submitting to prevent multiple submissions
+    setFormSubmitting(true);
     
-    // Update all state values
-    setIndustry(industry);
-    setJobRole(role);
-    setJobDescription(description);
-    
-    // Use a small timeout to ensure state updates have been processed
-    setTimeout(() => {
-      try {
-        // Create a synthetic event to pass to handleSubmit
-        const syntheticEvent = {
-          preventDefault: () => {}
-        } as React.FormEvent;
-        
-        console.log("Submitting with state values:", {
-          industry,
-          jobRole: role,
-          descriptionLength: description.length
-        });
-        
-        // Submit the form using handleSubmit from useInterviewSetup
-        handleSubmit(syntheticEvent);
-      } catch (error) {
-        console.error("Error during interview submission:", error);
-      } finally {
-        // Reset submission state
-        setFormSubmitting(false);
-      }
-    }, 50);
+    try {
+      // Update all state values
+      setIndustry(industry);
+      setJobRole(role.trim());
+      setJobDescription(description);
+      
+      // Wait for state updates to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Create a synthetic event to pass to handleSubmit
+      const syntheticEvent = {
+        preventDefault: () => {}
+      } as React.FormEvent;
+      
+      console.log("Submitting with state values:", {
+        industry,
+        jobRole: role.trim(),
+        descriptionLength: description.length
+      });
+      
+      // Submit the form using handleSubmit from useInterviewSetup
+      await handleSubmit(syntheticEvent);
+    } catch (error) {
+      console.error("Error during interview submission:", error);
+    } finally {
+      // Reset submission state
+      setFormSubmitting(false);
+    }
   };
 
   const handleStartNewInterview = () => {

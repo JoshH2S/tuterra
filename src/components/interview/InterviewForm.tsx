@@ -43,16 +43,17 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     let isValid = true;
 
     // Validate industry with clear logging
-    if (!industry.trim()) {
+    if (!industry?.trim()) {
       console.log("Industry validation failed: empty value");
       errors.industry = "Please select a valid industry";
       isValid = false;
     }
     
     // Enhanced job role validation with detailed logging
-    if (!jobRole || !jobRole.trim()) {
+    if (typeof jobRole !== 'string' || !jobRole.trim()) {
       console.log("Job role validation failed:", {
         value: `'${jobRole}'`,
+        type: typeof jobRole,
         length: jobRole ? jobRole.length : 0,
         isEmpty: !jobRole,
         isEmptyTrimmed: jobRole ? !jobRole.trim() : true
@@ -68,7 +69,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     }
     
     // Validate description
-    if (!jobDescription.trim()) {
+    if (!jobDescription?.trim()) {
       errors.jobDescription = "Please enter a job description";
       isValid = false;
     } else if (jobDescription.trim().length < 50) {
@@ -96,8 +97,8 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     console.log("Job role changed to:", `'${val}'`);
     setJobRole(val);
     
-    // Clear error when user types something
-    if (val.trim()) {
+    // Clear error when user types something valid
+    if (val?.trim()) {
       setFormErrors(prev => ({ ...prev, jobRole: undefined }));
     }
   };
@@ -113,6 +114,22 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       jobRoleTrimmed: jobRole ? jobRole.trim().length : 0,
       jobDescription: jobDescription.substring(0, 50) + "..."
     });
+    
+    // Pre-validation check for job role to catch edge cases
+    if (typeof jobRole !== 'string' || !jobRole.trim()) {
+      console.error("Job role validation failed - empty or invalid value:", jobRole);
+      setFormErrors(prev => ({
+        ...prev,
+        jobRole: "Please enter a job role"
+      }));
+      
+      toast({
+        title: "Missing information",
+        description: "Please enter a job role",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (!validateForm()) {
       console.log("Form validation failed with errors:", formErrors);
@@ -185,16 +202,19 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
             </Label>
             <Input
               id="jobRole"
+              name="jobRole"
               value={jobRole}
               onChange={handleJobRoleChange}
-              onBlur={() => {
+              onBlur={(e) => {
                 // Validate on blur
-                if (!jobRole.trim()) {
+                if (!e.target.value?.trim()) {
                   setFormErrors(prev => ({ ...prev, jobRole: "Please enter a job role" }));
                 }
               }}
               placeholder="Enter the job role"
               className={`w-full ${formErrors.jobRole ? 'border-red-500' : ''}`}
+              required
+              aria-required="true"
             />
             {formErrors.jobRole && (
               <p className="text-xs sm:text-sm text-red-500">{formErrors.jobRole}</p>
