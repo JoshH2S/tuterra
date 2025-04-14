@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +34,7 @@ export const useInterviewSetup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("Detailed submission validation:", { 
+    console.log("Form submission triggered with values:", { 
       jobTitle: {
         value: `'${jobTitle}'`,
         type: typeof jobTitle,
@@ -71,10 +72,11 @@ export const useInterviewSetup = () => {
 
     // More explicit validation with detailed logging
     if (!jobTitle || !jobTitle.trim()) {
-      console.error("Critical validation failure:", {
+      console.error("jobTitle validation failure:", {
         jobTitleRaw: `'${jobTitle}'`,
         jobTitleType: typeof jobTitle,
-        jobTitleTrimmed: jobTitle?.trim() || 'N/A'
+        jobTitleTrimmed: jobTitle?.trim() || 'N/A',
+        validationResult: 'Failed - empty or whitespace only'
       });
       
       toast({
@@ -86,7 +88,7 @@ export const useInterviewSetup = () => {
     }
 
     if (!industry || !industry.trim()) {
-      console.error("Industry is missing or empty:", `'${industry}'`);
+      console.error("Industry validation failure:", `'${industry}'`);
       toast({
         title: "Required field missing",
         description: "Please select an industry",
@@ -98,8 +100,8 @@ export const useInterviewSetup = () => {
     try {
       setLoading(true);
       console.log("Creating interview session with:", {
-        role: jobTitle,
-        industry: industry,
+        jobTitle: jobTitle.trim(),
+        industry: industry.trim(),
         descriptionLength: jobDescription.length
       });
 

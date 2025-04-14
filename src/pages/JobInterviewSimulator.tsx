@@ -39,6 +39,12 @@ const JobInterviewSimulator = () => {
   } = useInterviewSession();
 
   const {
+    jobTitle: setupJobTitle,
+    setJobTitle: setupSetJobTitle,
+    industry: setupIndustry,
+    setIndustry: setupSetIndustry,
+    jobDescription: setupJobDescription,
+    setJobDescription: setupSetJobDescription,
     loading: isLoading,
     showUpgradePrompt,
     setShowUpgradePrompt,
@@ -77,24 +83,31 @@ const JobInterviewSimulator = () => {
     setFormSubmitting(true);
     
     try {
-      // Update all state values
-      setIndustry(industry);
+      // Update setup state values
+      setupSetJobTitle(role.trim());
+      setupSetIndustry(industry);
+      setupSetJobDescription(description);
+      
+      // Also update interview session state for consistency
       setJobRole(role.trim());
+      setIndustry(industry);
       setJobDescription(description);
       
       // Wait for state updates to complete
       await new Promise(resolve => setTimeout(resolve, 50));
       
+      console.log("Submitting with state values:", {
+        setupJobTitle: role.trim(),
+        setupIndustry: industry,
+        jobRole: role.trim(),
+        setupJobDescription: description.length,
+        setupJobTitleLength: role.trim().length
+      });
+      
       // Create a synthetic event to pass to handleSubmit
       const syntheticEvent = {
         preventDefault: () => {}
       } as React.FormEvent;
-      
-      console.log("Submitting with state values:", {
-        industry,
-        jobRole: role.trim(),
-        descriptionLength: description.length
-      });
       
       // Submit the form using handleSubmit from useInterviewSetup
       await handleSubmit(syntheticEvent);

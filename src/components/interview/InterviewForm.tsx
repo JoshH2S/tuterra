@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,10 +25,11 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
 
   // Debug effect to monitor state changes
   useEffect(() => {
-    console.log("Form state updated:", { 
+    console.log("InterviewForm state updated:", { 
       industry, 
       jobRole: `'${jobRole}'`, 
       jobRoleLength: jobRole ? jobRole.length : 0,
+      jobRoleTrimmed: jobRole ? jobRole.trim().length : 0,
       jobDescription: jobDescription.substring(0, 30) + (jobDescription.length > 30 ? "..." : "") 
     });
   }, [industry, jobRole, jobDescription]);
@@ -94,7 +94,11 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
 
   const handleJobRoleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    console.log("Job role changed to:", `'${val}'`);
+    console.log("Job role changed:", {
+      value: `'${val}'`,
+      length: val.length,
+      trimmedLength: val.trim().length
+    });
     setJobRole(val);
     
     // Clear error when user types something valid
@@ -107,17 +111,28 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     e.preventDefault();
     
     // Add detailed debug info to help troubleshoot
-    console.log("Form submission attempt with values:", {
+    console.log("InterviewForm submission attempt with values:", {
       industry: `'${industry}'`,
-      jobRole: `'${jobRole}'`,
-      jobRoleLength: jobRole ? jobRole.length : 0,
-      jobRoleTrimmed: jobRole ? jobRole.trim().length : 0,
-      jobDescription: jobDescription.substring(0, 50) + "..."
+      jobRole: {
+        value: `'${jobRole}'`,
+        length: jobRole ? jobRole.length : 0,
+        trimmed: jobRole ? `'${jobRole.trim()}'` : '',
+        trimmedLength: jobRole ? jobRole.trim().length : 0
+      },
+      jobDescription: {
+        preview: jobDescription.substring(0, 50) + "...",
+        length: jobDescription.length,
+        trimmedLength: jobDescription.trim().length
+      }
     });
     
     // Pre-validation check for job role to catch edge cases
     if (typeof jobRole !== 'string' || !jobRole.trim()) {
-      console.error("Job role validation failed - empty or invalid value:", jobRole);
+      console.error("Job role validation failed - empty or invalid value:", {
+        value: `'${jobRole}'`,
+        type: typeof jobRole
+      });
+      
       setFormErrors(prev => ({
         ...prev,
         jobRole: "Please enter a job role"
@@ -161,6 +176,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     console.log("Form validated successfully, submitting with values:", {
       industry,
       jobRole: jobRole.trim(),
+      jobRole_trimmedLength: jobRole.trim().length,
       jobDescriptionLength: jobDescription.length
     });
     
