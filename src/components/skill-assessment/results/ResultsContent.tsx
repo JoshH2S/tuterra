@@ -81,21 +81,27 @@ export const ResultsContent = ({
           </TabsContent>
           
           <TabsContent value="analysis">
-            {/* Analysis content - now available to all users */}
-            <AdvancedAnalysisSection 
-              userTier={userTier}
-              skills={
-                result.skill_scores 
-                  ? Object.entries(result.skill_scores).map(([name, data]) => ({
-                      name,
-                      score: data.score
-                    }))
-                  : []
-              }
-              recommendations={recommendations}
-              benchmarks={benchmarks}
-              skillBenchmarks={skillBenchmarks}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Advanced Analysis</CardTitle>
+                <CardDescription>Skills and recommendations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AdvancedAnalysisSection 
+                  userTier={userTier}
+                  skills={
+                    result.skill_scores 
+                      ? Object.entries(result.skill_scores).map(([name, data]) => ({
+                          name,
+                          score: data.score
+                        }))
+                      : []
+                  }
+                  recommendations={recommendations}
+                  skillBenchmarks={skillBenchmarks}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
