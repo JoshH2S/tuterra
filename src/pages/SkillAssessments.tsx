@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -10,87 +10,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SkillAssessmentForm } from "@/components/skill-assessment/SkillAssessmentForm";
 import { SkillAssessmentsList } from "@/components/skill-assessment/SkillAssessmentsList";
+import AssessmentCard from "@/components/skill-assessment/AssessmentCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, Building2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-// Create the AssessmentCard component
-const AssessmentCard = ({ assessment, onViewAssessment }) => {
-  const skills = assessment.questions?.map(q => q.skill).filter((value, index, self) => 
-    value && self.indexOf(value) === index
-  ) || [];
-  
-  const completionRate = Math.floor(Math.random() * 100); // In a real app, this would come from user progress data
-  const isMobile = useIsMobile();
-  
-  return (
-    <Card className="h-full transition-all hover:shadow-md active:scale-[0.98] touch-manipulation w-full">
-      <CardHeader className="pb-3 sm:pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-          <div>
-            <CardTitle className="text-base sm:text-lg font-semibold line-clamp-1">
-              {assessment.title}
-            </CardTitle>
-            <CardDescription className="flex items-center gap-2 mt-1 text-xs sm:text-sm">
-              <Building2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
-              {assessment.industry}
-            </CardDescription>
-          </div>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm whitespace-nowrap self-start">
-            {assessment.role}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pb-4 sm:pb-6">
-        <div className="space-y-3 sm:space-y-4">
-          {/* Skills Preview */}
-          <div className="flex flex-wrap gap-1 sm:gap-1.5">
-            {skills.slice(0, isMobile ? 2 : 3).map((skill) => (
-              <Badge
-                key={skill}
-                variant="secondary"
-                className="text-xs truncate max-w-[120px]"
-              >
-                {skill}
-              </Badge>
-            ))}
-            {skills.length > (isMobile ? 2 : 3) && (
-              <Badge variant="secondary" className="text-xs">
-                +{skills.length - (isMobile ? 2 : 3)} more
-              </Badge>
-            )}
-          </div>
-
-          {/* Progress Indicator */}
-          <div className="space-y-1 sm:space-y-1.5">
-            <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-muted-foreground">Questions</span>
-              <span className="font-medium">
-                {assessment.questions?.length || 0} total
-              </span>
-            </div>
-            <Progress 
-              value={completionRate} 
-              className="h-1.5 sm:h-2"
-              indicatorClassName="bg-primary/80"
-            />
-          </div>
-        </div>
-      </CardContent>
-
-      <CardFooter className="pt-1 sm:pt-2">
-        <Button 
-          variant="outline" 
-          className="w-full text-xs sm:text-sm py-1 sm:py-2"
-          onClick={() => onViewAssessment(assessment.id)}
-        >
-          Take Assessment
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
 
 // Decorative element component
 const AssessmentStatsPreview = () => (
@@ -125,7 +48,7 @@ export default function SkillAssessments() {
     navigate(`/assessments/take-skill-assessment/${id}`);
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
@@ -177,6 +100,7 @@ export default function SkillAssessments() {
                 className="pl-8 sm:pl-9 w-full text-sm"
                 onChange={handleSearch}
                 value={searchQuery}
+                aria-label="Search skill assessments"
               />
             </div>
           </section>
