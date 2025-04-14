@@ -22,6 +22,12 @@ export const useAssessmentTimer = (
       });
     }, 1000);
     
-    return () => clearInterval(timer);
+    // Log that timer is active
+    console.log("Timer active, counting down from", timeRemaining);
+    
+    return () => {
+      console.log("Clearing timer interval");
+      clearInterval(timer);
+    };
   }, [timeRemaining, isActive, setTimeRemaining, onTimeout]);
 };

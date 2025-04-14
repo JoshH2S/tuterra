@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useAssessmentData } from "./skill-assessment/useAssessmentData";
 import { useAssessmentTimer } from "./skill-assessment/useAssessmentTimer";
@@ -13,6 +13,7 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [totalTime, setTotalTime] = useState<number>(0);
+  const [timerInitialized, setTimerInitialized] = useState<boolean>(false);
   
   // Network status
   const { isOfflineMode } = useNetworkStatus();
@@ -33,11 +34,23 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
     setError(assessmentError);
   }
   
-  // Initialize timer when assessment loads
-  if (assessment && totalTime === 0 && assessment.time_limit) {
-    setTotalTime(assessment.time_limit);
-    setTimeRemaining(assessment.time_limit);
-  }
+  // Initialize timer when assessment loads - using question count
+  useEffect(() => {
+    if (assessment && !timerInitialized) {
+      // Calculate time based on number of questions (1 minute per question)
+      const questionCount = assessment.questions?.length || 0;
+      const calculatedTime = Math.max(questionCount * 60, 60); // Minimum 1 minute
+      
+      // If there's a specific time_limit set, use that instead
+      const timeLimit = assessment.time_limit || calculatedTime;
+      
+      console.log(`Initializing timer: ${timeLimit} seconds for ${questionCount} questions`);
+      
+      setTotalTime(timeLimit);
+      setTimeRemaining(timeLimit);
+      setTimerInitialized(true);
+    }
+  }, [assessment, timerInitialized]);
 
   // Navigation between questions
   const {
@@ -76,7 +89,7 @@ export const useSkillAssessmentTaking = (assessmentId: string | undefined): Asse
   useAssessmentTimer(
     timeRemaining,
     setTimeRemaining,
-    !!assessment,
+    !!assessment && timerInitialized,
     handleSubmit
   );
 
