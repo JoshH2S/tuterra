@@ -1,9 +1,25 @@
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Award } from "lucide-react";
-import { SkillAssessmentDisplay, SkillAssessmentsListProps } from "./types";
+
+// Define the proper type for skill assessments
+type SkillAssessment = {
+  id: string;
+  title: string;
+  industry: string;
+  role: string;
+  created_at: string;
+  questions: any[];
+  description: string;
+};
+
+interface SkillAssessmentsListProps {
+  onViewAssessment: (id: string) => void;
+  searchQuery?: string;
+  renderItem?: (assessment: SkillAssessment) => React.ReactNode;
+}
 
 export function SkillAssessmentsList({ 
   onViewAssessment, 
@@ -11,9 +27,8 @@ export function SkillAssessmentsList({
   renderItem 
 }: SkillAssessmentsListProps) {
   const { user } = useAuth();
-  const [assessments, setAssessments] = useState<SkillAssessmentDisplay[]>([]);
+  const [assessments, setAssessments] = useState<SkillAssessment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAssessments = async () => {
@@ -27,10 +42,9 @@ export function SkillAssessmentsList({
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        setAssessments(data as SkillAssessmentDisplay[] || []);
+        setAssessments(data as SkillAssessment[] || []);
       } catch (error) {
         console.error("Error fetching assessments:", error);
-        setError("Failed to load assessments. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -52,26 +66,6 @@ export function SkillAssessmentsList({
     return (
       <div className="flex justify-center items-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12 text-destructive">
-        <p>{error}</p>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="mt-4"
-          onClick={() => {
-            setLoading(true);
-            setError(null);
-            setTimeout(() => fetchAssessments(), 500);
-          }}
-        >
-          Retry
-        </Button>
       </div>
     );
   }

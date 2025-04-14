@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -175,6 +176,7 @@ export const useAssessmentSubmission = (
         description: `Your score: ${score}%`,
       });
       
+      // Update the navigation path to include the /assessments/ prefix
       navigate(`/assessments/skill-assessment-results/${data.id}`);
       return Promise.resolve();
     } catch (error) {
