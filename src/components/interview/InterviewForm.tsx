@@ -230,7 +230,9 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
               value={jobDescription}
               onChange={(e) => {
                 setJobDescription(e.target.value);
-                setFormErrors(prev => ({ ...prev, jobDescription: undefined }));
+                if (e.target.value.trim().length >= 50) {
+                  setFormErrors(prev => ({ ...prev, jobDescription: undefined }));
+                }
               }}
               placeholder="Paste the job description here..."
               className={`h-24 sm:h-32 resize-none ${formErrors.jobDescription ? 'border-red-500' : ''}`}
