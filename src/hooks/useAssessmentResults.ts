@@ -83,7 +83,7 @@ export const useAssessmentResults = (resultId: string | undefined) => {
           const role = data.assessment?.role || '';
           const industry = data.assessment?.industry || '';
           
-          // Use type assertion for the skill_benchmarks table
+          // Fix: Use a more explicit type casting approach
           const { data: skillBenchmarkData, error: skillBenchmarkError } = await supabase
             .from("skill_benchmarks" as any)
             .select("skill_name, benchmark_score")
@@ -93,8 +93,9 @@ export const useAssessmentResults = (resultId: string | undefined) => {
             
           if (!skillBenchmarkError && skillBenchmarkData) {
             const benchmarkMap: Record<string, number> = {};
-            // Type assertion for the benchmark data
-            (skillBenchmarkData as SkillBenchmark[]).forEach(item => {
+            // Fix: More explicit casting with unknown as intermediate step
+            const typedData = skillBenchmarkData as unknown as SkillBenchmark[];
+            typedData.forEach(item => {
               benchmarkMap[item.skill_name] = item.benchmark_score;
             });
             setSkillBenchmarks(benchmarkMap);
