@@ -1,286 +1,214 @@
+
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-
-// Define proper types for our data
-export type AssessmentResult = {
-  id: string;
-  assessment_id: string;
-  user_id: string;
-  score: number;
-  detailed_results: Array<{
-    question: string;
-    correct: boolean;
-    userAnswer: string | string[];
-    correctAnswer: string | string[];
-    skill?: string;
-  }>;
-  skill_scores?: Record<string, { correct: number; total: number; score: number }>;
-  created_at: string;
-  time_spent?: number;
-  level?: string;
-  tier?: string;
-};
-
-export type Assessment = {
-  id: string;
-  title: string;
-  description: string;
-  industry: string;
-  role: string;
-  questions: any[];
-  level?: string;
-  tier?: string;
-};
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
 
 export const useAssessmentResults = (resultId: string | undefined) => {
-  const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const [result, setResult] = useState<AssessmentResult | null>(null);
-  const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState<any>(null);
+  const [assessment, setAssessment] = useState<any>(null);
+  const [userTier, setUserTier] = useState("free");
   const [recommendations, setRecommendations] = useState<string[]>([]);
-  const [benchmarks, setBenchmarks] = useState<{industry: string; role: string; averageScore: number}[]>([]);
-  const [userTier, setUserTier] = useState<string>("free");
+  const [benchmarks, setBenchmarks] = useState<any[]>([]);
   const [exportPdfLoading, setExportPdfLoading] = useState(false);
 
   useEffect(() => {
-    const fetchResults = async () => {
-      if (!resultId || !user) return;
-
+    if (!resultId || !user) return;
+    
+    const fetchResult = async () => {
+      setLoading(true);
       try {
-        // Get user's tier
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('subscription_tier')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        const tier = profile?.subscription_tier || 'free';
-        setUserTier(tier);
-        
-        // Fetch the result
-        const { data: resultData, error: resultError } = await supabase
+        // Fetch result
+        const { data, error } = await supabase
           .from("skill_assessment_results")
-          .select("*, assessment_id")
+          .select("*, assessment:assessment_id(*)")
           .eq("id", resultId)
-          .eq("user_id", user.id)
           .single();
-
-        if (resultError) throw resultError;
-        
-        // Cast the JSON data to the correct types
-        const typedResult: AssessmentResult = {
-          ...resultData,
-          detailed_results: resultData.detailed_results as AssessmentResult['detailed_results'],
-          // Fix for the type mismatch issue with skill_scores
-          skill_scores: resultData.skill_scores as unknown as Record<string, { correct: number; total: number; score: number }>,
-        };
-        
-        setResult(typedResult);
-
-        // Fetch the assessment
-        const { data: assessmentData, error: assessmentError } = await supabase
-          .from("skill_assessments")
-          .select("*")
-          .eq("id", resultData.assessment_id)
-          .single();
-
-        if (assessmentError) throw assessmentError;
-        
-        // Cast the JSON questions to the correct type
-        const typedAssessment: Assessment = {
-          ...assessmentData,
-          questions: assessmentData.questions as Assessment['questions']
-        };
-        
-        setAssessment(typedAssessment);
-        
-        // For Pro and Premium users, generate personalized recommendations and benchmarks
-        if (tier === 'pro' || tier === 'premium') {
-          // Generate recommendations - in a real app, this would be more sophisticated
-          const generatedRecommendations = [];
           
-          // Basic recommendations based on skills
-          if (typedResult.skill_scores) {
-            const weakestSkills = Object.entries(typedResult.skill_scores)
-              .sort(([, a], [, b]) => a.score - b.score)
-              .slice(0, 2);
-              
-            for (const [skill, data] of weakestSkills) {
-              if (data.score < 70) {
-                generatedRecommendations.push(
-                  `Focus on improving your ${skill} skills. Consider taking a more detailed assessment.`
-                );
-              }
-            }
-          }
-          
-          // Add generic recommendations
-          generatedRecommendations.push(
-            `Continue practicing ${assessmentData.role} tasks to build more experience.`,
-            `Join communities related to ${assessmentData.industry} to stay current with industry trends.`
-          );
-          
-          setRecommendations(generatedRecommendations);
-          
-          // For Premium users, fetch benchmark data
-          if (tier === 'premium') {
-            // In a real app, this would come from a real analytics database
-            // Here we're just generating fake benchmark data
-            setBenchmarks([
-              { 
-                industry: assessmentData.industry, 
-                role: assessmentData.role, 
-                averageScore: Math.round(70 + Math.random() * 15) 
-              },
-              { 
-                industry: assessmentData.industry, 
-                role: "All Roles", 
-                averageScore: Math.round(65 + Math.random() * 15) 
-              },
-              { 
-                industry: "All Industries", 
-                role: assessmentData.role, 
-                averageScore: Math.round(60 + Math.random() * 20) 
-              }
-            ]);
-          }
+        if (error) throw error;
+        if (!data) throw new Error("Result not found");
+        
+        // Check ownership
+        if (data.user_id !== user.id) {
+          throw new Error("You don't have access to this result");
         }
         
-        // Track result view
-        await supabase.from('user_feature_interactions').insert({
-          user_id: user.id,
-          feature: 'skill-assessment-results',
-          action: 'view',
-          metadata: { 
-            assessment_id: resultData.assessment_id,
-            result_id: resultId
-          },
-          timestamp: new Date().toISOString()
-        });
+        setResult(data);
+        setAssessment(data.assessment);
+        
+        // Fetch user tier
+        const { data: userData } = await supabase
+          .from("profiles")
+          .select("subscription_tier")
+          .eq("id", user.id)
+          .single();
+          
+        if (userData?.subscription_tier) {
+          setUserTier(userData.subscription_tier);
+        }
+        
+        // Generate recommendations based on results
+        generateRecommendations(data);
+        
+        // Fetch benchmarks
+        const { data: benchmarkData } = await supabase
+          .from("skill_assessment_results")
+          .select("score, skill_scores, completed_at")
+          .eq("assessment_id", data.assessment_id)
+          .order("completed_at", { ascending: false })
+          .limit(100);
+          
+        if (benchmarkData) {
+          setBenchmarks(benchmarkData);
+        }
       } catch (error) {
-        console.error("Error fetching results:", error);
+        console.error("Error fetching assessment result:", error);
         toast({
           title: "Error",
-          description: "Failed to load assessment results",
+          description: "Could not load assessment results",
           variant: "destructive",
         });
       } finally {
         setLoading(false);
       }
     };
-
-    fetchResults();
+    
+    fetchResult();
   }, [resultId, user, toast]);
-
+  
+  // Generate recommendations based on skill scores
+  const generateRecommendations = (resultData: any) => {
+    if (!resultData?.skill_scores) return [];
+    
+    const weakAreas = Object.entries(resultData.skill_scores)
+      .filter(([_, data]: [string, any]) => data.score < 70)
+      .map(([skill]: [string, any]) => skill);
+      
+    const recommendations = weakAreas.map(skill => 
+      `Improve your knowledge in ${skill} by focusing on practical exercises and case studies.`
+    );
+    
+    if (recommendations.length === 0) {
+      recommendations.push("Great job! Consider exploring advanced topics to further enhance your skills.");
+    }
+    
+    setRecommendations(recommendations);
+  };
+  
+  // Export results as PDF
   const handleExportPdf = async () => {
-    if (!result || !assessment || userTier === 'free') return;
+    if (!result || !assessment) return;
     
     setExportPdfLoading(true);
-    
     try {
-      toast({
-        title: "PDF Export",
-        description: "Your assessment results PDF is being generated.",
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.text(`Skill Assessment Results: ${assessment.title}`, 20, 20);
+      
+      // Add date and score
+      doc.setFontSize(12);
+      const date = new Date(result.completed_at).toLocaleDateString();
+      doc.text(`Completed on: ${date}`, 20, 30);
+      doc.text(`Overall Score: ${result.score}%`, 20, 40);
+      
+      // Add skill scores
+      doc.text("Skill Performance:", 20, 55);
+      let yPos = 65;
+      
+      Object.entries(result.skill_scores || {}).forEach(([skill, data]: [string, any]) => {
+        doc.text(`${skill}: ${data.score}% (${data.correct}/${data.total})`, 25, yPos);
+        yPos += 10;
       });
       
-      // In a real app, you would call an API to generate the PDF
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Add recommendations
+      doc.text("Recommendations:", 20, yPos + 10);
+      yPos += 20;
       
-      setExportPdfLoading(false);
-      
-      toast({
-        title: "PDF Ready",
-        description: "Your assessment results have been exported to PDF.",
+      recommendations.forEach(recommendation => {
+        doc.text(`• ${recommendation}`, 25, yPos);
+        yPos += 10;
       });
       
-      // Track export
-      await supabase.from('user_feature_interactions').insert({
-        user_id: user?.id,
-        feature: 'skill-assessment-export',
-        action: 'export-pdf',
-        metadata: { 
-          assessment_id: assessment.id,
-          result_id: result.id
-        },
-        timestamp: new Date().toISOString()
+      doc.save(`skill-assessment-${assessment.title.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+      
+      toast({
+        title: "Success",
+        description: "Results exported to PDF",
       });
     } catch (error) {
       console.error("Error exporting PDF:", error);
       toast({
-        title: "Export Failed",
-        description: "There was a problem generating your PDF.",
+        title: "Error",
+        description: "Failed to export results",
         variant: "destructive",
       });
+    } finally {
       setExportPdfLoading(false);
     }
   };
-
-  const handleShareResults = async () => {
-    if (!result || !assessment) return;
+  
+  // Share results (could be expanded to email or social sharing)
+  const handleShareResults = () => {
+    if (!resultId) return;
     
-    try {
-      // In a real app, generate a shareable link
-      toast({
-        title: "Share Results",
-        description: "Shareable link copied to clipboard.",
-      });
+    const shareUrl = `${window.location.origin}/assessments/skill-assessment-results/${resultId}`;
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => {
+          toast({
+            title: "Link copied",
+            description: "Assessment results link copied to clipboard",
+          });
+        })
+        .catch(() => {
+          toast({
+            title: "Error",
+            description: "Could not copy link",
+            variant: "destructive",
+          });
+        });
+    } else {
+      // Fallback for browsers without clipboard API
+      const textArea = document.createElement("textarea");
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
       
-      // Track share
-      await supabase.from('user_feature_interactions').insert({
-        user_id: user?.id,
-        feature: 'skill-assessment-share',
-        action: 'share',
-        metadata: { 
-          assessment_id: assessment.id,
-          result_id: result.id
-        },
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Error sharing results:", error);
+      try {
+        document.execCommand('copy');
+        toast({
+          title: "Link copied",
+          description: "Assessment results link copied to clipboard",
+        });
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: "Could not copy link. Please copy it manually.",
+          variant: "destructive",
+        });
+      }
+      
+      document.body.removeChild(textArea);
     }
   };
-
+  
+  // Retake assessment
   const handleRetakeAssessment = () => {
     if (!assessment) return;
     
-    try {
-      // Navigate to take the assessment again
-      navigate(`/take-skill-assessment/${assessment.id}`);
-      
-      // Track retake action if user is logged in
-      if (user) {
-        supabase.from('user_feature_interactions').insert({
-          user_id: user.id,
-          feature: 'skill-assessment-retake',
-          action: 'retake',
-          metadata: { 
-            assessment_id: assessment.id,
-            result_id: result?.id
-          },
-          timestamp: new Date().toISOString()
-        }).then(response => {
-          if (response.error) {
-            console.error("Error tracking assessment retake:", response.error);
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Error navigating to assessment:", error);
-      toast({
-        title: "Error",
-        description: "There was a problem starting the assessment.",
-        variant: "destructive",
-      });
-    }
+    navigate(`/assessments/take-skill-assessment/${assessment.id}`);
   };
-
+  
   return {
     result,
     assessment,

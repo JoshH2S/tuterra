@@ -1,14 +1,12 @@
 
-import { ChevronLeft, Download, Share, ArrowUpRight, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Loader2, FileDown, Share2, RefreshCw } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResultsHeaderProps {
   title: string;
   createdAt: string;
-  level?: string;
+  level: string;
   userTier: string;
   exportPdfLoading: boolean;
   onExportPdf: () => void;
@@ -17,7 +15,7 @@ interface ResultsHeaderProps {
   assessmentId: string;
 }
 
-export const ResultsHeader = ({
+export function ResultsHeader({
   title,
   createdAt,
   level,
@@ -27,136 +25,69 @@ export const ResultsHeader = ({
   onShareResults,
   onRetakeAssessment,
   assessmentId
-}: ResultsHeaderProps) => {
-  const navigate = useNavigate();
-
-  // Animation variants
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 10 },
-    show: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24
-      }
-    }
-  };
+}: ResultsHeaderProps) {
+  const isMobile = useIsMobile();
+  const formattedDate = new Date(createdAt).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
 
   return (
-    <motion.div 
-      className="space-y-4"
-      variants={container}
-      initial="hidden"
-      animate="show"
-    >
-      <motion.div variants={item}>
-        <motion.div 
-          whileHover={{ x: -3 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Button 
-            variant="outline" 
-            onClick={() => navigate("/skill-assessments")}
-            className="mb-4"
-            aria-label="Back to assessments"
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Assessments
-          </Button>
-        </motion.div>
-      </motion.div>
+    <div className="flex flex-col gap-4 sm:gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{title}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs sm:text-sm text-muted-foreground">
+            <span>Completed on {formattedDate}</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="capitalize">{level} Level</span>
+            {userTier !== 'free' && (
+              <>
+                <span className="hidden sm:inline">•</span>
+                <span className="capitalize">{userTier} Plan</span>
+              </>
+            )}
+          </div>
+        </div>
 
-      <motion.div 
-        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
-        variants={item}
-      >
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <h1 className="text-2xl font-bold">{title} Results</h1>
-          <p className="text-muted-foreground">
-            Completed on {new Date(createdAt).toLocaleDateString()}
-            {level && ` • ${level.charAt(0).toUpperCase() + level.slice(1)} level`}
-          </p>
-        </motion.div>
-        
-        <motion.div 
-          className="flex gap-2 flex-wrap w-full md:w-auto"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
-        >
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-full sm:w-auto">
-                  <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.02 }}>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={onExportPdf}
-                      disabled={userTier === 'free' || exportPdfLoading}
-                      className="relative w-full sm:w-auto"
-                    >
-                      {exportPdfLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Download className="h-4 w-4 mr-2" />
-                      )}
-                      Export PDF
-                      {userTier === 'free' && (
-                        <Lock className="h-3 w-3 ml-1" />
-                      )}
-                    </Button>
-                  </motion.div>
-                </div>
-              </TooltipTrigger>
-              {userTier === 'free' && (
-                <TooltipContent>
-                  <p>Upgrade to Pro or Premium to export results</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size={isMobile ? "sm" : "default"}
+            className="flex-1 sm:flex-none gap-1"
+            onClick={onExportPdf}
+            disabled={exportPdfLoading}
+          >
+            {exportPdfLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">Export</span>
+          </Button>
           
-          <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.02 }}>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onShareResults}
-              className="w-full sm:w-auto"
-            >
-              <Share className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          </motion.div>
+          <Button
+            variant="outline"
+            size={isMobile ? "sm" : "default"}
+            className="flex-1 sm:flex-none gap-1"
+            onClick={onShareResults}
+          >
+            <Share2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Share</span>
+          </Button>
           
-          <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.02 }}>
-            <Button
-              size="sm"
-              onClick={onRetakeAssessment}
-              className="w-full sm:w-auto"
-            >
-              <ArrowUpRight className="h-4 w-4 mr-2" />
-              Retake Assessment
-            </Button>
-          </motion.div>
-        </motion.div>
-      </motion.div>
-    </motion.div>
+          <Button
+            variant="default"
+            size={isMobile ? "sm" : "default"}
+            className="flex-1 sm:flex-none gap-1"
+            onClick={onRetakeAssessment}
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span className="hidden sm:inline">Retake</span>
+          </Button>
+        </div>
+      </div>
+    </div>
   );
-};
+}

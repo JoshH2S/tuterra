@@ -121,7 +121,7 @@ export default function SkillAssessments() {
   };
 
   const handleViewAssessment = (id: string) => {
-    navigate(`/take-skill-assessment/${id}`);
+    navigate(`/assessments/take-skill-assessment/${id}`);
   };
 
   const handleSearch = (e) => {
