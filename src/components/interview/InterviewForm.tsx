@@ -28,8 +28,12 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   useEffect(() => {
     console.log("Form state updated:", { 
       industry, 
-      jobRole: `'${jobRole}'`, 
-      jobRoleLength: jobRole ? jobRole.length : 0,
+      jobRole: {
+        value: `'${jobRole}'`,
+        type: typeof jobRole,
+        length: jobRole?.length || 0,
+        trimmedLength: jobRole?.trim()?.length || 0
+      },
       jobDescription: jobDescription.substring(0, 30) + (jobDescription.length > 30 ? "..." : "") 
     });
   }, [industry, jobRole, jobDescription]);
@@ -42,19 +46,18 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     } = {};
     let isValid = true;
 
-    // Validate industry with clear logging
+    // Validate industry
     if (!industry?.trim()) {
       console.log("Industry validation failed: empty value");
       errors.industry = "Please select a valid industry";
       isValid = false;
     }
     
-    // Enhanced job role validation with detailed logging
-    if (typeof jobRole !== 'string' || !jobRole.trim()) {
+    // Simple, direct job role validation - just check if it exists and has content
+    if (!jobRole?.trim()) {
       console.log("Job role validation failed:", {
         value: `'${jobRole}'`,
         type: typeof jobRole,
-        length: jobRole ? jobRole.length : 0,
         isEmpty: !jobRole,
         isEmptyTrimmed: jobRole ? !jobRole.trim() : true
       });
@@ -94,7 +97,11 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
 
   const handleJobRoleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    console.log("Job role changed to:", `'${val}'`);
+    console.log("Job role changed to:", { 
+      value: `'${val}'`,
+      length: val.length,
+      trimmedLength: val.trim().length
+    });
     setJobRole(val);
     
     // Clear error when user types something valid
@@ -106,18 +113,21 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Add detailed debug info to help troubleshoot
-    console.log("Form submission attempt with values:", {
-      industry: `'${industry}'`,
-      jobRole: `'${jobRole}'`,
-      jobRoleLength: jobRole ? jobRole.length : 0,
-      jobRoleTrimmed: jobRole ? jobRole.trim().length : 0,
-      jobDescription: jobDescription.substring(0, 50) + "..."
+    // Very clear debug logging before validation
+    console.log("Form submission attempt:", {
+      jobRole: {
+        value: `'${jobRole}'`,
+        type: typeof jobRole,
+        length: jobRole?.length || 0,
+        trimmedLength: jobRole?.trim()?.length || 0,
+        isEmpty: !jobRole,
+        isEmptyAfterTrim: !jobRole?.trim()
+      }
     });
     
-    // Pre-validation check for job role to catch edge cases
-    if (typeof jobRole !== 'string' || !jobRole.trim()) {
-      console.error("Job role validation failed - empty or invalid value:", jobRole);
+    // Direct check for empty job role before validation
+    if (!jobRole?.trim()) {
+      console.error("Job role empty at submission time");
       setFormErrors(prev => ({
         ...prev,
         jobRole: "Please enter a job role"
@@ -141,7 +151,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       return;
     }
     
-    // Final validation check before submission
+    // Final validation check before submission - belt and suspenders approach
     if (!industry.trim() || !jobRole.trim() || !jobDescription.trim()) {
       console.error("Critical validation failure - empty values detected after validation passed:", {
         industry: `'${industry}'`,
@@ -164,7 +174,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       jobDescriptionLength: jobDescription.length
     });
     
-    // Submit with trimmed values
+    // Submit the form with trimmed values
     onSubmit(industry, jobRole.trim(), jobDescription);
   };
 

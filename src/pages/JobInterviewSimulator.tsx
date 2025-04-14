@@ -16,8 +16,8 @@ const JobInterviewSimulator = () => {
   const {
     industry,
     setIndustry,
-    jobRole,
-    setJobRole,
+    jobTitle,
+    setJobTitle,
     jobDescription,
     setJobDescription,
     currentSessionId,
@@ -39,6 +39,12 @@ const JobInterviewSimulator = () => {
   } = useInterviewSession();
 
   const {
+    jobTitle: setupJobTitle,
+    setJobTitle: setSetupJobTitle,
+    industry: setupIndustry,
+    setIndustry: setSetupIndustry,
+    jobDescription: setupJobDescription,
+    setJobDescription: setSetupJobDescription,
     loading: isLoading,
     showUpgradePrompt,
     setShowUpgradePrompt,
@@ -54,22 +60,25 @@ const JobInterviewSimulator = () => {
   const usedFallbackQuestions = false;
   const isOnline = navigator.onLine;
 
-  const handleStartInterviewWithParams = async (industry: string, role: string, description: string) => {
+  const handleStartInterviewWithParams = async (industry: string, jobRole: string, description: string) => {
     console.log("Starting interview with params:", { 
       industry, 
-      role: `'${role}'`, 
-      roleLength: role.length,
-      description: description.substring(0, 50) + "..." 
+      jobRole: {
+        value: `'${jobRole}'`, 
+        type: typeof jobRole,
+        length: jobRole?.length || 0,
+        trimmed: jobRole?.trim()
+      }
     });
     
     // Validate inputs before processing
-    if (!industry.trim()) {
+    if (!industry?.trim()) {
       console.error("Invalid industry received:", industry);
       return;
     }
     
-    if (!role || !role.trim()) {
-      console.error("Invalid job role received:", role);
+    if (!jobRole?.trim()) {
+      console.error("Invalid job role received:", jobRole);
       return;
     }
 
@@ -77,24 +86,25 @@ const JobInterviewSimulator = () => {
     setFormSubmitting(true);
     
     try {
-      // Update all state values
-      setIndustry(industry);
-      setJobRole(role.trim());
-      setJobDescription(description);
+      // IMPORTANT: Use the setupJobTitle from useInterviewSetup hook
+      setSetupJobTitle(jobRole.trim());
+      setSetupIndustry(industry.trim());
+      setSetupJobDescription(description);
       
-      // Wait for state updates to complete
+      // Wait for state updates to complete - this is crucial
       await new Promise(resolve => setTimeout(resolve, 50));
+      
+      console.log("State before submission:", {
+        jobTitle: setupJobTitle,
+        newJobTitle: jobRole.trim(),
+        industry: setupIndustry,
+        newIndustry: industry.trim()
+      });
       
       // Create a synthetic event to pass to handleSubmit
       const syntheticEvent = {
         preventDefault: () => {}
       } as React.FormEvent;
-      
-      console.log("Submitting with state values:", {
-        industry,
-        jobRole: role.trim(),
-        descriptionLength: description.length
-      });
       
       // Submit the form using handleSubmit from useInterviewSetup
       await handleSubmit(syntheticEvent);
@@ -142,7 +152,7 @@ const JobInterviewSimulator = () => {
         
         {interviewReady && !isInterviewInProgress && !isInterviewComplete && (
           <InterviewReadyPrompt
-            jobRole={jobRole}
+            jobRole={jobTitle || setupJobTitle} // Use either source
             onStartChat={handleStartChat}
             usedFallbackQuestions={usedFallbackQuestions}
           />
