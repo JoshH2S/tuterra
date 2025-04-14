@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,11 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     jobDescription?: string;
   }>({});
 
+  // Debug effect to monitor state changes
+  useEffect(() => {
+    console.log("Form state updated:", { industry, jobRole, jobDescription });
+  }, [industry, jobRole, jobDescription]);
+
   const validateForm = () => {
     const errors: {
       industry?: string;
@@ -38,7 +43,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
     
-    // Validate job role - now a simple text input
+    // Validate job role
     if (!jobRole.trim()) {
       errors.jobRole = "Please enter a job role";
       isValid = false;
@@ -53,9 +58,22 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
 
-    console.log("Form validation result:", { isValid, errors, jobRole });
+    console.log("Form validation result:", { isValid, errors, industry, jobRole });
     setFormErrors(errors);
     return isValid;
+  };
+
+  const handleIndustryChange = (value: string) => {
+    console.log("Industry selection changed:", value);
+    const selectedOption = INDUSTRY_OPTIONS.find(opt => opt.value === value);
+    if (selectedOption) {
+      setIndustry(selectedOption.value);
+      setFormErrors(prev => ({ ...prev, industry: undefined }));
+    } else {
+      console.error("Invalid industry selected:", value);
+      setIndustry(value); // Still set it even if not in list (could be custom)
+      // Don't clear error if value is invalid
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -102,11 +120,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
             <SelectInput
               id="industry"
               value={industry}
-              onChange={(val) => {
-                console.log("Industry changed to:", val);
-                setIndustry(val);
-                setFormErrors(prev => ({ ...prev, industry: undefined }));
-              }}
+              onChange={handleIndustryChange}
               options={INDUSTRY_OPTIONS}
               placeholder="Select an industry"
               className={`w-full ${formErrors.industry ? 'border-red-500' : ''}`}

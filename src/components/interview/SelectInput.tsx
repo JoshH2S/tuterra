@@ -63,6 +63,7 @@ export const SelectInput = ({
   }, [value, options, isCustom]);
 
   const handleOptionSelect = (optionValue: string) => {
+    console.log("SelectInput: Option selected:", optionValue);
     onChange(optionValue);
     setIsOpen(false);
     setIsCustom(false);
