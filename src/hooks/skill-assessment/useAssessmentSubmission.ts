@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { 
@@ -175,6 +176,7 @@ export const useAssessmentSubmission = (
         description: `Your score: ${score}%`,
       });
       
+      // Update the navigation path to include the /assessments/ prefix
       navigate(`/assessments/skill-assessment-results/${data.id}`);
       return Promise.resolve();
     } catch (error) {
