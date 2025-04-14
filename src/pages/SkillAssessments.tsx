@@ -121,6 +121,7 @@ export default function SkillAssessments() {
   };
 
   const handleViewAssessment = (id: string) => {
+    // Update navigation path to include the /assessments/ prefix
     navigate(`/assessments/take-skill-assessment/${id}`);
   };
 

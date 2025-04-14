@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -77,7 +76,6 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
     },
   });
 
-  // Function to check user allowance with retry mechanism and timeout
   const checkUserAllowance = async () => {
     if (!user) {
       setIsCheckingAllowance(false);
@@ -88,43 +86,35 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
     setCheckError(null);
     
     try {
-      // Set a timeout to prevent indefinite checking state
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Allowance check timed out")), 5000)
       );
       
-      // Race between the actual check and the timeout
       await Promise.race([
         (async () => {
-          // Fetch latest credits first
           await fetchUserCredits();
           
-          // Get user's subscription tier
           const tier = await getUserTier();
           setUserTier(tier);
           
-          // Get assessment count
           const monthlyCount = await getMonthlyAssessmentCount();
           
-          // Get remaining credits
           const remainingCredits = credits?.assessment_credits || 0;
           
           console.log('User tier:', tier);
           console.log('Monthly assessment count:', monthlyCount);
           console.log('Remaining credits:', remainingCredits);
           
-          // Set limits based on tier
           if (tier === 'premium') {
-            setAssessmentsRemaining(Infinity); // Unlimited for premium
+            setAssessmentsRemaining(Infinity);
           } else if (tier === 'pro') {
             const monthlyRemaining = Math.max(0, 20 - monthlyCount);
             setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
-          } else { // Free tier
+          } else {
             const monthlyRemaining = Math.max(0, 2 - monthlyCount); 
             setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
           }
           
-          // If in offline mode, use the local credits
           if (isOfflineMode) {
             setAssessmentsRemaining(remainingCredits);
           }
@@ -135,7 +125,6 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
       console.error('Error checking user allowance:', error);
       setCheckError(error instanceof Error ? error.message : 'Failed to check allowance');
       
-      // If we failed to check allowance but have credits from local storage, use those
       if (credits?.assessment_credits) {
         setAssessmentsRemaining(credits.assessment_credits);
       }
@@ -145,32 +134,26 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
   };
 
   useEffect(() => {
-    // Check allowance when component mounts
     checkUserAllowance();
     
-    // Set up an interval to periodically check if we're stuck
     const checkInterval = setInterval(() => {
       if (isCheckingAllowance) {
         console.log('Still checking assessment allowance after delay, attempting to recover...');
-        // Force end the checking state if it's been going too long
         setIsCheckingAllowance(false);
         
-        // Use local credit value if available
         if (credits?.assessment_credits) {
           setAssessmentsRemaining(credits.assessment_credits);
         } else {
-          setAssessmentsRemaining(2); // Default to 2 for free tier as fallback
+          setAssessmentsRemaining(2);
         }
       }
-    }, 8000); // Check after 8 seconds
+    }, 8000);
     
     return () => clearInterval(checkInterval);
   }, [user, credits?.assessment_credits]);
 
-  // If credits update, refresh assessment count
   useEffect(() => {
     if (credits && !isCheckingAllowance) {
-      // Set assessments remaining based on credits without doing a full check
       if (userTier === 'premium') {
         setAssessmentsRemaining(Infinity);
       } else {
@@ -193,7 +176,6 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
       return;
     }
 
-    // Double-check if the user still has credits or monthly allowance
     const canGenerate = await checkAssessmentAllowance();
     if (!canGenerate) {
       toast({
@@ -205,7 +187,6 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
     }
 
     try {
-      // Generate the assessment
       const assessment = await generateAssessment({
         industry: data.industry,
         role: data.role,
@@ -218,7 +199,6 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
         throw new Error('Failed to generate assessment');
       }
 
-      // Save the assessment to the database
       const { data: savedAssessment, error } = await supabase
         .from("skill_assessments")
         .insert({
@@ -237,7 +217,6 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
 
       if (error) throw error;
 
-      // Update the remaining assessments count after successful creation
       setAssessmentsRemaining(prev => Math.max(0, prev - 1));
       
       toast({
@@ -245,8 +224,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
         description: "Your skill assessment has been generated successfully",
       });
 
-      // Navigate to the newly created assessment
-      navigate(`/take-skill-assessment/${savedAssessment.id}`);
+      navigate(`/assessments/take-skill-assessment/${savedAssessment.id}`);
     } catch (error) {
       console.error("Error creating assessment:", error);
       toast({
