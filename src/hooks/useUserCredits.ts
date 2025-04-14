@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -57,7 +56,7 @@ export const useUserCredits = () => {
       user_id: userId,
       quiz_credits: 5,
       interview_credits: 1,
-      assessment_credits: 2,
+      assessment_credits: 2, // Changed from 1 to 2 to match the product requirements
       tutor_message_credits: 5,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

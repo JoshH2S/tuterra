@@ -109,7 +109,7 @@ export const useSkillAssessmentGeneration = () => {
       
       // Check limits based on tier - Free tier gets 2 assessments
       if (tier === 'pro' && (count || 0) < 20) return true;
-      if (tier === 'free' && (count || 0) < 2) return true;
+      if (tier === 'free' && (count || 0) < 2) return true; // Changed from 1 to 2
       
       return false;
     } catch (error) {

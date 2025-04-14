@@ -53,7 +53,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
   const [userTier, setUserTier] = useState<string>("free");
   const [assessmentsRemaining, setAssessmentsRemaining] = useState<number>(0);
   const { generateAssessment, isGenerating, progress, checkAssessmentAllowance } = useSkillAssessmentGeneration();
-  const { credits, fetchUserCredits } = useUserCredits();
+  const { credits, fetchUserCredits, isOfflineMode } = useUserCredits();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -108,8 +108,14 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
           const monthlyRemaining = Math.max(0, 20 - (count || 0));
           setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
         } else { // Free tier
-          const monthlyRemaining = Math.max(0, 2 - (count || 0)); // 2 per month for free tier
+          // Free tier should get 2 assessments per month, not 1
+          const monthlyRemaining = Math.max(0, 2 - (count || 0)); 
           setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
+        }
+        
+        // If in offline mode, use the default allowance
+        if (isOfflineMode) {
+          setAssessmentsRemaining(Math.max(1, remainingCredits));
         }
       } catch (error) {
         console.error('Error fetching user details:', error);
@@ -119,7 +125,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
     };
 
     getUserDetails();
-  }, [user, credits, fetchUserCredits]);
+  }, [user, credits, fetchUserCredits, isOfflineMode]);
 
   const showPremiumFeatures = userTier !== 'free';
   const isPremium = userTier === 'premium';
