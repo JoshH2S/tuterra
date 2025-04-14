@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,10 +16,15 @@ export const useInterviewSetup = () => {
   
   const { checkCredits, decrementCredits } = useUserCredits();
 
-  // Debug effect to monitor state changes
+  // Enhanced debug effect
   useEffect(() => {
-    console.log("Interview setup state:", { 
-      jobTitle: `'${jobTitle}'`, 
+    console.log("Interview setup state debug:", { 
+      jobTitle: {
+        value: `'${jobTitle}'`, 
+        type: typeof jobTitle,
+        length: jobTitle.length,
+        trimmedLength: jobTitle.trim().length
+      },
       industry: `'${industry}'`,
       jobDescriptionLength: jobDescription.length 
     });
@@ -29,10 +33,20 @@ export const useInterviewSetup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("Submitting interview setup with values:", { 
-      jobTitle: `'${jobTitle}'`, 
-      industry: `'${industry}'`,
-      jobDescription: jobDescription.substring(0, 50) + "..."
+    console.log("Detailed submission validation:", { 
+      jobTitle: {
+        value: `'${jobTitle}'`,
+        type: typeof jobTitle,
+        length: jobTitle.length,
+        trimmedLength: jobTitle.trim().length,
+        isValidInput: !!jobTitle && jobTitle.trim().length > 0
+      },
+      industry: {
+        value: `'${industry}'`,
+        type: typeof industry,
+        length: industry.length,
+        trimmedLength: industry.trim().length
+      }
     });
     
     if (!user) {
@@ -55,13 +69,18 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    // Validate required fields with explicit logging
+    // More explicit validation with detailed logging
     if (!jobTitle || !jobTitle.trim()) {
-      console.error("Job title is missing or empty:", `'${jobTitle}'`);
+      console.error("Critical validation failure:", {
+        jobTitleRaw: `'${jobTitle}'`,
+        jobTitleType: typeof jobTitle,
+        jobTitleTrimmed: jobTitle?.trim() || 'N/A'
+      });
+      
       toast({
-        title: "Required field missing",
-        description: "Please provide a job title",
-        variant: "destructive",
+        title: "Invalid Job Title",
+        description: "Please provide a valid job title",
+        variant: "destructive"
       });
       return;
     }
