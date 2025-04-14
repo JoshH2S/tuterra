@@ -71,14 +71,16 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submission values:", {
-      industry,
-      jobRole,
+    
+    // Add detailed debug info to help troubleshoot
+    console.log("Form submission attempt with values:", {
+      industry: `'${industry}'`,
+      jobRole: `'${jobRole}'`,
       jobDescription: jobDescription.substring(0, 50) + "..."
     });
     
     if (!validateForm()) {
-      console.log("Form validation failed:", formErrors);
+      console.log("Form validation failed with errors:", formErrors);
       toast({
         title: "Missing information",
         description: "Please fill out all required fields correctly",
@@ -87,9 +89,24 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       return;
     }
     
+    // Double-check for empty values just in case
+    if (!industry.trim() || !jobRole.trim() || !jobDescription.trim()) {
+      console.error("Critical validation failure - empty values detected after validation passed:", {
+        industry: `'${industry}'`,
+        jobRole: `'${jobRole}'`,
+        jobDescription: jobDescription.trim().length
+      });
+      toast({
+        title: "Missing information",
+        description: "Please ensure all fields are properly filled out",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setFormErrors({});
     
-    console.log("Form validated, submitting to parent component");
+    console.log("Form validated successfully, submitting to parent component");
     
     // Submit the values with the entered job role
     onSubmit(industry, jobRole, jobDescription);

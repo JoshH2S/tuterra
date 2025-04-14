@@ -51,15 +51,22 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    // Use jobTitle if provided, otherwise use the industry state directly
-    const submissionRole = jobTitle || jobTitle;
-    const submissionIndustry = industry;
-    
-    if (!submissionRole.trim() || !submissionIndustry.trim()) {
-      console.error("Missing required fields:", { role: submissionRole, industry: submissionIndustry });
+    // Validate required fields with explicit logging
+    if (!jobTitle.trim()) {
+      console.error("Job title is missing or empty");
       toast({
-        title: "Required fields missing",
-        description: "Please fill in job title and industry",
+        title: "Required field missing",
+        description: "Please provide a job title",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!industry.trim()) {
+      console.error("Industry is missing or empty");
+      toast({
+        title: "Required field missing",
+        description: "Please select an industry",
         variant: "destructive",
       });
       return;
@@ -68,8 +75,8 @@ export const useInterviewSetup = () => {
     try {
       setLoading(true);
       console.log("Creating interview session with:", {
-        role: submissionRole,
-        industry: submissionIndustry,
+        role: jobTitle,
+        industry: industry,
         description: jobDescription
       });
 
@@ -78,8 +85,8 @@ export const useInterviewSetup = () => {
         .from("interview_sessions")
         .insert({
           user_id: user.id,
-          job_title: submissionRole,
-          industry: submissionIndustry,
+          job_title: jobTitle,
+          industry: industry,
           job_description: jobDescription,
           status: "created",
         })

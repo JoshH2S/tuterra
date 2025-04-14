@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { useInterviewSession } from "@/hooks/interview";
 import { InterviewForm } from "@/components/interview/InterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
@@ -45,6 +46,7 @@ const JobInterviewSimulator = () => {
   } = useInterviewSetup();
 
   const { subscription } = useSubscription();
+  const [formSubmitting, setFormSubmitting] = useState(false);
 
   // Local state for this component
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
@@ -54,17 +56,28 @@ const JobInterviewSimulator = () => {
 
   const handleStartInterviewWithParams = (industry: string, role: string, description: string) => {
     console.log("Starting interview with params:", { industry, role, description });
+    
+    // Set form as submitting to prevent multiple submissions
+    setFormSubmitting(true);
+    
+    // Update all state values
     setIndustry(industry);
     setJobRole(role);
     setJobDescription(description);
     
-    // Create a synthetic event to pass to handleSubmit
-    const syntheticEvent = {
-      preventDefault: () => {}
-    } as React.FormEvent;
-    
-    // Submit the form using handleSubmit from useInterviewSetup
-    handleSubmit(syntheticEvent);
+    // Use a small timeout to ensure state updates have been processed
+    setTimeout(() => {
+      // Create a synthetic event to pass to handleSubmit
+      const syntheticEvent = {
+        preventDefault: () => {}
+      } as React.FormEvent;
+      
+      // Submit the form using handleSubmit from useInterviewSetup
+      handleSubmit(syntheticEvent);
+      
+      // Reset submission state
+      setFormSubmitting(false);
+    }, 50);
   };
 
   const handleStartNewInterview = () => {
@@ -97,7 +110,7 @@ const JobInterviewSimulator = () => {
         {!interviewReady && !isInterviewInProgress && !isInterviewComplete && (
           <InterviewForm 
             onSubmit={handleStartInterviewWithParams} 
-            isLoading={isGeneratingQuestions || isLoading}
+            isLoading={isGeneratingQuestions || isLoading || formSubmitting}
           />
         )}
         
