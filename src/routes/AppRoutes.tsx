@@ -74,6 +74,13 @@ export const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
+      {/* Add the missing route for interview session with ID */}
+      <Route path="/interview/:id" element={
+        <ProtectedRoute>
+          <JobInterviewSimulator />
+        </ProtectedRoute>
+      } />
+      
       <Route path="/profile-settings" element={
         <ProtectedRoute>
           <ProfileSettings />

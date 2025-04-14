@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import { useUserCredits } from "@/hooks/useUserCredits";
 export const useInterviewSetup = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id: sessionId } = useParams();
   const [jobTitle, setJobTitle] = useState("");
   const [industry, setIndustry] = useState("");
   const [jobDescription, setJobDescription] = useState("");
@@ -27,9 +28,10 @@ export const useInterviewSetup = () => {
         trimmedLength: jobTitle.trim().length
       },
       industry: `'${industry}'`,
-      jobDescriptionLength: jobDescription.length 
+      jobDescriptionLength: jobDescription.length,
+      currentSessionId: sessionId
     });
-  }, [jobTitle, industry, jobDescription]);
+  }, [jobTitle, industry, jobDescription, sessionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +129,7 @@ export const useInterviewSetup = () => {
         console.log("Session created successfully:", session);
         // Decrement interview credits
         await decrementCredits('interview_credits');
+        // Updated path to use the correct route with interview ID
         navigate(`/interview/${session.id}`);
       }
     } catch (error) {

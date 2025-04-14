@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
 import { InterviewForm } from "@/components/interview/InterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
@@ -13,6 +14,11 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
 
 const JobInterviewSimulator = () => {
+  const { id: interviewId } = useParams();
+  
+  // Initialize interview modes based on URL parameters
+  const isDetailMode = !!interviewId;
+  
   const {
     industry,
     setIndustry,
@@ -37,6 +43,14 @@ const JobInterviewSimulator = () => {
     handleDownloadTranscript,
     handleStartNew
   } = useInterviewSession();
+
+  // Effect to sync the URL parameter with the interview session
+  useEffect(() => {
+    if (interviewId) {
+      console.log("Setting interview session from URL parameter:", interviewId);
+      setCurrentSessionId(interviewId);
+    }
+  }, [interviewId, setCurrentSessionId]);
 
   const {
     jobTitle: setupJobTitle,
@@ -146,7 +160,7 @@ const JobInterviewSimulator = () => {
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
-        {!interviewReady && !isInterviewInProgress && !isInterviewComplete && (
+        {!interviewReady && !isInterviewInProgress && !isInterviewComplete && !isDetailMode && (
           <InterviewForm 
             onSubmit={handleStartInterviewWithParams} 
             isLoading={isGeneratingQuestions || isLoading || formSubmitting}
