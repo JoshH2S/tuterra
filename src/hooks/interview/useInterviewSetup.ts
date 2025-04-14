@@ -19,15 +19,19 @@ export const useInterviewSetup = () => {
 
   // Debug effect to monitor state changes
   useEffect(() => {
-    console.log("Interview setup state:", { jobTitle, industry, jobDescription });
+    console.log("Interview setup state:", { 
+      jobTitle: `'${jobTitle}'`, 
+      industry: `'${industry}'`,
+      jobDescriptionLength: jobDescription.length 
+    });
   }, [jobTitle, industry, jobDescription]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log("Submitting interview setup with values:", { 
-      jobTitle, 
-      industry,
+      jobTitle: `'${jobTitle}'`, 
+      industry: `'${industry}'`,
       jobDescription: jobDescription.substring(0, 50) + "..."
     });
     
@@ -52,8 +56,8 @@ export const useInterviewSetup = () => {
     }
 
     // Validate required fields with explicit logging
-    if (!jobTitle.trim()) {
-      console.error("Job title is missing or empty");
+    if (!jobTitle || !jobTitle.trim()) {
+      console.error("Job title is missing or empty:", `'${jobTitle}'`);
       toast({
         title: "Required field missing",
         description: "Please provide a job title",
@@ -62,8 +66,8 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    if (!industry.trim()) {
-      console.error("Industry is missing or empty");
+    if (!industry || !industry.trim()) {
+      console.error("Industry is missing or empty:", `'${industry}'`);
       toast({
         title: "Required field missing",
         description: "Please select an industry",
@@ -77,7 +81,7 @@ export const useInterviewSetup = () => {
       console.log("Creating interview session with:", {
         role: jobTitle,
         industry: industry,
-        description: jobDescription
+        descriptionLength: jobDescription.length
       });
 
       // Create a new interview session
@@ -85,8 +89,8 @@ export const useInterviewSetup = () => {
         .from("interview_sessions")
         .insert({
           user_id: user.id,
-          job_title: jobTitle,
-          industry: industry,
+          job_title: jobTitle.trim(),
+          industry: industry.trim(),
           job_description: jobDescription,
           status: "created",
         })

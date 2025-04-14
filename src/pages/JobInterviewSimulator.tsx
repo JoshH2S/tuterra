@@ -55,10 +55,28 @@ const JobInterviewSimulator = () => {
   const isOnline = navigator.onLine;
 
   const handleStartInterviewWithParams = (industry: string, role: string, description: string) => {
-    console.log("Starting interview with params:", { industry, role, description });
+    console.log("Starting interview with params:", { 
+      industry, 
+      role: `'${role}'`, 
+      roleLength: role.length,
+      description: description.substring(0, 50) + "..." 
+    });
     
     // Set form as submitting to prevent multiple submissions
     setFormSubmitting(true);
+    
+    // Validate inputs before processing
+    if (!industry.trim()) {
+      console.error("Invalid industry received:", industry);
+      setFormSubmitting(false);
+      return;
+    }
+    
+    if (!role || !role.trim()) {
+      console.error("Invalid job role received:", role);
+      setFormSubmitting(false);
+      return;
+    }
     
     // Update all state values
     setIndustry(industry);
@@ -67,16 +85,26 @@ const JobInterviewSimulator = () => {
     
     // Use a small timeout to ensure state updates have been processed
     setTimeout(() => {
-      // Create a synthetic event to pass to handleSubmit
-      const syntheticEvent = {
-        preventDefault: () => {}
-      } as React.FormEvent;
-      
-      // Submit the form using handleSubmit from useInterviewSetup
-      handleSubmit(syntheticEvent);
-      
-      // Reset submission state
-      setFormSubmitting(false);
+      try {
+        // Create a synthetic event to pass to handleSubmit
+        const syntheticEvent = {
+          preventDefault: () => {}
+        } as React.FormEvent;
+        
+        console.log("Submitting with state values:", {
+          industry,
+          jobRole: role,
+          descriptionLength: description.length
+        });
+        
+        // Submit the form using handleSubmit from useInterviewSetup
+        handleSubmit(syntheticEvent);
+      } catch (error) {
+        console.error("Error during interview submission:", error);
+      } finally {
+        // Reset submission state
+        setFormSubmitting(false);
+      }
     }, 50);
   };
 
