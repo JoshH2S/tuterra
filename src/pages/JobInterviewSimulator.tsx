@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useInterviewSession } from "@/hooks/interview";
 import { InterviewForm } from "@/components/interview/InterviewForm";
@@ -39,8 +38,6 @@ const JobInterviewSimulator = () => {
   } = useInterviewSession();
 
   const {
-    jobTitle,
-    setJobTitle,
     loading: isLoading,
     showUpgradePrompt,
     setShowUpgradePrompt,
@@ -56,12 +53,18 @@ const JobInterviewSimulator = () => {
   const isOnline = navigator.onLine;
 
   const handleStartInterviewWithParams = (industry: string, role: string, description: string) => {
+    console.log("Starting interview with params:", { industry, role, description });
     setIndustry(industry);
     setJobRole(role);
     setJobDescription(description);
     
+    // Create a synthetic event to pass to handleSubmit
+    const syntheticEvent = {
+      preventDefault: () => {}
+    } as React.FormEvent;
+    
     // Submit the form using handleSubmit from useInterviewSetup
-    handleSubmit(new Event('submit') as any);
+    handleSubmit(syntheticEvent);
   };
 
   const handleStartNewInterview = () => {

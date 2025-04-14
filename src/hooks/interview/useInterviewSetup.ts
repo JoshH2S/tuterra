@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -17,8 +17,19 @@ export const useInterviewSetup = () => {
   
   const { checkCredits, decrementCredits } = useUserCredits();
 
+  // Debug effect to monitor state changes
+  useEffect(() => {
+    console.log("Interview setup state:", { jobTitle, industry, jobDescription });
+  }, [jobTitle, industry, jobDescription]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log("Submitting interview setup with values:", { 
+      jobTitle, 
+      industry,
+      jobDescription: jobDescription.substring(0, 50) + "..."
+    });
     
     if (!user) {
       toast({
@@ -40,7 +51,12 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    if (!jobTitle.trim() || !industry.trim()) {
+    // Use jobTitle if provided, otherwise use the industry state directly
+    const submissionRole = jobTitle || jobTitle;
+    const submissionIndustry = industry;
+    
+    if (!submissionRole.trim() || !submissionIndustry.trim()) {
+      console.error("Missing required fields:", { role: submissionRole, industry: submissionIndustry });
       toast({
         title: "Required fields missing",
         description: "Please fill in job title and industry",
@@ -51,23 +67,32 @@ export const useInterviewSetup = () => {
 
     try {
       setLoading(true);
+      console.log("Creating interview session with:", {
+        role: submissionRole,
+        industry: submissionIndustry,
+        description: jobDescription
+      });
 
       // Create a new interview session
       const { data: session, error } = await supabase
         .from("interview_sessions")
         .insert({
           user_id: user.id,
-          job_title: jobTitle,
-          industry: industry,
+          job_title: submissionRole,
+          industry: submissionIndustry,
           job_description: jobDescription,
           status: "created",
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
 
       if (session) {
+        console.log("Session created successfully:", session);
         // Decrement interview credits
         await decrementCredits('interview_credits');
         navigate(`/interview/${session.id}`);

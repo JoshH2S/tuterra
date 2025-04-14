@@ -38,7 +38,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     let isValid = true;
 
     // Validate industry
-    if (!industry || !INDUSTRY_OPTIONS.some(opt => opt.value === industry)) {
+    if (!industry.trim()) {
       errors.industry = "Please select a valid industry";
       isValid = false;
     }
@@ -65,15 +65,8 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
 
   const handleIndustryChange = (value: string) => {
     console.log("Industry selection changed:", value);
-    const selectedOption = INDUSTRY_OPTIONS.find(opt => opt.value === value);
-    if (selectedOption) {
-      setIndustry(selectedOption.value);
-      setFormErrors(prev => ({ ...prev, industry: undefined }));
-    } else {
-      console.error("Invalid industry selected:", value);
-      setIndustry(value); // Still set it even if not in list (could be custom)
-      // Don't clear error if value is invalid
-    }
+    setIndustry(value);
+    setFormErrors(prev => ({ ...prev, industry: undefined }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
