@@ -16,6 +16,7 @@ export const useAssessmentResults = (resultId: string | undefined) => {
   const [userTier, setUserTier] = useState("free");
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [benchmarks, setBenchmarks] = useState<any[]>([]);
+  const [skillBenchmarks, setSkillBenchmarks] = useState<Record<string, number>>({});
   const [exportPdfLoading, setExportPdfLoading] = useState(false);
 
   useEffect(() => {
@@ -66,6 +67,28 @@ export const useAssessmentResults = (resultId: string | undefined) => {
           
         if (benchmarkData) {
           setBenchmarks(benchmarkData);
+        }
+
+        // Fetch skill benchmarks if we have skill_scores
+        if (data.skill_scores) {
+          const skillNames = Object.keys(data.skill_scores);
+          const role = data.assessment?.role || '';
+          const industry = data.assessment?.industry || '';
+          
+          const { data: skillBenchmarkData, error: skillBenchmarkError } = await supabase
+            .from("skill_benchmarks")
+            .select("skill_name, benchmark_score")
+            .eq("role", role)
+            .eq("industry", industry)
+            .in("skill_name", skillNames);
+            
+          if (!skillBenchmarkError && skillBenchmarkData) {
+            const benchmarkMap: Record<string, number> = {};
+            skillBenchmarkData.forEach(item => {
+              benchmarkMap[item.skill_name] = item.benchmark_score;
+            });
+            setSkillBenchmarks(benchmarkMap);
+          }
         }
       } catch (error) {
         console.error("Error fetching assessment result:", error);
@@ -216,6 +239,7 @@ export const useAssessmentResults = (resultId: string | undefined) => {
     userTier,
     recommendations,
     benchmarks,
+    skillBenchmarks,
     exportPdfLoading,
     handleExportPdf,
     handleShareResults,

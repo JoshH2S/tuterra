@@ -29,9 +29,16 @@ interface ResultsContentProps {
     role: string;
     averageScore: number;
   }[];
+  skillBenchmarks?: Record<string, number>;
 }
 
-export const ResultsContent = ({ result, userTier, recommendations, benchmarks }: ResultsContentProps) => {
+export const ResultsContent = ({ 
+  result, 
+  userTier, 
+  recommendations, 
+  benchmarks, 
+  skillBenchmarks = {} 
+}: ResultsContentProps) => {
   return (
     <div className="md:grid md:grid-cols-3 gap-6">
       {/* Left column: Summary */}
@@ -87,6 +94,7 @@ export const ResultsContent = ({ result, userTier, recommendations, benchmarks }
               }
               recommendations={recommendations}
               benchmarks={benchmarks}
+              skillBenchmarks={skillBenchmarks}
             />
           </TabsContent>
         </Tabs>

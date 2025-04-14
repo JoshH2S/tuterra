@@ -21,6 +21,7 @@ export default function SkillAssessmentResults() {
     userTier,
     recommendations,
     benchmarks,
+    skillBenchmarks,
     exportPdfLoading,
     handleExportPdf,
     handleShareResults,
@@ -71,6 +72,7 @@ export default function SkillAssessmentResults() {
           userTier={userTier}
           recommendations={recommendations}
           benchmarks={benchmarks}
+          skillBenchmarks={skillBenchmarks}
         />
       ) : (
         <ResultsContent 
@@ -78,6 +80,7 @@ export default function SkillAssessmentResults() {
           userTier={userTier}
           recommendations={recommendations}
           benchmarks={benchmarks}
+          skillBenchmarks={skillBenchmarks}
         />
       )}
     </div>

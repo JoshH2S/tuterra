@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSwipeable } from "react-swipeable";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,9 +32,16 @@ interface MobileResultsViewProps {
     role: string;
     averageScore: number;
   }[];
+  skillBenchmarks?: Record<string, number>;
 }
 
-export const MobileResultsView = ({ result, userTier, recommendations, benchmarks }: MobileResultsViewProps) => {
+export const MobileResultsView = ({ 
+  result, 
+  userTier, 
+  recommendations, 
+  benchmarks,
+  skillBenchmarks = {}
+}: MobileResultsViewProps) => {
   const [activeView, setActiveView] = useState<'summary' | 'questions' | 'analysis'>('summary');
   
   const swipeHandlers = useSwipeable({
@@ -217,6 +225,7 @@ export const MobileResultsView = ({ result, userTier, recommendations, benchmark
                   }
                   recommendations={recommendations}
                   benchmarks={benchmarks}
+                  skillBenchmarks={skillBenchmarks}
                 />
               </div>
             </motion.div>
