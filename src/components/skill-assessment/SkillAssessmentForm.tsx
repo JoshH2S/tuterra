@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -225,6 +225,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
       });
 
       navigate(`/assessments/take-skill-assessment/${savedAssessment.id}`);
+      return Promise.resolve();
     } catch (error) {
       console.error("Error creating assessment:", error);
       toast({
