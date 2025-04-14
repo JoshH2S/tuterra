@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useSwipeable } from "react-swipeable";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,7 +36,6 @@ interface MobileResultsViewProps {
 export const MobileResultsView = ({ result, userTier, recommendations, benchmarks }: MobileResultsViewProps) => {
   const [activeView, setActiveView] = useState<'summary' | 'questions' | 'analysis'>('summary');
   
-  // Set up swipe handlers for mobile
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => {
       if (activeView === 'summary') setActiveView('questions');
@@ -51,7 +49,6 @@ export const MobileResultsView = ({ result, userTier, recommendations, benchmark
     preventScrollOnSwipe: true,
   });
   
-  // Animation variants
   const slideVariants = {
     enter: (direction: number) => ({
       x: direction > 0 ? '100%' : '-100%',
@@ -75,7 +72,6 @@ export const MobileResultsView = ({ result, userTier, recommendations, benchmark
     })
   };
   
-  // Direction of animation
   const getDirection = (newView: string) => {
     if (newView === 'summary' && activeView === 'questions') return -1;
     if (newView === 'analysis' && activeView === 'questions') return 1;
@@ -90,7 +86,6 @@ export const MobileResultsView = ({ result, userTier, recommendations, benchmark
   
   return (
     <div {...swipeHandlers} className="touch-manipulation">
-      {/* View selection tabs with animated underline */}
       <div className="flex justify-between items-center mb-4 border-b pb-2">
         <motion.div className="flex justify-between w-full relative">
           <Button 
@@ -147,7 +142,6 @@ export const MobileResultsView = ({ result, userTier, recommendations, benchmark
         </motion.div>
       </div>
       
-      {/* View content with transitions */}
       <div className="min-h-[60vh] relative overflow-hidden">
         <AnimatePresence initial={false} custom={getDirection(activeView)}>
           {activeView === 'summary' && (
@@ -230,7 +224,6 @@ export const MobileResultsView = ({ result, userTier, recommendations, benchmark
         </AnimatePresence>
       </div>
       
-      {/* Navigation indicators and arrows with animations */}
       <motion.div 
         className="flex justify-between mt-6 px-4"
         initial={{ opacity: 0, y: 10 }}

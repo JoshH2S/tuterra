@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock } from "lucide-react";
 import { DetailedQuestionsList } from "./DetailedQuestionsList";
 import { ScoreSummary } from "./ScoreSummary";
 import { AdvancedAnalysisSection } from "@/components/skill-assessment/PremiumFeatures";
@@ -59,10 +58,7 @@ export const ResultsContent = ({ result, userTier, recommendations, benchmarks }
         <Tabs defaultValue="questions" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="questions">Questions</TabsTrigger>
-            <TabsTrigger value="analysis">
-              Advanced Analysis
-              {userTier === 'free' && <Lock className="h-3 w-3 ml-1" />}
-            </TabsTrigger>
+            <TabsTrigger value="analysis">Advanced Analysis</TabsTrigger>
           </TabsList>
           
           <TabsContent value="questions">
@@ -78,7 +74,7 @@ export const ResultsContent = ({ result, userTier, recommendations, benchmarks }
           </TabsContent>
           
           <TabsContent value="analysis">
-            {/* Premium analysis content */}
+            {/* Analysis content - now available to all users */}
             <AdvancedAnalysisSection 
               userTier={userTier}
               skills={

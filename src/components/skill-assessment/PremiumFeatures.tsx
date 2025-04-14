@@ -1,6 +1,6 @@
 
 import { ReactNode } from "react";
-import { Sparkles, Lock, Info } from "lucide-react";
+import { Sparkles, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -56,33 +56,27 @@ export const PremiumFeature = ({
   tooltipText,
   locked = false
 }: PremiumFeatureProps) => {
-  const isLocked = locked || (
-    (tier === "premium" && userTier !== "premium") || 
-    (tier === "pro" && userTier !== "pro" && userTier !== "premium")
-  );
-
-  const defaultTooltip = tier === "premium" 
-    ? "Upgrade to Premium to unlock this feature" 
-    : "Upgrade to Pro or Premium to unlock this feature";
+  // Always set locked to false, making features available to all users
+  locked = false;
 
   return (
     <div className={cn(
       "relative rounded-lg border",
-      isLocked ? "opacity-75" : ""
+      locked ? "opacity-75" : ""
     )}>
       <div className="absolute top-2 right-2">
         <PremiumFeatureBadge feature={feature} tier={tier} />
       </div>
       
-      {isLocked ? (
+      {locked ? (
         <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 rounded-lg">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Lock className="h-8 w-8 text-muted-foreground mb-2" />
+                <Info className="h-8 w-8 text-muted-foreground mb-2" />
               </TooltipTrigger>
               <TooltipContent>
-                <p>{tooltipText || defaultTooltip}</p>
+                <p>{tooltipText}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -108,8 +102,9 @@ export const AdvancedAnalysisSection = ({
   recommendations = [],
   benchmarks = []
 }: AdvancedAnalysisSectionProps) => {
-  const isPremium = userTier === "premium";
-  const isPro = userTier === "pro" || isPremium;
+  // Override the tier check logic to make features available to all
+  const isPremium = true;
+  const isPro = true;
 
   return (
     <div className="space-y-6">
@@ -117,7 +112,7 @@ export const AdvancedAnalysisSection = ({
         feature="advanced-analysis" 
         tier="pro"
         userTier={userTier}
-        locked={!isPro}
+        locked={false}
       >
         <div className="p-4">
           <h3 className="text-lg font-medium mb-3">Skill Gap Analysis</h3>
@@ -149,7 +144,7 @@ export const AdvancedAnalysisSection = ({
         feature="personalized-feedback" 
         tier="pro"
         userTier={userTier}
-        locked={!isPro}
+        locked={false}
       >
         <div className="p-4">
           <h3 className="text-lg font-medium mb-3">Personalized Recommendations</h3>
@@ -171,7 +166,7 @@ export const AdvancedAnalysisSection = ({
         feature="industry-benchmarks" 
         tier="premium"
         userTier={userTier}
-        locked={!isPremium}
+        locked={false}
       >
         <div className="p-4">
           <h3 className="text-lg font-medium mb-3">Industry Benchmarks</h3>
@@ -186,7 +181,7 @@ export const AdvancedAnalysisSection = ({
             </div>
           ) : (
             <div className="text-center py-3 text-muted-foreground">
-              <p>Premium feature: Compare your results with industry averages</p>
+              <p>Compare your results with industry averages</p>
             </div>
           )}
         </div>
