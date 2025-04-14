@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,25 +69,26 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    // Simple direct validation - only check if the string exists and isn't empty when trimmed
-    if (!jobTitle?.trim()) {
-      console.error("Job title validation failed:", {
-        rawValue: `'${jobTitle}'`,
-        type: typeof jobTitle
+    // More explicit validation with detailed logging
+    if (!jobTitle || !jobTitle.trim()) {
+      console.error("Critical validation failure:", {
+        jobTitleRaw: `'${jobTitle}'`,
+        jobTitleType: typeof jobTitle,
+        jobTitleTrimmed: jobTitle?.trim() || 'N/A'
       });
       
       toast({
-        title: "Job title required",
-        description: "Please enter a job title",
+        title: "Invalid Job Title",
+        description: "Please provide a valid job title",
         variant: "destructive"
       });
       return;
     }
 
-    if (!industry?.trim()) {
+    if (!industry || !industry.trim()) {
       console.error("Industry is missing or empty:", `'${industry}'`);
       toast({
-        title: "Industry required",
+        title: "Required field missing",
         description: "Please select an industry",
         variant: "destructive",
       });
