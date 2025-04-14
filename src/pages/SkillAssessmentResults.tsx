@@ -20,7 +20,6 @@ export default function SkillAssessmentResults() {
     loading,
     userTier,
     recommendations,
-    benchmarks,
     skillBenchmarks,
     exportPdfLoading,
     handleExportPdf,
@@ -71,7 +70,6 @@ export default function SkillAssessmentResults() {
           result={result}
           userTier={userTier}
           recommendations={recommendations}
-          benchmarks={benchmarks}
           skillBenchmarks={skillBenchmarks}
         />
       ) : (
@@ -79,7 +77,6 @@ export default function SkillAssessmentResults() {
           result={result}
           userTier={userTier}
           recommendations={recommendations}
-          benchmarks={benchmarks}
           skillBenchmarks={skillBenchmarks}
         />
       )}

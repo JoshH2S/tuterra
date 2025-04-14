@@ -25,11 +25,6 @@ interface MobileResultsViewProps {
   };
   userTier: string;
   recommendations: string[];
-  benchmarks: {
-    industry: string;
-    role: string;
-    averageScore: number;
-  }[];
   skillBenchmarks?: Record<string, number>;
 }
 
@@ -37,7 +32,6 @@ export const MobileResultsView = ({
   result, 
   userTier, 
   recommendations, 
-  benchmarks,
   skillBenchmarks = {}
 }: MobileResultsViewProps) => {
   const {
@@ -78,7 +72,6 @@ export const MobileResultsView = ({
               result={result}
               userTier={userTier}
               recommendations={recommendations}
-              benchmarks={benchmarks}
               skillBenchmarks={skillBenchmarks}
               slideVariants={slideVariants}
               getDirection={getDirection}

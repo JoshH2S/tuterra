@@ -24,11 +24,6 @@ interface ResultsContentProps {
   };
   userTier: string;
   recommendations: string[];
-  benchmarks: {
-    industry: string;
-    role: string;
-    averageScore: number;
-  }[];
   skillBenchmarks?: Record<string, number>;
 }
 
@@ -36,7 +31,6 @@ export const ResultsContent = ({
   result, 
   userTier, 
   recommendations, 
-  benchmarks, 
   skillBenchmarks = {} 
 }: ResultsContentProps) => {
   return (
