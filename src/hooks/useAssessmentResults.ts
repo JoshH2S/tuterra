@@ -6,6 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 
+// Define an interface for skill benchmark data
+interface SkillBenchmark {
+  skill_name: string;
+  benchmark_score: number;
+  role: string;
+  industry: string;
+}
+
 export const useAssessmentResults = (resultId: string | undefined) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -75,8 +83,9 @@ export const useAssessmentResults = (resultId: string | undefined) => {
           const role = data.assessment?.role || '';
           const industry = data.assessment?.industry || '';
           
+          // Use type assertion for the skill_benchmarks table
           const { data: skillBenchmarkData, error: skillBenchmarkError } = await supabase
-            .from("skill_benchmarks")
+            .from("skill_benchmarks" as any)
             .select("skill_name, benchmark_score")
             .eq("role", role)
             .eq("industry", industry)
@@ -84,7 +93,8 @@ export const useAssessmentResults = (resultId: string | undefined) => {
             
           if (!skillBenchmarkError && skillBenchmarkData) {
             const benchmarkMap: Record<string, number> = {};
-            skillBenchmarkData.forEach(item => {
+            // Type assertion for the benchmark data
+            (skillBenchmarkData as SkillBenchmark[]).forEach(item => {
               benchmarkMap[item.skill_name] = item.benchmark_score;
             });
             setSkillBenchmarks(benchmarkMap);
@@ -138,7 +148,7 @@ export const useAssessmentResults = (resultId: string | undefined) => {
       
       // Add date and score
       doc.setFontSize(12);
-      const date = new Date(result.completed_at).toLocaleDateString();
+      const date = new Date(result.created_at).toLocaleDateString();
       doc.text(`Completed on: ${date}`, 20, 30);
       doc.text(`Overall Score: ${result.score}%`, 20, 40);
       
