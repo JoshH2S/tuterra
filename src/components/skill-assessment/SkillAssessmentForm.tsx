@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, Lock, Info } from "lucide-react";
+import { Loader2, Sparkles, Lock, Info, AlertCircle } from "lucide-react";
 import { useSkillAssessmentGeneration } from "@/hooks/useSkillAssessmentGeneration";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
@@ -32,6 +32,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const formSchema = z.object({
   industry: z.string().min(2, "Industry must be at least 2 characters"),
@@ -54,6 +55,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
   const [userTier, setUserTier] = useState<string>("free");
   const [assessmentsRemaining, setAssessmentsRemaining] = useState<number>(0);
   const [isCheckingAllowance, setIsCheckingAllowance] = useState<boolean>(true);
+  const [checkError, setCheckError] = useState<string | null>(null);
   const { 
     generateAssessment, 
     isGenerating, 
@@ -62,7 +64,7 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
     getUserTier,
     getMonthlyAssessmentCount
   } = useSkillAssessmentGeneration();
-  const { credits, fetchUserCredits, isOfflineMode } = useUserCredits();
+  const { credits, fetchUserCredits, isOfflineMode, retryFetch } = useUserCredits();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -75,60 +77,107 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
     },
   });
 
+  // Function to check user allowance with retry mechanism and timeout
+  const checkUserAllowance = async () => {
+    if (!user) {
+      setIsCheckingAllowance(false);
+      return;
+    }
+
+    setIsCheckingAllowance(true);
+    setCheckError(null);
+    
+    try {
+      // Set a timeout to prevent indefinite checking state
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Allowance check timed out")), 5000)
+      );
+      
+      // Race between the actual check and the timeout
+      await Promise.race([
+        (async () => {
+          // Fetch latest credits first
+          await fetchUserCredits();
+          
+          // Get user's subscription tier
+          const tier = await getUserTier();
+          setUserTier(tier);
+          
+          // Get assessment count
+          const monthlyCount = await getMonthlyAssessmentCount();
+          
+          // Get remaining credits
+          const remainingCredits = credits?.assessment_credits || 0;
+          
+          console.log('User tier:', tier);
+          console.log('Monthly assessment count:', monthlyCount);
+          console.log('Remaining credits:', remainingCredits);
+          
+          // Set limits based on tier
+          if (tier === 'premium') {
+            setAssessmentsRemaining(Infinity); // Unlimited for premium
+          } else if (tier === 'pro') {
+            const monthlyRemaining = Math.max(0, 20 - monthlyCount);
+            setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
+          } else { // Free tier
+            const monthlyRemaining = Math.max(0, 2 - monthlyCount); 
+            setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
+          }
+          
+          // If in offline mode, use the local credits
+          if (isOfflineMode) {
+            setAssessmentsRemaining(remainingCredits);
+          }
+        })(),
+        timeoutPromise
+      ]);
+    } catch (error) {
+      console.error('Error checking user allowance:', error);
+      setCheckError(error instanceof Error ? error.message : 'Failed to check allowance');
+      
+      // If we failed to check allowance but have credits from local storage, use those
+      if (credits?.assessment_credits) {
+        setAssessmentsRemaining(credits.assessment_credits);
+      }
+    } finally {
+      setIsCheckingAllowance(false);
+    }
+  };
+
   useEffect(() => {
-    // Get user's tier and remaining assessments
-    const getUserDetails = async () => {
-      if (!user) {
+    // Check allowance when component mounts
+    checkUserAllowance();
+    
+    // Set up an interval to periodically check if we're stuck
+    const checkInterval = setInterval(() => {
+      if (isCheckingAllowance) {
+        console.log('Still checking assessment allowance after delay, attempting to recover...');
+        // Force end the checking state if it's been going too long
         setIsCheckingAllowance(false);
-        return;
-      }
-
-      try {
-        setIsCheckingAllowance(true);
         
-        // Fetch latest credits first
-        await fetchUserCredits();
-        
-        // Get user's subscription tier
-        const tier = await getUserTier();
-        setUserTier(tier);
-        
-        // Get assessment count
-        const monthlyCount = await getMonthlyAssessmentCount();
-        
-        // Get remaining credits
-        const remainingCredits = credits?.assessment_credits || 0;
-        
-        console.log('User tier:', tier);
-        console.log('Monthly assessment count:', monthlyCount);
-        console.log('Remaining credits:', remainingCredits);
-        
-        // Set limits based on tier
-        if (tier === 'premium') {
-          setAssessmentsRemaining(Infinity); // Unlimited for premium
-        } else if (tier === 'pro') {
-          const monthlyRemaining = Math.max(0, 20 - monthlyCount);
-          setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
-        } else { // Free tier
-          const monthlyRemaining = Math.max(0, 2 - monthlyCount); 
-          setAssessmentsRemaining(Math.min(remainingCredits, monthlyRemaining));
+        // Use local credit value if available
+        if (credits?.assessment_credits) {
+          setAssessmentsRemaining(credits.assessment_credits);
+        } else {
+          setAssessmentsRemaining(2); // Default to 2 for free tier as fallback
         }
-        
-        // If in offline mode, use the local credits
-        if (isOfflineMode) {
-          setAssessmentsRemaining(remainingCredits);
-        }
-      } catch (error) {
-        console.error('Error fetching user details:', error);
-        // Fallback to just using credits if we can't get the count
-        setAssessmentsRemaining(credits?.assessment_credits || 0);
-      } finally {
-        setIsCheckingAllowance(false);
       }
-    };
+    }, 8000); // Check after 8 seconds
+    
+    return () => clearInterval(checkInterval);
+  }, [user, credits?.assessment_credits]);
 
-    getUserDetails();
-  }, [user, credits, fetchUserCredits, isOfflineMode, getUserTier, getMonthlyAssessmentCount]);
+  // If credits update, refresh assessment count
+  useEffect(() => {
+    if (credits && !isCheckingAllowance) {
+      // Set assessments remaining based on credits without doing a full check
+      if (userTier === 'premium') {
+        setAssessmentsRemaining(Infinity);
+      } else {
+        setAssessmentsRemaining(credits.assessment_credits || 0);
+      }
+    }
+  }, [credits, userTier]);
 
   const showPremiumFeatures = userTier !== 'free';
   const isPremium = userTier === 'premium';
@@ -211,6 +260,23 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
   return (
     <Form {...form}>
       <div className="mb-4">
+        {checkError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Connection Error</AlertTitle>
+            <AlertDescription>
+              Having trouble checking your assessment credits.
+              <Button 
+                variant="link" 
+                className="p-0 h-auto ml-2"
+                onClick={() => checkUserAllowance()}
+              >
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+      
         {assessmentsRemaining < Infinity && (
           <div className="bg-muted p-3 rounded-md mb-4 flex items-center gap-2">
             <Info size={16} className="text-muted-foreground" />
@@ -406,13 +472,15 @@ export function SkillAssessmentForm({ onCancel }: SkillAssessmentFormProps) {
             type="button"
             variant="outline"
             onClick={onCancel}
-            disabled={isGenerating || isCheckingAllowance}
+            disabled={isGenerating}
           >
             Cancel
           </Button>
           <Button 
             type="submit" 
-            disabled={isGenerating || assessmentsRemaining <= 0 || isCheckingAllowance}
+            disabled={isGenerating || 
+              (assessmentsRemaining <= 0 && !isCheckingAllowance) || 
+              isCheckingAllowance}
             className="relative"
           >
             {isGenerating ? (
