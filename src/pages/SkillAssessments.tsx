@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -11,17 +11,53 @@ import { useToast } from "@/hooks/use-toast";
 import { SkillAssessmentForm } from "@/components/skill-assessment/SkillAssessmentForm";
 import { SkillAssessmentsList } from "@/components/skill-assessment/SkillAssessmentsList";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, Building2 } from "lucide-react";
+import { Plus, Search, Building2, FileText, Eye } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // Create the AssessmentCard component
 const AssessmentCard = ({ assessment, onViewAssessment }) => {
+  const [previousScore, setPreviousScore] = useState(null);
+  const [latestResultId, setLatestResultId] = useState(null);
+  const { user } = useAuth();
   const skills = assessment.questions?.map(q => q.skill).filter((value, index, self) => 
     value && self.indexOf(value) === index
   ) || [];
   
-  const completionRate = Math.floor(Math.random() * 100); // In a real app, this would come from user progress data
   const isMobile = useIsMobile();
+  
+  // Fetch previous score for this assessment
+  useEffect(() => {
+    const fetchPreviousScore = async () => {
+      if (!user || !assessment.id) return;
+      
+      try {
+        const { data } = await supabase
+          .from("skill_assessment_results")
+          .select("id, score")
+          .eq("assessment_id", assessment.id)
+          .eq("user_id", user.id)
+          .order("completed_at", { ascending: false })
+          .limit(1);
+          
+        if (data && data.length > 0) {
+          setPreviousScore(data[0].score);
+          setLatestResultId(data[0].id);
+        }
+      } catch (error) {
+        console.error("Error fetching previous score:", error);
+      }
+    };
+    
+    fetchPreviousScore();
+  }, [assessment.id, user]);
+  
+  // Handle view results click
+  const handleViewResults = (e) => {
+    e.stopPropagation(); // Prevent the card click from triggering
+    if (latestResultId) {
+      window.location.href = `/assessments/skill-assessment-results/${latestResultId}`;
+    }
+  };
   
   return (
     <Card className="h-full transition-all hover:shadow-md active:scale-[0.98] touch-manipulation w-full">
@@ -62,30 +98,45 @@ const AssessmentCard = ({ assessment, onViewAssessment }) => {
             )}
           </div>
 
-          {/* Progress Indicator */}
+          {/* Progress Indicator - Now shows actual previous score if available */}
           <div className="space-y-1 sm:space-y-1.5">
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-muted-foreground">Questions</span>
+              <span className="text-muted-foreground">
+                {previousScore !== null ? "Previous Score" : "Questions"}
+              </span>
               <span className="font-medium">
-                {assessment.questions?.length || 0} total
+                {previousScore !== null 
+                  ? `${previousScore}%`
+                  : `${assessment.questions?.length || 0} total`}
               </span>
             </div>
             <Progress 
-              value={completionRate} 
+              value={previousScore !== null ? previousScore : 0} 
               className="h-1.5 sm:h-2"
-              indicatorClassName="bg-primary/80"
+              indicatorClassName={`${previousScore !== null ? 'bg-primary' : 'bg-primary/80'}`}
             />
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="pt-1 sm:pt-2">
+      <CardFooter className="pt-1 sm:pt-2 flex gap-2">
+        {previousScore !== null && (
+          <Button 
+            variant="outline" 
+            className="text-xs sm:text-sm py-1 sm:py-2 flex-1"
+            onClick={handleViewResults}
+          >
+            <Eye className="w-3.5 h-3.5 mr-1.5" />
+            View Results
+          </Button>
+        )}
         <Button 
-          variant="outline" 
-          className="w-full text-xs sm:text-sm py-1 sm:py-2"
+          variant={previousScore !== null ? "outline" : "default"} 
+          className={`text-xs sm:text-sm py-1 sm:py-2 ${previousScore !== null ? 'flex-1' : 'w-full'}`}
           onClick={() => onViewAssessment(assessment.id)}
         >
-          Take Assessment
+          <FileText className="w-3.5 h-3.5 mr-1.5" />
+          {previousScore !== null ? "Take Again" : "Take Assessment"}
         </Button>
       </CardFooter>
     </Card>
