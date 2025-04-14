@@ -62,39 +62,29 @@ export const useSkillAssessmentGeneration = () => {
     }
   };
 
-  // Check if user can generate an assessment based on their tier and credits
-  const checkAssessmentAllowance = async () => {
-    if (!user) return false;
+  // Get the user's subscription tier
+  const getUserTier = async (): Promise<string> => {
+    if (!user) return 'free';
     
     try {
-      // Always refresh credits first to ensure we have the latest data
-      await fetchUserCredits();
-      
-      // If we're in offline mode, we'll check the local credits
-      if (isOfflineMode) {
-        return await checkCredits('assessment_credits');
-      }
-      
-      // Get user's subscription tier from profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('subscription_tier')
         .eq('id', user.id)
         .maybeSingle();
       
-      const tier = profile?.subscription_tier || 'free';
-      
-      // Premium users have unlimited assessments
-      if (tier === 'premium') return true;
-      
-      // For free and pro users, check if they have assessment credits
-      const hasCredits = await checkCredits('assessment_credits');
-      if (!hasCredits) {
-        return false;
-      }
-      
-      // If they have credits, also check monthly limits
-      // Get count of assessments created in the current month
+      return profile?.subscription_tier || 'free';
+    } catch (error) {
+      console.error('Error getting user tier:', error);
+      return 'free';
+    }
+  };
+
+  // Get the count of assessments created in the current month
+  const getMonthlyAssessmentCount = async (): Promise<number> => {
+    if (!user) return 0;
+    
+    try {
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
@@ -107,10 +97,73 @@ export const useSkillAssessmentGeneration = () => {
         
       if (error) throw error;
       
-      // Check limits based on tier - Free tier gets 2 assessments
-      if (tier === 'pro' && (count || 0) < 20) return true;
-      if (tier === 'free' && (count || 0) < 2) return true; // Changed from 1 to 2
+      return count || 0;
+    } catch (error) {
+      console.error('Error counting monthly assessments:', error);
+      return 0;
+    }
+  };
+
+  // Get monthly assessment limit based on subscription tier
+  const getMonthlyAssessmentLimit = (tier: string): number => {
+    switch (tier) {
+      case 'premium':
+        return Infinity;
+      case 'pro':
+        return 20;
+      default:
+        return 2; // Free tier gets 2 assessments
+    }
+  };
+
+  // Check if user can generate an assessment based on their tier and credits
+  const checkAssessmentAllowance = async () => {
+    if (!user) return false;
+    
+    try {
+      console.log('Checking assessment allowance for user', user.id);
       
+      // Always refresh credits first to ensure we have the latest data
+      await fetchUserCredits();
+      
+      // If we're in offline mode, we'll check the local credits only
+      if (isOfflineMode) {
+        console.log('In offline mode, checking local credits');
+        return await checkCredits('assessment_credits');
+      }
+      
+      // Get user's subscription tier
+      const tier = await getUserTier();
+      console.log('User tier:', tier);
+      
+      // Premium users have unlimited assessments
+      if (tier === 'premium') {
+        console.log('Premium user has unlimited assessments');
+        return true;
+      }
+      
+      // For free and pro users, check if they have assessment credits
+      const hasCredits = await checkCredits('assessment_credits');
+      console.log('User has assessment credits:', hasCredits);
+      
+      if (!hasCredits) {
+        console.log('User has no assessment credits remaining');
+        return false;
+      }
+      
+      // If they have credits, also check monthly limits
+      const monthlyCount = await getMonthlyAssessmentCount();
+      const monthlyLimit = getMonthlyAssessmentLimit(tier);
+      
+      console.log('Monthly assessment count:', monthlyCount, 'Monthly limit:', monthlyLimit);
+      
+      // Check if user is within their monthly limit
+      if (monthlyCount < monthlyLimit) {
+        console.log('User is within monthly assessment limit');
+        return true;
+      }
+      
+      console.log('User has reached monthly assessment limit');
       return false;
     } catch (error) {
       console.error('Error checking assessment allowance:', error);
@@ -173,13 +226,7 @@ export const useSkillAssessmentGeneration = () => {
       }
 
       // Get user's subscription tier
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('subscription_tier')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      const tier = profile?.subscription_tier || 'free';
+      const tier = await getUserTier();
       const modelType = determineModelType(tier);
       const maxTokens = getTokenLimit(tier);
 
@@ -254,6 +301,8 @@ export const useSkillAssessmentGeneration = () => {
     generateAssessment,
     isGenerating,
     progress,
-    checkAssessmentAllowance
+    checkAssessmentAllowance,
+    getUserTier,
+    getMonthlyAssessmentCount
   };
 };
