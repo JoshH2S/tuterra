@@ -65,41 +65,42 @@ export const useAssessmentResults = (resultId: string | undefined) => {
         // Generate recommendations based on results
         generateRecommendations(data);
         
-        // Fetch benchmarks
-        const { data: benchmarkData } = await supabase
-          .from("skill_assessment_results")
-          .select("score, skill_scores, completed_at")
-          .eq("assessment_id", data.assessment_id)
-          .order("completed_at", { ascending: false })
-          .limit(100);
-          
-        if (benchmarkData) {
-          setBenchmarks(benchmarkData);
-        }
-
-        // Fetch skill benchmarks if we have skill_scores
-        if (data.skill_scores) {
-          const skillNames = Object.keys(data.skill_scores);
-          const role = data.assessment?.role || '';
-          const industry = data.assessment?.industry || '';
-          
-          // Fix: Use a more explicit type casting approach
-          const { data: skillBenchmarkData, error: skillBenchmarkError } = await supabase
-            .from("skill_benchmarks" as any)
-            .select("skill_name, benchmark_score")
-            .eq("role", role)
-            .eq("industry", industry)
-            .in("skill_name", skillNames);
-            
-          if (!skillBenchmarkError && skillBenchmarkData) {
-            const benchmarkMap: Record<string, number> = {};
-            // Fix: More explicit casting with unknown as intermediate step
-            const typedData = skillBenchmarkData as unknown as SkillBenchmark[];
-            typedData.forEach(item => {
-              benchmarkMap[item.skill_name] = item.benchmark_score;
+        // Fetch benchmarks using the new edge function
+        if (data.assessment?.role && data.assessment?.industry) {
+          try {
+            const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-industry-benchmarks`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+              },
+              body: JSON.stringify({
+                role: data.assessment.role,
+                industry: data.assessment.industry
+              })
             });
-            setSkillBenchmarks(benchmarkMap);
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch benchmarks: ${response.statusText}`);
+            }
+            
+            const benchmarkData = await response.json();
+            
+            if (benchmarkData.benchmarks) {
+              setBenchmarks(benchmarkData.benchmarks);
+            }
+            
+            if (benchmarkData.skillBenchmarks) {
+              setSkillBenchmarks(benchmarkData.skillBenchmarks);
+            }
+          } catch (benchmarkError) {
+            console.error("Error fetching industry benchmarks:", benchmarkError);
+            // Fall back to fetching local benchmarks
+            fetchLocalBenchmarks(data);
           }
+        } else {
+          // Fall back to fetching local benchmarks
+          fetchLocalBenchmarks(data);
         }
       } catch (error) {
         console.error("Error fetching assessment result:", error);
@@ -115,6 +116,54 @@ export const useAssessmentResults = (resultId: string | undefined) => {
     
     fetchResult();
   }, [resultId, user, toast]);
+  
+  // Fallback method to fetch and calculate benchmarks locally
+  const fetchLocalBenchmarks = async (data: any) => {
+    try {
+      // Fetch benchmarks
+      const { data: benchmarkData } = await supabase
+        .from("skill_assessment_results")
+        .select("score, skill_scores, completed_at")
+        .eq("assessment_id", data.assessment_id)
+        .order("completed_at", { ascending: false })
+        .limit(100);
+        
+      if (benchmarkData) {
+        setBenchmarks([{
+          industry: data.assessment?.industry || 'General',
+          role: data.assessment?.role || 'Professional',
+          averageScore: Math.round(
+            benchmarkData.reduce((sum, item) => sum + item.score, 0) / benchmarkData.length
+          )
+        }]);
+        
+        // Calculate skill benchmarks
+        const skillScores: Record<string, number[]> = {};
+        
+        benchmarkData.forEach(result => {
+          if (result.skill_scores) {
+            Object.entries(result.skill_scores).forEach(([skill, scoreData]: [string, any]) => {
+              if (!skillScores[skill]) {
+                skillScores[skill] = [];
+              }
+              skillScores[skill].push(scoreData.score);
+            });
+          }
+        });
+        
+        const calculatedBenchmarks: Record<string, number> = {};
+        Object.entries(skillScores).forEach(([skill, scores]) => {
+          calculatedBenchmarks[skill] = Math.round(
+            scores.reduce((sum, score) => sum + score, 0) / scores.length
+          );
+        });
+        
+        setSkillBenchmarks(calculatedBenchmarks);
+      }
+    } catch (benchmarkError) {
+      console.error("Error fetching local benchmarks:", benchmarkError);
+    }
+  };
   
   // Generate recommendations based on skill scores
   const generateRecommendations = (resultData: any) => {
