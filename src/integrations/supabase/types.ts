@@ -1268,9 +1268,11 @@ export type Database = {
           description: string | null
           id: string
           industry: string
+          level: string | null
           questions: Json
           role: string
           skills_tested: Json | null
+          tier: string | null
           title: string
           updated_at: string
         }
@@ -1280,9 +1282,11 @@ export type Database = {
           description?: string | null
           id?: string
           industry: string
+          level?: string | null
           questions?: Json
           role: string
           skills_tested?: Json | null
+          tier?: string | null
           title: string
           updated_at?: string
         }
@@ -1292,9 +1296,11 @@ export type Database = {
           description?: string | null
           id?: string
           industry?: string
+          level?: string | null
           questions?: Json
           role?: string
           skills_tested?: Json | null
+          tier?: string | null
           title?: string
           updated_at?: string
         }

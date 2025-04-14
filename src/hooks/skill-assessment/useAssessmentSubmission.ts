@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +26,6 @@ export const useAssessmentSubmission = (
   const [error, setError] = useState<string | null>(null);
   const [submissionProgress, setSubmissionProgress] = useState(0);
 
-  // Convert array answers to record for submission
   const convertAnswersToRecord = (): Record<number, string | string[]> => {
     const record: Record<number, string | string[]> = {};
     answers.forEach((answer, index) => {
@@ -49,12 +47,10 @@ export const useAssessmentSubmission = (
     setSubmissionProgress(10);
     
     try {
-      // Validate answers
       if (!validateAnswers(answers)) {
         throw new Error("Some answers have invalid format. Please check your responses.");
       }
       
-      // Check for unanswered questions
       const unansweredQuestions = assessment.questions
         .map((_, index) => index)
         .filter(index => answers[index] === undefined);
@@ -67,7 +63,6 @@ export const useAssessmentSubmission = (
       
       setSubmissionProgress(30);
       
-      // Calculate score
       let correctCount = 0;
       const questions = assessment.questions || [];
       
@@ -76,7 +71,6 @@ export const useAssessmentSubmission = (
         let isCorrect = false;
         
         if (Array.isArray(userAnswer) && Array.isArray(question.correctAnswer)) {
-          // Sort both arrays to ensure order doesn't matter for comparison
           const sortedUserAnswer = [...userAnswer].sort();
           const sortedCorrectAnswer = [...question.correctAnswer].sort();
           isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer);
@@ -98,7 +92,6 @@ export const useAssessmentSubmission = (
       const score = Math.round((correctCount / questions.length) * 100);
       setSubmissionProgress(60);
       
-      // Calculate skill scores
       const skillScores: SkillScores = {};
       
       detailedResults.forEach(result => {
@@ -113,7 +106,6 @@ export const useAssessmentSubmission = (
         }
       });
       
-      // Calculate percentages
       Object.keys(skillScores).forEach(skill => {
         const { correct, total } = skillScores[skill];
         skillScores[skill].score = Math.round((correct / total) * 100);
@@ -121,7 +113,6 @@ export const useAssessmentSubmission = (
       
       setSubmissionProgress(80);
       
-      // Convert answers array to record for submission
       const answersRecord = convertAnswersToRecord();
       
       console.log("Preparing submission with data:", {
@@ -137,7 +128,6 @@ export const useAssessmentSubmission = (
         tier: assessment.tier || userTier
       });
       
-      // Save results
       const { data, error: saveError } = await supabase
         .from("skill_assessment_results")
         .insert({
@@ -162,7 +152,6 @@ export const useAssessmentSubmission = (
       
       setSubmissionProgress(90);
       
-      // Track completion
       try {
         await supabase.from('user_feature_interactions').insert({
           user_id: user.id,
@@ -177,7 +166,6 @@ export const useAssessmentSubmission = (
         });
       } catch (trackError) {
         console.error("Error tracking assessment completion:", trackError);
-        // Don't throw here to avoid disrupting the main flow
       }
       
       setSubmissionProgress(100);
@@ -187,15 +175,13 @@ export const useAssessmentSubmission = (
         description: `Your score: ${score}%`,
       });
       
-      // Navigate to results page
-      navigate(`/skill-assessment-results/${data.id}`);
+      navigate(`/assessments/skill-assessment-results/${data.id}`);
       return Promise.resolve();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       console.error("Error submitting assessment:", error);
       setError(`Failed to submit your answers: ${errorMessage}. Please try again.`);
       
-      // Store failed submission in local storage for potential recovery
       try {
         localStorage.setItem(
           `failed_submission_${assessment.id}`,
