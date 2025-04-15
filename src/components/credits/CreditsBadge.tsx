@@ -1,3 +1,4 @@
+
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { Badge } from "@/components/ui/badge";
 import { Coins, Loader2, AlertCircle, WifiOff } from "lucide-react";
@@ -62,6 +63,9 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     safeCredits.tutor_message_credits;
 
   const maxCredits = 14;
+
+  // Add the percentage calculation back
+  const percentage = Math.floor((totalCredits / maxCredits) * 100);
 
   // Determine color based on remaining credits
   let badgeVariant: "default" | "destructive" | "outline" | "secondary" = "outline";
