@@ -16,9 +16,18 @@ export const useInterviewSetup = () => {
   const [loading, setLoading] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   
-  const { checkCredits, decrementCredits, credits } = useUserCredits();
+  const { checkCredits, decrementCredits, credits, retryFetch } = useUserCredits();
 
-  // Enhanced debug effect
+  // Enhanced debug effect for credits tracking
+  useEffect(() => {
+    console.log("Interview setup credits debug:", { 
+      credits,
+      hasInterviewCredits: credits?.interview_credits > 0,
+      currentInterviewCredits: credits?.interview_credits || 0
+    });
+  }, [credits]);
+
+  // Enhanced debug effect for form state
   useEffect(() => {
     console.log("Interview setup state debug:", { 
       jobTitle: {
@@ -51,7 +60,8 @@ export const useInterviewSetup = () => {
         length: industry.length,
         trimmedLength: industry.trim().length
       },
-      interviewCreditsRemaining: credits?.interview_credits || 0
+      interviewCreditsRemaining: credits?.interview_credits || 0,
+      hasCredits: checkCredits('interview_credits')
     });
     
     if (!user) {
@@ -62,6 +72,9 @@ export const useInterviewSetup = () => {
       });
       return;
     }
+
+    // Ensure we have the latest credit count
+    await retryFetch();
 
     // Check if user has interview credits
     if (!checkCredits('interview_credits')) {
@@ -133,18 +146,18 @@ export const useInterviewSetup = () => {
         console.log("Session created successfully:", session.id);
         // Decrement interview credits
         const decrementSuccess = await decrementCredits('interview_credits');
-        console.log("Decrement credits result:", { decrementSuccess, newCreditsRemaining: (credits?.interview_credits || 0) - 1 });
+        console.log("Decrement credits result:", { 
+          decrementSuccess, 
+          newCreditsRemaining: (credits?.interview_credits || 0) - 1 
+        });
         
         if (!decrementSuccess) {
-          // This is a fallback in case decrement fails but we want to continue anyway
           console.warn("Failed to decrement credits, but continuing with interview");
         }
         
-        // Ensure questions are generated before navigation
         try {
           console.log(`Fetching or generating questions for session: ${session.id}`);
           
-          // Direct navigation to the interview with session data
           navigate(`/interview/${session.id}`, { 
             state: { 
               sessionId: session.id,
@@ -155,7 +168,6 @@ export const useInterviewSetup = () => {
           });
         } catch (fetchError) {
           console.error("Error generating questions:", fetchError);
-          // Navigate anyway, the component will handle fallbacks
           navigate(`/interview/${session.id}`);
         }
       }
