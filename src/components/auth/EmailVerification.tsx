@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,7 +109,7 @@ export const EmailVerification = () => {
       </div>
 
       <Card className="shadow-lg border-0 overflow-hidden">
-        <div className="h-2 bg-primary" />
+        <div className="h-2 bg-gradient-to-r from-primary-100 to-primary-400" />
         
         <CardContent className="p-8">
           {verifying ? (
@@ -179,7 +180,7 @@ export const EmailVerification = () => {
                 </motion.p>
               </div>
 
-              <Alert className="bg-blue-50 border-blue-200">
+              <Alert className="bg-blue-50 border-blue-200 rounded-md">
                 <Mail className="h-5 w-5 text-blue-600" />
                 <AlertDescription className="text-blue-800">
                   A verification email has been sent to your inbox. Please click the link in the email to verify your account.
@@ -191,7 +192,12 @@ export const EmailVerification = () => {
                   Didn't receive an email? Check your spam folder or click below to resend the verification email:
                 </p>
                 <div className="flex justify-center py-2">
-                  <Button variant="outline" onClick={handleResendVerification} disabled={verifying}>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleResendVerification} 
+                    disabled={verifying}
+                    className="bg-white hover:bg-gray-50 active:scale-95 transition-transform touch-manipulation"
+                  >
                     {verifying ? "Sending..." : "Resend Verification Email"}
                   </Button>
                 </div>
@@ -206,8 +212,8 @@ export const EmailVerification = () => {
                 <HelpCircle className="h-5 w-5 mr-2 flex-shrink-0 text-gray-500 mt-0.5" />
                 <p>
                   If you're having trouble verifying your email, please contact our support team for assistance at{" "}
-                  <a href="mailto:support@eduportal.com" className="text-primary hover:underline">
-                    support@eduportal.com
+                  <a href="mailto:support@tuterra.com" className="text-primary hover:underline">
+                    support@tuterra.com
                   </a>
                 </p>
               </div>

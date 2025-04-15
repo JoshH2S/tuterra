@@ -94,22 +94,142 @@ const sendSessionReminder = async () => {
         day: 'numeric'
       });
 
-      // Send the email
+      // Send the email with improved styling
       const emailResult = await resend.emails.send({
-        from: "Study Reminder <noreply@yourapp.com>",
+        from: "Tuterra Study Reminder <noreply@yourapp.com>",
         to: studentEmail,
         subject: `Reminder: Your study session "${session.title}" starts in 1 hour`,
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>Study Session Reminder</h2>
-            <p>Your scheduled study session <strong>${session.title}</strong> starts in 1 hour.</p>
-            <div style="background-color: #f9f9f9; border-left: 4px solid #5c6ac4; padding: 15px; margin: 20px 0;">
-              <p><strong>Date:</strong> ${formattedDate}</p>
-              <p><strong>Time:</strong> ${formattedTime}</p>
-              ${session.description ? `<p><strong>Description:</strong> ${session.description}</p>` : ''}
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <title>Study Session Reminder</title>
+            <style>
+              body {
+                font-family: 'Quicksand', sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f9f9f9;
+                color: #333333;
+                line-height: 1.6;
+              }
+              .container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #ffffff;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+              }
+              .header {
+                text-align: center;
+                padding: 20px 0;
+                border-bottom: 2px solid #FFF8DC;
+              }
+              .logo {
+                max-width: 180px;
+                height: auto;
+              }
+              .content {
+                padding: 20px 0;
+              }
+              h1 {
+                color: #B8860B;
+                font-size: 24px;
+                margin-bottom: 16px;
+                font-weight: 600;
+              }
+              .session-details {
+                background-color: #FFF8DC;
+                border-left: 4px solid #B8860B;
+                padding: 16px;
+                margin: 20px 0;
+                border-radius: 4px;
+              }
+              .session-item {
+                margin-bottom: 8px;
+              }
+              .label {
+                font-weight: 600;
+                color: #8B4513;
+              }
+              .button {
+                display: inline-block;
+                background: linear-gradient(135deg, #FFD700, #B8860B);
+                color: #333;
+                text-decoration: none;
+                padding: 12px 24px;
+                border-radius: 5px;
+                font-weight: 600;
+                margin: 20px 0;
+                text-align: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+              .button:hover {
+                background: linear-gradient(135deg, #B8860B, #8B4513);
+              }
+              .footer {
+                text-align: center;
+                margin-top: 30px;
+                color: #777;
+                font-size: 14px;
+                border-top: 1px solid #eee;
+                padding-top: 20px;
+              }
+              @media screen and (max-width: 480px) {
+                .container {
+                  padding: 15px;
+                }
+                h1 {
+                  font-size: 20px;
+                }
+                .button {
+                  display: block;
+                  text-align: center;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <img src="https://lovable-uploads.s3.amazonaws.com/7ab2ba58-1918-4a73-85e1-7793751f29b4.png" alt="Tuterra Logo" class="logo">
+              </div>
+              <div class="content">
+                <h1>Your Study Session Starts Soon</h1>
+                <p>Hello,</p>
+                <p>This is a friendly reminder that your scheduled study session <strong>${session.title}</strong> starts in 1 hour.</p>
+                
+                <div class="session-details">
+                  <div class="session-item">
+                    <span class="label">Date:</span> ${formattedDate}
+                  </div>
+                  <div class="session-item">
+                    <span class="label">Time:</span> ${formattedTime}
+                  </div>
+                  ${session.description ? `
+                  <div class="session-item">
+                    <span class="label">Description:</span> ${session.description}
+                  </div>
+                  ` : ''}
+                </div>
+                
+                <p>Prepare your study materials and find a quiet space to maximize your learning effectiveness.</p>
+                
+                <a href="https://yourapp.com/sessions/${session.id}" class="button">View Session Details</a>
+                
+                <p>Good luck with your studies!</p>
+              </div>
+              <div class="footer">
+                <p>This email was sent automatically by Tuterra. Please do not reply.</p>
+                <p>&copy; ${new Date().getFullYear()} Tuterra. All rights reserved.</p>
+              </div>
             </div>
-            <p>Good luck with your studies!</p>
-          </div>
+          </body>
+          </html>
         `
       });
 
