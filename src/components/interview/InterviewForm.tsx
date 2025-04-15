@@ -10,17 +10,17 @@ import { SelectInput } from "@/components/interview/SelectInput";
 import { INDUSTRY_OPTIONS } from "@/components/interview/constants";
 
 interface InterviewFormProps {
-  onSubmit: (industry: string, jobRole: string, jobDescription: string) => void;
+  onSubmit: (industry: string, jobTitle: string, jobDescription: string) => void;
   isLoading?: boolean;
 }
 
 export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProps) => {
   const [industry, setIndustry] = useState<string>("");
-  const [jobRole, setJobRole] = useState<string>("");
+  const [jobTitle, setJobTitle] = useState<string>("");
   const [jobDescription, setJobDescription] = useState<string>("");
   const [formErrors, setFormErrors] = useState<{
     industry?: string;
-    jobRole?: string;
+    jobTitle?: string;
     jobDescription?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,17 +29,17 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   useEffect(() => {
     console.log("InterviewForm state updated:", { 
       industry, 
-      jobRole: `'${jobRole}'`, 
-      jobRoleLength: jobRole ? jobRole.length : 0,
-      jobRoleTrimmed: jobRole ? jobRole.trim().length : 0,
+      jobTitle: `'${jobTitle}'`, 
+      jobTitleLength: jobTitle ? jobTitle.length : 0,
+      jobTitleTrimmed: jobTitle ? jobTitle.trim().length : 0,
       jobDescription: jobDescription.substring(0, 30) + (jobDescription.length > 30 ? "..." : "") 
     });
-  }, [industry, jobRole, jobDescription]);
+  }, [industry, jobTitle, jobDescription]);
 
   const validateForm = () => {
     const errors: {
       industry?: string;
-      jobRole?: string;
+      jobTitle?: string;
       jobDescription?: string;
     } = {};
     let isValid = true;
@@ -51,22 +51,22 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
     
-    // Enhanced job role validation with detailed logging
-    if (typeof jobRole !== 'string' || !jobRole.trim()) {
-      console.log("Job role validation failed:", {
-        value: `'${jobRole}'`,
-        type: typeof jobRole,
-        length: jobRole ? jobRole.length : 0,
-        isEmpty: !jobRole,
-        isEmptyTrimmed: jobRole ? !jobRole.trim() : true
+    // Enhanced job title validation with detailed logging
+    if (typeof jobTitle !== 'string' || !jobTitle.trim()) {
+      console.log("Job title validation failed:", {
+        value: `'${jobTitle}'`,
+        type: typeof jobTitle,
+        length: jobTitle ? jobTitle.length : 0,
+        isEmpty: !jobTitle,
+        isEmptyTrimmed: jobTitle ? !jobTitle.trim() : true
       });
-      errors.jobRole = "Please enter a job role";
+      errors.jobTitle = "Please enter a job title";
       isValid = false;
     } else {
-      console.log("Job role validation passed:", {
-        value: `'${jobRole}'`,
-        length: jobRole.length,
-        trimmedLength: jobRole.trim().length
+      console.log("Job title validation passed:", {
+        value: `'${jobTitle}'`,
+        length: jobTitle.length,
+        trimmedLength: jobTitle.trim().length
       });
     }
     
@@ -94,18 +94,18 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     }
   };
 
-  const handleJobRoleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleJobTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    console.log("Job role changed:", {
+    console.log("Job title changed:", {
       value: `'${val}'`,
       length: val.length,
       trimmedLength: val.trim().length
     });
-    setJobRole(val);
+    setJobTitle(val);
     
     // Clear error when user types something valid
     if (val?.trim()) {
-      setFormErrors(prev => ({ ...prev, jobRole: undefined }));
+      setFormErrors(prev => ({ ...prev, jobTitle: undefined }));
     }
   };
 
@@ -123,11 +123,11 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     // Add detailed debug info to help troubleshoot
     console.log("InterviewForm submission attempt with values:", {
       industry: `'${industry}'`,
-      jobRole: {
-        value: `'${jobRole}'`,
-        length: jobRole ? jobRole.length : 0,
-        trimmed: jobRole ? `'${jobRole.trim()}'` : '',
-        trimmedLength: jobRole ? jobRole.trim().length : 0
+      jobTitle: {
+        value: `'${jobTitle}'`,
+        length: jobTitle ? jobTitle.length : 0,
+        trimmed: jobTitle ? `'${jobTitle.trim()}'` : '',
+        trimmedLength: jobTitle ? jobTitle.trim().length : 0
       },
       jobDescription: {
         preview: jobDescription.substring(0, 50) + "...",
@@ -151,18 +151,18 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     try {
       // Prepare the final values with trimming to ensure consistency
       const finalIndustry = industry.trim();
-      const finalJobRole = jobRole.trim();
+      const finalJobTitle = jobTitle.trim();
       const finalJobDescription = jobDescription.trim();
       
       console.log("Form validated successfully, submitting with values:", {
         industry: finalIndustry,
-        jobRole: finalJobRole,
-        jobRoleLength: finalJobRole.length,
+        jobTitle: finalJobTitle,
+        jobTitleLength: finalJobTitle.length,
         jobDescriptionLength: finalJobDescription.length
       });
       
       // Submit with trimmed values
-      await onSubmit(finalIndustry, finalJobRole, finalJobDescription);
+      await onSubmit(finalIndustry, finalJobTitle, finalJobDescription);
     } catch (error) {
       console.error("Error during form submission:", error);
       toast({
@@ -204,27 +204,27 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="jobRole" className="flex justify-between text-sm sm:text-base">
-              Job Role <span className="text-red-500">*</span>
+            <Label htmlFor="jobTitle" className="flex justify-between text-sm sm:text-base">
+              Job Title <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="jobRole"
-              name="jobRole"
-              value={jobRole}
-              onChange={handleJobRoleChange}
+              id="jobTitle"
+              name="jobTitle"
+              value={jobTitle}
+              onChange={handleJobTitleChange}
               onBlur={(e) => {
                 // Validate on blur
                 if (!e.target.value?.trim()) {
-                  setFormErrors(prev => ({ ...prev, jobRole: "Please enter a job role" }));
+                  setFormErrors(prev => ({ ...prev, jobTitle: "Please enter a job title" }));
                 }
               }}
-              placeholder="Enter the job role"
-              className={`w-full ${formErrors.jobRole ? 'border-red-500' : ''}`}
+              placeholder="Enter the job title"
+              className={`w-full ${formErrors.jobTitle ? 'border-red-500' : ''}`}
               required
               aria-required="true"
             />
-            {formErrors.jobRole && (
-              <p className="text-xs sm:text-sm text-red-500">{formErrors.jobRole}</p>
+            {formErrors.jobTitle && (
+              <p className="text-xs sm:text-sm text-red-500">{formErrors.jobTitle}</p>
             )}
           </div>
           

@@ -28,8 +28,8 @@ const JobInterviewSimulator = () => {
   const {
     industry,
     setIndustry,
-    jobRole,
-    setJobRole,
+    jobTitle,
+    setJobTitle,
     jobDescription,
     setJobDescription,
     currentSessionId,
@@ -68,7 +68,7 @@ const JobInterviewSimulator = () => {
             industry: locationState.industry
           });
           
-          setJobRole(locationState.jobTitle);
+          setJobTitle(locationState.jobTitle);
           setIndustry(locationState.industry);
           if (locationState.jobDescription) {
             setJobDescription(locationState.jobDescription);
@@ -110,7 +110,7 @@ const JobInterviewSimulator = () => {
     };
     
     setupInterview();
-  }, [interviewId, setCurrentSessionId, setJobRole, setIndustry, setJobDescription]);
+  }, [interviewId, setCurrentSessionId, setJobTitle, setIndustry, setJobDescription]);
 
   // Access interview setup state and handlers
   const {
@@ -139,11 +139,11 @@ const JobInterviewSimulator = () => {
   const usedFallbackQuestions = false;
   const isOnline = navigator.onLine;
 
-  const handleStartInterviewWithParams = async (industry: string, role: string, description: string) => {
+  const handleStartInterviewWithParams = async (industry: string, jobTitle: string, description: string) => {
     console.log("Starting interview with params:", { 
       industry, 
-      role: `'${role}'`, 
-      roleLength: role.length,
+      jobTitle: `'${jobTitle}'`, 
+      jobTitleLength: jobTitle.length,
       description: description.substring(0, 50) + "..." 
     });
     
@@ -153,8 +153,8 @@ const JobInterviewSimulator = () => {
       return;
     }
     
-    if (!role || !role.trim()) {
-      console.error("Invalid job role received:", role);
+    if (!jobTitle || !jobTitle.trim()) {
+      console.error("Invalid job title received:", jobTitle);
       return;
     }
 
@@ -163,12 +163,12 @@ const JobInterviewSimulator = () => {
       setFormSubmitting(true);
       
       // Update setup state values
-      setupSetJobTitle(role.trim());
+      setupSetJobTitle(jobTitle.trim());
       setupSetIndustry(industry);
       setupSetJobDescription(description);
       
       // Also update interview session state for consistency
-      setJobRole(role.trim());
+      setJobTitle(jobTitle.trim());
       setIndustry(industry);
       setJobDescription(description);
       
@@ -176,9 +176,9 @@ const JobInterviewSimulator = () => {
       await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log("Submitting with state values:", {
-        setupJobTitle: role.trim(),
+        setupJobTitle: jobTitle.trim(),
         setupIndustry: industry,
-        jobRole: role.trim(),
+        jobTitle: jobTitle.trim(),
         setupJobDescription: description.length
       });
       

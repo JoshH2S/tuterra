@@ -4,7 +4,7 @@ import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
 
 export const useInterviewState = () => {
   const [industry, setIndustry] = useState<string>("");
-  const [jobRole, setJobRole] = useState<string>("");
+  const [jobTitle, setJobTitle] = useState<string>("");
   const [jobDescription, setJobDescription] = useState<string>("");
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
@@ -76,8 +76,8 @@ export const useInterviewState = () => {
   return {
     industry,
     setIndustry,
-    jobRole,
-    setJobRole,
+    jobTitle,
+    setJobTitle,
     jobDescription,
     setJobDescription,
     currentSessionId,

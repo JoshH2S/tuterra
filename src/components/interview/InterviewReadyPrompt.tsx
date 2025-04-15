@@ -1,52 +1,60 @@
 
-import React from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles, WifiOff } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface InterviewReadyPromptProps {
-  jobRole: string;
+  jobTitle: string;
   onStartChat: () => void;
   usedFallbackQuestions?: boolean;
 }
 
 export const InterviewReadyPrompt = ({ 
-  jobRole, 
+  jobTitle, 
   onStartChat,
-  usedFallbackQuestions = false 
+  usedFallbackQuestions = false
 }: InterviewReadyPromptProps) => {
   return (
-    <div className="text-center space-y-6 max-w-xl mx-auto px-4">
-      <div className="flex justify-center mb-2">
-        <div className={`p-3 rounded-full ${usedFallbackQuestions ? "bg-amber-100" : "bg-blue-100"}`}>
-          {usedFallbackQuestions ? 
-            <WifiOff className="h-6 w-6 text-amber-600" /> : 
-            <Sparkles className="h-6 w-6 text-blue-600" />
-          }
-        </div>
-      </div>
-      <h2 className="text-2xl font-bold">Your Interview is Ready!</h2>
-      <p className="text-gray-600">
-        {usedFallbackQuestions 
-          ? `We've prepared a standard interview for the ${jobRole} position using our offline mode.` 
-          : `We've prepared a custom interview for the ${jobRole} position you're applying for.`
-        }
-        You'll be asked a series of questions - take your time to think and respond naturally.
-      </p>
-      <Button 
-        onClick={onStartChat} 
-        size="lg" 
-        className="px-8 w-full sm:w-auto"
-      >
-        Begin Interview
-      </Button>
-      {usedFallbackQuestions && (
-        <p className="text-xs text-amber-600 mt-2">
-          <span className="flex items-center justify-center gap-1">
-            <WifiOff className="h-3 w-3" /> 
-            Using offline mode with standard questions
-          </span>
+    <Card className="w-full mx-auto max-w-2xl">
+      <CardHeader>
+        <CardTitle className="text-xl text-center md:text-2xl">
+          Your Interview is Ready
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p>
+          We've prepared a simulated job interview for the <strong>{jobTitle}</strong> position.
         </p>
-      )}
-    </div>
+        
+        {usedFallbackQuestions && (
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-md text-amber-800 text-sm">
+            <p>
+              <strong>Note:</strong> We're using a set of standard questions for this role 
+              since we couldn't generate custom ones at the moment. These are still relevant
+              to your job title but may be less specific to your exact requirements.
+            </p>
+          </div>
+        )}
+        
+        <div className="space-y-3">
+          <h3 className="font-medium">Tips for a successful practice:</h3>
+          <ul className="list-disc pl-5 space-y-1 text-sm md:text-base">
+            <li>Answer as if you're in a real interview</li>
+            <li>Take your time to think before responding</li>
+            <li>Try to provide specific examples from your experience</li>
+            <li>Speak clearly and confidently</li>
+            <li>Keep your answers concise but comprehensive</li>
+          </ul>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button 
+          onClick={onStartChat}
+          className="w-full py-5 text-base font-medium"
+          size="lg"
+        >
+          Start Interview
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };

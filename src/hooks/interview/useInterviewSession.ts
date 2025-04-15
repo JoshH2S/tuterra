@@ -11,8 +11,8 @@ export const useInterviewSession = () => {
   const {
     industry,
     setIndustry,
-    jobRole,
-    setJobRole,
+    jobTitle,
+    setJobTitle,
     jobDescription,
     setJobDescription,
     currentSessionId,
@@ -117,8 +117,8 @@ export const useInterviewSession = () => {
   return {
     industry,
     setIndustry,
-    jobRole,
-    setJobRole,
+    jobTitle,
+    setJobTitle,
     jobDescription,
     setJobDescription,
     currentSessionId,
