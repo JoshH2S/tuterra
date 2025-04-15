@@ -1,21 +1,27 @@
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
+import { useInterviewQuestions } from "@/hooks/interview/useInterviewQuestions";
 import { InterviewForm } from "@/components/interview/InterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
 import { InterviewDebug } from "@/components/interview/InterviewDebug";
 import { InterviewLogo } from "@/components/interview/InterviewLogo";
 import { InterviewCompletion } from "@/components/interview/InterviewCompletion";
-import { Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff, AlertCircle } from "lucide-react";
 import { useInterviewSetup } from "@/hooks/interview/useInterviewSetup";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
+import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const JobInterviewSimulator = () => {
   // Get interview ID from URL parameters
   const { id: interviewId } = useParams();
+  const location = useLocation();
+  const locationState = location.state || {};
   const isDetailMode = !!interviewId;
   
   // Access interview session state and handlers
@@ -44,16 +50,67 @@ const JobInterviewSimulator = () => {
     handleStartNew
   } = useInterviewSession();
 
+  // Access the question generation hook
+  const { generateQuestions, fetchQuestions, loading: loadingQuestions } = 
+    useInterviewQuestions(currentSessionId, setQuestions);
+
   // Effect to sync URL parameter with interview session
   useEffect(() => {
-    if (interviewId) {
-      console.log("Setting interview session from URL parameter:", interviewId);
-      setCurrentSessionId(interviewId);
-      
-      // Load interview session data from database here if needed
-      // This would be a good place to fetch the session details
-    }
-  }, [interviewId, setCurrentSessionId]);
+    const setupInterview = async () => {
+      if (interviewId) {
+        console.log("Setting interview session from URL parameter:", interviewId);
+        setCurrentSessionId(interviewId);
+        
+        // Try to get interview session details from location state
+        if (locationState.jobTitle && locationState.industry) {
+          console.log("Using location state for interview details:", {
+            jobTitle: locationState.jobTitle,
+            industry: locationState.industry
+          });
+          
+          setJobRole(locationState.jobTitle);
+          setIndustry(locationState.industry);
+          if (locationState.jobDescription) {
+            setJobDescription(locationState.jobDescription);
+          }
+        }
+        
+        // Fetch questions for this session
+        console.log("Fetching questions for session:", interviewId);
+        setIsGeneratingQuestions(true);
+        
+        try {
+          await fetchQuestions();
+          console.log("Questions fetched successfully");
+        } catch (error) {
+          console.error("Error fetching questions:", error);
+          toast({
+            title: "Could not load interview questions",
+            description: "We'll try to generate new ones for you.",
+            variant: "destructive"
+          });
+          
+          // Try to generate questions if we have the needed data
+          if (locationState.jobTitle && locationState.industry) {
+            try {
+              await generateQuestions(
+                locationState.industry, 
+                locationState.jobTitle, 
+                locationState.jobDescription || "",
+                interviewId
+              );
+            } catch (genError) {
+              console.error("Also failed to generate questions:", genError);
+            }
+          }
+        } finally {
+          setIsGeneratingQuestions(false);
+        }
+      }
+    };
+    
+    setupInterview();
+  }, [interviewId, setCurrentSessionId, setJobRole, setIndustry, setJobDescription]);
 
   // Access interview setup state and handlers
   const {
@@ -71,6 +128,10 @@ const JobInterviewSimulator = () => {
 
   const { subscription } = useSubscription();
   const [formSubmitting, setFormSubmitting] = useState(false);
+  const [errorState, setErrorState] = useState<{
+    hasError: boolean;
+    message: string;
+  }>({ hasError: false, message: "" });
 
   // Local state for this component
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
@@ -101,7 +162,7 @@ const JobInterviewSimulator = () => {
       // Set form as submitting to prevent multiple submissions
       setFormSubmitting(true);
       
-      // First update setup state values
+      // Update setup state values
       setupSetJobTitle(role.trim());
       setupSetIndustry(industry);
       setupSetJobDescription(description);
@@ -112,12 +173,12 @@ const JobInterviewSimulator = () => {
       setJobDescription(description);
       
       // Wait for state updates to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log("Submitting with state values:", {
-        setupJobTitle: setupJobTitle,
-        setupIndustry: setupIndustry,
-        jobRole: jobRole,
+        setupJobTitle: role.trim(),
+        setupIndustry: industry,
+        jobRole: role.trim(),
         setupJobDescription: description.length
       });
       
@@ -130,6 +191,10 @@ const JobInterviewSimulator = () => {
       await handleSubmit(syntheticEvent);
     } catch (error) {
       console.error("Error during interview submission:", error);
+      setErrorState({
+        hasError: true,
+        message: "Failed to start the interview. Please try again."
+      });
     } finally {
       // Reset submission state
       setFormSubmitting(false);
@@ -138,7 +203,66 @@ const JobInterviewSimulator = () => {
 
   const handleStartNewInterview = () => {
     handleStartNew();
+    // Clear any error state
+    setErrorState({ hasError: false, message: "" });
   };
+
+  const handleRetryLoading = async () => {
+    if (!interviewId) return;
+    
+    setIsGeneratingQuestions(true);
+    setErrorState({ hasError: false, message: "" });
+    
+    try {
+      // Try to fetch questions first
+      await fetchQuestions();
+    } catch (error) {
+      console.error("Retry fetch failed:", error);
+      
+      // If fetch fails and we have job details, try generation
+      if (jobRole && industry) {
+        try {
+          await generateQuestions(
+            industry,
+            jobRole,
+            jobDescription,
+            interviewId
+          );
+        } catch (genError) {
+          console.error("Retry generation also failed:", genError);
+          setErrorState({
+            hasError: true,
+            message: "We're having trouble loading your interview. Please try again later."
+          });
+        }
+      } else {
+        setErrorState({
+          hasError: true,
+          message: "Missing job details. Please start a new interview."
+        });
+      }
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
+  };
+
+  // Show error message if we have an error
+  if (errorState.hasError) {
+    return (
+      <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
+        <InterviewLogo />
+        <Card className="p-6 mt-6 text-center">
+          <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
+          <h2 className="text-xl font-semibold mb-4">Something went wrong</h2>
+          <p className="mb-6">{errorState.message}</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={handleRetryLoading} variant="outline">Retry Loading</Button>
+            <Button onClick={handleStartNewInterview}>Start New Interview</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
@@ -163,11 +287,23 @@ const JobInterviewSimulator = () => {
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
+        {/* Show loading state when generating questions */}
+        {(isGeneratingQuestions || loadingQuestions) && (
+          <div className="text-center py-8">
+            <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-lg">Preparing your interview questions...</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This may take a moment as we analyze the job requirements.
+            </p>
+          </div>
+        )}
+        
         {/* Only show interview form when not in detail mode and no interview is in progress */}
-        {!interviewReady && !isInterviewInProgress && !isInterviewComplete && !isDetailMode && (
+        {!interviewReady && !isInterviewInProgress && !isInterviewComplete && 
+         !isGeneratingQuestions && !loadingQuestions && !isDetailMode && (
           <InterviewForm 
             onSubmit={handleStartInterviewWithParams} 
-            isLoading={isGeneratingQuestions || isLoading || formSubmitting}
+            isLoading={isGeneratingQuestions || isLoading || formSubmitting || loadingQuestions}
           />
         )}
         

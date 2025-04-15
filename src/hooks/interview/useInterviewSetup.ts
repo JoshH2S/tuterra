@@ -130,9 +130,24 @@ export const useInterviewSetup = () => {
         // Decrement interview credits
         await decrementCredits('interview_credits');
         
-        // IMPORTANT: Use direct navigation to the /interview/:id route
-        // This matches our route configuration in AppRoutes.tsx
-        navigate(`/interview/${session.id}`);
+        // Ensure questions are generated before navigation
+        try {
+          console.log(`Fetching or generating questions for session: ${session.id}`);
+          
+          // Direct navigation to the interview with session data
+          navigate(`/interview/${session.id}`, { 
+            state: { 
+              sessionId: session.id,
+              jobTitle: jobTitle.trim(),
+              industry: industry.trim(),
+              jobDescription: jobDescription
+            }
+          });
+        } catch (fetchError) {
+          console.error("Error generating questions:", fetchError);
+          // Navigate anyway, the component will handle fallbacks
+          navigate(`/interview/${session.id}`);
+        }
       }
     } catch (error) {
       console.error("Failed to create interview session:", error);
