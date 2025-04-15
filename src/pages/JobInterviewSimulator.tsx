@@ -14,11 +14,11 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
 
 const JobInterviewSimulator = () => {
+  // Get interview ID from URL parameters
   const { id: interviewId } = useParams();
-  
-  // Initialize interview modes based on URL parameters
   const isDetailMode = !!interviewId;
   
+  // Access interview session state and handlers
   const {
     industry,
     setIndustry,
@@ -44,14 +44,18 @@ const JobInterviewSimulator = () => {
     handleStartNew
   } = useInterviewSession();
 
-  // Effect to sync the URL parameter with the interview session
+  // Effect to sync URL parameter with interview session
   useEffect(() => {
     if (interviewId) {
       console.log("Setting interview session from URL parameter:", interviewId);
       setCurrentSessionId(interviewId);
+      
+      // Load interview session data from database here if needed
+      // This would be a good place to fetch the session details
     }
   }, [interviewId, setCurrentSessionId]);
 
+  // Access interview setup state and handlers
   const {
     jobTitle: setupJobTitle,
     setJobTitle: setupSetJobTitle,
@@ -93,11 +97,11 @@ const JobInterviewSimulator = () => {
       return;
     }
 
-    // Set form as submitting to prevent multiple submissions
-    setFormSubmitting(true);
-    
     try {
-      // Update setup state values
+      // Set form as submitting to prevent multiple submissions
+      setFormSubmitting(true);
+      
+      // First update setup state values
       setupSetJobTitle(role.trim());
       setupSetIndustry(industry);
       setupSetJobDescription(description);
@@ -108,14 +112,13 @@ const JobInterviewSimulator = () => {
       setJobDescription(description);
       
       // Wait for state updates to complete
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       console.log("Submitting with state values:", {
-        setupJobTitle: role.trim(),
-        setupIndustry: industry,
-        jobRole: role.trim(),
-        setupJobDescription: description.length,
-        setupJobTitleLength: role.trim().length
+        setupJobTitle: setupJobTitle,
+        setupIndustry: setupIndustry,
+        jobRole: jobRole,
+        setupJobDescription: description.length
       });
       
       // Create a synthetic event to pass to handleSubmit
@@ -160,6 +163,7 @@ const JobInterviewSimulator = () => {
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
+        {/* Only show interview form when not in detail mode and no interview is in progress */}
         {!interviewReady && !isInterviewInProgress && !isInterviewComplete && !isDetailMode && (
           <InterviewForm 
             onSubmit={handleStartInterviewWithParams} 

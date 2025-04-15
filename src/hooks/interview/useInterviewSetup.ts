@@ -126,10 +126,12 @@ export const useInterviewSetup = () => {
       }
 
       if (session) {
-        console.log("Session created successfully:", session);
+        console.log("Session created successfully:", session.id);
         // Decrement interview credits
         await decrementCredits('interview_credits');
-        // Updated path to use the correct route with interview ID
+        
+        // IMPORTANT: Use direct navigation to the /interview/:id route
+        // This matches our route configuration in AppRoutes.tsx
         navigate(`/interview/${session.id}`);
       }
     } catch (error) {

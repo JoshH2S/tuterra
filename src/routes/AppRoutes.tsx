@@ -68,13 +68,14 @@ export const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
+      {/* Interview simulator routes */}
       <Route path="/interview-simulator" element={
         <ProtectedRoute>
           <JobInterviewSimulator />
         </ProtectedRoute>
       } />
       
-      {/* Add the missing route for interview session with ID */}
+      {/* Interview session route with ID parameter */}
       <Route path="/interview/:id" element={
         <ProtectedRoute>
           <JobInterviewSimulator />

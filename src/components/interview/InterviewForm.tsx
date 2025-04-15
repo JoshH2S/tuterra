@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     jobRole?: string;
     jobDescription?: string;
   }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Debug effect to monitor state changes
   useEffect(() => {
@@ -107,8 +109,16 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submissions
+    if (isSubmitting || isLoading) {
+      console.log("Preventing duplicate submission");
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     // Add detailed debug info to help troubleshoot
     console.log("InterviewForm submission attempt with values:", {
@@ -126,26 +136,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       }
     });
     
-    // Pre-validation check for job role to catch edge cases
-    if (typeof jobRole !== 'string' || !jobRole.trim()) {
-      console.error("Job role validation failed - empty or invalid value:", {
-        value: `'${jobRole}'`,
-        type: typeof jobRole
-      });
-      
-      setFormErrors(prev => ({
-        ...prev,
-        jobRole: "Please enter a job role"
-      }));
-      
-      toast({
-        title: "Missing information",
-        description: "Please enter a job role",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+    // Consolidated validation in one place to avoid race conditions
     if (!validateForm()) {
       console.log("Form validation failed with errors:", formErrors);
       toast({
@@ -153,35 +144,35 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
         description: "Please fill out all required fields correctly",
         variant: "destructive"
       });
+      setIsSubmitting(false);
       return;
     }
     
-    // Final validation check before submission
-    if (!industry.trim() || !jobRole.trim() || !jobDescription.trim()) {
-      console.error("Critical validation failure - empty values detected after validation passed:", {
-        industry: `'${industry}'`,
-        jobRole: `'${jobRole}'`,
-        jobDescription: jobDescription.trim().length
+    try {
+      // Prepare the final values with trimming to ensure consistency
+      const finalIndustry = industry.trim();
+      const finalJobRole = jobRole.trim();
+      const finalJobDescription = jobDescription.trim();
+      
+      console.log("Form validated successfully, submitting with values:", {
+        industry: finalIndustry,
+        jobRole: finalJobRole,
+        jobRoleLength: finalJobRole.length,
+        jobDescriptionLength: finalJobDescription.length
       });
+      
+      // Submit with trimmed values
+      await onSubmit(finalIndustry, finalJobRole, finalJobDescription);
+    } catch (error) {
+      console.error("Error during form submission:", error);
       toast({
-        title: "Missing information",
-        description: "Please ensure all fields are properly filled out",
+        title: "Submission Error",
+        description: "An error occurred while submitting the form. Please try again.",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setFormErrors({});
-    
-    console.log("Form validated successfully, submitting with values:", {
-      industry,
-      jobRole: jobRole.trim(),
-      jobRole_trimmedLength: jobRole.trim().length,
-      jobDescriptionLength: jobDescription.length
-    });
-    
-    // Submit with trimmed values
-    onSubmit(industry, jobRole.trim(), jobDescription);
   };
 
   return (
@@ -267,11 +258,11 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
           <Button 
             type="submit" 
             className="w-full py-5 text-base font-medium" 
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
           >
-            {isLoading ? "Generating Interview..." : "Start Interview Simulation"}
+            {isLoading || isSubmitting ? "Generating Interview..." : "Start Interview Simulation"}
           </Button>
-          {isLoading && (
+          {(isLoading || isSubmitting) && (
             <p className="text-xs sm:text-sm text-muted-foreground text-center mt-2">
               This may take a few moments as we craft personalized questions...
             </p>
