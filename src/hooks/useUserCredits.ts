@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -27,7 +26,6 @@ export const useUserCredits = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [lastRetryTime, setLastRetryTime] = useState(0);
 
-  // Store pending transactions for later sync
   const addPendingTransaction = useCallback((type: string, data: any) => {
     const transaction = {
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -50,13 +48,12 @@ export const useUserCredits = () => {
     return transaction.id;
   }, []);
 
-  // Create a default credits object with the given user ID
   const createDefaultCredits = useCallback((userId: string): UserCredits => {
     return {
       id: 'local-' + Math.random().toString(36).substring(2, 9),
       user_id: userId,
       quiz_credits: 5,
-      interview_credits: 2, // Updated from 1 to 2 to match the product requirements
+      interview_credits: 2,
       assessment_credits: 2,
       tutor_message_credits: 5,
       created_at: new Date().toISOString(),
@@ -71,7 +68,6 @@ export const useUserCredits = () => {
       return;
     }
 
-    // Limit retry attempts to prevent excessive API calls
     const now = Date.now();
     if (retryCount > 3 && now - lastRetryTime < 60000) {
       console.log('Too many retry attempts, using local credits');
@@ -80,11 +76,9 @@ export const useUserCredits = () => {
       return;
     }
 
-    // If we're explicitly retrying, update the counters
     setRetryCount(prev => prev + 1);
     setLastRetryTime(now);
 
-    // If we're offline or have connection errors, skip server fetch and use local data
     if (networkOffline || hasConnectionError) {
       console.log('Network offline or connection errors, using local credits');
       setIsOfflineMode(true);
@@ -95,11 +89,10 @@ export const useUserCredits = () => {
 
     try {
       setLoading(true);
-      setError(null); // Clear any previous errors
-      
+      setError(null);
+
       console.log('Fetching credits for user:', user.id);
-      
-      // Using 'any' to bypass the type checking since we know user_credits exists in the database
+
       const { data, error: fetchError } = await (supabase as any)
         .from('user_credits')
         .select('*')
@@ -107,36 +100,32 @@ export const useUserCredits = () => {
         .maybeSingle();
 
       if (fetchError) {
-        // Log the full error for better debugging
         console.error('Supabase error fetching credits:', fetchError);
-        
-        // Check for specific error codes that indicate permission issues
+
         const errorIsPermissionDenied = 
           fetchError.code === '42501' || 
           fetchError.message.includes('permission denied') || 
           (fetchError as any).code === 'PGRST301' || 
           fetchError.message.includes('403');
-        
+
         if (errorIsPermissionDenied) {
           console.log('Permission denied when fetching credits, using offline mode');
           setIsOfflineMode(true);
           useLocalCredits(user.id);
           return;
         }
-        
+
         throw fetchError;
       }
 
       console.log('Credits data from Supabase:', data);
 
-      // If no data is found, create a new credits record
       if (!data) {
         console.log('No credits found for user, attempting to create default credits');
-        
+
         try {
-          // Try to create default credits for the user
           const newCreditsData = createDefaultCredits(user.id);
-          
+
           const { data: newCredits, error: insertError } = await (supabase as any)
             .from('user_credits')
             .insert({
@@ -151,22 +140,18 @@ export const useUserCredits = () => {
             
           if (insertError) {
             console.error('Error creating default credits:', insertError);
-            
-            // Handle RLS violation errors specifically
+
             if (insertError.code === '42501' || insertError.message.includes('violates row-level security policy')) {
               console.warn('RLS policy error when creating credits, this may be a permissions issue');
               setIsOfflineMode(true);
               
-              // Store this attempt as a pending transaction for later
               addPendingTransaction('createCredits', { 
                 userId: user.id, 
                 credits: newCreditsData 
               });
               
-              // Still use local credits
               useLocalCredits(user.id);
               
-              // Show a helpful toast that won't confuse users too much
               toast({
                 title: "Using Offline Mode",
                 description: "Your credits will sync when connection is restored.",
@@ -175,27 +160,24 @@ export const useUserCredits = () => {
               
               return;
             }
-            
-            // Handle other permission errors
+
             if (insertError.message.includes('permission denied')) {
               console.log('Permission denied when creating credits, using offline mode');
               setIsOfflineMode(true);
               useLocalCredits(user.id);
               return;
             }
-            
+
             throw insertError;
           }
-          
+
           if (newCredits) {
             console.log('Created new credits record:', newCredits);
             setCredits(newCredits as UserCredits);
             setIsOfflineMode(false);
             
-            // Update local cache with server data
             storeLocalCredits(newCredits);
           } else {
-            // Fallback if insert doesn't return data
             useLocalCredits(user.id);
             setIsOfflineMode(true);
           }
@@ -209,18 +191,15 @@ export const useUserCredits = () => {
         setCredits(data as UserCredits);
         setIsOfflineMode(false);
         
-        // Update local cache with server data
         storeLocalCredits(data);
       }
     } catch (err) {
       console.error('Error fetching user credits:', err);
       setError('Failed to load your available credits');
       
-      // Provide fallback credits for UI display
       useLocalCredits(user?.id || 'unknown');
       setIsOfflineMode(true);
       
-      // Only show toast if it's a real error, not just missing data
       if (err instanceof Error && err.message !== 'No data found') {
         toast({
           title: "Using Offline Mode",
@@ -233,7 +212,6 @@ export const useUserCredits = () => {
     }
   }, [user, networkOffline, hasConnectionError, retryCount, lastRetryTime, createDefaultCredits, addPendingTransaction]);
 
-  // Store credits in local storage for offline use
   const storeLocalCredits = (creditsData: UserCredits) => {
     try {
       localStorage.setItem(`local_credits_${creditsData.user_id}`, JSON.stringify(creditsData));
@@ -243,9 +221,7 @@ export const useUserCredits = () => {
     }
   };
 
-  // Use local credits when offline or when there's an error
   const useLocalCredits = (userId: string) => {
-    // Try to get stored local credits first
     const storedCredits = localStorage.getItem(`local_credits_${userId}`);
     if (storedCredits) {
       try {
@@ -258,12 +234,10 @@ export const useUserCredits = () => {
       }
     }
     
-    // Create and use default credits
     const defaultCredits = createDefaultCredits(userId);
     console.log('Using default local credits:', defaultCredits);
     setCredits(defaultCredits);
     
-    // Store local credits for later use
     storeLocalCredits(defaultCredits);
   };
 
@@ -280,7 +254,6 @@ export const useUserCredits = () => {
         return false;
       }
 
-      // If in offline mode, just update the local state
       if (isOfflineMode || networkOffline || hasConnectionError) {
         console.log(`Network issue detected: updating ${creditType} locally only`);
         
@@ -293,7 +266,6 @@ export const useUserCredits = () => {
         setCredits(updatedCredits);
         storeLocalCredits(updatedCredits);
         
-        // Add to pending transactions for later sync
         addPendingTransaction('decrementCredits', { creditType, userId: user.id });
         
         toast({
@@ -307,14 +279,12 @@ export const useUserCredits = () => {
 
       console.log(`Decrementing ${creditType} for user ${user.id}`);
 
-      // Try to update in Supabase
       const { error } = await (supabase as any)
         .from('user_credits')
         .update({ [creditType]: credits[creditType] - 1 })
         .eq('user_id', user.id);
 
       if (error) {
-        // Check for permission denied or other errors
         const errorIsPermissionDenied = 
           error.code === '42501' || 
           error.message.includes('permission denied') || 
@@ -334,7 +304,6 @@ export const useUserCredits = () => {
           setCredits(updatedCredits);
           storeLocalCredits(updatedCredits);
           
-          // Add to pending transactions
           addPendingTransaction('decrementCredits', { creditType, userId: user.id });
           
           toast({
@@ -349,7 +318,6 @@ export const useUserCredits = () => {
         throw error;
       }
 
-      // Update local state
       const updatedCredits = {
         ...credits,
         [creditType]: credits[creditType] - 1,
@@ -357,7 +325,6 @@ export const useUserCredits = () => {
       };
       
       setCredits(updatedCredits);
-      // Update local storage cache
       storeLocalCredits(updatedCredits);
 
       console.log(`Successfully decremented ${creditType}, remaining: ${credits[creditType] - 1}`);
@@ -365,7 +332,6 @@ export const useUserCredits = () => {
     } catch (err) {
       console.error(`Error decrementing ${creditType}:`, err);
       
-      // Fall back to offline mode
       setIsOfflineMode(true);
       
       const updatedCredits = {
@@ -377,7 +343,6 @@ export const useUserCredits = () => {
       setCredits(updatedCredits);
       storeLocalCredits(updatedCredits);
       
-      // Add to pending transactions
       addPendingTransaction('decrementCredits', { creditType, userId: user.id });
       
       toast({
@@ -392,20 +357,23 @@ export const useUserCredits = () => {
 
   const checkCredits = (creditType: 'quiz_credits' | 'interview_credits' | 'assessment_credits' | 'tutor_message_credits'): boolean => {
     if (!credits) return false;
+    
+    console.log(`Checking ${creditType}:`, {
+      available: credits[creditType],
+      hasCredits: credits[creditType] > 0
+    });
+    
     return credits[creditType] > 0;
   };
 
-  // Sync with server when coming back online
   const syncCreditsWithServer = async () => {
     if (!user || !credits || !pendingTransactions.length) return;
     
-    // Skip if we're still offline
     if (networkOffline || hasConnectionError) return;
     
     console.log('Attempting to sync pending transactions with server');
     
     try {
-      // Check if we have server-side credits first
       const { data, error } = await (supabase as any)
         .from('user_credits')
         .select('*')
@@ -417,7 +385,6 @@ export const useUserCredits = () => {
         return;
       }
       
-      // Process each pending transaction
       const transactionsToProcess = [...pendingTransactions];
       let successfulSyncs = 0;
       
@@ -425,7 +392,6 @@ export const useUserCredits = () => {
         if (transaction.type === 'decrementCredits') {
           const { creditType } = transaction.data;
           
-          // If we have server data, update it
           if (data) {
             try {
               const { error: updateError } = await (supabase as any)
@@ -439,7 +405,6 @@ export const useUserCredits = () => {
               if (!updateError) {
                 successfulSyncs++;
                 
-                // Remove this transaction from pending
                 setPendingTransactions(prev => 
                   prev.filter(t => t.id !== transaction.id)
                 );
@@ -448,7 +413,6 @@ export const useUserCredits = () => {
               console.error('Error syncing transaction:', e);
             }
           } else {
-            // No server record, create one with our local data
             try {
               const { error: insertError } = await (supabase as any)
                 .from('user_credits')
@@ -460,7 +424,6 @@ export const useUserCredits = () => {
               if (!insertError) {
                 successfulSyncs++;
                 
-                // Remove all transactions since we've synced everything
                 setPendingTransactions([]);
               }
             } catch (e) {
@@ -474,14 +437,12 @@ export const useUserCredits = () => {
         console.log(`Successfully synced ${successfulSyncs} transactions`);
         setIsOfflineMode(false);
         
-        // Update local storage
         try {
           localStorage.setItem('pendingTransactions', JSON.stringify(pendingTransactions));
         } catch (e) {
           console.error('Error updating pending transactions in storage:', e);
         }
         
-        // Refresh credits from server
         fetchUserCredits();
         
         toast({
@@ -495,12 +456,10 @@ export const useUserCredits = () => {
     }
   };
 
-  // Initialize credits on first load
   useEffect(() => {
     if (user) {
       fetchUserCredits();
       
-      // Load any pending transactions from storage
       try {
         const storedTransactions = localStorage.getItem('pendingTransactions');
         if (storedTransactions) {
@@ -514,10 +473,8 @@ export const useUserCredits = () => {
       setCredits(null);
     }
     
-    // Setup online/offline detection
     const handleOnline = () => {
       console.log('Browser went online, attempting to sync credits');
-      // Give some time for connection to stabilize
       setTimeout(() => {
         syncCreditsWithServer();
       }, 2000);
@@ -530,21 +487,18 @@ export const useUserCredits = () => {
     };
   }, [user, fetchUserCredits]);
 
-  // Try to sync anytime offline mode changes
   useEffect(() => {
     if (!isOfflineMode && user) {
       syncCreditsWithServer();
     }
   }, [isOfflineMode, user]);
 
-  // Current connection status changed, update our state
   useEffect(() => {
     if (networkOffline && !isOfflineMode) {
       setIsOfflineMode(true);
     }
   }, [networkOffline]);
 
-  // Log current credit state on every update
   useEffect(() => {
     if (credits) {
       console.log("Current credits state:", {
@@ -566,6 +520,6 @@ export const useUserCredits = () => {
     fetchUserCredits,
     syncCreditsWithServer,
     pendingTransactions: pendingTransactions.length,
-    retryFetch: fetchUserCredits // Add a retry function for explicit refetching
+    retryFetch: fetchUserCredits
   };
 };

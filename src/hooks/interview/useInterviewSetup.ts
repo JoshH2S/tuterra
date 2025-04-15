@@ -16,7 +16,7 @@ export const useInterviewSetup = () => {
   const [loading, setLoading] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   
-  const { checkCredits, decrementCredits } = useUserCredits();
+  const { checkCredits, decrementCredits, credits } = useUserCredits();
 
   // Enhanced debug effect
   useEffect(() => {
@@ -29,9 +29,10 @@ export const useInterviewSetup = () => {
       },
       industry: `'${industry}'`,
       jobDescriptionLength: jobDescription.length,
-      currentSessionId: sessionId
+      currentSessionId: sessionId,
+      interviewCreditsRemaining: credits?.interview_credits || 0
     });
-  }, [jobTitle, industry, jobDescription, sessionId]);
+  }, [jobTitle, industry, jobDescription, sessionId, credits]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +50,8 @@ export const useInterviewSetup = () => {
         type: typeof industry,
         length: industry.length,
         trimmedLength: industry.trim().length
-      }
+      },
+      interviewCreditsRemaining: credits?.interview_credits || 0
     });
     
     if (!user) {
@@ -63,6 +65,7 @@ export const useInterviewSetup = () => {
 
     // Check if user has interview credits
     if (!checkCredits('interview_credits')) {
+      console.log("No interview credits remaining, showing upgrade prompt");
       setShowUpgradePrompt(true);
       toast({
         title: "No credits remaining",
@@ -104,7 +107,8 @@ export const useInterviewSetup = () => {
       console.log("Creating interview session with:", {
         jobTitle: jobTitle.trim(),
         industry: industry.trim(),
-        descriptionLength: jobDescription.length
+        descriptionLength: jobDescription.length,
+        interviewCreditsRemaining: credits?.interview_credits || 0
       });
 
       // Create a new interview session
@@ -128,7 +132,13 @@ export const useInterviewSetup = () => {
       if (session) {
         console.log("Session created successfully:", session.id);
         // Decrement interview credits
-        await decrementCredits('interview_credits');
+        const decrementSuccess = await decrementCredits('interview_credits');
+        console.log("Decrement credits result:", { decrementSuccess, newCreditsRemaining: (credits?.interview_credits || 0) - 1 });
+        
+        if (!decrementSuccess) {
+          // This is a fallback in case decrement fails but we want to continue anyway
+          console.warn("Failed to decrement credits, but continuing with interview");
+        }
         
         // Ensure questions are generated before navigation
         try {

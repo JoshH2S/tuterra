@@ -74,8 +74,8 @@ export const CreditsDisplay = ({
     id: 'fallback',
     user_id: 'unknown',
     quiz_credits: 5,
-    interview_credits: 1,
-    assessment_credits: 1,
+    interview_credits: 2, // Updated to 2 interview credits
+    assessment_credits: 2,
     tutor_message_credits: 5,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -83,8 +83,8 @@ export const CreditsDisplay = ({
 
   const creditsItems = [
     { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 },
-    { label: "Interview Simulations", value: safeCredits.interview_credits, total: 1 },
-    { label: "Skill Assessments", value: safeCredits.assessment_credits, total: 1 },
+    { label: "Interview Simulations", value: safeCredits.interview_credits, total: 2 }, // Updated total to 2
+    { label: "Skill Assessments", value: safeCredits.assessment_credits, total: 2 },
     { label: "AI Tutor Messages", value: safeCredits.tutor_message_credits, total: 5 },
   ];
 
