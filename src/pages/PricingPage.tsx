@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -120,8 +119,8 @@ export default function PricingPage() {
           features={[
             "5 AI tutor messages per month",
             "2 quizzes per month",
+            "2 interview simulations per month",
             "1 assessment per month",
-            "1 interview simulation per month",
           ]}
           planId="pro_plan" // This won't be used for the free plan
           onSelect={() => {}}
