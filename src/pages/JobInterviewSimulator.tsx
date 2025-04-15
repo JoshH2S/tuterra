@@ -139,11 +139,11 @@ const JobInterviewSimulator = () => {
   const usedFallbackQuestions = false;
   const isOnline = navigator.onLine;
 
-  const handleStartInterviewWithParams = async (industry: string, jobTitle: string, description: string) => {
+  const handleStartInterviewWithParams = async (industry: string, title: string, description: string) => {
     console.log("Starting interview with params:", { 
       industry, 
-      jobTitle: `'${jobTitle}'`, 
-      jobTitleLength: jobTitle.length,
+      jobTitle: `'${title}'`, 
+      jobTitleLength: title.length,
       description: description.substring(0, 50) + "..." 
     });
     
@@ -153,8 +153,8 @@ const JobInterviewSimulator = () => {
       return;
     }
     
-    if (!jobTitle || !jobTitle.trim()) {
-      console.error("Invalid job title received:", jobTitle);
+    if (!title || !title.trim()) {
+      console.error("Invalid job title received:", title);
       return;
     }
 
@@ -163,12 +163,12 @@ const JobInterviewSimulator = () => {
       setFormSubmitting(true);
       
       // Update setup state values
-      setupSetJobTitle(jobTitle.trim());
+      setupSetJobTitle(title.trim());
       setupSetIndustry(industry);
       setupSetJobDescription(description);
       
       // Also update interview session state for consistency
-      setJobTitle(jobTitle.trim());
+      setJobTitle(title.trim());
       setIndustry(industry);
       setJobDescription(description);
       
@@ -176,9 +176,9 @@ const JobInterviewSimulator = () => {
       await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log("Submitting with state values:", {
-        setupJobTitle: jobTitle.trim(),
+        setupJobTitle: title.trim(),
         setupIndustry: industry,
-        jobTitle: jobTitle.trim(),
+        jobTitle: title.trim(),
         setupJobDescription: description.length
       });
       
@@ -220,11 +220,11 @@ const JobInterviewSimulator = () => {
       console.error("Retry fetch failed:", error);
       
       // If fetch fails and we have job details, try generation
-      if (jobRole && industry) {
+      if (jobTitle && industry) {
         try {
           await generateQuestions(
             industry,
-            jobRole,
+            jobTitle,
             jobDescription,
             interviewId
           );
@@ -309,7 +309,7 @@ const JobInterviewSimulator = () => {
         
         {interviewReady && !isInterviewInProgress && !isInterviewComplete && (
           <InterviewReadyPrompt
-            jobRole={jobRole}
+            jobTitle={jobTitle}
             onStartChat={handleStartChat}
             usedFallbackQuestions={usedFallbackQuestions}
           />

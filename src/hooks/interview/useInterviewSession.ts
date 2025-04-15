@@ -103,7 +103,7 @@ export const useInterviewSession = () => {
 
   const handleDownloadTranscript = (format: 'txt' | 'pdf') => {
     console.log(`Downloading transcript in ${format} format`);
-    downloadTranscript(transcript, jobRole, format);
+    downloadTranscript(transcript, jobTitle, format);
   };
 
   const handleStartNew = () => {

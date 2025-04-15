@@ -9,13 +9,13 @@ import { generateLegacyFallbackQuestions, generateEmergencyFallbackQuestions } f
  * Falls back to legacy questions if templates are unavailable
  */
 export const generateFallbackQuestions = async (
-  jobRole: string, 
+  jobTitle: string, 
   industry: string, 
   sessionId: string | null
 ): Promise<InterviewQuestion[]> => {
   const currentDate = new Date().toISOString();
-  const roleCategory = getRoleCategory(jobRole);
-  const displayJobRole = formatJobRole(jobRole);
+  const roleCategory = getRoleCategory(jobTitle);
+  const displayJobTitle = formatJobRole(jobTitle);
   
   try {
     // Try to fetch templates from the database
@@ -23,13 +23,13 @@ export const generateFallbackQuestions = async (
     
     if (!templates || templates.length === 0) {
       console.warn("No question templates found in database");
-      return generateLegacyFallbackQuestions(jobRole, industry, sessionId);
+      return generateLegacyFallbackQuestions(jobTitle, industry, sessionId);
     }
     
     // Map templates to questions
     return templates.map((template, index) => {
       const questionText = substituteVariables(template.template, {
-        jobRole: displayJobRole,
+        jobTitle: displayJobTitle,
         industry: industry
       });
       
@@ -45,10 +45,10 @@ export const generateFallbackQuestions = async (
     console.error("Error generating fallback questions from templates:", error);
     
     try {
-      return generateLegacyFallbackQuestions(jobRole, industry, sessionId);
+      return generateLegacyFallbackQuestions(jobTitle, industry, sessionId);
     } catch (secondaryError) {
       console.error("Error in legacy fallback generation:", secondaryError);
-      return generateEmergencyFallbackQuestions(jobRole, industry, sessionId);
+      return generateEmergencyFallbackQuestions(jobTitle, industry, sessionId);
     }
   }
 };

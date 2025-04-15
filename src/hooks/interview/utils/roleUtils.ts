@@ -2,24 +2,24 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Helper function to determine the role category based on job role name
+ * Helper function to determine the role category based on job title name
  */
-export const getRoleCategory = (role: string): string => {
-  const roleNormalized = role.toLowerCase();
+export const getRoleCategory = (title: string): string => {
+  const titleNormalized = title.toLowerCase();
   
-  if (roleNormalized.includes('manager') || roleNormalized.includes('director') || roleNormalized.includes('lead')) {
+  if (titleNormalized.includes('manager') || titleNormalized.includes('director') || titleNormalized.includes('lead')) {
     return 'management';
-  } else if (roleNormalized.includes('engineer') || roleNormalized.includes('developer') || roleNormalized.includes('programmer')) {
+  } else if (titleNormalized.includes('engineer') || titleNormalized.includes('developer') || titleNormalized.includes('programmer')) {
     return 'development';
-  } else if (roleNormalized.includes('analyst') || roleNormalized.includes('data')) {
+  } else if (titleNormalized.includes('analyst') || titleNormalized.includes('data')) {
     return 'analyst';
-  } else if (roleNormalized.includes('design')) {
+  } else if (titleNormalized.includes('design')) {
     return 'design';
-  } else if (roleNormalized.includes('sales') || roleNormalized.includes('marketing')) {
+  } else if (titleNormalized.includes('sales') || titleNormalized.includes('marketing')) {
     return 'sales';
-  } else if (roleNormalized.includes('doctor') || roleNormalized.includes('nurse') || roleNormalized.includes('healthcare')) {
+  } else if (titleNormalized.includes('doctor') || titleNormalized.includes('nurse') || titleNormalized.includes('healthcare')) {
     return 'healthcare';
-  } else if (roleNormalized.includes('finance') || roleNormalized.includes('accountant')) {
+  } else if (titleNormalized.includes('finance') || titleNormalized.includes('accountant')) {
     return 'finance';
   }
   
@@ -27,10 +27,10 @@ export const getRoleCategory = (role: string): string => {
 };
 
 /**
- * Format job role for display by replacing hyphens and capitalizing words
+ * Format job title for display by replacing hyphens and capitalizing words
  */
-export const formatJobRole = (role: string): string => {
-  return role
+export const formatJobRole = (title: string): string => {
+  return title
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
