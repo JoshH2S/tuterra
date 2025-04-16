@@ -55,11 +55,25 @@ export const fetchQuestionsFromSessionData = async (sessionId: string): Promise<
   try {
     console.log(`Attempting to fetch questions from session data for session ${sessionId}`);
     
-    const { data, error } = await supabase
+    // Try fetching with ID column first (primary key)
+    let { data, error } = await supabase
       .from('interview_sessions')
       .select('questions, job_title, industry')
-      .eq('session_id', sessionId)
+      .eq('id', sessionId)
       .maybeSingle();
+    
+    // If not found via ID column, try with session_id column as fallback
+    if (error || !data) {
+      console.log(`No session found with id=${sessionId}, trying session_id column as fallback`);
+      const response = await supabase
+        .from('interview_sessions')
+        .select('questions, job_title, industry')
+        .eq('session_id', sessionId)
+        .maybeSingle();
+      
+      data = response.data;
+      error = response.error;
+    }
     
     if (error) {
       console.error("Error fetching session:", error);

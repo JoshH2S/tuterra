@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
@@ -91,6 +90,7 @@ const JobInterviewSimulator = () => {
         setIsGeneratingQuestions(true);
         
         try {
+          await new Promise(resolve => setTimeout(resolve, 1000));
           await fetchQuestions();
           console.log("Questions fetched successfully");
         } catch (error) {
@@ -103,6 +103,7 @@ const JobInterviewSimulator = () => {
           
           if (locationState.jobTitle && locationState.industry) {
             try {
+              await new Promise(resolve => setTimeout(resolve, 500));
               await generateQuestions(
                 locationState.industry, 
                 locationState.jobTitle, 
@@ -111,6 +112,10 @@ const JobInterviewSimulator = () => {
               );
             } catch (genError) {
               console.error("Also failed to generate questions:", genError);
+              setErrorState({
+                hasError: true,
+                message: "We're having trouble loading your interview. Please try again later."
+              });
             }
           }
         } finally {
@@ -140,14 +145,12 @@ const JobInterviewSimulator = () => {
       
       const { questions: generatedQuestions, sessionId } = result;
       
-      // Update state with the generated questions and session ID
       setJobTitle(data.jobTitle);
       setIndustry(data.industry);
       setJobDescription(data.jobDescription);
       setCurrentSessionId(sessionId);
       setQuestions(generatedQuestions);
       
-      // Navigate to the interview detail page
       navigate(`/interview/${sessionId}`, { 
         state: { 
           sessionId,
@@ -208,7 +211,6 @@ const JobInterviewSimulator = () => {
     }
   };
 
-  // Display API connection error if detected
   if (hasConnectionError && !errorState.hasError) {
     return (
       <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">

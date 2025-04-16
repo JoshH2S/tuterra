@@ -62,6 +62,7 @@ export async function verifySessionExists(sessionId: string, maxRetries = 4, ini
     console.log(`Verification attempt ${attempt} of ${maxRetries} for session ${sessionId}`);
     
     try {
+      // First try with id column (primary key)
       const { data: sessionData, error: sessionError } = await adminSupabase
         .from('interview_sessions')
         .select('id, session_id, job_title, industry')
@@ -74,7 +75,7 @@ export async function verifySessionExists(sessionId: string, maxRetries = 4, ini
         console.log(`Session ${sessionId} verified successfully on attempt ${attempt}:`, sessionData);
         return true;
       } else {
-        console.log(`Session ${sessionId} not found on attempt ${attempt}`);
+        console.log(`Session not found using id column on attempt ${attempt}, trying session_id column`);
         
         // Double-check using session_id as fallback (just in case)
         const { data: fallbackData } = await adminSupabase
