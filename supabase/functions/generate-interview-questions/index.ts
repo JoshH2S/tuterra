@@ -14,6 +14,40 @@ const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Initialize Supabase client with admin rights
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+// Session verification with retry logic
+async function verifySessionExists(sessionId: string, maxRetries = 3, delay = 1000): Promise<boolean> {
+  console.log(`Verifying session ${sessionId} exists with up to ${maxRetries} retries`);
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    console.log(`Attempt ${attempt} of ${maxRetries} to verify session ${sessionId}`);
+    
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('interview_sessions')
+      .select('id, session_id')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+      
+    if (sessionError) {
+      console.error(`Error checking for session (attempt ${attempt}):`, sessionError);
+    } else if (sessionData) {
+      console.log(`Session ${sessionId} found on attempt ${attempt}`, sessionData);
+      return true;
+    } else {
+      console.log(`Session ${sessionId} not found on attempt ${attempt}, waiting before retry`);
+    }
+    
+    if (attempt < maxRetries) {
+      // Wait before next retry (only if we have more retries to do)
+      await new Promise(resolve => setTimeout(resolve, delay));
+      // Increase delay for exponential backoff
+      delay *= 1.5;
+    }
+  }
+  
+  console.log(`Session ${sessionId} not found after ${maxRetries} attempts`);
+  return false;
+}
+
 serve(async (req) => {
   // Log request method and headers for debugging
   console.log("Function called: generate-interview-questions");
@@ -115,31 +149,12 @@ serve(async (req) => {
       });
     }
     
-    // Verify session exists in database before proceeding
-    console.log(`Verifying session ${sessionId} exists in database`);
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('interview_sessions')
-      .select('id, session_id')
-      .eq('session_id', sessionId)
-      .maybeSingle();
+    // Verify session exists in database with retry logic
+    console.log(`Verifying session ${sessionId} exists in database with retry logic`);
+    const sessionExists = await verifySessionExists(sessionId, 3, 1000);
 
-    console.log("Session verification result:", { 
-      sessionData, 
-      sessionError,
-      requestedSessionId: sessionId 
-    });
-
-    if (sessionError) {
-      console.error("Session verification failed:", sessionError);
-      return createErrorResponse({ 
-        message: "Failed to verify session",
-        details: sessionError.message,
-        sessionId 
-      }, 500);
-    }
-
-    if (!sessionData) {
-      console.error("Session not found:", sessionId);
+    if (!sessionExists) {
+      console.error("Session not found after retries:", sessionId);
       return createErrorResponse({ 
         message: "Session not found",
         sessionId,

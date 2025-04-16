@@ -69,6 +69,21 @@ serve(async (req) => {
       job_title: role
     });
     
+    // Verify this session doesn't already exist
+    const { data: existingSession } = await supabase
+      .from('interview_sessions')
+      .select('id')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+      
+    if (existingSession) {
+      console.log(`Session ${sessionId} already exists with DB ID ${existingSession.id}, returning success`);
+      return new Response(
+        JSON.stringify({ success: true, id: existingSession.id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+    
     // Create the interview session with empty questions initially
     const { data, error } = await supabase
       .from('interview_sessions')

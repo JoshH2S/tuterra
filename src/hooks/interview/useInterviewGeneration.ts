@@ -90,7 +90,7 @@ export const useInterviewGeneration = () => {
     }
   };
 
-  // Generate interview questions
+  // Generate interview questions with improved error handling and retries
   const generateInterview = async (params: InterviewGenerationParams): Promise<{
     questions: InterviewQuestion[];
     sessionId: string;
@@ -99,6 +99,16 @@ export const useInterviewGeneration = () => {
       toast({
         title: "Authentication required",
         description: "Please sign in to generate interview questions",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    // Validate input parameters
+    if (!params.industry || !params.jobTitle) {
+      toast({
+        title: "Missing information",
+        description: "Industry and job title are required fields",
         variant: "destructive",
       });
       return null;
@@ -147,6 +157,9 @@ export const useInterviewGeneration = () => {
       setProgress(30);
       console.log("Interview session created:", session.id);
       
+      // Add a small delay to ensure session is propagated in the database
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       let questions: InterviewQuestion[] = [];
       
       // Get user's subscription tier
@@ -157,14 +170,44 @@ export const useInterviewGeneration = () => {
       try {
         // Generate questions using API or fallbacks based on connectivity
         if (isOnline) {
-          questions = await generateQuestionsFromApi({
-            sessionId: session.id,
-            industry: params.industry,
-            jobRole: params.jobTitle,
-            jobDescription: params.jobDescription
-          }, (error) => {
-            console.error("API generation error:", error);
-          });
+          // Try to generate questions with retry logic
+          const maxRetries = 3;
+          let lastError = null;
+          
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+              console.log(`Attempt ${attempt} of ${maxRetries} to generate questions`);
+              questions = await generateQuestionsFromApi({
+                sessionId: session.id,
+                industry: params.industry,
+                jobRole: params.jobTitle,
+                jobDescription: params.jobDescription
+              }, (error) => {
+                console.error(`API generation error (attempt ${attempt}):`, error);
+                lastError = error;
+              });
+              
+              if (questions && questions.length > 0) {
+                console.log(`Successfully generated ${questions.length} questions on attempt ${attempt}`);
+                break; // Success, exit retry loop
+              }
+            } catch (genError) {
+              console.error(`Error generating questions on attempt ${attempt}:`, genError);
+              lastError = genError;
+              
+              if (attempt < maxRetries) {
+                // Wait before retry with exponential backoff
+                const delay = 1000 * Math.pow(1.5, attempt - 1);
+                console.log(`Waiting ${delay}ms before retry`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+              }
+            }
+          }
+          
+          // If all retries failed, throw the last error
+          if (!questions || questions.length === 0) {
+            throw lastError || new Error("Failed to generate questions after multiple attempts");
+          }
         } else {
           // In offline mode, use fallback generator
           questions = await generateFallbackQuestions(

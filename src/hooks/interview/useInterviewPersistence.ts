@@ -70,6 +70,10 @@ export const useInterviewPersistence = () => {
       // Only return sessionId if we got a successful response
       if (data?.success && data?.id) {
         console.log("Session created successfully:", { sessionId, dbId: data.id });
+        
+        // Add a small delay to ensure session propagation before generating questions
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         return sessionId;
       }
       
