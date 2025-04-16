@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { RequestBody, EdgeFunctionResponse } from "./types.ts";
@@ -92,20 +93,12 @@ serve(async (req) => {
       }, 400);
     }
     
-    // Support multiple parameter formats (jobTitle, role, jobRole)
-    const { industry, role, jobRole, jobTitle, jobDescription, sessionId } = reqBody;
-    
-    // Use the most specific parameter available, prioritizing jobTitle
-    const effectiveRole = jobTitle || role || jobRole;
+    // Extract parameters - standardize on jobTitle
+    const { industry, jobTitle, jobDescription, sessionId } = reqBody;
     
     console.log("Processed parameters:", { 
       industry, 
-      role: effectiveRole,
-      originalParams: {
-        jobTitle: jobTitle ? 'present' : 'missing',
-        role: role ? 'present' : 'missing',
-        jobRole: jobRole ? 'present' : 'missing'
-      },
+      jobTitle,
       jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A",
       sessionId
     });
@@ -113,7 +106,7 @@ serve(async (req) => {
     // For testing quickly without session verification - comment out in production
     if (sessionId === "test-123") {
       console.log("Test session ID detected, bypassing session verification");
-      const questions = generateBasicInterviewQuestions(industry, effectiveRole, jobDescription);
+      const questions = generateBasicInterviewQuestions(industry, jobTitle, jobDescription);
       
       return createSuccessResponse({ 
         success: true, 
@@ -161,20 +154,20 @@ serve(async (req) => {
     try {
       // 1. Extract key requirements from job description if available
       if (jobDescription && jobDescription.trim().length > 50) {
-        requirements = await extractRequirements(effectiveRole, industry, jobDescription);
+        requirements = await extractRequirements(jobTitle, industry, jobDescription);
         console.log(`Extracted ${requirements.length} key requirements from job description`);
       } else {
-        requirements = [`Role: ${effectiveRole}`, `Industry: ${industry}`];
+        requirements = [`Role: ${jobTitle}`, `Industry: ${industry}`];
         console.log("No detailed job description provided, using basic requirements");
       }
 
       // 2. Generate enhanced questions based on requirements
-      questions = await generateEnhancedQuestions(effectiveRole, industry, requirements, jobDescription);
+      questions = await generateEnhancedQuestions(jobTitle, industry, requirements, jobDescription);
       console.log(`Generated ${questions.length} enhanced questions`);
     } catch (aiError) {
       console.error("Error in AI-based question generation:", aiError);
       console.log("Falling back to basic question generation");
-      questions = generateBasicInterviewQuestions(industry, effectiveRole, jobDescription);
+      questions = generateBasicInterviewQuestions(industry, jobTitle, jobDescription);
     }
     
     // Save the questions to the database

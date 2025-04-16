@@ -3,9 +3,9 @@
 
 export interface RequestBody {
   industry: string;
-  jobRole?: string;  // Support legacy parameter
-  role?: string;     // Support legacy parameter
-  jobTitle?: string; // Add support for jobTitle parameter
+  jobTitle: string;   // Primary parameter
+  jobRole?: string;   // Support legacy parameter
+  role?: string;      // Support legacy parameter
   jobDescription?: string;
   sessionId: string;
 }

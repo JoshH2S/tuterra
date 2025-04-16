@@ -22,16 +22,15 @@ export const generateQuestionsFromApi = async (
     }
     
     // Ensure job title is properly trimmed and sanitized
-    const sanitizedJobRole = params.jobRole.trim();
-    if (sanitizedJobRole === "") {
+    const sanitizedJobTitle = params.jobRole.trim();
+    if (sanitizedJobTitle === "") {
       throw new Error("Job title cannot be empty");
     }
     
-    // Create a clean payload with proper serialization
+    // Create a clean payload with proper serialization - standardize on jobTitle
     const payload = {
       industry: params.industry.trim(),
-      jobTitle: sanitizedJobRole, // Explicitly use jobTitle as the key with trimmed value
-      jobRole: sanitizedJobRole,  // Keep for backward compatibility, also trimmed
+      jobTitle: sanitizedJobTitle, // Primary parameter
       jobDescription: params.jobDescription ? params.jobDescription.trim() : "",
       sessionId: params.sessionId
     };

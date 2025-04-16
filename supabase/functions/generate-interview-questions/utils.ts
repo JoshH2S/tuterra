@@ -4,9 +4,7 @@
 // Define the expected request body structure
 export interface RequestBody {
   industry: string;
-  jobRole?: string;  // Support legacy parameter
-  role?: string;     // Support legacy parameter
-  jobTitle?: string; // Add support for jobTitle parameter
+  jobTitle: string; // Primary parameter is jobTitle
   jobDescription?: string;
   sessionId: string;
 }
@@ -63,28 +61,19 @@ export function validateRequest(body: any): body is RequestBody {
     throw new Error('Missing or invalid sessionId field');
   }
   
-  // Check for all possible job role parameter names (more robust validation)
-  const jobTitleValue = body.jobTitle || body.role || body.jobRole;
-  
-  if (!jobTitleValue || typeof jobTitleValue !== 'string' || jobTitleValue.trim() === '') {
-    throw new Error('Missing or invalid job title/role field');
+  // First check for jobTitle directly
+  if (body.jobTitle && typeof body.jobTitle === 'string' && body.jobTitle.trim() !== '') {
+    return true;
   }
   
-  // Log which parameter was found for debugging
-  if (jobTitleValue) {
-    console.log("Found job role using parameter:", 
-      body.jobTitle ? "jobTitle" : 
-      body.role ? "role" : 
-      "jobRole"
-    );
-    
-    console.log("Job title value:", {
-      raw: jobTitleValue,
-      trimmed: jobTitleValue.trim(),
-      length: jobTitleValue.length,
-      trimmedLength: jobTitleValue.trim().length
-    });
+  // For backward compatibility, check legacy parameters
+  const legacyRole = body.role || body.jobRole;
+  if (legacyRole && typeof legacyRole === 'string' && legacyRole.trim() !== '') {
+    console.log("Using legacy parameter (role/jobRole) instead of jobTitle");
+    // Assign the legacy role to jobTitle for consistent processing
+    body.jobTitle = legacyRole.trim();
+    return true;
   }
-
-  return true;
+  
+  throw new Error('Missing or invalid job title field');
 }

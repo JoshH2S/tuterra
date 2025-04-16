@@ -3,7 +3,7 @@ import { InterviewQuestion } from "@/types/interview";
 
 export interface QuestionGenerationParams {
   industry: string;
-  jobRole: string;
+  jobRole: string;    // We'll keep this named jobRole for now to minimize changes
   jobDescription: string;
   sessionId: string;
 }
