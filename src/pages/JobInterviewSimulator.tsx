@@ -140,11 +140,13 @@ const JobInterviewSimulator = () => {
   const isOnline = navigator.onLine;
 
   const handleStartInterviewWithParams = async (industry: string, title: string, description: string) => {
-    console.log("Starting interview with params:", { 
-      industry, 
-      jobTitle: `'${title}'`, 
-      jobTitleLength: title.length,
-      description: description.substring(0, 50) + "..." 
+    console.log("handleStartInterviewWithParams called with:", {
+      jobTitle: {
+        value: `'${title}'`,
+        length: title.length,
+        trimmedLength: title.trim().length,
+        timestamp: new Date().toISOString()
+      }
     });
     
     // Validate inputs before processing
@@ -175,11 +177,12 @@ const JobInterviewSimulator = () => {
       // Wait for state updates to complete
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      console.log("Submitting with state values:", {
-        setupJobTitle: title.trim(),
-        setupIndustry: industry,
-        jobTitle: title.trim(),
-        setupJobDescription: description.length
+      console.log("State updates completed, submitting with:", {
+        jobTitle: {
+          value: `'${title.trim()}'`,
+          length: title.trim().length,
+          timestamp: new Date().toISOString()
+        }
       });
       
       // Create a synthetic event to pass to handleSubmit
