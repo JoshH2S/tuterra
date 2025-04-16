@@ -53,24 +53,37 @@ export function validateRequest(body: any): body is RequestBody {
     throw new Error('Request body is missing or empty');
   }
   
-  // Check for all possible job role parameter names
-  const jobRoleValue = body.jobTitle || body.role || body.jobRole;
+  // Check for industry
+  if (!body.industry || typeof body.industry !== 'string' || body.industry.trim() === '') {
+    throw new Error('Missing or invalid industry field');
+  }
+  
+  // Check for session ID
+  if (!body.sessionId || typeof body.sessionId !== 'string' || body.sessionId.trim() === '') {
+    throw new Error('Missing or invalid sessionId field');
+  }
+  
+  // Check for all possible job role parameter names (more robust validation)
+  const jobTitleValue = body.jobTitle || body.role || body.jobRole;
+  
+  if (!jobTitleValue || typeof jobTitleValue !== 'string' || jobTitleValue.trim() === '') {
+    throw new Error('Missing or invalid job title/role field');
+  }
   
   // Log which parameter was found for debugging
-  if (jobRoleValue) {
+  if (jobTitleValue) {
     console.log("Found job role using parameter:", 
       body.jobTitle ? "jobTitle" : 
       body.role ? "role" : 
       "jobRole"
     );
-  }
-  
-  if (!body.industry || !jobRoleValue || !body.sessionId) {
-    throw new Error(`Missing required fields: ${[
-      !body.industry && 'industry',
-      !jobRoleValue && 'job title/role',
-      !body.sessionId && 'sessionId'
-    ].filter(Boolean).join(', ')}`);
+    
+    console.log("Job title value:", {
+      raw: jobTitleValue,
+      trimmed: jobTitleValue.trim(),
+      length: jobTitleValue.length,
+      trimmedLength: jobTitleValue.trim().length
+    });
   }
 
   return true;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,13 +49,16 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
     
-    if (typeof jobTitle !== 'string' || !jobTitle.trim()) {
-      console.log("Job title validation failed:", {
-        value: `'${jobTitle}'`,
-        type: typeof jobTitle,
-        length: jobTitle ? jobTitle.length : 0,
-        isEmpty: !jobTitle,
-        isEmptyTrimmed: jobTitle ? !jobTitle.trim() : true
+    // More strict and explicit jobTitle validation
+    if (!jobTitle) {
+      console.log("Job title validation failed: value is null or undefined");
+      errors.jobTitle = "Please enter a job title";
+      isValid = false;
+    } else if (jobTitle.trim() === "") {
+      console.log("Job title validation failed: value is empty or whitespace", {
+        jobTitle: `'${jobTitle}'`,
+        length: jobTitle.length,
+        trimmedLength: jobTitle.trim().length
       });
       errors.jobTitle = "Please enter a job title";
       isValid = false;
@@ -98,7 +102,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     });
     setJobTitle(val);
     
-    if (val?.trim()) {
+    if (val && val.trim() !== "") {
       setFormErrors(prev => ({ ...prev, jobTitle: undefined }));
     }
   };

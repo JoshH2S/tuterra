@@ -21,12 +21,18 @@ export const generateQuestionsFromApi = async (
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
     
+    // Ensure job title is properly trimmed and sanitized
+    const sanitizedJobRole = params.jobRole.trim();
+    if (sanitizedJobRole === "") {
+      throw new Error("Job title cannot be empty");
+    }
+    
     // Create a clean payload with proper serialization
     const payload = {
-      industry: params.industry,
-      jobTitle: params.jobRole, // Explicitly use jobTitle as the key
-      jobRole: params.jobRole,  // Keep for backward compatibility
-      jobDescription: params.jobDescription || "",
+      industry: params.industry.trim(),
+      jobTitle: sanitizedJobRole, // Explicitly use jobTitle as the key with trimmed value
+      jobRole: sanitizedJobRole,  // Keep for backward compatibility, also trimmed
+      jobDescription: params.jobDescription ? params.jobDescription.trim() : "",
       sessionId: params.sessionId
     };
     

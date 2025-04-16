@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +50,7 @@ export const useInterviewSetup = () => {
         type: typeof jobTitle,
         length: jobTitle.length,
         trimmedLength: jobTitle.trim().length,
-        isValidInput: !!jobTitle && jobTitle.trim().length > 0
+        isValidInput: Boolean(jobTitle && jobTitle.trim().length > 0)
       },
       industry: {
         value: `'${industry}'`,
@@ -83,11 +84,22 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    if (!jobTitle || !jobTitle.trim()) {
+    // More robust job title validation
+    if (!jobTitle) {
+      console.error("jobTitle validation failure: null or undefined value");
+      toast({
+        title: "Invalid Job Title",
+        description: "Please provide a valid job title",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (jobTitle.trim() === "") {
       console.error("jobTitle validation failure:", {
         jobTitleRaw: `'${jobTitle}'`,
         jobTitleType: typeof jobTitle,
-        jobTitleTrimmed: jobTitle?.trim() || 'N/A',
+        jobTitleTrimmed: jobTitle.trim(),
         validationResult: 'Failed - empty or whitespace only'
       });
       
