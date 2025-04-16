@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -25,18 +26,19 @@ export const useNetworkStatus = () => {
     setLastHealthCheckTime(now);
 
     try {
-      // Use Supabase health check endpoint
-      const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/rest/v1/`, {
-        method: 'HEAD',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5obHNydHVieXZnZ3RreXJoa3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2MzM4OTUsImV4cCI6MjA1NDIwOTg5NX0.rD-VfZhrrSRpo1rfuO1JoKYkNELxUUGdulu4-sI-kdU',
-        },
-        // Set a shorter timeout to avoid long waits
-        signal: AbortSignal.timeout(5000),
-      });
-
-      // Check if response is successful
-      const connectionIsHealthy = response.ok;
+      // Use Supabase health check by making a simple query
+      const { error } = await supabase
+        .from('interview_sessions')
+        .select('count')
+        .limit(1)
+        .single();
+      
+      // Check if there's an auth error, which indicates API key issues
+      const connectionIsHealthy = !error || (error.code !== 'PGRST301' && error.code !== '401');
+      
+      if (error && (error.code === 'PGRST301' || error.code === '401')) {
+        console.error("API key or authentication error detected:", error);
+      }
       
       setHasConnectionError(!connectionIsHealthy);
       setIsOfflineMode(!navigator.onLine || !connectionIsHealthy);

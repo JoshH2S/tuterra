@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { InterviewQuestion, EnhancedInterviewQuestion } from "@/types/interview";
@@ -49,7 +50,24 @@ export const useInterviewQuestions = (
       return formattedQuestions;
     } catch (error) {
       console.error("Error generating questions:", error);
-      throw error; // Let the calling code handle this and use fallback questions
+      
+      // Show more detailed error to the user
+      toast({
+        title: "Error generating questions",
+        description: error instanceof Error ? error.message : "Failed to generate interview questions. Falling back to local questions.",
+        variant: "destructive"
+      });
+      
+      // Try to use fallback questions instead
+      try {
+        console.log("Attempting to use fallback questions due to API error");
+        const fallbackQuestions = await generateFallbackQuestionsWrapper(jobTitle, industry);
+        setQuestions(fallbackQuestions);
+        return fallbackQuestions;
+      } catch (fallbackError) {
+        console.error("Error generating fallback questions:", fallbackError);
+        throw error; // Let the calling code handle this
+      }
     } finally {
       setLoading(false);
     }

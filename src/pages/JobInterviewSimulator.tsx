@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
@@ -15,12 +16,14 @@ import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
 
 const JobInterviewSimulator = () => {
   const { id: interviewId } = useParams();
   const location = useLocation();
   const locationState = location.state || {};
   const isDetailMode = !!interviewId;
+  const { isOnline, hasConnectionError } = useNetworkStatus();
   
   const {
     industry,
@@ -125,9 +128,8 @@ const JobInterviewSimulator = () => {
   }>({ hasError: false, message: "" });
 
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
-  const sessionCreationErrors: any[] = [];
+  const sessionCreationErrors: string[] = [];
   const usedFallbackQuestions = false;
-  const isOnline = navigator.onLine;
 
   const handleStartInterviewWithParams = async (industry: string, title: string, description: string) => {
     console.log("handleStartInterviewWithParams called with:", {
@@ -231,6 +233,26 @@ const JobInterviewSimulator = () => {
       setIsGeneratingQuestions(false);
     }
   };
+
+  // Display API connection error if detected
+  if (hasConnectionError && !errorState.hasError) {
+    return (
+      <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
+        <InterviewLogo />
+        <Card className="p-6 mt-6 text-center">
+          <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
+          <h2 className="text-xl font-semibold mb-4">API Connection Error</h2>
+          <p className="mb-6">
+            We're having trouble connecting to our services. This might be due to API key authentication issues.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={() => window.location.reload()} variant="outline">Refresh Page</Button>
+            <Button onClick={handleStartNewInterview}>Start New Interview</Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (errorState.hasError) {
     return (

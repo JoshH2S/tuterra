@@ -38,36 +38,16 @@ export const generateQuestionsFromApi = async (
     // Log the exact payload being sent to help with debugging
     console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // Use the environment variable for Supabase URL
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://nhlsrtubyvggtkyrhkuu.supabase.co';
-    const functionUrl = `${supabaseUrl}/functions/v1/generate-interview-questions`;
-    
-    console.log("Endpoint URL:", functionUrl);
-    
-    // Get the current session access token
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token;
-    
-    if (!accessToken) {
-      console.log("No authentication token available. Using anonymous access.");
-    }
-    
-    const response = await fetch(functionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
-      },
-      body: JSON.stringify(payload)
+    // Use the Supabase client's functions.invoke method instead of direct fetch
+    const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
+      body: payload
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Error response from edge function:", response.status, errorText);
-      throw new Error(`Edge function error: ${response.status} - ${errorText}`);
+    if (error) {
+      console.error("Error invoking generate-interview-questions function:", error);
+      throw new Error(`Edge function error: ${error.message}`);
     }
     
-    const data = await response.json();
     console.log("Edge function response:", data);
     
     if (!data) {
@@ -100,7 +80,7 @@ export const generateQuestionsFromApi = async (
         const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EdgeFunctionQuestion, index: number) => ({
           id: q.id || `q-${crypto.randomUUID()}`,
           session_id: params.sessionId,
-          question: q.text || '', // Map text field to question field
+          question: q.question || q.text || '', // Map text field to question field
           question_order: q.question_order || index,
           created_at: q.created_at || new Date().toISOString()
         }));

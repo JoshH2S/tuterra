@@ -1,89 +1,55 @@
 
-// Utility functions for the generate-interview-questions edge function
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 
-// Define the expected request body structure
-export interface RequestBody {
-  industry: string;
-  jobTitle: string; // Primary parameter is jobTitle
-  jobDescription?: string;
-  sessionId: string;
-}
+// Get environment variables
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// CORS headers for cross-origin requests
+// Initialize Supabase client with admin rights
+export const adminSupabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+// CORS headers
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Create a success response with proper headers
-export function createSuccessResponse(data: any, status = 200): Response {
-  return new Response(
-    JSON.stringify(data),
-    { 
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status 
-    }
-  );
-}
+export const createSuccessResponse = (data: any, status = 200) => {
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+};
 
-// Create an error response with proper headers
-export function createErrorResponse(error: any, status = 500): Response {
-  const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+export const createErrorResponse = (error: any, status = 500) => {
+  console.error("Error:", error);
+  
   return new Response(
-    JSON.stringify({ 
-      error: errorMessage,
-      timestamp: new Date().toISOString(),
-      stack: error instanceof Error ? error.stack?.split("\n").slice(0, 3).join("\n") : "No stack trace"
+    JSON.stringify({
+      error: error.message || "An unexpected error occurred",
+      details: error.details || error,
     }),
-    { 
+    {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status 
+      status,
     }
   );
-}
+};
 
-// Validate request body
-export function validateRequest(body: any): body is RequestBody {
-  console.log("Validating request body:", JSON.stringify(body));
-  
+export const validateRequest = (body: any) => {
   if (!body) {
-    throw new Error('Request body is missing or empty');
+    throw new Error("Request body is missing");
   }
   
-  // Check for industry
-  if (!body.industry || typeof body.industry !== 'string' || body.industry.trim() === '') {
-    throw new Error('Missing or invalid industry field');
+  if (!body.sessionId) {
+    throw new Error("Session ID is required");
   }
   
-  // Check for session ID
-  if (!body.sessionId || typeof body.sessionId !== 'string' || body.sessionId.trim() === '') {
-    throw new Error('Missing or invalid sessionId field');
+  if (!body.industry) {
+    throw new Error("Industry is required");
   }
   
-  // Enhanced job title validation
-  if (body.jobTitle) {
-    if (typeof body.jobTitle !== 'string') {
-      throw new Error('Job title must be a string');
-    }
-    
-    if (body.jobTitle.trim() === '') {
-      throw new Error('Job title cannot be empty or whitespace only');
-    }
-    
-    // Ensure job title is properly trimmed
-    body.jobTitle = body.jobTitle.trim();
-    return true;
+  if (!body.jobTitle) {
+    throw new Error("Job title is required");
   }
-  
-  // For backward compatibility, check legacy parameters
-  const legacyRole = body.role || body.jobRole;
-  if (legacyRole && typeof legacyRole === 'string' && legacyRole.trim() !== '') {
-    console.log("Using legacy parameter (role/jobRole) instead of jobTitle");
-    // Assign the legacy role to jobTitle for consistent processing
-    body.jobTitle = legacyRole.trim();
-    return true;
-  }
-  
-  throw new Error('Missing or invalid job title field');
-}
+};
