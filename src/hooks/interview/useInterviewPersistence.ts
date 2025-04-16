@@ -22,20 +22,20 @@ export const useInterviewPersistence = () => {
       return null;
     }
     
-    // Generate a new session ID
-    let sessionId;
+    // Generate a client-side UUID for session tracking
+    let clientSessionId;
     try {
-      sessionId = uuidv4();
-      if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '' || !sessionId.includes('-')) {
-        throw new Error("Failed to generate a valid session ID");
+      clientSessionId = uuidv4();
+      if (!clientSessionId || typeof clientSessionId !== 'string' || clientSessionId.trim() === '' || !clientSessionId.includes('-')) {
+        throw new Error("Failed to generate a valid client session ID");
       }
       
-      console.log(`Created valid session ID: ${sessionId}`);
+      console.log(`Created valid client session ID: ${clientSessionId}`);
     } catch (uuidError) {
       console.error("UUID generation error:", uuidError);
       // Create a timestamp-based fallback ID if UUID generation fails
-      sessionId = `fallback-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      console.log(`Using fallback session ID: ${sessionId}`);
+      clientSessionId = `fallback-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      console.log(`Using fallback client session ID: ${clientSessionId}`);
       
       toast({
         title: "Session ID Issue",
@@ -43,7 +43,7 @@ export const useInterviewPersistence = () => {
         variant: "destructive",
       });
       
-      return sessionId;
+      return clientSessionId;
     }
     
     setLoading(true);
@@ -54,9 +54,9 @@ export const useInterviewPersistence = () => {
       
       const { data, error } = await supabase.functions.invoke('create-interview-session', {
         body: {
-          sessionId,
+          sessionId: clientSessionId,
           industry,
-          role: jobRole, // We keep 'role' in the API contract but it maps to job_title in the DB
+          role: jobRole, // Maps to job_title in the DB
           jobDescription
         }
       });
@@ -70,10 +70,13 @@ export const useInterviewPersistence = () => {
       // Only return the database ID if we got a successful response
       // This is now correctly treated as the primary key of the interview_sessions table
       if (data?.success && data?.id) {
-        console.log("Session created successfully:", { sessionId: data.id });
+        console.log("Session created successfully:", { 
+          databaseId: data.id,
+          clientSessionId
+        });
         
         // Add a small delay to ensure session propagation before generating questions
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         return data.id;
       }
@@ -93,8 +96,8 @@ export const useInterviewPersistence = () => {
         variant: "destructive",
       });
       
-      // Return the session ID anyway so the interview can continue with local questions
-      return sessionId;
+      // Return the client session ID anyway so the interview can continue with local questions
+      return clientSessionId;
     } finally {
       setLoading(false);
     }

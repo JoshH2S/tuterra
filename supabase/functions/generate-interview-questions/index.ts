@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { RequestBody, EdgeFunctionResponse } from "./types.ts";
-import { corsHeaders, createSuccessResponse, createErrorResponse, validateRequest } from "./utils.ts";
+import { corsHeaders, createSuccessResponse, createErrorResponse, validateRequest, verifySessionExists } from "./utils.ts";
 import { extractRequirements } from "./requirementsExtractor.ts";
 import { generateEnhancedQuestions } from "./questionGenerator.ts";
 import { generateBasicInterviewQuestions } from "./fallbackQuestions.ts";
@@ -13,41 +13,6 @@ const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // Initialize Supabase client with admin rights
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-// Session verification with retry logic
-async function verifySessionExists(sessionId: string, maxRetries = 3, delay = 1000): Promise<boolean> {
-  console.log(`Verifying session ${sessionId} exists with up to ${maxRetries} retries`);
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    console.log(`Attempt ${attempt} of ${maxRetries} to verify session ${sessionId}`);
-    
-    // FIXED: Changed from session_id to id column for lookup
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('interview_sessions')
-      .select('id, session_id')
-      .eq('id', sessionId)
-      .maybeSingle();
-      
-    if (sessionError) {
-      console.error(`Error checking for session (attempt ${attempt}):`, sessionError);
-    } else if (sessionData) {
-      console.log(`Session ${sessionId} found on attempt ${attempt}`, sessionData);
-      return true;
-    } else {
-      console.log(`Session ${sessionId} not found on attempt ${attempt}, waiting before retry`);
-    }
-    
-    if (attempt < maxRetries) {
-      // Wait before next retry (only if we have more retries to do)
-      await new Promise(resolve => setTimeout(resolve, delay));
-      // Increase delay for exponential backoff
-      delay *= 1.5;
-    }
-  }
-  
-  console.log(`Session ${sessionId} not found after ${maxRetries} attempts`);
-  return false;
-}
 
 serve(async (req) => {
   // Log request method and headers for debugging
@@ -150,16 +115,16 @@ serve(async (req) => {
       });
     }
     
-    // Verify session exists in database with retry logic
-    console.log(`Verifying session ${sessionId} exists in database with retry logic`);
-    const sessionExists = await verifySessionExists(sessionId, 3, 1000);
+    // Verify session exists in database with enhanced retry logic
+    console.log(`Verifying session ${sessionId} exists in database with enhanced retry logic`);
+    const sessionExists = await verifySessionExists(sessionId, 4, 800);
 
     if (!sessionExists) {
-      console.error("Session not found after retries:", sessionId);
+      console.error("Session not found after maximum retries:", sessionId);
       return createErrorResponse({ 
         message: "Session not found",
         sessionId,
-        suggestion: "Session may still be propagating, please try again"
+        suggestion: "Please try again or create a new interview session"
       }, 404);
     }
     
@@ -188,7 +153,7 @@ serve(async (req) => {
     
     // Save the questions to the database
     console.log("Updating session with generated questions");
-    // FIXED: Changed from session_id to id column for update
+    
     const { error: updateError } = await supabase
       .from('interview_sessions')
       .update({ 

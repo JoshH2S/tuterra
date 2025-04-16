@@ -122,7 +122,10 @@ serve(async (req) => {
       );
     }
     
-    console.log("Session created successfully:", { sessionId, dbId: data[0].id });
+    console.log("Session created successfully:", { 
+      clientSessionId: sessionId,
+      databaseId: data[0].id
+    });
     
     return new Response(
       JSON.stringify({ success: true, id: data[0].id }),

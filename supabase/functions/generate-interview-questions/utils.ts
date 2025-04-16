@@ -53,3 +53,53 @@ export const validateRequest = (body: any) => {
     throw new Error("Job title is required");
   }
 };
+
+// Enhanced session verification with more gradual backoff and detailed logging
+export async function verifySessionExists(sessionId: string, maxRetries = 4, initialDelay = 800): Promise<boolean> {
+  console.log(`Starting verification for session ${sessionId} with ${maxRetries} attempts`);
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    console.log(`Verification attempt ${attempt} of ${maxRetries} for session ${sessionId}`);
+    
+    try {
+      const { data: sessionData, error: sessionError } = await adminSupabase
+        .from('interview_sessions')
+        .select('id, session_id, job_title, industry')
+        .eq('id', sessionId)
+        .maybeSingle();
+        
+      if (sessionError) {
+        console.error(`Database error on verification attempt ${attempt}:`, sessionError);
+      } else if (sessionData) {
+        console.log(`Session ${sessionId} verified successfully on attempt ${attempt}:`, sessionData);
+        return true;
+      } else {
+        console.log(`Session ${sessionId} not found on attempt ${attempt}`);
+        
+        // Double-check using session_id as fallback (just in case)
+        const { data: fallbackData } = await adminSupabase
+          .from('interview_sessions')
+          .select('id')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+          
+        if (fallbackData) {
+          console.log(`Session found using fallback lookup (session_id column) with ID: ${fallbackData.id}`);
+          return true;
+        }
+      }
+      
+      if (attempt < maxRetries) {
+        // Use more gradual backoff: 800ms, 1200ms, 1800ms, etc.
+        const backoffDelay = initialDelay * (1 + (attempt - 1) * 0.5);
+        console.log(`Waiting ${backoffDelay}ms before next verification attempt...`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+    } catch (error) {
+      console.error(`Unexpected error during verification attempt ${attempt}:`, error);
+    }
+  }
+  
+  console.log(`Session ${sessionId} could not be verified after ${maxRetries} attempts`);
+  return false;
+}
