@@ -1,6 +1,16 @@
 
 // Utility functions for the generate-interview-questions edge function
 
+// Define the expected request body structure
+export interface RequestBody {
+  industry: string;
+  jobRole?: string;  // Support legacy parameter
+  role?: string;     // Support legacy parameter
+  jobTitle?: string; // Add support for jobTitle parameter
+  jobDescription?: string;
+  sessionId: string;
+}
+
 // CORS headers for cross-origin requests
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,13 +53,22 @@ export function validateRequest(body: any): body is RequestBody {
     throw new Error('Request body is missing or empty');
   }
   
-  // Check for both 'role' and 'jobRole' parameters to handle both naming conventions
-  const role = body.role || body.jobRole;
+  // Check for all possible job role parameter names
+  const jobRoleValue = body.jobTitle || body.role || body.jobRole;
   
-  if (!body.industry || !role || !body.sessionId) {
+  // Log which parameter was found for debugging
+  if (jobRoleValue) {
+    console.log("Found job role using parameter:", 
+      body.jobTitle ? "jobTitle" : 
+      body.role ? "role" : 
+      "jobRole"
+    );
+  }
+  
+  if (!body.industry || !jobRoleValue || !body.sessionId) {
     throw new Error(`Missing required fields: ${[
       !body.industry && 'industry',
-      !role && 'role/jobRole',
+      !jobRoleValue && 'job title/role',
       !body.sessionId && 'sessionId'
     ].filter(Boolean).join(', ')}`);
   }
