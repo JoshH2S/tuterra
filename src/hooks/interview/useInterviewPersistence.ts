@@ -67,14 +67,15 @@ export const useInterviewPersistence = () => {
         throw new Error(error?.message || 'Failed to create session');
       }
       
-      // Only return sessionId if we got a successful response
+      // Only return the database ID if we got a successful response
+      // This is now correctly treated as the primary key of the interview_sessions table
       if (data?.success && data?.id) {
-        console.log("Session created successfully:", { sessionId, dbId: data.id });
+        console.log("Session created successfully:", { sessionId: data.id });
         
         // Add a small delay to ensure session propagation before generating questions
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 800));
         
-        return sessionId;
+        return data.id;
       }
       
       throw new Error("Invalid response from create-interview-session");

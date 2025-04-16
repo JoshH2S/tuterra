@@ -21,10 +21,11 @@ async function verifySessionExists(sessionId: string, maxRetries = 3, delay = 10
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     console.log(`Attempt ${attempt} of ${maxRetries} to verify session ${sessionId}`);
     
+    // FIXED: Changed from session_id to id column for lookup
     const { data: sessionData, error: sessionError } = await supabase
       .from('interview_sessions')
       .select('id, session_id')
-      .eq('session_id', sessionId)
+      .eq('id', sessionId)
       .maybeSingle();
       
     if (sessionError) {
@@ -187,13 +188,14 @@ serve(async (req) => {
     
     // Save the questions to the database
     console.log("Updating session with generated questions");
+    // FIXED: Changed from session_id to id column for update
     const { error: updateError } = await supabase
       .from('interview_sessions')
       .update({ 
         questions,
         job_description: jobDescription || null
       })
-      .eq('session_id', sessionId);
+      .eq('id', sessionId);
     
     if (updateError) {
       console.error("Error updating session with questions:", updateError);
