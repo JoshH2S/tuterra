@@ -22,11 +22,12 @@ export function CreditsSummaryPopup() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [showForUser, setShowForUser] = useState(true);
 
-  // Only show for free tier users
-  if (subscription.tier !== 'free') {
-    return null;
-  }
+  useEffect(() => {
+    // Determine if we should show for this user based on tier
+    setShowForUser(subscription.tier === 'free');
+  }, [subscription.tier]);
 
   useEffect(() => {
     if (user && subscription.tier === 'free') {
@@ -52,6 +53,11 @@ export function CreditsSummaryPopup() {
       assessment_credits: credits.assessment_credits,
       tutor_message_credits: credits.tutor_message_credits
     });
+  }
+
+  // If we're not showing for this user, return null
+  if (!showForUser) {
+    return null;
   }
 
   return (
