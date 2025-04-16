@@ -46,14 +46,17 @@ export function CreditsSummaryPopup() {
     fetchUserCredits();
   };
 
-  if (credits) {
-    console.log("Current credits state:", {
-      quiz_credits: credits.quiz_credits,
-      interview_credits: credits.interview_credits,
-      assessment_credits: credits.assessment_credits,
-      tutor_message_credits: credits.tutor_message_credits
-    });
-  }
+  // Debug log for credits state
+  useEffect(() => {
+    if (credits) {
+      console.log("Current credits state:", {
+        quiz_credits: credits.quiz_credits,
+        interview_credits: credits.interview_credits,
+        assessment_credits: credits.assessment_credits,
+        tutor_message_credits: credits.tutor_message_credits
+      });
+    }
+  }, [credits]);
 
   // If we're not showing for this user, return null
   if (!showForUser) {

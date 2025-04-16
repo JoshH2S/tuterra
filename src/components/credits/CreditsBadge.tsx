@@ -15,12 +15,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
   const { credits, loading, error, isOfflineMode, fetchUserCredits } = useUserCredits();
   const { subscription } = useSubscription();
-
-  // Only show credits badge for free users
-  if (subscription.tier !== 'free') {
-    return null;
-  }
-
+  
   // Fetch credits when the component mounts
   useEffect(() => {
     fetchUserCredits();
@@ -31,6 +26,11 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
       console.error("CreditsBadge error:", error);
     }
   }, [error]);
+
+  // Only show credits badge for free users
+  if (subscription.tier !== 'free') {
+    return null;
+  }
 
   if (loading) {
     return (

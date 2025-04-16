@@ -28,6 +28,13 @@ export const TutorChatInput = ({
   const { checkCredits, decrementCredits } = useUserCredits();
   const { subscription } = useSubscription();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Flag to track if component should render auth alert
+  const [showAuthAlert, setShowAuthAlert] = useState(false);
+
+  useEffect(() => {
+    setShowAuthAlert(!isLoggedIn && !checkingAuth);
+  }, [isLoggedIn, checkingAuth]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -70,7 +77,8 @@ export const TutorChatInput = ({
     }
   };
 
-  if (!isLoggedIn && !checkingAuth) {
+  // Render auth alert if user is not logged in
+  if (showAuthAlert) {
     return (
       <Alert variant="destructive" className="mb-4">
         <AlertCircle className="h-4 w-4" />

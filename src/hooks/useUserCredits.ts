@@ -11,7 +11,6 @@ export type UserCredits = {
   interview_credits: number;
   assessment_credits: number;
   tutor_message_credits: number;
-  bonus_interview_applied: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -57,7 +56,6 @@ export const useUserCredits = () => {
       interview_credits: 3,
       assessment_credits: 2,
       tutor_message_credits: 5,
-      bonus_interview_applied: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
