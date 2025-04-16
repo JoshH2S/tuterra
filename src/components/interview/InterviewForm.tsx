@@ -1,13 +1,16 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { SelectInput } from "@/components/interview/SelectInput";
 import { INDUSTRY_OPTIONS } from "@/components/interview/constants";
+import { interviewSchema, type InterviewFormData } from "@/hooks/interview/utils/validation";
 
 interface InterviewFormProps {
   onSubmit: (industry: string, jobTitle: string, jobDescription: string) => void;
@@ -15,84 +18,26 @@ interface InterviewFormProps {
 }
 
 export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProps) => {
-  const [industry, setIndustry] = useState<string>("");
-  const [jobTitle, setJobTitle] = useState<string>("");
-  const [jobDescription, setJobDescription] = useState<string>("");
-  const [formErrors, setFormErrors] = useState<{
-    industry?: string;
-    jobTitle?: string;
-    jobDescription?: string;
-  }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const validateForm = () => {
-    const errors: {
-      industry?: string;
-      jobTitle?: string;
-      jobDescription?: string;
-    } = {};
-    let isValid = true;
-
-    if (!industry?.trim()) {
-      errors.industry = "Please select a valid industry";
-      isValid = false;
+  const form = useForm<InterviewFormData>({
+    resolver: zodResolver(interviewSchema),
+    defaultValues: {
+      industry: "",
+      jobTitle: "",
+      jobDescription: ""
     }
-    
-    if (!jobTitle?.trim()) {
-      errors.jobTitle = "Please enter a job title";
-      isValid = false;
-    }
-    
-    if (!jobDescription?.trim()) {
-      errors.jobDescription = "Please enter a job description";
-      isValid = false;
-    } else if (jobDescription.trim().length < 50) {
-      errors.jobDescription = "Job description should be more detailed (at least 50 characters)";
-      isValid = false;
-    }
+  });
 
-    setFormErrors(errors);
-    return isValid;
-  };
-
-  const handleIndustryChange = (value: string) => {
-    if (value) {
-      setIndustry(value);
-      setFormErrors(prev => ({ ...prev, industry: undefined }));
-    }
-  };
-
-  const handleJobTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setJobTitle(value);
-    
-    if (value?.trim()) {
-      setFormErrors(prev => ({ ...prev, jobTitle: undefined }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleFormSubmit = async (data: InterviewFormData) => {
     if (isSubmitting || isLoading) {
       return;
     }
     
     setIsSubmitting(true);
     
-    if (!validateForm()) {
-      toast({
-        title: "Missing information",
-        description: "Please fill out all required fields correctly",
-        variant: "destructive"
-      });
-      setIsSubmitting(false);
-      return;
-    }
-    
     try {
-      const cleanJobTitle = jobTitle.trim();
-      await onSubmit(industry.trim(), cleanJobTitle, jobDescription.trim());
+      await onSubmit(data.industry, data.jobTitle, data.jobDescription);
     } catch (error) {
       console.error("Error during form submission:", error);
       toast({
@@ -106,98 +51,103 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full">
-      <Card className="w-full max-w-2xl mx-auto shadow-md">
-        <CardHeader className="space-y-1 sm:space-y-2">
-          <CardTitle className="text-xl sm:text-2xl text-center sm:text-left">Job Interview Simulator</CardTitle>
-          <CardDescription className="text-sm sm:text-base text-center sm:text-left">
-            Enter the details about the job you're interviewing for, and we'll generate a tailored
-            interview experience with AI-powered questions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 sm:space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="industry" className="flex justify-between text-sm sm:text-base">
-              Industry <span className="text-red-500">*</span>
-            </Label>
-            <SelectInput
-              id="industry"
-              value={industry}
-              onChange={handleIndustryChange}
-              options={INDUSTRY_OPTIONS}
-              placeholder="Select an industry"
-              className={`w-full ${formErrors.industry ? 'border-red-500' : ''}`}
-            />
-            {formErrors.industry && (
-              <p className="text-xs sm:text-sm text-red-500">{formErrors.industry}</p>
-            )}
-          </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="w-full">
+        <Card className="w-full max-w-2xl mx-auto shadow-md">
+          <CardHeader className="space-y-1 sm:space-y-2">
+            <CardTitle className="text-xl sm:text-2xl text-center sm:text-left">Job Interview Simulator</CardTitle>
+            <CardDescription className="text-sm sm:text-base text-center sm:text-left">
+              Enter the details about the job you're interviewing for, and we'll generate a tailored
+              interview experience with AI-powered questions.
+            </CardDescription>
+          </CardHeader>
           
-          <div className="space-y-2">
-            <Label htmlFor="jobTitle" className="flex justify-between text-sm sm:text-base">
-              Job Title <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="jobTitle"
+          <CardContent className="space-y-4 sm:space-y-6">
+            <FormField
+              control={form.control}
+              name="industry"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="flex justify-between text-sm sm:text-base">
+                    Industry <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <SelectInput
+                    id="industry"
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={INDUSTRY_OPTIONS}
+                    placeholder="Select an industry"
+                    className="w-full"
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
               name="jobTitle"
-              value={jobTitle}
-              onChange={handleJobTitleChange}
-              onBlur={() => {
-                if (!jobTitle?.trim()) {
-                  setFormErrors(prev => ({ ...prev, jobTitle: "Please enter a job title" }));
-                }
-              }}
-              placeholder="Enter the job title"
-              className={`w-full ${formErrors.jobTitle ? 'border-red-500' : ''}`}
-              required
-              aria-required="true"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="flex justify-between text-sm sm:text-base">
+                    Job Title <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      id="jobTitle"
+                      placeholder="Enter the job title"
+                      className="w-full"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {formErrors.jobTitle && (
-              <p className="text-xs sm:text-sm text-red-500">{formErrors.jobTitle}</p>
-            )}
-          </div>
+            
+            <FormField
+              control={form.control}
+              name="jobDescription"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="flex justify-between text-sm sm:text-base">
+                    Job Description <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      id="jobDescription"
+                      placeholder="Paste the job description here..."
+                      className="h-24 sm:h-32 resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    Paste the job description to help the AI generate more relevant questions.
+                    <br />
+                    More detailed descriptions (100+ words) will result in better questions.
+                  </p>
+                </FormItem>
+              )}
+            />
+          </CardContent>
           
-          <div className="space-y-2">
-            <Label htmlFor="jobDescription" className="flex justify-between text-sm sm:text-base">
-              Job Description <span className="text-red-500">*</span>
-            </Label>
-            <Textarea
-              id="jobDescription"
-              value={jobDescription}
-              onChange={(e) => {
-                setJobDescription(e.target.value);
-                if (e.target.value.trim().length >= 50) {
-                  setFormErrors(prev => ({ ...prev, jobDescription: undefined }));
-                }
-              }}
-              placeholder="Paste the job description here..."
-              className={`h-24 sm:h-32 resize-none ${formErrors.jobDescription ? 'border-red-500' : ''}`}
-            />
-            {formErrors.jobDescription && (
-              <p className="text-xs sm:text-sm text-red-500">{formErrors.jobDescription}</p>
+          <CardFooter className="flex flex-col space-y-2 px-6 pb-6">
+            <Button 
+              type="submit" 
+              className="w-full py-5 text-base font-medium touch-manipulation" 
+              disabled={isLoading || isSubmitting}
+            >
+              {isLoading || isSubmitting ? "Generating Interview..." : "Start Interview Simulation"}
+            </Button>
+            {(isLoading || isSubmitting) && (
+              <p className="text-xs sm:text-sm text-muted-foreground text-center mt-2">
+                This may take a few moments as we craft personalized questions...
+              </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Paste the job description to help the AI generate more relevant questions.
-              <br />
-              More detailed descriptions (100+ words) will result in better questions.
-            </p>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2 px-6 pb-6">
-          <Button 
-            type="submit" 
-            className="w-full py-5 text-base font-medium touch-manipulation" 
-            disabled={isLoading || isSubmitting}
-          >
-            {isLoading || isSubmitting ? "Generating Interview..." : "Start Interview Simulation"}
-          </Button>
-          {(isLoading || isSubmitting) && (
-            <p className="text-xs sm:text-sm text-muted-foreground text-center mt-2">
-              This may take a few moments as we craft personalized questions...
-            </p>
-          )}
-        </CardFooter>
-      </Card>
-    </form>
+          </CardFooter>
+        </Card>
+      </form>
+    </Form>
   );
 };

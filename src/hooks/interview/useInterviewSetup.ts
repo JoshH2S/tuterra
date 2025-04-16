@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { useSubscription } from "@/hooks/useSubscription";
+import { formatJobTitle } from "./utils/validation";
 
 export const useInterviewSetup = () => {
   const { user } = useAuth();
@@ -19,31 +21,6 @@ export const useInterviewSetup = () => {
   
   const { checkCredits, decrementCredits, credits, retryFetch } = useUserCredits();
   const { subscription } = useSubscription();
-
-  useEffect(() => {
-    console.log("Interview setup credits debug:", { 
-      credits,
-      hasInterviewCredits: credits?.interview_credits > 0,
-      currentInterviewCredits: credits?.interview_credits || 0,
-      subscriptionTier: subscription?.tier
-    });
-  }, [credits, subscription]);
-
-  useEffect(() => {
-    console.log("Interview setup state debug:", { 
-      jobTitle: {
-        value: `'${jobTitle}'`, 
-        type: typeof jobTitle,
-        length: jobTitle.length,
-        trimmedLength: jobTitle.trim().length
-      },
-      industry: `'${industry}'`,
-      jobDescriptionLength: jobDescription.length,
-      currentSessionId: sessionId,
-      interviewCreditsRemaining: credits?.interview_credits || 0,
-      subscriptionTier: subscription?.tier
-    });
-  }, [jobTitle, industry, jobDescription, sessionId, credits, subscription]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,8 +37,13 @@ export const useInterviewSetup = () => {
     // Reset any previous error state
     setErrorOccurred(false);
 
-    // Validate essential fields (all should be pre-trimmed)
-    if (!jobTitle) {
+    // Trim and validate inputs
+    const trimmedJobTitle = jobTitle.trim();
+    const trimmedIndustry = industry.trim();
+    const trimmedJobDescription = jobDescription.trim();
+
+    // Validate essential fields
+    if (!trimmedJobTitle) {
       toast({
         title: "Invalid Job Title",
         description: "Please provide a valid job title",
@@ -70,7 +52,7 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    if (!industry) {
+    if (!trimmedIndustry) {
       toast({
         title: "Required field missing",
         description: "Please select an industry",
@@ -79,7 +61,19 @@ export const useInterviewSetup = () => {
       return;
     }
 
+    if (trimmedJobDescription.length < 50) {
+      toast({
+        title: "Job description too short",
+        description: "Please provide a more detailed job description (at least 50 characters)",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
+
+    // Format job title for consistency
+    const formattedJobTitle = formatJobTitle(trimmedJobTitle);
 
     // Skip credit check for premium users
     let hasCredits = true;
@@ -104,23 +98,19 @@ export const useInterviewSetup = () => {
         console.error("Error checking credits:", creditsError);
         // Continue with interview creation even if credits check fails
         console.log("Continuing despite credits check error");
-        // Don't return here - allow the process to continue despite credits error
       }
     } else {
       console.log("Skipping credit check for paid user:", subscription.tier);
     }
 
     try {
-      // Store jobTitle in a variable to ensure it's used consistently
-      const finalJobTitle = jobTitle;
-      
       const { data: session, error } = await supabase
         .from("interview_sessions")
         .insert({
           user_id: user.id,
-          job_title: finalJobTitle,
-          industry: industry,
-          job_description: jobDescription,
+          job_title: formattedJobTitle,
+          industry: trimmedIndustry,
+          job_description: trimmedJobDescription,
           status: "created",
         })
         .select()
@@ -161,9 +151,9 @@ export const useInterviewSetup = () => {
           navigate(`/interview/${session.id}`, { 
             state: { 
               sessionId: session.id,
-              jobTitle: finalJobTitle,
-              industry: industry,
-              jobDescription: jobDescription
+              jobTitle: formattedJobTitle,
+              industry: trimmedIndustry,
+              jobDescription: trimmedJobDescription
             }
           });
         } catch (fetchError) {
