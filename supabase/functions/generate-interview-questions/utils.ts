@@ -61,8 +61,18 @@ export function validateRequest(body: any): body is RequestBody {
     throw new Error('Missing or invalid sessionId field');
   }
   
-  // First check for jobTitle directly
-  if (body.jobTitle && typeof body.jobTitle === 'string' && body.jobTitle.trim() !== '') {
+  // Enhanced job title validation
+  if (body.jobTitle) {
+    if (typeof body.jobTitle !== 'string') {
+      throw new Error('Job title must be a string');
+    }
+    
+    if (body.jobTitle.trim() === '') {
+      throw new Error('Job title cannot be empty or whitespace only');
+    }
+    
+    // Ensure job title is properly trimmed
+    body.jobTitle = body.jobTitle.trim();
     return true;
   }
   

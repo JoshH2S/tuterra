@@ -49,7 +49,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
     
-    // More strict and explicit jobTitle validation
+    // Stricter job title validation
     if (!jobTitle) {
       console.log("Job title validation failed: value is null or undefined");
       errors.jobTitle = "Please enter a job title";

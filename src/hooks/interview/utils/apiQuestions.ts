@@ -21,10 +21,10 @@ export const generateQuestionsFromApi = async (
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
     
-    // Ensure job title is properly trimmed and sanitized
+    // Enhanced job title validation
     const sanitizedJobTitle = params.jobRole.trim();
-    if (sanitizedJobTitle === "") {
-      throw new Error("Job title cannot be empty");
+    if (!sanitizedJobTitle || sanitizedJobTitle === "") {
+      throw new Error("Job title cannot be empty or whitespace only");
     }
     
     // Create a clean payload with proper serialization - standardize on jobTitle

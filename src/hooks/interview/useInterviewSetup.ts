@@ -84,7 +84,7 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    // More robust job title validation
+    // Enhanced job title validation
     if (!jobTitle) {
       console.error("jobTitle validation failure: null or undefined value");
       toast({
@@ -95,11 +95,12 @@ export const useInterviewSetup = () => {
       return;
     }
     
-    if (jobTitle.trim() === "") {
+    const trimmedJobTitle = jobTitle.trim();
+    if (trimmedJobTitle === "") {
       console.error("jobTitle validation failure:", {
         jobTitleRaw: `'${jobTitle}'`,
         jobTitleType: typeof jobTitle,
-        jobTitleTrimmed: jobTitle.trim(),
+        jobTitleTrimmed: trimmedJobTitle,
         validationResult: 'Failed - empty or whitespace only'
       });
       
@@ -124,7 +125,7 @@ export const useInterviewSetup = () => {
     try {
       setLoading(true);
       console.log("Creating interview session with:", {
-        jobTitle: jobTitle.trim(),
+        jobTitle: trimmedJobTitle,
         industry: industry.trim(),
         descriptionLength: jobDescription.length,
         interviewCreditsRemaining: credits?.interview_credits || 0
@@ -134,7 +135,7 @@ export const useInterviewSetup = () => {
         .from("interview_sessions")
         .insert({
           user_id: user.id,
-          job_title: jobTitle.trim(),
+          job_title: trimmedJobTitle,
           industry: industry.trim(),
           job_description: jobDescription,
           status: "created",
@@ -166,7 +167,7 @@ export const useInterviewSetup = () => {
           navigate(`/interview/${session.id}`, { 
             state: { 
               sessionId: session.id,
-              jobTitle: jobTitle.trim(),
+              jobTitle: trimmedJobTitle,
               industry: industry.trim(),
               jobDescription: jobDescription
             }
