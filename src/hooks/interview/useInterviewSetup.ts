@@ -63,7 +63,6 @@ export const useInterviewSetup = () => {
         trimmedLength: industry.trim().length
       },
       interviewCreditsRemaining: credits?.interview_credits || 0,
-      hasCredits: checkCredits('interview_credits'),
       subscriptionTier: subscription?.tier
     });
     
@@ -76,23 +75,7 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    // Only check credits for free tier users
-    if (subscription.tier === 'free') {
-      await retryFetch();
-
-      if (!checkCredits('interview_credits')) {
-        console.log("No interview credits remaining, showing upgrade prompt");
-        setShowUpgradePrompt(true);
-        toast({
-          title: "No credits remaining",
-          description: "You have used all your free interview simulation credits. Please upgrade to continue.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Enhanced job title validation
+    // Enhanced job title validation first, before any credit checks
     if (!jobTitle) {
       console.error("jobTitle validation failure: null or undefined value");
       toast({
@@ -130,6 +113,33 @@ export const useInterviewSetup = () => {
       return;
     }
 
+    // Only check credits for free tier users
+    if (subscription.tier === 'free') {
+      try {
+        await retryFetch();
+        
+        // Check if user has interview credits, skip if premium
+        const hasCredits = await checkCredits('interview_credits');
+        if (!hasCredits) {
+          console.log("No interview credits remaining, showing upgrade prompt");
+          setShowUpgradePrompt(true);
+          toast({
+            title: "No credits remaining",
+            description: "You have used all your free interview simulation credits. Please upgrade to continue.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (creditsError) {
+        console.error("Error checking credits:", creditsError);
+        // Continue with interview creation even if credits check fails
+        // This prevents the user from being blocked due to database issues
+        console.log("Continuing despite credits check error");
+      }
+    } else {
+      console.log("Skipping credit check for paid user:", subscription.tier);
+    }
+
     try {
       setLoading(true);
       console.log("Creating interview session with:", {
@@ -162,15 +172,20 @@ export const useInterviewSetup = () => {
         
         // Only decrement credits for free tier users
         if (subscription.tier === 'free') {
-          const decrementSuccess = await decrementCredits('interview_credits');
-          console.log("Decrement credits result:", { 
-            decrementSuccess, 
-            newCreditsRemaining: (credits?.interview_credits || 0) - 1,
-            subscriptionTier: subscription?.tier
-          });
-          
-          if (!decrementSuccess) {
-            console.warn("Failed to decrement credits, but continuing with interview");
+          try {
+            const decrementSuccess = await decrementCredits('interview_credits');
+            console.log("Decrement credits result:", { 
+              decrementSuccess, 
+              newCreditsRemaining: (credits?.interview_credits || 0) - 1,
+              subscriptionTier: subscription?.tier
+            });
+            
+            if (!decrementSuccess) {
+              console.warn("Failed to decrement credits, but continuing with interview");
+            }
+          } catch (decrementError) {
+            console.error("Error decrementing credits:", decrementError);
+            // Continue anyway - don't block the interview due to credits issues
           }
         } else {
           console.log("Skip credit decrement for paid user:", subscription.tier);

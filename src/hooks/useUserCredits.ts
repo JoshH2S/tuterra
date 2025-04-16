@@ -133,8 +133,7 @@ export const useUserCredits = () => {
               quiz_credits: newCreditsData.quiz_credits,
               interview_credits: newCreditsData.interview_credits,
               assessment_credits: newCreditsData.assessment_credits,
-              tutor_message_credits: newCreditsData.tutor_message_credits,
-              bonus_interview_applied: true
+              tutor_message_credits: newCreditsData.tutor_message_credits
             })
             .select('*')
             .single();
@@ -189,35 +188,6 @@ export const useUserCredits = () => {
         }
       } else {
         console.log('Found existing credits:', data);
-        
-        if (data && !data.bonus_interview_applied) {
-          console.log('Applying one-time bonus interview credit');
-          try {
-            const { error: updateError } = await (supabase as any)
-              .from('user_credits')
-              .update({ 
-                interview_credits: data.interview_credits + 1,
-                bonus_interview_applied: true
-              })
-              .eq('user_id', user.id);
-              
-            if (!updateError) {
-              console.log('Successfully applied bonus credit');
-              data.interview_credits += 1;
-              data.bonus_interview_applied = true;
-              
-              toast({
-                title: "Bonus Credit Applied!",
-                description: "You've received an extra interview credit.",
-                variant: "default",
-              });
-            } else {
-              console.error('Error applying bonus credit:', updateError);
-            }
-          } catch (bonusErr) {
-            console.error('Error applying bonus interview credit:', bonusErr);
-          }
-        }
         
         setCredits(data as UserCredits);
         setIsOfflineMode(false);
