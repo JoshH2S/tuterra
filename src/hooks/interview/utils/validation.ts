@@ -1,35 +1,22 @@
 
 import { z } from "zod";
 
-// Zod schema for interview form validation
+// Define the schema for interview form validation
 export const interviewSchema = z.object({
-  jobTitle: z.string()
-    .min(2, "Job title must be at least 2 characters")
-    .transform(val => val.trim()),
-  industry: z.string()
-    .min(2, "Industry must be at least 2 characters") 
-    .transform(val => val.trim()),
-  jobDescription: z.string()
-    .min(50, "Job description should be at least 50 characters for better results")
-    .transform(val => val.trim())
+  industry: z.string().min(1, "Please select an industry"),
+  jobTitle: z.string().min(1, "Job title is required"),
+  jobDescription: z.string().min(50, "Please provide a more detailed job description (at least 50 characters)")
 });
 
+// Export type based on the schema
 export type InterviewFormData = z.infer<typeof interviewSchema>;
 
-// Consistent formatting function for job titles
+// Function to format job title for consistency
 export const formatJobTitle = (title: string): string => {
   if (!title) return "";
   
-  return title
-    .split(/[-_\s]/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+  // Trim and ensure consistent capitalization
+  return title.trim()
+    .replace(/\s+/g, " ") // Replace multiple spaces with a single space
+    .replace(/^\w|\s\w/g, (match) => match.toUpperCase()); // Capitalize first letter of each word
 };
-
-// Parameter types for API calls
-export interface InterviewGenerationParams {
-  jobTitle: string;
-  industry: string;
-  jobDescription: string;
-  sessionId: string;
-}

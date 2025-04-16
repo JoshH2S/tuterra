@@ -38,6 +38,8 @@ export const InterviewForm = ({ onSubmit, isLoading = false, progress = 0 }: Int
     setIsSubmitting(true);
     
     try {
+      // Log the data being submitted for debugging
+      console.log("Submitting interview form with data:", data);
       await onSubmit(data);
     } catch (error) {
       console.error("Error during form submission:", error);
