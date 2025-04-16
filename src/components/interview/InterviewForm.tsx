@@ -49,7 +49,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
     
-    // Stricter job title validation
+    // Improved job title validation - more lenient but still catches empty strings
     if (!jobTitle) {
       console.log("Job title validation failed: value is null or undefined");
       errors.jobTitle = "Please enter a job title";
@@ -63,6 +63,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       errors.jobTitle = "Please enter a job title";
       isValid = false;
     } else {
+      // Log successful validation for debugging
       console.log("Job title validation passed:", {
         value: `'${jobTitle}'`,
         length: jobTitle.length,
@@ -249,7 +250,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
         <CardFooter className="flex flex-col space-y-2 px-6 pb-6">
           <Button 
             type="submit" 
-            className="w-full py-5 text-base font-medium" 
+            className="w-full py-5 text-base font-medium touch-manipulation" 
             disabled={isLoading || isSubmitting}
           >
             {isLoading || isSubmitting ? "Generating Interview..." : "Start Interview Simulation"}

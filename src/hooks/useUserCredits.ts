@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -280,56 +281,74 @@ export const useUserCredits = () => {
 
       console.log(`Decrementing ${creditType} for user ${user.id}`);
 
-      const { error } = await (supabase as any)
-        .from('user_credits')
-        .update({ [creditType]: credits[creditType] - 1 })
-        .eq('user_id', user.id);
+      try {
+        const { error } = await (supabase as any)
+          .from('user_credits')
+          .update({ [creditType]: credits[creditType] - 1 })
+          .eq('user_id', user.id);
 
-      if (error) {
-        const errorIsPermissionDenied = 
-          error.code === '42501' || 
-          error.message.includes('permission denied') || 
-          (error as any).code === 'PGRST301' || 
-          error.message.includes('403');
-        
-        if (errorIsPermissionDenied) {
-          console.log('Permission denied when updating credits, updating locally only');
-          setIsOfflineMode(true);
+        if (error) {
+          const errorIsPermissionDenied = 
+            error.code === '42501' || 
+            error.message.includes('permission denied') || 
+            (error as any).code === 'PGRST301' || 
+            error.message.includes('403');
           
-          const updatedCredits = {
-            ...credits,
-            [creditType]: credits[creditType] - 1,
-            updated_at: new Date().toISOString(),
-          };
+          if (errorIsPermissionDenied) {
+            console.log('Permission denied when updating credits, updating locally only');
+            setIsOfflineMode(true);
+            
+            const updatedCredits = {
+              ...credits,
+              [creditType]: credits[creditType] - 1,
+              updated_at: new Date().toISOString(),
+            };
+            
+            setCredits(updatedCredits);
+            storeLocalCredits(updatedCredits);
+            
+            addPendingTransaction('decrementCredits', { creditType, userId: user.id });
+            
+            toast({
+              title: "Offline Mode",
+              description: "Using offline mode for credits. Changes will sync when you reconnect.",
+              variant: "default",
+            });
+            
+            return true;
+          }
           
-          setCredits(updatedCredits);
-          storeLocalCredits(updatedCredits);
-          
-          addPendingTransaction('decrementCredits', { creditType, userId: user.id });
-          
-          toast({
-            title: "Offline Mode",
-            description: "Using offline mode for credits. Changes will sync when you reconnect.",
-            variant: "default",
-          });
-          
-          return true;
+          throw error;
         }
+
+        const updatedCredits = {
+          ...credits,
+          [creditType]: credits[creditType] - 1,
+          updated_at: new Date().toISOString(),
+        };
         
-        throw error;
+        setCredits(updatedCredits);
+        storeLocalCredits(updatedCredits);
+
+        console.log(`Successfully decremented ${creditType}, remaining: ${credits[creditType] - 1}`);
+        return true;
+      } catch (dbError) {
+        console.error(`Database error when decrementing ${creditType}:`, dbError);
+        
+        // Fallback to local update
+        const updatedCredits = {
+          ...credits,
+          [creditType]: credits[creditType] - 1,
+          updated_at: new Date().toISOString(),
+        };
+        
+        setCredits(updatedCredits);
+        storeLocalCredits(updatedCredits);
+        addPendingTransaction('decrementCredits', { creditType, userId: user.id });
+        
+        console.log(`Fallback: locally decremented ${creditType}, remaining: ${credits[creditType] - 1}`);
+        return true;
       }
-
-      const updatedCredits = {
-        ...credits,
-        [creditType]: credits[creditType] - 1,
-        updated_at: new Date().toISOString(),
-      };
-      
-      setCredits(updatedCredits);
-      storeLocalCredits(updatedCredits);
-
-      console.log(`Successfully decremented ${creditType}, remaining: ${credits[creditType] - 1}`);
-      return true;
     } catch (err) {
       console.error(`Error decrementing ${creditType}:`, err);
       

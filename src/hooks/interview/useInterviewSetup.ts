@@ -16,6 +16,7 @@ export const useInterviewSetup = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [errorOccurred, setErrorOccurred] = useState(false);
   
   const { checkCredits, decrementCredits, credits, retryFetch } = useUserCredits();
   const { subscription } = useSubscription();
@@ -75,6 +76,9 @@ export const useInterviewSetup = () => {
       return;
     }
 
+    // Reset any previous error state
+    setErrorOccurred(false);
+
     // Enhanced job title validation first, before any credit checks
     if (!jobTitle) {
       console.error("jobTitle validation failure: null or undefined value");
@@ -113,13 +117,16 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    // Only check credits for free tier users
+    setLoading(true);
+
+    // Skip credit check for premium users
+    let hasCredits = true;
     if (subscription.tier === 'free') {
       try {
         await retryFetch();
         
-        // Check if user has interview credits, skip if premium
-        const hasCredits = await checkCredits('interview_credits');
+        // Check if user has interview credits
+        hasCredits = await checkCredits('interview_credits');
         if (!hasCredits) {
           console.log("No interview credits remaining, showing upgrade prompt");
           setShowUpgradePrompt(true);
@@ -128,20 +135,20 @@ export const useInterviewSetup = () => {
             description: "You have used all your free interview simulation credits. Please upgrade to continue.",
             variant: "destructive",
           });
+          setLoading(false);
           return;
         }
       } catch (creditsError) {
         console.error("Error checking credits:", creditsError);
         // Continue with interview creation even if credits check fails
-        // This prevents the user from being blocked due to database issues
         console.log("Continuing despite credits check error");
+        // Don't return here - allow the process to continue despite credits error
       }
     } else {
       console.log("Skipping credit check for paid user:", subscription.tier);
     }
 
     try {
-      setLoading(true);
       console.log("Creating interview session with:", {
         jobTitle: trimmedJobTitle,
         industry: industry.trim(),
@@ -171,7 +178,7 @@ export const useInterviewSetup = () => {
         console.log("Session created successfully:", session.id);
         
         // Only decrement credits for free tier users
-        if (subscription.tier === 'free') {
+        if (subscription.tier === 'free' && hasCredits) {
           try {
             const decrementSuccess = await decrementCredits('interview_credits');
             console.log("Decrement credits result:", { 
@@ -188,7 +195,7 @@ export const useInterviewSetup = () => {
             // Continue anyway - don't block the interview due to credits issues
           }
         } else {
-          console.log("Skip credit decrement for paid user:", subscription.tier);
+          console.log("Skip credit decrement for paid user or no credits check:", subscription.tier);
         }
         
         try {
@@ -208,10 +215,11 @@ export const useInterviewSetup = () => {
         }
       }
     } catch (error) {
+      setErrorOccurred(true);
       console.error("Failed to create interview session:", error);
       toast({
         title: "Failed to start interview",
-        description: "There was an error starting your interview simulation.",
+        description: "There was an error starting your interview simulation. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -227,6 +235,7 @@ export const useInterviewSetup = () => {
     jobDescription,
     setJobDescription,
     loading,
+    errorOccurred,
     showUpgradePrompt,
     setShowUpgradePrompt,
     handleSubmit,
