@@ -7,17 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
 import { SelectInput } from "@/components/interview/SelectInput";
 import { INDUSTRY_OPTIONS } from "@/components/interview/constants";
 import { interviewSchema, type InterviewFormData } from "@/hooks/interview/utils/validation";
+import { Progress } from "@/components/ui/progress";
 
 interface InterviewFormProps {
-  onSubmit: (industry: string, jobTitle: string, jobDescription: string) => void;
+  onSubmit: (data: InterviewFormData) => Promise<void>;
   isLoading?: boolean;
+  progress?: number;
 }
 
-export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProps) => {
+export const InterviewForm = ({ onSubmit, isLoading = false, progress = 0 }: InterviewFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<InterviewFormData>({
@@ -37,18 +38,16 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     setIsSubmitting(true);
     
     try {
-      await onSubmit(data.industry, data.jobTitle, data.jobDescription);
+      await onSubmit(data);
     } catch (error) {
       console.error("Error during form submission:", error);
-      toast({
-        title: "Submission Error",
-        description: "An error occurred while submitting the form. Please try again.",
-        variant: "destructive"
-      });
+      // Error toast is handled in the parent component
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const showProgress = isLoading && progress > 0;
 
   return (
     <Form {...form}>
@@ -130,6 +129,18 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
                 </FormItem>
               )}
             />
+
+            {showProgress && (
+              <div className="space-y-2">
+                <Progress value={progress} className="h-2" />
+                <p className="text-xs text-center text-muted-foreground">
+                  {progress < 30 && "Preparing your interview..."}
+                  {progress >= 30 && progress < 60 && "Creating personalized questions..."}
+                  {progress >= 60 && progress < 90 && "Finalizing your interview..."}
+                  {progress >= 90 && "Almost ready..."}
+                </p>
+              </div>
+            )}
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-2 px-6 pb-6">
@@ -138,9 +149,9 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
               className="w-full py-5 text-base font-medium touch-manipulation" 
               disabled={isLoading || isSubmitting}
             >
-              {isLoading || isSubmitting ? "Generating Interview..." : "Start Interview Simulation"}
+              {isLoading || isSubmitting ? "Creating Interview..." : "Start Interview Simulation"}
             </Button>
-            {(isLoading || isSubmitting) && (
+            {(isLoading || isSubmitting) && !showProgress && (
               <p className="text-xs sm:text-sm text-muted-foreground text-center mt-2">
                 This may take a few moments as we craft personalized questions...
               </p>

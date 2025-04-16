@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
 import { useInterviewQuestions } from "@/hooks/interview/useInterviewQuestions";
+import { useInterviewGeneration } from "@/hooks/interview/useInterviewGeneration";
 import { InterviewForm } from "@/components/interview/InterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
@@ -10,9 +11,9 @@ import { InterviewDebug } from "@/components/interview/InterviewDebug";
 import { InterviewLogo } from "@/components/interview/InterviewLogo";
 import { InterviewCompletion } from "@/components/interview/InterviewCompletion";
 import { Wifi, WifiOff, AlertCircle } from "lucide-react";
-import { useInterviewSetup } from "@/hooks/interview/useInterviewSetup";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
+import { InterviewFormData } from "@/hooks/interview/utils/validation";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
 const JobInterviewSimulator = () => {
   const { id: interviewId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const locationState = location.state || {};
   const isDetailMode = !!interviewId;
   const { isOnline, hasConnectionError } = useNetworkStatus();
@@ -52,6 +54,19 @@ const JobInterviewSimulator = () => {
 
   const { generateQuestions, fetchQuestions, loading: loadingQuestions } = 
     useInterviewQuestions(currentSessionId, setQuestions);
+
+  const { 
+    generateInterview,
+    isGenerating,
+    progress
+  } = useInterviewGeneration();
+
+  const { subscription } = useSubscription();
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [errorState, setErrorState] = useState<{
+    hasError: boolean;
+    message: string;
+  }>({ hasError: false, message: "" });
 
   useEffect(() => {
     const setupInterview = async () => {
@@ -107,88 +122,47 @@ const JobInterviewSimulator = () => {
     setupInterview();
   }, [interviewId, setCurrentSessionId, setJobTitle, setIndustry, setJobDescription]);
 
-  const {
-    jobTitle: setupJobTitle,
-    setJobTitle: setupSetJobTitle,
-    industry: setupIndustry,
-    setIndustry: setupSetIndustry,
-    jobDescription: setupJobDescription,
-    setJobDescription: setupSetJobDescription,
-    loading: isLoading,
-    showUpgradePrompt,
-    setShowUpgradePrompt,
-    handleSubmit
-  } = useInterviewSetup();
-
-  const { subscription } = useSubscription();
-  const [formSubmitting, setFormSubmitting] = useState(false);
-  const [errorState, setErrorState] = useState<{
-    hasError: boolean;
-    message: string;
-  }>({ hasError: false, message: "" });
-
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
   const sessionCreationErrors: string[] = [];
   const usedFallbackQuestions = false;
 
-  const handleStartInterviewWithParams = async (industry: string, title: string, description: string) => {
-    console.log("handleStartInterviewWithParams called with:", {
-      jobTitle: {
-        value: `'${title}'`,
-        length: title.length,
-        trimmedLength: title.trim().length,
-        timestamp: new Date().toISOString()
-      }
-    });
-    
-    if (!industry.trim()) {
-      console.error("Invalid industry received");
-      return;
-    }
-    
-    if (!title.trim()) {
-      console.error("Invalid job title received");
-      return;
-    }
-
+  const handleFormSubmit = async (data: InterviewFormData) => {
     try {
-      setFormSubmitting(true);
+      const result = await generateInterview({
+        industry: data.industry,
+        jobTitle: data.jobTitle,
+        jobDescription: data.jobDescription
+      });
       
-      const trimmedTitle = title.trim();
-      const trimmedIndustry = industry.trim();
-      const trimmedDescription = description.trim();
+      if (!result) {
+        throw new Error("Failed to generate interview");
+      }
       
-      setupSetJobTitle(trimmedTitle);
-      setupSetIndustry(trimmedIndustry);
-      setupSetJobDescription(trimmedDescription);
+      const { questions: generatedQuestions, sessionId } = result;
       
-      setJobTitle(trimmedTitle);
-      setIndustry(trimmedIndustry);
-      setJobDescription(trimmedDescription);
+      // Update state with the generated questions and session ID
+      setJobTitle(data.jobTitle);
+      setIndustry(data.industry);
+      setJobDescription(data.jobDescription);
+      setCurrentSessionId(sessionId);
+      setQuestions(generatedQuestions);
       
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      console.log("State updates completed, submitting with:", {
-        jobTitle: {
-          value: `'${title.trim()}'`,
-          length: title.trim().length,
-          timestamp: new Date().toISOString()
+      // Navigate to the interview detail page
+      navigate(`/interview/${sessionId}`, { 
+        state: { 
+          sessionId,
+          jobTitle: data.jobTitle,
+          industry: data.industry,
+          jobDescription: data.jobDescription
         }
       });
-      
-      const syntheticEvent = {
-        preventDefault: () => {}
-      } as React.FormEvent;
-      
-      await handleSubmit(syntheticEvent);
     } catch (error) {
-      console.error("Error during interview submission:", error);
-      setErrorState({
-        hasError: true,
-        message: "Failed to start the interview. Please try again."
+      console.error("Error generating interview:", error);
+      toast({
+        title: "Failed to generate interview",
+        description: "There was a problem creating your interview. Please try again.",
+        variant: "destructive"
       });
-    } finally {
-      setFormSubmitting(false);
     }
   };
 
@@ -294,7 +268,7 @@ const JobInterviewSimulator = () => {
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
-        {(isGeneratingQuestions || loadingQuestions) && (
+        {(isGeneratingQuestions || loadingQuestions || isGenerating) && (
           <div className="text-center py-8">
             <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-lg">Preparing your interview questions...</p>
@@ -305,10 +279,11 @@ const JobInterviewSimulator = () => {
         )}
         
         {!interviewReady && !isInterviewInProgress && !isInterviewComplete && 
-         !isGeneratingQuestions && !loadingQuestions && !isDetailMode && (
+         !isGeneratingQuestions && !loadingQuestions && !isGenerating && !isDetailMode && (
           <InterviewForm 
-            onSubmit={handleStartInterviewWithParams} 
-            isLoading={isGeneratingQuestions || isLoading || formSubmitting || loadingQuestions}
+            onSubmit={handleFormSubmit} 
+            isLoading={isGeneratingQuestions || loadingQuestions || isGenerating}
+            progress={progress}
           />
         )}
         
