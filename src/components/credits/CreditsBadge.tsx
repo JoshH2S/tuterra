@@ -10,9 +10,16 @@ import {
 } from "@/components/ui/tooltip";
 import { CreditsDisplay } from "./CreditsDisplay";
 import { useEffect } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
   const { credits, loading, error, isOfflineMode, fetchUserCredits } = useUserCredits();
+  const { subscription } = useSubscription();
+
+  // Only show credits badge for free users
+  if (subscription.tier !== 'free') {
+    return null;
+  }
 
   // Fetch credits when the component mounts
   useEffect(() => {

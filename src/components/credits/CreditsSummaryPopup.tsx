@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { CreditsDisplay } from "@/components/credits/CreditsDisplay";
@@ -22,15 +23,16 @@ export function CreditsSummaryPopup() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
+  // Only show for free tier users
+  if (subscription.tier !== 'free') {
+    return null;
+  }
+
   useEffect(() => {
     if (user && subscription.tier === 'free') {
       fetchUserCredits();
     }
   }, [user, subscription.tier, fetchUserCredits]);
-
-  if (subscription.tier !== 'free') {
-    return null;
-  }
 
   const handleOpenChange = (open: boolean) => {
     if (open) {

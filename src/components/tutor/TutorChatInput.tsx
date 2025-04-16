@@ -39,7 +39,7 @@ export const TutorChatInput = ({
   const handleSend = async () => {
     if (!message.trim() || disabled || isProcessing) return;
 
-    // Skip credit check for premium users
+    // Only check credits for free tier users
     if (subscription.tier === 'free') {
       // Check if user has tutor message credits
       const hasCredits = await checkCredits('tutor_message_credits');
@@ -50,6 +50,8 @@ export const TutorChatInput = ({
 
       // Decrement tutor message credits
       await decrementCredits('tutor_message_credits');
+    } else {
+      console.log("Skipping credit check for paid user:", subscription.tier);
     }
     
     onSendMessage(message.trim());

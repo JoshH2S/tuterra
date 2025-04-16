@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserCredits } from "@/hooks/useUserCredits";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const useInterviewSetup = () => {
   const { user } = useAuth();
@@ -17,14 +18,16 @@ export const useInterviewSetup = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   
   const { checkCredits, decrementCredits, credits, retryFetch } = useUserCredits();
+  const { subscription } = useSubscription();
 
   useEffect(() => {
     console.log("Interview setup credits debug:", { 
       credits,
       hasInterviewCredits: credits?.interview_credits > 0,
-      currentInterviewCredits: credits?.interview_credits || 0
+      currentInterviewCredits: credits?.interview_credits || 0,
+      subscriptionTier: subscription?.tier
     });
-  }, [credits]);
+  }, [credits, subscription]);
 
   useEffect(() => {
     console.log("Interview setup state debug:", { 
@@ -37,9 +40,10 @@ export const useInterviewSetup = () => {
       industry: `'${industry}'`,
       jobDescriptionLength: jobDescription.length,
       currentSessionId: sessionId,
-      interviewCreditsRemaining: credits?.interview_credits || 0
+      interviewCreditsRemaining: credits?.interview_credits || 0,
+      subscriptionTier: subscription?.tier
     });
-  }, [jobTitle, industry, jobDescription, sessionId, credits]);
+  }, [jobTitle, industry, jobDescription, sessionId, credits, subscription]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +63,8 @@ export const useInterviewSetup = () => {
         trimmedLength: industry.trim().length
       },
       interviewCreditsRemaining: credits?.interview_credits || 0,
-      hasCredits: checkCredits('interview_credits')
+      hasCredits: checkCredits('interview_credits'),
+      subscriptionTier: subscription?.tier
     });
     
     if (!user) {
@@ -71,17 +76,20 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    await retryFetch();
+    // Only check credits for free tier users
+    if (subscription.tier === 'free') {
+      await retryFetch();
 
-    if (!checkCredits('interview_credits')) {
-      console.log("No interview credits remaining, showing upgrade prompt");
-      setShowUpgradePrompt(true);
-      toast({
-        title: "No credits remaining",
-        description: "You have used all your free interview simulation credits. Please upgrade to continue.",
-        variant: "destructive",
-      });
-      return;
+      if (!checkCredits('interview_credits')) {
+        console.log("No interview credits remaining, showing upgrade prompt");
+        setShowUpgradePrompt(true);
+        toast({
+          title: "No credits remaining",
+          description: "You have used all your free interview simulation credits. Please upgrade to continue.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     // Enhanced job title validation
@@ -128,7 +136,8 @@ export const useInterviewSetup = () => {
         jobTitle: trimmedJobTitle,
         industry: industry.trim(),
         descriptionLength: jobDescription.length,
-        interviewCreditsRemaining: credits?.interview_credits || 0
+        interviewCreditsRemaining: credits?.interview_credits || 0,
+        subscriptionTier: subscription?.tier
       });
 
       const { data: session, error } = await supabase
@@ -151,14 +160,20 @@ export const useInterviewSetup = () => {
       if (session) {
         console.log("Session created successfully:", session.id);
         
-        const decrementSuccess = await decrementCredits('interview_credits');
-        console.log("Decrement credits result:", { 
-          decrementSuccess, 
-          newCreditsRemaining: (credits?.interview_credits || 0) - 1 
-        });
-        
-        if (!decrementSuccess) {
-          console.warn("Failed to decrement credits, but continuing with interview");
+        // Only decrement credits for free tier users
+        if (subscription.tier === 'free') {
+          const decrementSuccess = await decrementCredits('interview_credits');
+          console.log("Decrement credits result:", { 
+            decrementSuccess, 
+            newCreditsRemaining: (credits?.interview_credits || 0) - 1,
+            subscriptionTier: subscription?.tier
+          });
+          
+          if (!decrementSuccess) {
+            console.warn("Failed to decrement credits, but continuing with interview");
+          }
+        } else {
+          console.log("Skip credit decrement for paid user:", subscription.tier);
         }
         
         try {

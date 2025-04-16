@@ -19,6 +19,7 @@ export const useQuizCredits = () => {
 
   const validateCredits = async (): Promise<boolean> => {
     try {
+      // Only check credits for free tier users
       if (subscription.tier === 'free') {
         // Always fetch the latest credits before checking
         await fetchUserCredits();
@@ -79,6 +80,12 @@ export const useQuizCredits = () => {
       // Reset the toast flag when actually using a credit
       setHasShownCreditToast(false);
       
+      // Skip credit check and decrement for paid users
+      if (subscription.tier !== 'free') {
+        console.log("Skipping credit checks for paid user:", subscription.tier);
+        return true;
+      }
+      
       // Check if we're in offline mode
       if (isOfflineMode) {
         // In offline mode, we just decrement local credits
@@ -98,25 +105,22 @@ export const useQuizCredits = () => {
       // Always fetch the latest credits before decrementing
       await fetchUserCredits();
       
-      if (subscription.tier === 'free') {
-        const success = await decrementCredits('quiz_credits');
+      const success = await decrementCredits('quiz_credits');
+      
+      // Show an accurate toast with remaining credits after successful decrement
+      if (success && credits) {
+        // Refresh credits to get the updated count
+        await fetchUserCredits();
         
-        // Show an accurate toast with remaining credits after successful decrement
-        if (success && credits) {
-          // Refresh credits to get the updated count
-          await fetchUserCredits();
-          
-          const remainingCredits = credits.quiz_credits;
-          toast({
-            title: "Credit Usage",
-            description: `You have ${remainingCredits} quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining after this use.`,
-            variant: "default",
-          });
-        }
-        
-        return success;
+        const remainingCredits = credits.quiz_credits;
+        toast({
+          title: "Credit Usage",
+          description: `You have ${remainingCredits} quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining after this use.`,
+          variant: "default",
+        });
       }
-      return true;
+      
+      return success;
     } catch (error) {
       console.error("Error using credit:", error);
       toast({

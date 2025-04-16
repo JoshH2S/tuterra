@@ -54,13 +54,15 @@ export const GenerateButton = ({ onClick, disabled, isGenerating }: GenerateButt
             </>
           )}
         </Button>
-        <p className="text-xs text-center text-muted-foreground">
-          {isOfflineMode ? (
-            "Offline mode - Using local credits"
-          ) : (
-            `You have ${remainingCredits} free quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining.`
-          )}
-        </p>
+        {isFreeUser && (
+          <p className="text-xs text-center text-muted-foreground">
+            {isOfflineMode ? (
+              "Offline mode - Using local credits"
+            ) : (
+              `You have ${remainingCredits} free quiz ${remainingCredits === 1 ? 'credit' : 'credits'} remaining.`
+            )}
+          </p>
+        )}
       </div>
     );
   }
