@@ -38,7 +38,7 @@ export const generateQuestionsFromApi = async (
     // Log the exact payload being sent to help with debugging
     console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // Use the Supabase client's functions.invoke method instead of direct fetch
+    // Use the Supabase client's functions.invoke method which automatically includes auth headers
     const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
       body: payload
     });
@@ -80,7 +80,7 @@ export const generateQuestionsFromApi = async (
         const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EdgeFunctionQuestion, index: number) => ({
           id: q.id || `q-${crypto.randomUUID()}`,
           session_id: params.sessionId,
-          question: q.text || '', // FIX: Use q.text instead of q.question
+          question: q.text || '', // Use q.text instead of q.question
           question_order: q.question_order || index,
           created_at: q.created_at || new Date().toISOString()
         }));
