@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ export const ConnectionStatusBanner = () => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [dismissedTimestamp, setDismissedTimestamp] = useState<number | null>(null);
   
-  // Check if we've already dismissed this recently (within 5 minutes)
   const hasRecentlyDismissed = () => {
     if (!dismissedTimestamp) return false;
     const fiveMinutesMs = 5 * 60 * 1000;
@@ -22,7 +20,6 @@ export const ConnectionStatusBanner = () => {
   };
   
   useEffect(() => {
-    // Try to get dismissed timestamp from session storage
     try {
       const storedDismissed = sessionStorage.getItem('connectionBannerDismissed');
       if (storedDismissed) {
@@ -32,11 +29,8 @@ export const ConnectionStatusBanner = () => {
       console.error('Failed to load banner dismissed state:', e);
     }
     
-    // Only show the banner if we're offline or have connection errors
-    // and we haven't recently dismissed it
     const shouldShow = (isOfflineMode || !isOnline || hasConnectionError) && !hasRecentlyDismissed();
     
-    // Add a small delay to prevent flickering during initial loading
     const timer = setTimeout(() => {
       setShowBanner(shouldShow);
     }, 2000);
@@ -47,11 +41,9 @@ export const ConnectionStatusBanner = () => {
   const handleRetry = async () => {
     setIsRetrying(true);
     
-    // Perform connection check
     const connectionSuccessful = await checkConnection();
     
     if (connectionSuccessful) {
-      // If connection successful, try to fetch credits
       try {
         await fetchUserCredits();
       } catch (e) {
@@ -59,7 +51,6 @@ export const ConnectionStatusBanner = () => {
       }
     }
     
-    // Reset retry state after a slight delay for UI feedback
     setTimeout(() => {
       setIsRetrying(false);
     }, 1000);
@@ -69,7 +60,6 @@ export const ConnectionStatusBanner = () => {
     setShowBanner(false);
     setDismissedTimestamp(Date.now());
     
-    // Store dismissed timestamp in session storage
     try {
       sessionStorage.setItem('connectionBannerDismissed', Date.now().toString());
     } catch (e) {
@@ -77,7 +67,6 @@ export const ConnectionStatusBanner = () => {
     }
   };
   
-  // If no connection issues or recently dismissed, don't render anything
   if (!showBanner) return null;
   
   return (
