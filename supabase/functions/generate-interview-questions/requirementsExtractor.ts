@@ -51,7 +51,14 @@ export async function extractRequirements(role: string, industry: string, jobDes
     
     try {
       const content = data.choices[0].message.content;
-      const parsedRequirements = JSON.parse(content);
+      console.log("Raw content from OpenAI:", content);
+      
+      // Clean the response to handle markdown code blocks
+      const cleanedContent = cleanMarkdownCodeBlocks(content);
+      console.log("Cleaned content:", cleanedContent);
+      
+      // Try to parse the cleaned content
+      const parsedRequirements = JSON.parse(cleanedContent);
       
       if (Array.isArray(parsedRequirements) && parsedRequirements.length > 0) {
         return parsedRequirements;
@@ -61,6 +68,7 @@ export async function extractRequirements(role: string, industry: string, jobDes
       }
     } catch (parseError) {
       console.error("Failed to parse OpenAI response:", parseError);
+      console.error("Response content was:", data.choices[0].message.content);
       return [`Role: ${role}`, `Industry: ${industry}`];
     }
   } catch (error) {
@@ -68,3 +76,20 @@ export async function extractRequirements(role: string, industry: string, jobDes
     return [`Role: ${role}`, `Industry: ${industry}`];
   }
 }
+
+/**
+ * Cleans markdown code blocks from a string to extract pure JSON
+ */
+function cleanMarkdownCodeBlocks(content: string): string {
+  // Case 1: Content is wrapped in ```json ... ``` markdown code block
+  const jsonBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
+  const match = content.match(jsonBlockRegex);
+  
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  
+  // Case 2: No code blocks, just cleanup any trailing/leading whitespace
+  return content.trim();
+}
+
