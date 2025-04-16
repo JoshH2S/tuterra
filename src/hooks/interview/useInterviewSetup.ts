@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,24 +48,6 @@ export const useInterviewSetup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("Form submission triggered with values:", { 
-      jobTitle: {
-        value: `'${jobTitle}'`,
-        type: typeof jobTitle,
-        length: jobTitle.length,
-        trimmedLength: jobTitle.trim().length,
-        isValidInput: Boolean(jobTitle && jobTitle.trim().length > 0)
-      },
-      industry: {
-        value: `'${industry}'`,
-        type: typeof industry,
-        length: industry.length,
-        trimmedLength: industry.trim().length
-      },
-      interviewCreditsRemaining: credits?.interview_credits || 0,
-      subscriptionTier: subscription?.tier
-    });
-    
     if (!user) {
       toast({
         title: "Authentication required",
@@ -79,26 +60,8 @@ export const useInterviewSetup = () => {
     // Reset any previous error state
     setErrorOccurred(false);
 
-    // Enhanced job title validation first, before any credit checks
+    // Validate essential fields (all should be pre-trimmed)
     if (!jobTitle) {
-      console.error("jobTitle validation failure: null or undefined value");
-      toast({
-        title: "Invalid Job Title",
-        description: "Please provide a valid job title",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const trimmedJobTitle = jobTitle.trim();
-    if (trimmedJobTitle === "") {
-      console.error("jobTitle validation failure:", {
-        jobTitleRaw: `'${jobTitle}'`,
-        jobTitleType: typeof jobTitle,
-        jobTitleTrimmed: trimmedJobTitle,
-        validationResult: 'Failed - empty or whitespace only'
-      });
-      
       toast({
         title: "Invalid Job Title",
         description: "Please provide a valid job title",
@@ -107,8 +70,7 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    if (!industry || !industry.trim()) {
-      console.error("Industry validation failure:", `'${industry}'`);
+    if (!industry) {
       toast({
         title: "Required field missing",
         description: "Please select an industry",
@@ -149,20 +111,15 @@ export const useInterviewSetup = () => {
     }
 
     try {
-      console.log("Creating interview session with:", {
-        jobTitle: trimmedJobTitle,
-        industry: industry.trim(),
-        descriptionLength: jobDescription.length,
-        interviewCreditsRemaining: credits?.interview_credits || 0,
-        subscriptionTier: subscription?.tier
-      });
-
+      // Store jobTitle in a variable to ensure it's used consistently
+      const finalJobTitle = jobTitle;
+      
       const { data: session, error } = await supabase
         .from("interview_sessions")
         .insert({
           user_id: user.id,
-          job_title: trimmedJobTitle,
-          industry: industry.trim(),
+          job_title: finalJobTitle,
+          industry: industry,
           job_description: jobDescription,
           status: "created",
         })
@@ -204,8 +161,8 @@ export const useInterviewSetup = () => {
           navigate(`/interview/${session.id}`, { 
             state: { 
               sessionId: session.id,
-              jobTitle: trimmedJobTitle,
-              industry: industry.trim(),
+              jobTitle: finalJobTitle,
+              industry: industry,
               jobDescription: jobDescription
             }
           });

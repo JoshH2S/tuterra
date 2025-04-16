@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { InterviewQuestion, EnhancedInterviewQuestion } from "@/types/interview";
@@ -14,32 +13,29 @@ export const useInterviewQuestions = (
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const generateQuestions = async (industry: string, jobRole: string, jobDescription: string, sessionId: string): Promise<InterviewQuestion[]> => {
+  const generateQuestions = async (industry: string, jobTitle: string, jobDescription: string, sessionId: string): Promise<InterviewQuestion[]> => {
     // Input validation
     if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
-      console.error("Cannot generate questions: No valid session ID provided", { sessionId });
+      console.error("Cannot generate questions: No valid session ID provided");
       throw new Error("Session ID is missing or invalid");
     }
     
     if (!industry || typeof industry !== 'string') {
-      console.error("Cannot generate questions: Invalid industry parameter", { industry });
+      console.error("Cannot generate questions: Invalid industry parameter");
       throw new Error("Industry parameter is missing or invalid");
     }
     
-    if (!jobRole || typeof jobRole !== 'string') {
-      console.error("Cannot generate questions: Invalid jobRole parameter", { jobRole });
-      throw new Error("Job role parameter is missing or invalid");
+    if (!jobTitle || typeof jobTitle !== 'string') {
+      console.error("Cannot generate questions: Invalid job title parameter");
+      throw new Error("Job title parameter is missing or invalid");
     }
     
     setLoading(true);
-    console.log(`Generating questions for session [${sessionId}] with:`, { 
-      industry, 
-      jobRole, 
-      jobDescription: jobDescription?.substring(0, 50) + '...' 
-    });
     
     try {
-      const params = { industry, jobRole, jobDescription, sessionId };
+      // For the API, we're using jobRole, not jobTitle
+      // This ensures we map from jobTitle (UI term) to jobRole (API term) consistently
+      const params = { industry, jobRole: jobTitle, jobDescription, sessionId };
       const formattedQuestions = await generateQuestionsFromApi(params, (error) => {
         console.error("Error in generateQuestionsFromApi:", error);
       });

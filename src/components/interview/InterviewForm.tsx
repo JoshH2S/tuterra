@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,16 +25,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    console.log("InterviewForm state updated:", { 
-      industry, 
-      jobTitle: `'${jobTitle}'`, 
-      jobTitleLength: jobTitle ? jobTitle.length : 0,
-      jobTitleTrimmed: jobTitle ? jobTitle.trim().length : 0,
-      jobDescription: jobDescription.substring(0, 30) + (jobDescription.length > 30 ? "..." : "") 
-    });
-  }, [industry, jobTitle, jobDescription]);
-
   const validateForm = () => {
     const errors: {
       industry?: string;
@@ -43,29 +34,13 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     let isValid = true;
 
     if (!industry?.trim()) {
-      console.log("Industry validation failed: empty value");
       errors.industry = "Please select a valid industry";
       isValid = false;
     }
     
-    if (!jobTitle) {
-      console.log("Job title validation failed: value is null or undefined");
+    if (!jobTitle?.trim()) {
       errors.jobTitle = "Please enter a job title";
       isValid = false;
-    } else if (jobTitle.trim() === "") {
-      console.log("Job title validation failed: value is empty or whitespace", {
-        jobTitle: `'${jobTitle}'`,
-        length: jobTitle.length,
-        trimmedLength: jobTitle.trim().length
-      });
-      errors.jobTitle = "Please enter a job title";
-      isValid = false;
-    } else {
-      console.log("Job title validation passed:", {
-        value: `'${jobTitle}'`,
-        length: jobTitle.length,
-        trimmedLength: jobTitle.trim().length
-      });
     }
     
     if (!jobDescription?.trim()) {
@@ -76,32 +51,22 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
 
-    console.log("Form validation result:", { isValid, errors });
     setFormErrors(errors);
     return isValid;
   };
 
   const handleIndustryChange = (value: string) => {
-    console.log("Industry selection changed:", value);
     if (value) {
       setIndustry(value);
       setFormErrors(prev => ({ ...prev, industry: undefined }));
-    } else {
-      console.error("Empty industry value received");
     }
   };
 
   const handleJobTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    console.log("Job title input changed:", {
-      value: `'${val}'`,
-      length: val.length,
-      trimmedLength: val.trim().length,
-      timestamp: new Date().toISOString()
-    });
-    setJobTitle(val);
+    const value = e.target.value;
+    setJobTitle(value);
     
-    if (val && val.trim() !== "") {
+    if (value?.trim()) {
       setFormErrors(prev => ({ ...prev, jobTitle: undefined }));
     }
   };
@@ -109,22 +74,13 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("Form submission started with job title:", {
-      value: `'${jobTitle}'`,
-      length: jobTitle.length,
-      trimmedLength: jobTitle.trim().length,
-      timestamp: new Date().toISOString()
-    });
-    
     if (isSubmitting || isLoading) {
-      console.log("Preventing duplicate submission");
       return;
     }
     
     setIsSubmitting(true);
     
     if (!validateForm()) {
-      console.log("Form validation failed with errors:", formErrors);
       toast({
         title: "Missing information",
         description: "Please fill out all required fields correctly",
@@ -135,18 +91,8 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     }
     
     try {
-      const finalJobTitle = jobTitle.trim();
-      
-      console.log("Submitting form with final values:", {
-        jobTitle: {
-          original: `'${jobTitle}'`,
-          final: `'${finalJobTitle}'`,
-          length: finalJobTitle.length,
-          timestamp: new Date().toISOString()
-        }
-      });
-      
-      await onSubmit(industry.trim(), finalJobTitle, jobDescription.trim());
+      const cleanJobTitle = jobTitle.trim();
+      await onSubmit(industry.trim(), cleanJobTitle, jobDescription.trim());
     } catch (error) {
       console.error("Error during form submission:", error);
       toast({
@@ -196,8 +142,8 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
               name="jobTitle"
               value={jobTitle}
               onChange={handleJobTitleChange}
-              onBlur={(e) => {
-                if (!e.target.value?.trim()) {
+              onBlur={() => {
+                if (!jobTitle?.trim()) {
                   setFormErrors(prev => ({ ...prev, jobTitle: "Please enter a job title" }));
                 }
               }}

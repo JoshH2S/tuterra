@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
@@ -18,13 +17,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const JobInterviewSimulator = () => {
-  // Get interview ID from URL parameters
   const { id: interviewId } = useParams();
   const location = useLocation();
   const locationState = location.state || {};
   const isDetailMode = !!interviewId;
   
-  // Access interview session state and handlers
   const {
     industry,
     setIndustry,
@@ -50,18 +47,15 @@ const JobInterviewSimulator = () => {
     handleStartNew
   } = useInterviewSession();
 
-  // Access the question generation hook
   const { generateQuestions, fetchQuestions, loading: loadingQuestions } = 
     useInterviewQuestions(currentSessionId, setQuestions);
 
-  // Effect to sync URL parameter with interview session
   useEffect(() => {
     const setupInterview = async () => {
       if (interviewId) {
         console.log("Setting interview session from URL parameter:", interviewId);
         setCurrentSessionId(interviewId);
         
-        // Try to get interview session details from location state
         if (locationState.jobTitle && locationState.industry) {
           console.log("Using location state for interview details:", {
             jobTitle: locationState.jobTitle,
@@ -75,7 +69,6 @@ const JobInterviewSimulator = () => {
           }
         }
         
-        // Fetch questions for this session
         console.log("Fetching questions for session:", interviewId);
         setIsGeneratingQuestions(true);
         
@@ -90,7 +83,6 @@ const JobInterviewSimulator = () => {
             variant: "destructive"
           });
           
-          // Try to generate questions if we have the needed data
           if (locationState.jobTitle && locationState.industry) {
             try {
               await generateQuestions(
@@ -112,7 +104,6 @@ const JobInterviewSimulator = () => {
     setupInterview();
   }, [interviewId, setCurrentSessionId, setJobTitle, setIndustry, setJobDescription]);
 
-  // Access interview setup state and handlers
   const {
     jobTitle: setupJobTitle,
     setJobTitle: setupSetJobTitle,
@@ -133,7 +124,6 @@ const JobInterviewSimulator = () => {
     message: string;
   }>({ hasError: false, message: "" });
 
-  // Local state for this component
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
   const sessionCreationErrors: any[] = [];
   const usedFallbackQuestions = false;
@@ -149,32 +139,31 @@ const JobInterviewSimulator = () => {
       }
     });
     
-    // Validate inputs before processing
     if (!industry.trim()) {
-      console.error("Invalid industry received:", industry);
+      console.error("Invalid industry received");
       return;
     }
     
-    if (!title || !title.trim()) {
-      console.error("Invalid job title received:", title);
+    if (!title.trim()) {
+      console.error("Invalid job title received");
       return;
     }
 
     try {
-      // Set form as submitting to prevent multiple submissions
       setFormSubmitting(true);
       
-      // Update setup state values
-      setupSetJobTitle(title.trim());
-      setupSetIndustry(industry);
-      setupSetJobDescription(description);
+      const trimmedTitle = title.trim();
+      const trimmedIndustry = industry.trim();
+      const trimmedDescription = description.trim();
       
-      // Also update interview session state for consistency
-      setJobTitle(title.trim());
-      setIndustry(industry);
-      setJobDescription(description);
+      setupSetJobTitle(trimmedTitle);
+      setupSetIndustry(trimmedIndustry);
+      setupSetJobDescription(trimmedDescription);
       
-      // Wait for state updates to complete
+      setJobTitle(trimmedTitle);
+      setIndustry(trimmedIndustry);
+      setJobDescription(trimmedDescription);
+      
       await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log("State updates completed, submitting with:", {
@@ -185,12 +174,10 @@ const JobInterviewSimulator = () => {
         }
       });
       
-      // Create a synthetic event to pass to handleSubmit
       const syntheticEvent = {
         preventDefault: () => {}
       } as React.FormEvent;
       
-      // Submit the form using handleSubmit from useInterviewSetup
       await handleSubmit(syntheticEvent);
     } catch (error) {
       console.error("Error during interview submission:", error);
@@ -199,14 +186,12 @@ const JobInterviewSimulator = () => {
         message: "Failed to start the interview. Please try again."
       });
     } finally {
-      // Reset submission state
       setFormSubmitting(false);
     }
   };
 
   const handleStartNewInterview = () => {
     handleStartNew();
-    // Clear any error state
     setErrorState({ hasError: false, message: "" });
   };
 
@@ -217,12 +202,10 @@ const JobInterviewSimulator = () => {
     setErrorState({ hasError: false, message: "" });
     
     try {
-      // Try to fetch questions first
       await fetchQuestions();
     } catch (error) {
       console.error("Retry fetch failed:", error);
       
-      // If fetch fails and we have job details, try generation
       if (jobTitle && industry) {
         try {
           await generateQuestions(
@@ -249,7 +232,6 @@ const JobInterviewSimulator = () => {
     }
   };
 
-  // Show error message if we have an error
   if (errorState.hasError) {
     return (
       <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
@@ -290,7 +272,6 @@ const JobInterviewSimulator = () => {
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
-        {/* Show loading state when generating questions */}
         {(isGeneratingQuestions || loadingQuestions) && (
           <div className="text-center py-8">
             <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -301,7 +282,6 @@ const JobInterviewSimulator = () => {
           </div>
         )}
         
-        {/* Only show interview form when not in detail mode and no interview is in progress */}
         {!interviewReady && !isInterviewInProgress && !isInterviewComplete && 
          !isGeneratingQuestions && !loadingQuestions && !isDetailMode && (
           <InterviewForm 
@@ -323,7 +303,7 @@ const JobInterviewSimulator = () => {
             currentQuestion={currentQuestion}
             onSubmitResponse={handleSubmitResponse}
             typingEffect={typingEffect}
-            onTypingComplete={() => {}} // This is handled in useInterviewSession
+            onTypingComplete={() => {}}
             isLastQuestion={isLastQuestion}
           />
         )}
