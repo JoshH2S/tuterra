@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { RequestBody, EdgeFunctionResponse } from "./types.ts";
@@ -93,13 +92,20 @@ serve(async (req) => {
       }, 400);
     }
     
-    // Support both role and jobRole parameters
-    const { industry, role, jobRole, jobDescription, sessionId } = reqBody;
-    const effectiveRole = role || jobRole; // Use either parameter name
+    // Support multiple parameter formats (jobTitle, role, jobRole)
+    const { industry, role, jobRole, jobTitle, jobDescription, sessionId } = reqBody;
+    
+    // Use the most specific parameter available, prioritizing jobTitle
+    const effectiveRole = jobTitle || role || jobRole;
     
     console.log("Processed parameters:", { 
       industry, 
       role: effectiveRole,
+      originalParams: {
+        jobTitle: jobTitle ? 'present' : 'missing',
+        role: role ? 'present' : 'missing',
+        jobRole: jobRole ? 'present' : 'missing'
+      },
       jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A",
       sessionId
     });

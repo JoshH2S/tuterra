@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debug effect to monitor state changes
   useEffect(() => {
     console.log("InterviewForm state updated:", { 
       industry, 
@@ -44,14 +42,12 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     } = {};
     let isValid = true;
 
-    // Validate industry with clear logging
     if (!industry?.trim()) {
       console.log("Industry validation failed: empty value");
       errors.industry = "Please select a valid industry";
       isValid = false;
     }
     
-    // Enhanced job title validation with detailed logging
     if (typeof jobTitle !== 'string' || !jobTitle.trim()) {
       console.log("Job title validation failed:", {
         value: `'${jobTitle}'`,
@@ -70,7 +66,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       });
     }
     
-    // Validate description
     if (!jobDescription?.trim()) {
       errors.jobDescription = "Please enter a job description";
       isValid = false;
@@ -103,7 +98,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     });
     setJobTitle(val);
     
-    // Clear error when user types something valid
     if (val?.trim()) {
       setFormErrors(prev => ({ ...prev, jobTitle: undefined }));
     }
@@ -112,7 +106,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent double submissions
     if (isSubmitting || isLoading) {
       console.log("Preventing duplicate submission");
       return;
@@ -120,7 +113,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     
     setIsSubmitting(true);
     
-    // Add detailed debug info to help troubleshoot
     console.log("InterviewForm submission attempt with values:", {
       industry: `'${industry}'`,
       jobTitle: {
@@ -136,7 +128,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       }
     });
     
-    // Consolidated validation in one place to avoid race conditions
     if (!validateForm()) {
       console.log("Form validation failed with errors:", formErrors);
       toast({
@@ -149,7 +140,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
     }
     
     try {
-      // Prepare the final values with trimming to ensure consistency
       const finalIndustry = industry.trim();
       const finalJobTitle = jobTitle.trim();
       const finalJobDescription = jobDescription.trim();
@@ -161,7 +151,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
         jobDescriptionLength: finalJobDescription.length
       });
       
-      // Submit with trimmed values
       await onSubmit(finalIndustry, finalJobTitle, finalJobDescription);
     } catch (error) {
       console.error("Error during form submission:", error);
@@ -213,7 +202,6 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
               value={jobTitle}
               onChange={handleJobTitleChange}
               onBlur={(e) => {
-                // Validate on blur
                 if (!e.target.value?.trim()) {
                   setFormErrors(prev => ({ ...prev, jobTitle: "Please enter a job title" }));
                 }

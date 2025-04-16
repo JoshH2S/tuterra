@@ -1,9 +1,11 @@
 
 // Type definitions for the generate-interview-questions edge function
+
 export interface RequestBody {
   industry: string;
-  role?: string;
-  jobRole?: string;
+  jobRole?: string;  // Support legacy parameter
+  role?: string;     // Support legacy parameter
+  jobTitle?: string; // Add support for jobTitle parameter
   jobDescription?: string;
   sessionId: string;
 }
@@ -23,8 +25,6 @@ export interface EnhancedInterviewQuestion {
   estimatedTimeSeconds: number;
   context?: string;
   keywords: string[];
-  followUp?: string[];
-  expectedTopics?: string[];
   question_order: number;
   created_at: string;
 }

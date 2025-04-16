@@ -24,7 +24,8 @@ export const generateQuestionsFromApi = async (
     // Create a clean payload with proper serialization
     const payload = {
       industry: params.industry,
-      jobRole: params.jobRole,
+      jobTitle: params.jobRole, // Explicitly use jobTitle as the key
+      jobRole: params.jobRole,  // Keep for backward compatibility
       jobDescription: params.jobDescription || "",
       sessionId: params.sessionId
     };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +17,6 @@ export const useInterviewSetup = () => {
   
   const { checkCredits, decrementCredits, credits, retryFetch } = useUserCredits();
 
-  // Enhanced debug effect for credits tracking
   useEffect(() => {
     console.log("Interview setup credits debug:", { 
       credits,
@@ -27,7 +25,6 @@ export const useInterviewSetup = () => {
     });
   }, [credits]);
 
-  // Enhanced debug effect for form state
   useEffect(() => {
     console.log("Interview setup state debug:", { 
       jobTitle: {
@@ -73,10 +70,8 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    // Ensure we have the latest credit count
     await retryFetch();
 
-    // Check if user has interview credits
     if (!checkCredits('interview_credits')) {
       console.log("No interview credits remaining, showing upgrade prompt");
       setShowUpgradePrompt(true);
@@ -88,7 +83,6 @@ export const useInterviewSetup = () => {
       return;
     }
 
-    // More explicit validation with detailed logging
     if (!jobTitle || !jobTitle.trim()) {
       console.error("jobTitle validation failure:", {
         jobTitleRaw: `'${jobTitle}'`,
@@ -124,7 +118,6 @@ export const useInterviewSetup = () => {
         interviewCreditsRemaining: credits?.interview_credits || 0
       });
 
-      // Create a new interview session
       const { data: session, error } = await supabase
         .from("interview_sessions")
         .insert({
@@ -144,7 +137,7 @@ export const useInterviewSetup = () => {
 
       if (session) {
         console.log("Session created successfully:", session.id);
-        // Decrement interview credits
+        
         const decrementSuccess = await decrementCredits('interview_credits');
         console.log("Decrement credits result:", { 
           decrementSuccess, 
