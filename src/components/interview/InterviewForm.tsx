@@ -49,7 +49,7 @@ export const InterviewForm = ({ onSubmit, isLoading = false }: InterviewFormProp
       isValid = false;
     }
     
-    // Improved job title validation - more lenient but still catches empty strings
+    // Improved job title validation with more comprehensive checks
     if (!jobTitle) {
       console.log("Job title validation failed: value is null or undefined");
       errors.jobTitle = "Please enter a job title";

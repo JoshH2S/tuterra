@@ -1,4 +1,3 @@
-
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -74,17 +73,16 @@ export const CreditsDisplay = ({
     id: 'fallback',
     user_id: 'unknown',
     quiz_credits: 5,
-    interview_credits: 3,  // Updated to 3 to match the new default
+    interview_credits: 3, 
     assessment_credits: 2,
     tutor_message_credits: 5,
-    bonus_interview_applied: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
 
   const creditsItems = [
     { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 },
-    { label: "Interview Simulations", value: safeCredits.interview_credits, total: 3 }, // Updated total to 3
+    { label: "Interview Simulations", value: safeCredits.interview_credits, total: 3 },
     { label: "Skill Assessments", value: safeCredits.assessment_credits, total: 2 },
     { label: "AI Tutor Messages", value: safeCredits.tutor_message_credits, total: 5 },
   ];
@@ -95,7 +93,6 @@ export const CreditsDisplay = ({
     navigate('/pricing');
   };
 
-  // Mobile-optimized compact view
   if (compact) {
     return (
       <div className="space-y-2 p-2">
@@ -117,7 +114,6 @@ export const CreditsDisplay = ({
     );
   }
 
-  // Full view with responsive design
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
