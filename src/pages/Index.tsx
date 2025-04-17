@@ -20,11 +20,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white w-full max-w-full overflow-hidden">
-      <Header1 />
+      <Header1 getStartedUrl="/plan-selection" />
       
       <div className="pt-20">
         <section id="hero">
-          <HeroSection />
+          <HeroSection ctaUrl="/plan-selection" />
         </section>
         
         <section id="features">
@@ -36,7 +36,7 @@ const Index = () => {
         </section>
         
         <section id="cta">
-          <CtaSection />
+          <CtaSection ctaUrl="/plan-selection" />
         </section>
       </div>
       
@@ -52,4 +52,3 @@ const Index = () => {
 };
 
 export default Index;
-

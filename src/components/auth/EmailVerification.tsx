@@ -1,235 +1,212 @@
 
-import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Mail, Clock, HelpCircle, Check, AlertCircle } from "lucide-react";
-import { WelcomePopup } from "../onboarding/WelcomePopup";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
+import { Mail, Loader2, CheckCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
 export const EmailVerification = () => {
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [error, setError] = useState("");
-  
+  const [email, setEmail] = useState<string>("");
+  const [verifying, setVerifying] = useState(true);
+  const [verified, setVerified] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { createCheckoutSession } = useSubscriptionManagement();
+
+  // Get current location query params
+  const queryParams = new URLSearchParams(location.search);
+  const shouldCheckout = queryParams.get("checkout") === "true";
+  const isEnterprise = queryParams.get("enterprise") === "true";
   
   useEffect(() => {
-    const processEmailVerification = async () => {
-      const searchParams = new URLSearchParams(location.search);
-      
-      if (searchParams.has("error_description")) {
-        setError(searchParams.get("error_description") || "Verification failed.");
-        return;
+    // Try to get the email from localStorage if not already in state
+    if (!email) {
+      const storedEmail = localStorage.getItem("pendingVerificationEmail");
+      if (storedEmail) {
+        setEmail(storedEmail);
       }
-      
-      if (location.hash) {
-        const hashParams = new URLSearchParams(location.hash.substring(1));
-        if (hashParams.has("access_token")) {
-          setVerifying(true);
+    }
+    
+    // Check if user is already signed in
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          setVerified(true);
+          setVerifying(false);
           
-          try {
-            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-            
-            if (sessionError) throw sessionError;
-            
-            if (sessionData?.session) {
-              setVerificationSuccess(true);
-              setTimeout(() => {
-                setShowWelcomePopup(true);
-              }, 1500);
-            }
-          } catch (err: any) {
-            console.error("Verification error:", err);
-            setError(err.message || "Failed to verify email. Please try again.");
-          } finally {
-            setVerifying(false);
-          }
+          // Handle redirection based on plan
+          setTimeout(() => handleRedirectAfterVerification(), 2000);
+        } else {
+          setVerifying(false);
         }
+      } catch (error) {
+        console.error("Error checking session:", error);
+        setVerifying(false);
+        setError("Failed to check verification status. Please try again.");
       }
     };
     
-    processEmailVerification();
-  }, [location]);
+    checkSession();
+  }, []);
   
-  const handleResendVerification = async () => {
+  const handleRedirectAfterVerification = async () => {
     try {
-      setVerifying(true);
+      setRedirecting(true);
+      
+      // Check if there's a selected plan
+      const selectedPlan = localStorage.getItem("selectedPlan");
+      
+      if (shouldCheckout && selectedPlan === "pro_plan") {
+        // For Pro plan, redirect to Stripe checkout
+        await createCheckoutSession({
+          planId: "pro_plan",
+          successUrl: `${window.location.origin}/subscription-success`,
+          cancelUrl: `${window.location.origin}/subscription-canceled`,
+        });
+      } else if (isEnterprise && selectedPlan === "enterprise_plan") {
+        // For Enterprise plan, redirect to contact page
+        navigate("/contact");
+      } else {
+        // For Free plan or if no plan selected, redirect to onboarding
+        navigate("/profile-settings");
+      }
+    } catch (error) {
+      console.error("Error redirecting after verification:", error);
+      // Fallback to dashboard if checkout fails
+      navigate("/dashboard");
+    }
+  };
+  
+  const resendVerificationEmail = async () => {
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address to resend the verification link.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setResendLoading(true);
+      
+      // Determine redirect URL based on the stored plan
+      const selectedPlan = localStorage.getItem("selectedPlan");
+      let redirectUrl = window.location.origin + "/verify-email";
+      
+      if (selectedPlan === "pro_plan") {
+        redirectUrl += "?checkout=true";
+      } else if (selectedPlan === "enterprise_plan") {
+        redirectUrl += "?enterprise=true";
+      }
+      
       const { error } = await supabase.auth.resend({
         type: "signup",
-        email: localStorage.getItem("pendingVerificationEmail") || "",
+        email,
         options: {
-          emailRedirectTo: window.location.origin + "/verify-email",
+          emailRedirectTo: redirectUrl,
         },
       });
       
       if (error) throw error;
       
       toast({
-        title: "Verification email sent!",
+        title: "Verification Email Sent",
         description: "Please check your inbox for the verification link.",
       });
-    } catch (err: any) {
-      console.error("Failed to resend verification email:", err);
-      setError(err.message || "Failed to resend verification email.");
+    } catch (error: any) {
+      console.error("Error resending verification email:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend verification email. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setVerifying(false);
+      setResendLoading(false);
     }
   };
   
-  const handleContinue = () => {
-    navigate("/", { replace: true });
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-md"
-    >
-      <div className="flex justify-center mb-8">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="w-[180px]"
-        >
-          <img 
-            src="/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png"
-            alt="EduPortal Logo" 
-            className="w-full h-auto"
-          />
-        </motion.div>
-      </div>
-
-      <Card className="shadow-lg border-0 overflow-hidden">
-        <div className="h-2 bg-gradient-to-r from-primary-100 to-primary-400" />
-        
-        <CardContent className="p-8">
+    <div className="w-full max-w-md">
+      <div className="text-center mb-6">
+        <div className="inline-flex justify-center items-center w-16 h-16 bg-primary/10 rounded-full mb-4">
           {verifying ? (
-            <div className="text-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-600">Verifying your email...</p>
-            </div>
-          ) : error ? (
-            <div className="space-y-6">
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-5 w-5" />
-                <AlertTitle>Verification Failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-              
-              <p className="text-gray-700">
-                We couldn't verify your email. This could be because the verification link expired or was already used.
-              </p>
-              
-              <div className="flex justify-center py-4">
-                <Button onClick={handleResendVerification}>
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          ) : verified ? (
+            <CheckCircle className="h-8 w-8 text-green-500" />
+          ) : (
+            <Mail className="h-8 w-8 text-primary" />
+          )}
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Email Verification</h2>
+        {verifying ? (
+          <p className="text-muted-foreground">Checking verification status...</p>
+        ) : verified ? (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ duration: 0.5 }}
+          >
+            <p className="text-green-600 mb-2">Your email has been successfully verified!</p>
+            <p className="text-muted-foreground">
+              {redirecting ? (
+                <span className="flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {shouldCheckout ? "Redirecting to checkout..." : "Redirecting to your dashboard..."}
+                </span>
+              ) : (
+                shouldCheckout 
+                  ? "You'll be redirected to complete your subscription..."
+                  : "You'll be redirected to your dashboard shortly..."
+              )}
+            </p>
+          </motion.div>
+        ) : (
+          <>
+            <p className="text-muted-foreground mb-6">
+              We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.
+            </p>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Didn't receive the email? Check your spam folder or resend it.</p>
+                <Button 
+                  onClick={resendVerificationEmail} 
+                  variant="outline" 
+                  className="w-full"
+                  disabled={resendLoading}
+                >
+                  {resendLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Resend Verification Email
                 </Button>
               </div>
               
-              <p className="text-sm text-gray-500 text-center">
-                If you continue having issues, please contact our support team.
-              </p>
-            </div>
-          ) : verificationSuccess ? (
-            <div className="space-y-6 text-center">
-              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-                <Check className="h-8 w-8 text-green-600" />
-              </div>
-              
-              <h2 className="text-xl font-semibold text-gray-800">Email Verified!</h2>
-              
-              <p className="text-gray-600">
-                Your email has been successfully verified. You can now continue to set up your profile.
-              </p>
-              
-              <Button
-                size="lg"
-                className="px-8"
-                onClick={handleContinue}
-              >
-                Continue to EduPortal
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <motion.h1 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.4 }}
-                  className="text-2xl md:text-3xl font-bold text-gray-800 mb-1"
+              <div className="text-center">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate("/auth")}
+                  className="text-sm"
                 >
-                  Verify Your Email
-                </motion.h1>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.4 }}
-                  className="text-xl text-gray-600"
-                >
-                  Almost there!
-                </motion.p>
-              </div>
-
-              <Alert className="bg-blue-50 border-blue-200 rounded-md">
-                <Mail className="h-5 w-5 text-blue-600" />
-                <AlertDescription className="text-blue-800">
-                  A verification email has been sent to your inbox. Please click the link in the email to verify your account.
-                </AlertDescription>
-              </Alert>
-
-              <div className="pt-4 space-y-2">
-                <p className="text-sm text-gray-600">
-                  Didn't receive an email? Check your spam folder or click below to resend the verification email:
-                </p>
-                <div className="flex justify-center py-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleResendVerification} 
-                    disabled={verifying}
-                    className="bg-white hover:bg-gray-50 active:scale-95 transition-transform touch-manipulation"
-                  >
-                    {verifying ? "Sending..." : "Resend Verification Email"}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center text-amber-600 text-sm">
-                <Clock className="h-4 w-4 mr-1.5" />
-                <p>Note: Verification links will expire after 24 hours.</p>
-              </div>
-
-              <div className="flex items-start text-gray-600 bg-gray-50 p-4 rounded-md text-sm">
-                <HelpCircle className="h-5 w-5 mr-2 flex-shrink-0 text-gray-500 mt-0.5" />
-                <p>
-                  If you're having trouble verifying your email, please contact our support team for assistance at{" "}
-                  <a href="mailto:support@tuterra.com" className="text-primary hover:underline">
-                    support@tuterra.com
-                  </a>
-                </p>
+                  Back to Sign In
+                </Button>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="mt-6 text-center text-xs text-gray-500 px-4">
-        <p>Having trouble viewing this page? Please try on a larger screen or contact support.</p>
+          </>
+        )}
+        
+        {error && (
+          <p className="text-red-500 mt-4">{error}</p>
+        )}
       </div>
-
-      <WelcomePopup 
-        isOpen={showWelcomePopup} 
-        onClose={() => setShowWelcomePopup(false)} 
-      />
-    </motion.div>
+    </div>
   );
 };

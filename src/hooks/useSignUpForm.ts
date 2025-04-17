@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
+import { useNavigate } from "react-router-dom";
 
-export const useSignUpForm = () => {
+export const useSignUpForm = (selectedPlan?: string | null) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,6 +18,7 @@ export const useSignUpForm = () => {
   const [verificationSent, setVerificationSent] = useState(false);
   const [formError, setFormError] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (password) {
@@ -65,17 +67,34 @@ export const useSignUpForm = () => {
     setLoading(true);
     
     try {
+      // Build the user metadata including the selected plan
+      const userMetadata = {
+        first_name: firstName,
+        last_name: lastName,
+        user_type: "student",
+      };
+      
+      if (selectedPlan) {
+        Object.assign(userMetadata, { selected_plan: selectedPlan });
+      }
+      
+      // Determine redirect URL based on the plan
+      let redirectUrl = window.location.origin + "/verify-email";
+      
+      // For pro plan, include query parameter to route to payment after verification
+      if (selectedPlan === "pro_plan") {
+        redirectUrl += "?checkout=true";
+      } else if (selectedPlan === "enterprise_plan") {
+        redirectUrl += "?enterprise=true";
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            user_type: "student",
-          },
-          // Enable email confirmation
-          emailRedirectTo: window.location.origin + "/verify-email"
+          data: userMetadata,
+          // Enable email confirmation with custom redirect
+          emailRedirectTo: redirectUrl
         },
       });
 
@@ -83,6 +102,12 @@ export const useSignUpForm = () => {
       
       if (data?.user) {
         setVerificationSent(true);
+        
+        // Save selected plan to localStorage for persistence
+        if (selectedPlan) {
+          localStorage.setItem("selectedPlan", selectedPlan);
+        }
+        
         toast({
           title: "Verification email sent!",
           description: "Please check your inbox and verify your email.",

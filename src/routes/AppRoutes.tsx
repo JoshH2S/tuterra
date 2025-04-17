@@ -16,6 +16,7 @@ import { TermsOfUse } from "@/components/legal/TermsOfUse";
 import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
 import PricingPage from "@/pages/PricingPage";
+import PlanSelectionPage from "@/pages/PlanSelectionPage";
 import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 
@@ -26,6 +27,9 @@ export const AppRoutes = () => {
       
       {/* Auth Routes */}
       {authRoutes}
+      
+      {/* Plan Selection Route */}
+      <Route path="/plan-selection" element={<PlanSelectionPage />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard/*" element={

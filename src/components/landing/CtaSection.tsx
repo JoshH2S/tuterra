@@ -1,38 +1,32 @@
 
-import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-export function CtaSection() {
-  return (
-    <section className="py-20 bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-white shadow-md">
-      <div className="container mx-auto px-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center max-w-3xl mx-auto"
-        >
-          <h2 className="text-4xl font-bold mb-6 gradient-text">
-            Ready to Transform Your Educational Experience?
-          </h2>
-          <p className="text-xl gradient-text mb-8">
-            Join thousands of educators and students already using our platform to enhance learning outcomes.
-          </p>
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            className="inline-block"
-          >
-            <Link 
-              to="/courses" 
-              className="px-10 py-4 bg-gradient-to-r from-[#091747] to-blue-400 dark:to-blue-500 text-white rounded-lg font-medium hover:opacity-90 shadow-md transition-colors"
-            >
-              Get Started Today
-            </Link>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  );
+interface CtaSectionProps {
+  ctaUrl?: string;
 }
+
+export const CtaSection = ({ ctaUrl = "/auth?tab=signup" }: CtaSectionProps) => {
+  return (
+    <div className="bg-white py-16 sm:py-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            Ready to transform your learning experience?
+          </h2>
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-600">
+            Join thousands of students who are learning faster and more effectively with Tuterra's AI-powered tools.
+          </p>
+          <div className="mt-10 flex items-center justify-center gap-x-6">
+            <Button size="lg" asChild>
+              <Link to={ctaUrl}>Get Started Today</Link>
+            </Button>
+            <Link to="/pricing" className="text-sm font-semibold leading-6 text-gray-900 hover:text-primary transition-colors">
+              View pricing <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -1,198 +1,188 @@
 
-"use client";
-
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 import {
-    NavigationMenu,
-    NavigationMenuContent,
-    NavigationMenuItem,
-    NavigationMenuLink,
-    NavigationMenuList,
-    NavigationMenuTrigger,
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { Menu, MoveRight, X } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { MenuIcon, X } from "lucide-react";
 
-function Header1() {
-    const navigationItems = [
-        {
-            title: "Home",
-            href: "/",
-            description: "",
-        },
-        {
-            title: "Product",
-            description: "Managing a small business today is already tough.",
-            items: [
-                {
-                    title: "Reports",
-                    href: "/reports",
-                },
-                {
-                    title: "Statistics",
-                    href: "/statistics",
-                },
-                {
-                    title: "Dashboards",
-                    href: "/dashboards",
-                },
-                {
-                    title: "Recordings",
-                    href: "/recordings",
-                },
-            ],
-        },
-        {
-            title: "Company",
-            description: "Managing a small business today is already tough.",
-            items: [
-                {
-                    title: "About us",
-                    href: "/about",
-                },
-                {
-                    title: "Fundraising",
-                    href: "/fundraising",
-                },
-                {
-                    title: "Investors",
-                    href: "/investors",
-                },
-                {
-                    title: "Contact us",
-                    href: "/contact",
-                },
-            ],
-        },
-    ];
+const menuItems = [
+  { label: "Features", href: "/#features" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "About", href: "/#about" },
+];
 
-    const [isOpen, setOpen] = useState(false);
-    return (
-        <header className="w-full z-40 fixed top-0 left-0 bg-background">
-            <div className="container relative mx-auto min-h-20 flex gap-4 flex-row lg:grid lg:grid-cols-3 items-center">
-                <div className="justify-start items-center gap-4 lg:flex hidden flex-row">
-                    <NavigationMenu className="flex justify-start items-start">
-                        <NavigationMenuList className="flex justify-start gap-4 flex-row">
-                            {navigationItems.map((item) => (
-                                <NavigationMenuItem key={item.title}>
-                                    {item.href ? (
-                                        <>
-                                            <NavigationMenuLink asChild>
-                                                <Link to={item.href}>
-                                                    <Button variant="ghost">{item.title}</Button>
-                                                </Link>
-                                            </NavigationMenuLink>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <NavigationMenuTrigger className="font-medium text-sm">
-                                                {item.title}
-                                            </NavigationMenuTrigger>
-                                            <NavigationMenuContent className="!w-[450px] p-4">
-                                                <div className="flex flex-col lg:grid grid-cols-2 gap-4">
-                                                    <div className="flex flex-col h-full justify-between">
-                                                        <div className="flex flex-col">
-                                                            <p className="text-base">{item.title}</p>
-                                                            <p className="text-muted-foreground text-sm">
-                                                                {item.description}
-                                                            </p>
-                                                        </div>
-                                                        <Button size="sm" className="mt-10">
-                                                            Book a call today
-                                                        </Button>
-                                                    </div>
-                                                    <div className="flex flex-col text-sm h-full justify-end">
-                                                        {item.items?.map((subItem) => (
-                                                            <Link
-                                                                to={subItem.href}
-                                                                key={subItem.title}
-                                                                className="flex flex-row justify-between items-center hover:bg-muted py-2 px-4 rounded"
-                                                            >
-                                                                <span>{subItem.title}</span>
-                                                                <MoveRight className="w-4 h-4 text-muted-foreground" />
-                                                            </Link>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </NavigationMenuContent>
-                                        </>
-                                    )}
-                                </NavigationMenuItem>
-                            ))}
-                        </NavigationMenuList>
-                    </NavigationMenu>
-                </div>
-                <div className="flex lg:justify-center justify-start">
-                    <Link to="/">
-                        <img 
-                            src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png" 
-                            alt="tuterra.ai logo" 
-                            className="h-12 w-auto object-contain" 
-                        />
-                    </Link>
-                </div>
-                <div className="flex justify-end w-full gap-4">
-                    <div className="border-r hidden md:inline"></div>
-                    <Button variant="outline" asChild>
-                        <Link to="/auth">Sign in</Link>
-                    </Button>
-                    <Button asChild>
-                        <Link to="/auth?tab=signup">Get started</Link>
-                    </Button>
-                </div>
-                <div className="flex w-12 shrink lg:hidden items-end justify-end">
-                    <Button variant="ghost" onClick={() => setOpen(!isOpen)} className="touch-manipulation">
-                        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                    </Button>
-                    {isOpen && (
-                        <div className="absolute top-20 border-t flex flex-col w-full right-0 bg-background shadow-lg py-4 container gap-8">
-                            {navigationItems.map((item) => (
-                                <div key={item.title} className="touch-manipulation">
-                                    <div className="flex flex-col gap-2">
-                                        {item.href ? (
-                                            <Link
-                                                to={item.href}
-                                                className="flex justify-between items-center"
-                                            >
-                                                <span className="text-lg">{item.title}</span>
-                                                <MoveRight className="w-4 h-4 stroke-1 text-muted-foreground" />
-                                            </Link>
-                                        ) : (
-                                            <p className="text-lg">{item.title}</p>
-                                        )}
-                                        {item.items &&
-                                            item.items.map((subItem) => (
-                                                <Link
-                                                    key={subItem.title}
-                                                    to={subItem.href}
-                                                    className="flex justify-between items-center"
-                                                >
-                                                    <span className="text-muted-foreground">
-                                                        {subItem.title}
-                                                    </span>
-                                                    <MoveRight className="w-4 h-4 stroke-1" />
-                                                </Link>
-                                            ))}
-                                    </div>
-                                </div>
-                            ))}
-                            <div className="flex flex-col gap-3 mt-4">
-                                <Link to="/auth" className="flex justify-between items-center">
-                                    <span className="text-lg">Sign in</span>
-                                    <MoveRight className="w-4 h-4 stroke-1 text-muted-foreground" />
-                                </Link>
-                                <Link to="/auth?tab=signup" className="flex justify-between items-center">
-                                    <span className="text-lg font-semibold text-primary">Get started</span>
-                                    <MoveRight className="w-4 h-4 stroke-1 text-primary" />
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </header>
-    );
+interface HeaderProps {
+  getStartedUrl?: string;
 }
 
-export { Header1 };
+export function Header1({ getStartedUrl = "/auth?tab=signup" }: HeaderProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { isLoggedIn } = useAuthStatus();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <header
+      className={cn(
+        "fixed top-0 w-full z-50 transition-all duration-300",
+        scrolled || isOpen
+          ? "bg-white/95 backdrop-blur-sm border-b shadow-sm"
+          : "bg-transparent"
+      )}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center">
+            <Link to="/" className="flex-shrink-0">
+              <span className="sr-only">Tuterra</span>
+              <div className="h-8 w-auto">
+                <span className="text-xl font-bold tracking-tight text-gray-900">
+                  Tuterra
+                </span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Desktop navigation */}
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-baseline space-x-4">
+              <NavigationMenu>
+                <NavigationMenuList>
+                  {menuItems.map((item) => (
+                    <NavigationMenuItem key={item.label}>
+                      <Link
+                        to={item.href}
+                        className="text-gray-700 hover:text-primary px-3 py-2 text-sm font-medium transition-colors"
+                      >
+                        {item.label}
+                      </Link>
+                    </NavigationMenuItem>
+                  ))}
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
+          </div>
+
+          <div className="hidden md:block">
+            <div className="flex items-center space-x-4">
+              {isLoggedIn ? (
+                <Button onClick={() => navigate("/dashboard")}>Dashboard</Button>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate("/auth")}
+                    className="text-gray-700 hover:text-primary"
+                  >
+                    Sign in
+                  </Button>
+                  <Button onClick={() => navigate(getStartedUrl)}>
+                    Get Started
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              type="button"
+              onClick={toggleMenu}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-primary hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
+              aria-controls="mobile-menu"
+              aria-expanded="false"
+            >
+              <span className="sr-only">Open main menu</span>
+              {isOpen ? (
+                <X className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <MenuIcon className="block h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {isOpen && (
+        <div className="md:hidden" id="mobile-menu">
+          <div className="space-y-1 px-4 pb-3 pt-2 border-t">
+            {menuItems.map((item) => (
+              <Link
+                key={item.label}
+                to={item.href}
+                className="text-gray-700 hover:text-primary block px-3 py-2 text-base font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+            
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              {isLoggedIn ? (
+                <Button 
+                  onClick={() => {
+                    navigate("/dashboard");
+                    setIsOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  Dashboard
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      navigate("/auth");
+                      setIsOpen(false);
+                    }}
+                    className="w-full"
+                  >
+                    Sign in
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      navigate(getStartedUrl);
+                      setIsOpen(false);
+                    }}
+                    className="w-full"
+                  >
+                    Get Started
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+export const Header2 = () => {
+  return <div>Alternative Header</div>;
+};
