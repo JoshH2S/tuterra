@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PersonalInfoInputs } from "./PersonalInfoInputs";
 import { PasswordInputs } from "./PasswordInputs";
 import { SubmitButton } from "./SubmitButton";
@@ -10,16 +10,14 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
 import { TermsOfUse } from "@/components/legal/TermsOfUse";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Mail, AlertCircle, Check } from "lucide-react";
+import { Shield, Mail, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 
 interface SignUpFormProps {
   onSignUpSuccess?: () => void;
-  selectedPlan?: string | null;
 }
 
-export const SignUpForm = ({ onSignUpSuccess, selectedPlan }: SignUpFormProps) => {
+export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
   const {
     email,
     setEmail,
@@ -41,7 +39,7 @@ export const SignUpForm = ({ onSignUpSuccess, selectedPlan }: SignUpFormProps) =
     handleSignUp,
     verificationSent,
     formError
-  } = useSignUpForm(selectedPlan);
+  } = useSignUpForm();
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
@@ -53,24 +51,6 @@ export const SignUpForm = ({ onSignUpSuccess, selectedPlan }: SignUpFormProps) =
       onSignUpSuccess?.();
     }
   };
-
-  // Get plan display info
-  const getPlanInfo = () => {
-    if (!selectedPlan) return null;
-    
-    switch(selectedPlan) {
-      case 'free_plan':
-        return { name: "Free Plan", color: "bg-gray-100 text-gray-700" };
-      case 'pro_plan':
-        return { name: "Pro Plan", color: "bg-blue-100 text-blue-700" };
-      case 'enterprise_plan':
-        return { name: "Enterprise Plan", color: "bg-purple-100 text-purple-700" };
-      default:
-        return null;
-    }
-  };
-  
-  const planInfo = getPlanInfo();
 
   return (
     <motion.div
@@ -92,9 +72,6 @@ export const SignUpForm = ({ onSignUpSuccess, selectedPlan }: SignUpFormProps) =
             <AlertDescription className="text-blue-800">
               <span className="font-medium block">Verification email sent!</span>
               Please check your inbox at <span className="font-bold">{email}</span> and click the verification link to activate your account.
-              {selectedPlan && selectedPlan !== "free_plan" && (
-                <p className="mt-2">After verification, you'll be directed to complete your subscription.</p>
-              )}
             </AlertDescription>
           </Alert>
           <p className="text-sm text-muted-foreground">
@@ -108,25 +85,6 @@ export const SignUpForm = ({ onSignUpSuccess, selectedPlan }: SignUpFormProps) =
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{formError}</AlertDescription>
             </Alert>
-          )}
-          
-          {planInfo && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Check className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium">Selected Plan:</span>
-              </div>
-              <Badge className={`${planInfo.color} font-normal text-sm px-3 py-1`}>
-                {planInfo.name}
-              </Badge>
-              <p className="text-xs text-muted-foreground mt-1">
-                {selectedPlan === "pro_plan" 
-                  ? "You'll proceed to payment after verification." 
-                  : selectedPlan === "enterprise_plan" 
-                    ? "Our team will contact you after signup." 
-                    : ""}
-              </p>
-            </div>
           )}
           
           <div className="space-y-4">

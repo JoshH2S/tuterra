@@ -6,12 +6,10 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { EmailVerification } from "@/components/auth/EmailVerification";
 import { motion } from "framer-motion";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { WelcomePopup } from "@/components/onboarding/WelcomePopup";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 
 interface AuthProps {
   mode?: "emailVerification" | "resetPassword";
@@ -22,19 +20,9 @@ const Auth = ({
 }: AuthProps = {}) => {
   const [showWelcome, setShowWelcome] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const queryMode = queryParams.get("mode") as "emailVerification" | "resetPassword" | null;
   const mode = propMode || queryMode || undefined;
-  const tabFromQuery = queryParams.get("tab") || "signin";
-  const selectedPlan = queryParams.get("plan") || sessionStorage.getItem("selectedPlan");
-  
-  // Save the plan selection if it's in the URL
-  useEffect(() => {
-    if (queryParams.get("plan")) {
-      sessionStorage.setItem("selectedPlan", queryParams.get("plan") as string);
-    }
-  }, [queryParams]);
   
   // Save email for potential resend verification
   useEffect(() => {
@@ -81,25 +69,12 @@ const Auth = ({
   }} transition={{
     duration: 0.5
   }} className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      {selectedPlan && (
-        <div className="w-full max-w-md mb-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/plan-selection")}
-            className="flex items-center"
-            size="sm"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Plan Selection
-          </Button>
-        </div>
-      )}
-      
       <Card className="w-full max-w-md shadow-lg border-0 mb-8">
         <CardHeader>
           <CardTitle className="text-center">Welcome to Tuterra</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={tabFromQuery} className="w-full">
+          <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -114,7 +89,7 @@ const Auth = ({
                   // We'll set the welcome popup to show after the user verifies their email
                   // and gets redirected back to the app
                 }, 500);
-              }} selectedPlan={selectedPlan} />
+              }} />
             </TabsContent>
           </Tabs>
         </CardContent>

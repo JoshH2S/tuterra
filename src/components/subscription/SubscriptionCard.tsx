@@ -17,7 +17,6 @@ interface SubscriptionCardProps {
   buttonDisabled?: boolean;
   buttonIcon?: React.ReactNode;
   customButtonVariant?: ButtonProps["variant"];
-  isSelected?: boolean;
 }
 
 export function SubscriptionCard({
@@ -32,20 +31,12 @@ export function SubscriptionCard({
   buttonDisabled,
   buttonIcon,
   customButtonVariant,
-  isSelected,
 }: SubscriptionCardProps) {
   return (
     <Card className={cn(
-      "flex flex-col p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg border relative",
-      isPopular && "border-primary ring-2 ring-primary ring-opacity-60",
-      isSelected && "border-green-500 ring-2 ring-green-500"
+      "flex flex-col p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg border",
+      isPopular && "border-primary ring-2 ring-primary ring-opacity-60"
     )}>
-      {isSelected && (
-        <div className="absolute -top-3 -right-3 bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md">
-          <Check className="h-5 w-5" />
-        </div>
-      )}
-      
       <div className="flex-1">
         {isPopular && (
           <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary mb-4">
@@ -76,7 +67,7 @@ export function SubscriptionCard({
       <Button
         onClick={() => onSelect(planId)}
         disabled={buttonDisabled}
-        className={cn("mt-8", isSelected && customButtonVariant !== "outline" && "bg-green-500 hover:bg-green-600")}
+        className="mt-8"
         variant={customButtonVariant || "default"}
       >
         {buttonIcon && <span className="mr-2">{buttonIcon}</span>}
