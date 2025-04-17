@@ -1,4 +1,3 @@
-
 export interface InterviewSession {
   id: string;
   user_id: string;
@@ -68,11 +67,4 @@ export interface InterviewFeedback {
 export interface InterviewTranscript {
   question: string;
   answer: string;
-  feedback?: string;
-}
-
-export interface InterviewPerformance {
-  score: number;
-  strengths: string[];
-  areasForImprovement: string[];
 }

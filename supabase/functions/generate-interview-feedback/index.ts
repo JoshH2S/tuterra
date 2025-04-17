@@ -55,48 +55,21 @@ serve(async (req) => {
     
     console.log(`Generating feedback for interview session ${sessionId}`);
     
-    // Get interview details for role and industry
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('interview_sessions')
-      .select('job_title, industry')
-      .eq('id', sessionId)
-      .single();
-    
-    if (sessionError) {
-      console.error("Error fetching session details:", sessionError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch interview session details" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-      );
-    }
-    
-    const { job_title, industry } = sessionData;
-    
     // Format the transcript for the prompt
     const formattedTranscript = transcript
       .map((item, index) => `Question ${index + 1}: ${item.question}\nAnswer: ${item.answer}`)
       .join("\n\n");
     
-    // Create the system prompt for the AI using the template provided
+    // Create the system prompt for the AI
     const systemPrompt = `
-    You are a professional career coach and hiring expert. Analyze the following mock job interview transcript for a candidate applying for a ${job_title} in the ${industry} sector. Provide detailed, constructive feedback across the following areas:
-
-    1. **Communication Skills** – How clear, concise, and confident were their responses?
-    2. **Domain Knowledge** – Did they demonstrate relevant technical or industry knowledge?
-    3. **Problem-Solving Ability** – How well did they handle scenario-based or behavioral questions?
-    4. **Confidence & Tone** – Did their language and tone reflect confidence and professionalism?
-    5. **Cultural Fit** – Based on the responses, would they be a good fit for a modern company in this field?
-    6. **Strengths & Red Flags** – Highlight any standout strengths and potential concerns.
-    7. **Suggested Improvements** – Offer 2–3 practical suggestions to improve future interview performance.
-
-    Be objective, specific, and encouraging. Use a professional yet friendly tone. Finish the feedback with a motivational summary.
-
-    Provide your analysis in JSON format with the following structure:
+    You are an expert interview coach. Review the following job interview transcript and provide constructive feedback:
+    
+    Provide an analysis in JSON format with the following structure:
     {
-      "feedback": "Overall feedback and analysis covering all the points mentioned above",
+      "feedback": "Overall feedback and analysis",
       "strengths": ["Strength 1", "Strength 2", "Strength 3"],
       "areas_for_improvement": ["Area 1", "Area 2", "Area 3"],
-      "overall_score": A number from 1-100 rating the overall interview performance
+      "overall_score": A number from 1-10 rating the overall interview performance
     }
     `;
     
@@ -121,7 +94,7 @@ serve(async (req) => {
             }
           ],
           temperature: 0.7,
-          max_tokens: 1500
+          max_tokens: 1000
         })
       });
       

@@ -43,15 +43,11 @@ const JobInterviewSimulator = () => {
     isInterviewComplete,
     typingEffect,
     transcript,
-    performance,
     currentQuestion,
     isLastQuestion,
-    feedbackLoading,
     handleStartChat,
     handleSubmitResponse,
     handleDownloadTranscript,
-    handleSaveToProfile,
-    handleShare,
     handleStartNew
   } = useInterviewSession();
 
@@ -313,11 +309,8 @@ const JobInterviewSimulator = () => {
         {isInterviewComplete && (
           <InterviewCompletion
             transcript={transcript}
-            performance={performance}
             onDownloadTranscript={handleDownloadTranscript}
-            onStartNew={handleStartNew}
-            onSaveToProfile={handleSaveToProfile}
-            onShare={handleShare}
+            onStartNew={handleStartNewInterview}
           />
         )}
       </div>
