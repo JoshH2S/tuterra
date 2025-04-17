@@ -7,6 +7,7 @@ import { ComparisonSection } from "@/components/landing/ComparisonSection";
 import { CtaSection } from "@/components/landing/CtaSection";
 import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
 import { EnhancedNavigation } from "@/components/navigation/EnhancedNavigation";
+import { Header1 } from "@/components/ui/header";
 
 const Index = () => {
   const { isOnline } = useNetworkStatus();
@@ -21,24 +22,30 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white w-full max-w-full overflow-hidden">
-      <section id="hero">
-        <HeroSection />
-      </section>
+      {/* Add the new Header component at the top */}
+      <Header1 />
       
-      <section id="features">
-        <FeatureShowcaseDemo />
-      </section>
-      
-      <FeaturesSection />
-      <FloatingCards />
-      
-      <section id="comparison">
-        <ComparisonSection />
-      </section>
-      
-      <section id="cta">
-        <CtaSection />
-      </section>
+      {/* Add padding-top to account for the fixed header */}
+      <div className="pt-20">
+        <section id="hero">
+          <HeroSection />
+        </section>
+        
+        <section id="features">
+          <FeatureShowcaseDemo />
+        </section>
+        
+        <FeaturesSection />
+        <FloatingCards />
+        
+        <section id="comparison">
+          <ComparisonSection />
+        </section>
+        
+        <section id="cta">
+          <CtaSection />
+        </section>
+      </div>
       
       {/* Enhanced navigation for better UX */}
       <EnhancedNavigation sections={sections} />
