@@ -1,6 +1,5 @@
 
 import { HeroSection } from "@/components/landing/HeroSection";
-import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { FloatingCards } from "@/components/landing/FloatingCards";
 import { FeatureShowcaseDemo } from "@/components/landing/FeatureShowcaseDemo";
 import { ComparisonSection } from "@/components/landing/ComparisonSection";
@@ -15,17 +14,15 @@ const Index = () => {
   // Define sections for the navigation
   const sections = [
     { id: "hero", title: "Home" },
-    { id: "features", title: "Features" },
+    // Removed Features section from navigation
     { id: "comparison", title: "Why Choose Us" },
     { id: "cta", title: "Get Started" }
   ];
 
   return (
     <div className="min-h-screen bg-white w-full max-w-full overflow-hidden">
-      {/* Add the Header component at the top */}
       <Header1 />
       
-      {/* Add padding-top to account for the fixed header */}
       <div className="pt-20">
         <section id="hero">
           <HeroSection />
@@ -35,7 +32,7 @@ const Index = () => {
           <FeatureShowcaseDemo />
         </section>
         
-        <FeaturesSection />
+        {/* Removed FeaturesSection component */}
         <FloatingCards />
         
         <section id="comparison">
@@ -47,7 +44,6 @@ const Index = () => {
         </section>
       </div>
       
-      {/* Enhanced navigation for better UX */}
       <EnhancedNavigation sections={sections} />
       
       {!isOnline && (
