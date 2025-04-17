@@ -4,54 +4,72 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+
 export function HeroSection() {
-  return <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-white dark:from-gray-900 dark:to-gray-800">
+  return (
+    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-white dark:from-gray-900 dark:to-gray-800">
+      {/* New background image */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src="/lovable-uploads/dfd38374-fd74-42a1-9010-8c092a4ae7b6.png" 
+          alt="Tuterra AI learning environment" 
+          className="w-full h-full object-cover"
+        />
+        {/* Overlay to ensure text is readable */}
+        <div className="absolute inset-0 bg-black/30"></div>
+      </div>
+      
       <div className="container px-4 mx-auto relative z-10">
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.8
-      }} className="text-center max-w-3xl mx-auto">
-          <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          duration: 0.6,
-          delay: 0.2
-        }} className="flex justify-center mb-6">
+        <motion.div 
+          initial={{
+            opacity: 0,
+            y: 20
+          }} 
+          animate={{
+            opacity: 1,
+            y: 0
+          }} 
+          transition={{
+            duration: 0.8
+          }} 
+          className="text-center max-w-3xl mx-auto"
+        >
+          <motion.div 
+            initial={{
+              opacity: 0,
+              y: 20
+            }} 
+            animate={{
+              opacity: 1,
+              y: 0
+            }} 
+            transition={{
+              duration: 0.6,
+              delay: 0.2
+            }} 
+            className="flex justify-center mb-6"
+          >
             <img src="/lovable-uploads/78778e79-7be3-4fb2-b3af-90404757e8f4.png" alt="tuterra.ai logo" className="h-40 md:h-48 w-auto object-fill" />
           </motion.div>
           
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-white">
             Transform Your Learning Experience with{" "}
-            <span className="bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-transparent bg-clip-text">tuterra.ai</span>
+            <span className="bg-gradient-to-br from-amber-200 to-amber-400 text-transparent bg-clip-text">tuterra.ai</span>
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+          <p className="text-xl text-white mb-8">
             An intelligent learning platform that adapts to your needs, tracks your progress,
             and helps you achieve your educational goals.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/courses" className="btn-gold-gradient px-8 py-3 rounded-lg flex items-center justify-center gap-2">
+            <Link to="/courses" className="btn-gold-gradient px-8 py-3 rounded-lg flex items-center justify-center gap-2 bg-amber-400 text-black font-semibold hover:bg-amber-500 transition-colors">
               Get Started <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link to="/tutor" className="px-8 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <Link to="/tutor" className="px-8 py-3 border border-white text-white rounded-lg font-medium hover:bg-white/10 transition-colors">
               Try AI Tutor
             </Link>
           </div>
         </motion.div>
       </div>
-      
-      {/* Background Elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl" />
-      </div>
-    </section>;
+    </section>
+  );
 }

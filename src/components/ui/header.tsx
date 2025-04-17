@@ -127,9 +127,7 @@ function Header1() {
                     <p className="font-semibold">tuterra.ai</p>
                 </div>
                 <div className="flex justify-end w-full gap-4">
-                    <Button variant="ghost" className="hidden md:inline">
-                        Book a demo
-                    </Button>
+                    {/* "Book a demo" button removed */}
                     <div className="border-r hidden md:inline"></div>
                     <Button variant="outline" asChild>
                         <Link to="/signin">Sign in</Link>
