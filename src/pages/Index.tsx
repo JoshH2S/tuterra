@@ -14,7 +14,6 @@ const Index = () => {
   // Define sections for the navigation
   const sections = [
     { id: "hero", title: "Home" },
-    // Removed Features section from navigation
     { id: "comparison", title: "Why Choose Us" },
     { id: "cta", title: "Get Started" }
   ];
@@ -31,9 +30,6 @@ const Index = () => {
         <section id="features">
           <FeatureShowcaseDemo />
         </section>
-        
-        {/* Removed FeaturesSection component */}
-        <FloatingCards />
         
         <section id="comparison">
           <ComparisonSection />
@@ -56,3 +52,4 @@ const Index = () => {
 };
 
 export default Index;
+
