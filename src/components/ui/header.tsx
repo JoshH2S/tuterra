@@ -126,7 +126,7 @@ function Header1() {
                 <div className="flex lg:justify-center justify-start">
                     <Link to="/">
                         <img 
-                            src="/lovable-uploads/78778e79-7be3-4fb2-b3af-90404757e8f4.png" 
+                            src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png" 
                             alt="tuterra.ai logo" 
                             className="h-12 w-auto object-contain" 
                         />
