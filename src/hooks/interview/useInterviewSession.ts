@@ -1,11 +1,12 @@
 
-import { useEffect } from "react";
-import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
+import { useEffect, useState } from "react";
+import { InterviewQuestion, InterviewTranscript, InterviewPerformance } from "@/types/interview";
 import { useToast } from "@/hooks/use-toast";
 import { useInterviewState } from "./useInterviewState";
 import { useInterviewResponses } from "./useInterviewResponses";
 import { useInterviewPersistence } from "./useInterviewPersistence";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useInterviewFeedback } from "./useInterviewFeedback";
 
 export const useInterviewSession = () => {
   const {
@@ -41,6 +42,8 @@ export const useInterviewSession = () => {
   const { saveResponse } = useInterviewResponses(setResponses);
   const { downloadTranscript } = useInterviewPersistence();
   const { subscription } = useSubscription();
+  const { generateFeedback, feedback, loading: feedbackLoading } = useInterviewFeedback(currentSessionId);
+  const [performance, setPerformance] = useState<InterviewPerformance | undefined>();
 
   // When typing effect finishes
   useEffect(() => {
@@ -64,6 +67,37 @@ export const useInterviewSession = () => {
       updateTranscript();
     }
   }, [isInterviewComplete, responses, updateTranscript]);
+
+  // Generate feedback when transcript is available
+  useEffect(() => {
+    const handleFeedbackGeneration = async () => {
+      if (isInterviewComplete && transcript.length > 0 && !feedbackLoading && !performance) {
+        try {
+          await generateFeedback(transcript);
+        } catch (error) {
+          console.error("Error generating feedback:", error);
+          toast({
+            title: "Feedback Generation Error",
+            description: "We couldn't generate detailed feedback for your interview.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    handleFeedbackGeneration();
+  }, [isInterviewComplete, transcript, generateFeedback, feedbackLoading, performance]);
+
+  // Update performance when feedback is available
+  useEffect(() => {
+    if (feedback && !performance) {
+      setPerformance({
+        score: feedback.overall_score,
+        strengths: feedback.strengths,
+        areasForImprovement: feedback.areas_for_improvement
+      });
+    }
+  }, [feedback, performance]);
 
   const handleStartChat = () => {
     if (questions.length === 0) {
@@ -106,6 +140,22 @@ export const useInterviewSession = () => {
     downloadTranscript(transcript, jobTitle, format);
   };
 
+  const handleSaveToProfile = () => {
+    // This would be implemented in a future update
+    toast({
+      title: "Feature Coming Soon",
+      description: "Saving interviews to your profile will be available in a future update.",
+    });
+  };
+
+  const handleShare = () => {
+    // This would be implemented in a future update
+    toast({
+      title: "Feature Coming Soon",
+      description: "Sharing interview results will be available in a future update.",
+    });
+  };
+
   const handleStartNew = () => {
     console.log("Starting new interview, resetting state");
     resetInterview();
@@ -131,11 +181,15 @@ export const useInterviewSession = () => {
     isInterviewComplete,
     typingEffect,
     transcript,
+    performance,
     currentQuestion,
     isLastQuestion,
+    feedbackLoading,
     handleStartChat,
     handleSubmitResponse,
     handleDownloadTranscript,
+    handleSaveToProfile,
+    handleShare,
     handleStartNew
   };
 };
