@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
 import { InterviewLogo } from "@/components/interview/InterviewLogo";
+import { InterviewCompletion } from "@/components/interview/InterviewCompletion";
 
 const JobInterviewSimulator = () => {
   const { id: interviewId } = useParams();
@@ -264,8 +265,6 @@ const JobInterviewSimulator = () => {
             )}
           </div>
         </div>
-        
-        
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
