@@ -79,7 +79,11 @@ export default function PricingPage() {
         </p>
         
         {billingInterval === 'monthly' && (
-          <PremiumContentCard variant="glass" className="max-w-xs mx-auto p-2">
+          <PremiumContentCard 
+            title="Billing Options"
+            variant="glass" 
+            className="max-w-xs mx-auto p-2"
+          >
             <Tabs defaultValue="monthly" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
