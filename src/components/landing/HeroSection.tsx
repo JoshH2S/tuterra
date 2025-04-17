@@ -1,8 +1,10 @@
+
 "use client";
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+
 export function HeroSection() {
   return <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-white dark:from-gray-900 dark:to-gray-800">
       {/* Background image */}
@@ -28,7 +30,7 @@ export function HeroSection() {
           </h1>
           <p className="text-xl text-white mb-8">An intelligent learning platform that goes beyond helping you absorb information, designed to help you bridge the gap between the classroom and the real world</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/courses" className="btn-gold-gradient px-8 py-3 rounded-lg flex items-center justify-center gap-2 bg-amber-400 text-black font-semibold hover:bg-amber-500 transition-colors">
+            <Link to="/pricing" className="btn-gold-gradient px-8 py-3 rounded-lg flex items-center justify-center gap-2 bg-amber-400 text-black font-semibold hover:bg-amber-500 transition-colors">
               Get Started <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/tutor" className="px-8 py-3 border border-white text-white rounded-lg font-medium hover:bg-white/10 transition-colors">

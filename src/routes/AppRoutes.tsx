@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { authRoutes } from "./AuthRoutes";
@@ -26,6 +25,11 @@ export const AppRoutes = () => {
       
       {/* Auth Routes */}
       {authRoutes}
+      
+      {/* Public Routes */}
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-use" element={<TermsOfUse />} />
+      <Route path="/pricing" element={<PricingPage />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard/*" element={
@@ -107,9 +111,7 @@ export const AppRoutes = () => {
       } />
       
       {/* Unprotected Routes */}
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/terms-of-use" element={<TermsOfUse />} />
-      <Route path="/pricing" element={<PricingPage />} />
+      
       
       <Route path="/demos/*" element={
         <Routes>
