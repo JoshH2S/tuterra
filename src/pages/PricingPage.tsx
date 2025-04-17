@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -6,9 +7,8 @@ import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { PremiumContentCard, PremiumCard } from "@/components/ui/premium-card";
+import { PremiumContentCard } from "@/components/ui/premium-card";
+import { Mail } from "lucide-react";
 
 export default function PricingPage() {
   const { isLoggedIn } = useAuthStatus();
@@ -17,7 +17,7 @@ export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
   
-  const handleSelectPlan = async (planId: 'pro_plan' | 'premium_plan') => {
+  const handleSelectPlan = async (planId: 'pro_plan') => {
     if (!isLoggedIn) {
       navigate('/auth?returnTo=/pricing');
       return;
@@ -38,18 +38,25 @@ export default function PricingPage() {
   };
 
   const tierFeatures = {
-    pro: [
-      "Unlimited quizzes and assessments",
-      "Advanced AI feedback on quizzes",
-      "Learning path planning",
-      "Priority support",
+    free: [
+      "5 AI tutor messages per month",
+      "2 quizzes per month",
+      "2 interview simulations per month",
+      "1 skill assessment per month",
+      "Basic dashboard and course tracking",
     ],
-    premium: [
-      "Everything in Pro plan",
-      "AI-powered smart notes",
-      "Progress analytics dashboard",
-      "1-on-1 consultation session",
-      "Early access to new features",
+    pro: [
+      "Unlimited quizzes, assessments, and interview simulations",
+      "AI feedback on every quiz and skill report",
+      "Learning path planning & skill progress tracking",
+    ],
+    enterprise: [
+      "Designed for schools, bootcamps, and institutions",
+      "Custom onboarding & dashboards",
+      "Group analytics and LMS integrations",
+      "Instructor tools",
+      "Content alignment with school curriculum",
+      "Admin panel to manage learners",
     ],
   };
 
@@ -68,21 +75,23 @@ export default function PricingPage() {
       >
         <h1 className="text-4xl font-bold tracking-tight mb-4">Choose the Right Plan</h1>
         <p className="text-lg text-muted-foreground mb-8">
-          Unlock powerful learning features tailored to your educational needs
+          Find the perfect plan for your learning journey
         </p>
         
-        <PremiumCard variant="glass" className="max-w-xs mx-auto p-2">
-          <Tabs defaultValue="monthly" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
-                Monthly
-              </TabsTrigger>
-              <TabsTrigger value="yearly" onClick={() => setBillingInterval('yearly')}>
-                Yearly <span className="ml-1 text-xs text-emerald-600">-20%</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </PremiumCard>
+        {billingInterval === 'monthly' && (
+          <PremiumContentCard variant="glass" className="max-w-xs mx-auto p-2">
+            <Tabs defaultValue="monthly" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
+                  Monthly
+                </TabsTrigger>
+                <TabsTrigger value="yearly" onClick={() => setBillingInterval('yearly')}>
+                  Yearly <span className="ml-1 text-xs text-emerald-600">-20%</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </PremiumContentCard>
+        )}
       </motion.div>
 
       {!isLoggedIn && (
@@ -115,14 +124,9 @@ export default function PricingPage() {
         <SubscriptionCard
           title="Free"
           price="$0"
-          description="Limited access to core features"
-          features={[
-            "5 AI tutor messages per month",
-            "2 quizzes per month",
-            "2 interview simulations per month",
-            "1 assessment per month",
-          ]}
-          planId="pro_plan" // This won't be used for the free plan
+          description="Explore core tools with limited usage"
+          features={tierFeatures.free}
+          planId="free_plan"
           onSelect={() => {}}
           buttonText="Current Plan"
           buttonDisabled={true}
@@ -147,22 +151,17 @@ export default function PricingPage() {
           buttonDisabled={isCurrentPlan('pro_plan') || isRedirecting}
         />
 
-        {/* Premium Plan */}
+        {/* Enterprise Plan */}
         <SubscriptionCard
-          title="Premium"
-          price={billingInterval === 'monthly' ? "$19.99" : "$191.88"}
-          description="Professional-grade learning tools"
-          features={tierFeatures.premium}
-          planId="premium_plan"
-          onSelect={handleSelectPlan}
-          buttonText={
-            isCurrentPlan('premium_plan') 
-              ? "Current Plan" 
-              : isRedirecting 
-                ? "Redirecting..." 
-                : "Upgrade to Premium"
-          }
-          buttonDisabled={isCurrentPlan('premium_plan') || isRedirecting}
+          title="Enterprise"
+          price="Custom pricing"
+          description="For schools, institutions, and organizations"
+          features={tierFeatures.enterprise}
+          planId="enterprise_plan"
+          onSelect={() => navigate('/contact')}
+          buttonText="Contact Sales"
+          buttonIcon={<Mail className="w-4 h-4" />}
+          customButtonVariant="outline"
         />
       </motion.div>
 
