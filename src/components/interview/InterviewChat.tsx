@@ -72,8 +72,8 @@ export const InterviewChat = ({
   };
   
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Submit on Ctrl+Enter or Cmd+Enter
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    // Submit on Enter key
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
@@ -115,7 +115,7 @@ export const InterviewChat = ({
             />
             <div className="flex justify-between items-center mt-4">
               <p className="text-xs text-muted-foreground">
-                Press Ctrl+Enter to submit or use the microphone to speak
+                Press Enter to submit or use the microphone to speak
               </p>
               <Button 
                 onClick={handleSubmit} 
