@@ -20,12 +20,15 @@ export const MainLayout = () => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  // Check if current path is the landing page
+  const isLandingPage = location.pathname === "/";
+
   return (
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <SidebarProvider>
-        <Layout>
+        <Layout isLandingPage={isLandingPage}>
           <AppRoutes />
         </Layout>
       </SidebarProvider>

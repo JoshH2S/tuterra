@@ -7,13 +7,21 @@ import { Menu, ChevronUp, Home, Bell, User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileMenu } from "./MobileMenu";
 import { QuickActionButtons } from "./QuickActionButtons";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export function MobileNavigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [showToTop, setShowToTop] = useState(false);
   const isMobile = useIsMobile();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isLoggedIn, checkingAuth } = useAuthStatus();
+  
+  // Don't show navigation on landing page
+  const isLandingPage = location.pathname === "/";
+  
+  if (!isMobile || isLandingPage) return null;
 
   // Check scroll position to show/hide back to top button
   useEffect(() => {
@@ -31,8 +39,6 @@ export function MobileNavigation() {
       window.scrollTo(0, 0);
     }
   }, [location.pathname, isMobile]);
-
-  if (!isMobile) return null;
 
   const navItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
