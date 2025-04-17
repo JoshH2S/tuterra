@@ -135,10 +135,10 @@ function Header1() {
                 <div className="flex justify-end w-full gap-4">
                     <div className="border-r hidden md:inline"></div>
                     <Button variant="outline" asChild>
-                        <Link to="/signin">Sign in</Link>
+                        <Link to="/auth">Sign in</Link>
                     </Button>
                     <Button asChild>
-                        <Link to="/signup">Get started</Link>
+                        <Link to="/auth?tab=signup">Get started</Link>
                     </Button>
                 </div>
                 <div className="flex w-12 shrink lg:hidden items-end justify-end">
@@ -177,6 +177,16 @@ function Header1() {
                                     </div>
                                 </div>
                             ))}
+                            <div className="flex flex-col gap-3 mt-4">
+                                <Link to="/auth" className="flex justify-between items-center">
+                                    <span className="text-lg">Sign in</span>
+                                    <MoveRight className="w-4 h-4 stroke-1 text-muted-foreground" />
+                                </Link>
+                                <Link to="/auth?tab=signup" className="flex justify-between items-center">
+                                    <span className="text-lg font-semibold text-primary">Get started</span>
+                                    <MoveRight className="w-4 h-4 stroke-1 text-primary" />
+                                </Link>
+                            </div>
                         </div>
                     )}
                 </div>

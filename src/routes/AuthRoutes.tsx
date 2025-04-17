@@ -13,6 +13,8 @@ const AuthRedirect = () => {
 export const authRoutes = [
   <Route key="auth-root" path="/" element={<AuthRedirect />} />,
   <Route key="auth-page" path="/auth" element={<Auth />} />,
+  <Route key="auth-signin" path="/signin" element={<Navigate to="/auth" replace />} />,
+  <Route key="auth-signup" path="/signup" element={<Navigate to="/auth?tab=signup" replace />} />,
   <Route key="auth-verify-email" path="/verify-email" element={<Auth mode="emailVerification" />} />,
   <Route key="auth-reset-password" path="/reset-password" element={<Auth mode="resetPassword" />} />
 ];
