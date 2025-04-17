@@ -2,7 +2,7 @@
 import { HeroSection } from "@/components/landing/HeroSection";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { FloatingCards } from "@/components/landing/FloatingCards";
-import { DashboardPreview } from "@/components/landing/DashboardPreview";
+import { FeatureShowcaseDemo } from "@/components/landing/FeatureShowcaseDemo";
 import { ComparisonSection } from "@/components/landing/ComparisonSection";
 import { CtaSection } from "@/components/landing/CtaSection";
 import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
@@ -13,9 +13,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white -m-4 md:-m-8 w-full max-w-full overflow-hidden">
       <HeroSection />
+      <FeatureShowcaseDemo />
       <FeaturesSection />
       <FloatingCards />
-      <DashboardPreview />
       <ComparisonSection />
       <CtaSection />
       
