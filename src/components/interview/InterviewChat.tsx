@@ -15,6 +15,7 @@ interface InterviewChatProps {
   typingEffect: boolean;
   onTypingComplete: () => void;
   isLastQuestion: boolean;
+  jobTitle?: string;
 }
 
 export const InterviewChat = ({
@@ -22,7 +23,8 @@ export const InterviewChat = ({
   onSubmitResponse,
   typingEffect,
   onTypingComplete,
-  isLastQuestion
+  isLastQuestion,
+  jobTitle = ""
 }: InterviewChatProps) => {
   const [response, setResponse] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -77,10 +79,17 @@ export const InterviewChat = ({
     }
   };
 
+  const getCardTitle = () => {
+    if (jobTitle) {
+      return `${jobTitle} Interview`;
+    }
+    return "Interview Question";
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
       <PremiumContentCard 
-        title={currentQuestion?.question || "Interview Question"} 
+        title={getCardTitle()}
         variant="glass"
         className="mb-4 shadow-md"
       >

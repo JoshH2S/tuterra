@@ -304,6 +304,7 @@ const JobInterviewSimulator = () => {
             typingEffect={typingEffect}
             onTypingComplete={() => {}}
             isLastQuestion={isLastQuestion}
+            jobTitle={jobTitle}
           />
         )}
         
