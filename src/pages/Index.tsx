@@ -22,7 +22,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white w-full max-w-full overflow-hidden">
-      {/* Add the new Header component at the top */}
+      {/* Add the Header component at the top */}
       <Header1 />
       
       {/* Add padding-top to account for the fixed header */}

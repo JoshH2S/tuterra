@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 export function HeroSection() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-white dark:from-gray-900 dark:to-gray-800">
-      {/* New background image */}
+      {/* Background image */}
       <div className="absolute inset-0 z-0">
         <img 
           src="/lovable-uploads/dfd38374-fd74-42a1-9010-8c092a4ae7b6.png" 
@@ -34,24 +34,6 @@ export function HeroSection() {
           }} 
           className="text-center max-w-3xl mx-auto"
         >
-          <motion.div 
-            initial={{
-              opacity: 0,
-              y: 20
-            }} 
-            animate={{
-              opacity: 1,
-              y: 0
-            }} 
-            transition={{
-              duration: 0.6,
-              delay: 0.2
-            }} 
-            className="flex justify-center mb-6"
-          >
-            <img src="/lovable-uploads/78778e79-7be3-4fb2-b3af-90404757e8f4.png" alt="tuterra.ai logo" className="h-40 md:h-48 w-auto object-fill" />
-          </motion.div>
-          
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-white">
             Transform Your Learning Experience with{" "}
             <span className="bg-gradient-to-br from-amber-200 to-amber-400 text-transparent bg-clip-text">tuterra.ai</span>

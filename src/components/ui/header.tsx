@@ -123,11 +123,16 @@ function Header1() {
                         </NavigationMenuList>
                     </NavigationMenu>
                 </div>
-                <div className="flex lg:justify-center">
-                    <p className="font-semibold">tuterra.ai</p>
+                <div className="flex lg:justify-center justify-start">
+                    <Link to="/">
+                        <img 
+                            src="/lovable-uploads/78778e79-7be3-4fb2-b3af-90404757e8f4.png" 
+                            alt="tuterra.ai logo" 
+                            className="h-12 w-auto object-contain" 
+                        />
+                    </Link>
                 </div>
                 <div className="flex justify-end w-full gap-4">
-                    {/* "Book a demo" button removed */}
                     <div className="border-r hidden md:inline"></div>
                     <Button variant="outline" asChild>
                         <Link to="/signin">Sign in</Link>
