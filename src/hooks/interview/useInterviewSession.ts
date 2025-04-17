@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { InterviewQuestion, InterviewTranscript, InterviewPerformance } from "@/types/interview";
 import { useToast } from "@/hooks/use-toast";
@@ -45,11 +44,9 @@ export const useInterviewSession = () => {
   const { generateFeedback, feedback, loading: feedbackLoading } = useInterviewFeedback(currentSessionId);
   const [performance, setPerformance] = useState<InterviewPerformance | undefined>();
 
-  // When typing effect finishes
   useEffect(() => {
     let typingTimer: number;
     if (typingEffect && isInterviewInProgress) {
-      // Premium users get faster typing
       const typingSpeed = subscription.tier !== "free" ? 1000 : 2000;
       
       typingTimer = window.setTimeout(() => {
@@ -59,7 +56,6 @@ export const useInterviewSession = () => {
     return () => clearTimeout(typingTimer);
   }, [typingEffect, isInterviewInProgress, setTypingEffect, subscription.tier]);
 
-  // Generate transcript when interview is completed
   useEffect(() => {
     if (isInterviewComplete) {
       console.log("Interview complete, generating transcript");
@@ -68,7 +64,6 @@ export const useInterviewSession = () => {
     }
   }, [isInterviewComplete, responses, updateTranscript]);
 
-  // Generate feedback when transcript is available
   useEffect(() => {
     const handleFeedbackGeneration = async () => {
       if (isInterviewComplete && transcript.length > 0 && !feedbackLoading && !performance) {
@@ -88,7 +83,6 @@ export const useInterviewSession = () => {
     handleFeedbackGeneration();
   }, [isInterviewComplete, transcript, generateFeedback, feedbackLoading, performance]);
 
-  // Update performance when feedback is available
   useEffect(() => {
     if (feedback && !performance) {
       setPerformance({
@@ -126,7 +120,6 @@ export const useInterviewSession = () => {
     
     await saveResponse(currentQuestion, response);
     
-    // Update responses manually to ensure we have the latest
     setResponses(prev => ({
       ...prev,
       [currentQuestion.id]: response
@@ -141,7 +134,6 @@ export const useInterviewSession = () => {
   };
 
   const handleSaveToProfile = () => {
-    // This would be implemented in a future update
     toast({
       title: "Feature Coming Soon",
       description: "Saving interviews to your profile will be available in a future update.",
@@ -149,7 +141,6 @@ export const useInterviewSession = () => {
   };
 
   const handleShare = () => {
-    // This would be implemented in a future update
     toast({
       title: "Feature Coming Soon",
       description: "Sharing interview results will be available in a future update.",
