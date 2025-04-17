@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
@@ -17,12 +17,27 @@ export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
   
-  const handleSelectPlan = async (planId: 'pro_plan') => {
-    if (!isLoggedIn) {
-      navigate('/auth?returnTo=/pricing');
+  const handleSelectPlan = async (planId: string) => {
+    if (planId === 'free_plan') {
+      // For free plan, redirect to auth page directly
+      navigate('/auth?tab=signup&plan=free');
       return;
     }
     
+    if (planId === 'enterprise_plan') {
+      // For enterprise plan, redirect to contact page
+      navigate('/contact');
+      return;
+    }
+    
+    // For pro plan, check if the user is logged in first
+    if (!isLoggedIn) {
+      // Save the selected plan to URL params and redirect to auth
+      navigate(`/auth?tab=signup&plan=${planId}`);
+      return;
+    }
+    
+    // If user is already logged in and selected pro plan, proceed to checkout
     setIsRedirecting(true);
     
     await createCheckoutSession({
@@ -98,26 +113,6 @@ export default function PricingPage() {
         )}
       </motion.div>
 
-      {!isLoggedIn && (
-        <PremiumContentCard
-          title="Sign in required"
-          variant="glass"
-          className="max-w-3xl mx-auto mb-8"
-        >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex-1">
-              You need to sign in or create an account to subscribe to a plan.
-            </div>
-            <Button 
-              onClick={() => navigate('/auth?returnTo=/pricing')}
-              className="whitespace-nowrap"
-            >
-              Sign in
-            </Button>
-          </div>
-        </PremiumContentCard>
-      )}
-
       <motion.div 
         initial="hidden"
         animate="visible"
@@ -131,9 +126,9 @@ export default function PricingPage() {
           description="Explore core tools with limited usage"
           features={tierFeatures.free}
           planId="free_plan"
-          onSelect={() => {}}
-          buttonText="Current Plan"
-          buttonDisabled={true}
+          onSelect={handleSelectPlan}
+          buttonText="Start Free"
+          buttonDisabled={isCurrentPlan('free_plan')}
         />
 
         {/* Pro Plan */}
@@ -150,7 +145,7 @@ export default function PricingPage() {
               ? "Current Plan" 
               : isRedirecting 
                 ? "Redirecting..." 
-                : "Upgrade to Pro"
+                : "Choose Pro"
           }
           buttonDisabled={isCurrentPlan('pro_plan') || isRedirecting}
         />
@@ -162,7 +157,7 @@ export default function PricingPage() {
           description="For schools, institutions, and organizations"
           features={tierFeatures.enterprise}
           planId="enterprise_plan"
-          onSelect={() => navigate('/contact')}
+          onSelect={handleSelectPlan}
           buttonText="Contact Sales"
           buttonIcon={<Mail className="w-4 h-4" />}
           customButtonVariant="outline"

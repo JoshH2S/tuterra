@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { authRoutes } from "./AuthRoutes";
@@ -17,6 +18,7 @@ import UpdatePassword from "@/pages/UpdatePassword";
 import PricingPage from "@/pages/PricingPage";
 import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
+import Contact from "@/pages/Contact";
 
 export const AppRoutes = () => {
   return (
@@ -30,6 +32,7 @@ export const AppRoutes = () => {
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/contact" element={<Contact />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard/*" element={

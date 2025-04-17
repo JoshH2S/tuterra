@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Get initial session
@@ -24,12 +25,15 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       
       // If session is lost during app usage, redirect to auth
       if (!session && !loading) {
-        navigate("/auth", { replace: true });
+        navigate("/auth", { 
+          replace: true,
+          state: { from: location.pathname } // Save the current path to redirect back after login
+        });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, loading]);
+  }, [navigate, loading, location.pathname]);
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen">
@@ -38,7 +42,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!session) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
   return <>{children}</>;
