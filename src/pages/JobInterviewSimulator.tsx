@@ -7,8 +7,6 @@ import { InterviewForm } from "@/components/interview/InterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
 import { InterviewDebug } from "@/components/interview/InterviewDebug";
-import { InterviewLogo } from "@/components/interview/InterviewLogo";
-import { InterviewCompletion } from "@/components/interview/InterviewCompletion";
 import { Wifi, WifiOff, AlertCircle } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
@@ -17,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
+import { InterviewLogo } from "@/components/interview/InterviewLogo";
 
 const JobInterviewSimulator = () => {
   const { id: interviewId } = useParams();
@@ -266,7 +265,7 @@ const JobInterviewSimulator = () => {
           </div>
         </div>
         
-        <InterviewLogo />
+        
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
