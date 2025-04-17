@@ -41,7 +41,7 @@ export default function PricingPage() {
     setIsRedirecting(true);
     
     await createCheckoutSession({
-      planId,
+      planId: planId as "pro_plan", // Type cast to the expected type
       successUrl: `${window.location.origin}/subscription-success`,
       cancelUrl: `${window.location.origin}/subscription-canceled`,
     });

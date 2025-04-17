@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 
 export interface CheckoutOptions {
-  planId: 'pro_plan' | 'premium_plan';
+  planId: "pro_plan" | "premium_plan" | string;
   successUrl: string;
   cancelUrl: string;
 }
