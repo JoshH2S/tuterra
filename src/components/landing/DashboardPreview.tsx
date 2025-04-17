@@ -5,24 +5,24 @@ import { Carousel } from "@/components/ui/carousel";
 export function DashboardPreview() {
   const slideData = [
     {
-      title: "Interactive Learning Dashboard",
+      title: "Skill Assessment Experience",
       button: "Explore Features",
-      src: "/lovable-uploads/d88b3ac6-4f44-4e30-b4d8-32d7190ea211.png",
+      src: "/lovable-uploads/089c8cb1-63b0-4ed5-ba8c-419af66cdf7e.png",
     },
     {
-      title: "Progress Tracking",
-      button: "See Analytics",
-      src: "/lovable-uploads/9c384236-998d-4be7-8fce-38625409b005.png",
+      title: "Interactive Dashboard",
+      button: "View Analytics",
+      src: "/lovable-uploads/66e5de1b-be24-4178-944a-09183d99629d.png",
     },
     {
-      title: "AI Study Assistant",
-      button: "Try It Now",
-      src: "/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png",
+      title: "Interview Simulator",
+      button: "Practice Now",
+      src: "/lovable-uploads/3df6641b-fd5a-4272-9c39-6ee0258337db.png",
     },
     {
-      title: "Personalized Learning",
-      button: "Get Started",
-      src: "/lovable-uploads/5abc5bdf-f0f2-4773-844c-b174f2e2b884.png",
+      title: "Interactive Learning Experience",
+      button: "Start Learning",
+      src: "/lovable-uploads/a02bdab0-bfea-438f-9680-b4e948ed841a.png",
     },
   ];
   

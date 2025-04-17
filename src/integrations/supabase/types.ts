@@ -39,6 +39,38 @@ export type Database = {
         }
         Relationships: []
       }
+      answer_feedback: {
+        Row: {
+          created_at: string | null
+          feedback: string
+          id: string
+          question_id: string | null
+          score: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          feedback: string
+          id?: string
+          question_id?: string | null
+          score?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          feedback?: string
+          id?: string
+          question_id?: string | null
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_feedback_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "interview_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_analytics: {
         Row: {
           created_at: string
