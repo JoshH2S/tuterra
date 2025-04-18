@@ -4,30 +4,34 @@ import { Button } from "@/components/ui/button";
 import { CreateStudySessionData } from "@/types/study-sessions";
 import { SessionFormFields } from "./calendar/SessionFormFields";
 import { useSessionForm } from "./calendar/useSessionForm";
+import { StudentCourse } from "@/types/student";
 
 interface StudySessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateSession: (sessionData: CreateStudySessionData) => Promise<void>;
+  courses: StudentCourse[];
 }
 
 export function StudySessionDialog({ 
   open, 
   onOpenChange, 
-  onCreateSession
+  onCreateSession,
+  courses
 }: StudySessionDialogProps) {
   const {
     sessionData,
     setSessionData,
     selectedDate,
     setSelectedDate,
-    courses,
+    courses: formCourses,
     isLoading,
     handleSubmit,
     resetForm
   } = useSessionForm({
     onCreateSession,
-    onClose: () => onOpenChange(false)
+    onClose: () => onOpenChange(false),
+    courses
   });
   
   // Handle dialog close - reset form when closing

@@ -39,3 +39,25 @@ export function useMediaQuery(query: string): boolean {
 export function useIsMobile(): boolean {
   return useMediaQuery("(max-width: 768px)");
 }
+
+/**
+ * Hook that detects if the current device supports touch
+ * @returns boolean indicating if the device has touch capabilities
+ */
+export function useTouchDevice(): boolean {
+  const [isTouch, setIsTouch] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    // Check if device supports touch
+    const isTouchDevice = 
+      'ontouchstart' in window || 
+      navigator.maxTouchPoints > 0 ||
+      (navigator as any).msMaxTouchPoints > 0;
+    
+    setIsTouch(isTouchDevice);
+  }, []);
+  
+  return isTouch;
+}
