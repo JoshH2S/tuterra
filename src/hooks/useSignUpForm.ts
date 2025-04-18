@@ -21,8 +21,6 @@ export const useSignUpForm = () => {
   useEffect(() => {
     if (password) {
       setPasswordStrength(calculatePasswordStrength(password));
-      
-      // Clear password error if all requirements are met
       const { allMet } = validatePasswordRequirements(password);
       if (allMet && passwordError === "Password doesn't meet requirements") {
         setPasswordError("");
@@ -33,17 +31,14 @@ export const useSignUpForm = () => {
   }, [password, passwordError]);
 
   const validatePassword = () => {
-    // Only validate if password field has been touched
     if (!passwordTouched) return true;
     
-    // Check password requirements
     const { allMet } = validatePasswordRequirements(password);
     if (!allMet) {
       setPasswordError("Password doesn't meet requirements");
       return false;
     }
     
-    // Check if passwords match
     if (password !== confirmPassword) {
       setPasswordError("Passwords do not match");
       return false;
@@ -53,11 +48,57 @@ export const useSignUpForm = () => {
     return true;
   };
 
+  const checkExistingUser = async () => {
+    try {
+      const { data: { users }, error } = await supabase.auth.admin.listUsers({
+        filter: {
+          email: email
+        }
+      });
+
+      if (error) throw error;
+
+      if (users && users.length > 0) {
+        const user = users[0];
+        if (!user.email_confirmed_at) {
+          // User exists but hasn't confirmed email
+          const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email,
+            options: {
+              emailRedirectTo: window.location.origin + "/verify-email"
+            }
+          });
+          
+          if (resendError) throw resendError;
+          
+          setVerificationSent(true);
+          toast({
+            title: "Email verification resent",
+            description: "Please check your inbox and verify your email to continue.",
+          });
+          return 'unconfirmed';
+        } else {
+          // User exists and has confirmed email
+          toast({
+            title: "Account already exists",
+            description: "Please log in instead.",
+            variant: "destructive",
+          });
+          return 'confirmed';
+        }
+      }
+      return 'not_found';
+    } catch (error: any) {
+      console.error("Error checking user:", error);
+      throw error;
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
     
-    // Validate passwords before submission
     if (!validatePassword()) {
       return;
     }
@@ -65,28 +106,33 @@ export const useSignUpForm = () => {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            user_type: "student",
-          },
-          // Enable email confirmation
-          emailRedirectTo: window.location.origin + "/verify-email"
-        },
-      });
-
-      if (error) throw error;
+      // Check if user exists before attempting signup
+      const userStatus = await checkExistingUser();
       
-      if (data?.user) {
-        setVerificationSent(true);
-        toast({
-          title: "Verification email sent!",
-          description: "Please check your inbox and verify your email.",
+      if (userStatus === 'not_found') {
+        // Proceed with new signup
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              user_type: "student",
+            },
+            emailRedirectTo: window.location.origin + "/verify-email"
+          },
         });
+
+        if (error) throw error;
+        
+        if (data?.user) {
+          setVerificationSent(true);
+          toast({
+            title: "Verification email sent!",
+            description: "Please check your inbox and verify your email to continue.",
+          });
+        }
       }
     } catch (error: any) {
       console.error("Signup error:", error);
