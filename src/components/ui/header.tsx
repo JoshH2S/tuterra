@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Menu, MoveRight, X } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Header1() {
     const navigationItems = [
@@ -68,6 +67,12 @@ function Header1() {
     ];
 
     const [isOpen, setOpen] = useState(false);
+    const navigate = useNavigate();
+
+    const handleGetStarted = () => {
+        navigate('/pricing');
+    };
+
     return (
         <header className="w-full z-40 fixed top-0 left-0 bg-background">
             <div className="container relative mx-auto min-h-20 flex gap-4 flex-row lg:grid lg:grid-cols-3 items-center">
@@ -137,8 +142,8 @@ function Header1() {
                     <Button variant="outline" asChild>
                         <Link to="/auth">Sign in</Link>
                     </Button>
-                    <Button asChild>
-                        <Link to="/auth?tab=signup">Get started</Link>
+                    <Button onClick={handleGetStarted}>
+                        Get started
                     </Button>
                 </div>
                 <div className="flex w-12 shrink lg:hidden items-end justify-end">
