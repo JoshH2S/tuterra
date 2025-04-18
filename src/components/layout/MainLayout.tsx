@@ -20,15 +20,15 @@ export const MainLayout = () => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Check if current path is the landing page
-  const isLandingPage = location.pathname === "/";
+  // Don't show sidebar on landing page and auth pages
+  const hideSidebar = location.pathname === "/" || location.pathname === "/auth";
 
   return (
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <SidebarProvider>
-        <Layout isLandingPage={isLandingPage}>
+        <Layout isLandingPage={hideSidebar}>
           <AppRoutes />
         </Layout>
       </SidebarProvider>
