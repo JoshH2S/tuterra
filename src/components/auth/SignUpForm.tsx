@@ -9,12 +9,12 @@ import { useSignUpForm } from "@/hooks/useSignUpForm";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
 import { TermsOfUse } from "@/components/legal/TermsOfUse";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Mail, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TermsAgreement } from "./TermsAgreement";
+import { VerificationSentAlert } from "./VerificationSentAlert";
 
 interface SignUpFormProps {
   onSignUpSuccess?: () => void;
@@ -96,37 +96,11 @@ export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
       <SignUpFormHeader />
 
       {verificationSent ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-4"
-        >
-          <Alert className="bg-blue-50 border-blue-200">
-            <Mail className="h-5 w-5 text-blue-500" />
-            <AlertDescription className="text-blue-800">
-              <span className="font-medium block">Verification email sent!</span>
-              Please check your inbox at <span className="font-bold">{email}</span> and click the verification link to activate your account.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="mt-4 text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              Haven't received the email?
-            </p>
-            <Button
-              variant="outline"
-              onClick={handleResendVerification}
-              disabled={resendingEmail}
-              className="w-full"
-            >
-              {resendingEmail ? "Sending..." : "Resend verification email"}
-            </Button>
-          </div>
-
-          <p className="text-sm text-muted-foreground">
-            Once verified, you can log in to continue with the onboarding process.
-          </p>
-        </motion.div>
+        <VerificationSentAlert 
+          email={email}
+          onResend={handleResendVerification}
+          isResending={resendingEmail}
+        />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
@@ -160,40 +134,12 @@ export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
             />
           </div>
 
-          <div className="flex items-start space-x-2 mt-4">
-            <Checkbox
-              id="terms"
-              checked={agreedToTerms}
-              onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-            />
-            <div className="grid gap-1.5 leading-none">
-              <label
-                htmlFor="terms"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                I agree to the{" "}
-                <button
-                  type="button"
-                  className="text-primary hover:underline focus:outline-none focus:underline"
-                  onClick={() => setShowTerms(true)}
-                >
-                  Terms of Use
-                </button>{" "}
-                and{" "}
-                <button
-                  type="button"
-                  className="text-primary hover:underline focus:outline-none focus:underline"
-                  onClick={() => setShowPrivacyPolicy(true)}
-                >
-                  Privacy Policy
-                </button>
-              </label>
-              <p className="text-xs text-muted-foreground flex items-center">
-                <Shield className="h-3 w-3 mr-1" />
-                Your data is protected and secured
-              </p>
-            </div>
-          </div>
+          <TermsAgreement
+            agreed={agreedToTerms}
+            onAgreeChange={setAgreedToTerms}
+            onShowTerms={() => setShowTerms(true)}
+            onShowPrivacyPolicy={() => setShowPrivacyPolicy(true)}
+          />
 
           <SubmitButton loading={loading} disabled={!agreedToTerms} />
         </form>
