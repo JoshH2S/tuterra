@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
 import { DesktopDashboard } from "@/components/dashboard/DesktopDashboard";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useMediaQuery } from "@/hooks/use-mobile";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions } from "@/hooks/useStudySessions";
 import { StudySessionDialog } from "@/components/dashboard/StudySessionDialog";
+import { CreateStudySessionData } from "@/types/study-sessions";
 
 export default function StudentDashboard() {
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -19,6 +21,15 @@ export default function StudentDashboard() {
   const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
   
   const firstName = user?.user_metadata?.first_name || "Student";
+  
+  // Wrapper functions to handle the return types properly
+  const handleCreateSession = async (sessionData: CreateStudySessionData): Promise<void> => {
+    await createSession(sessionData);
+  };
+  
+  const handleUpdateSession = async (id: string, updates: any): Promise<void> => {
+    await updateSession(id, updates);
+  };
   
   return (
     <div className="min-h-screen bg-background">
@@ -37,9 +48,9 @@ export default function StudentDashboard() {
             insights={insights}
             sessions={sessions}
             courses={courses}
-            onCreateSession={createSession}
+            onCreateSession={handleCreateSession}
             openSessionDialog={() => setIsSessionDialogOpen(true)}
-            onUpdateSession={updateSession}
+            onUpdateSession={handleUpdateSession}
           />
         ) : (
           <DesktopDashboard 
@@ -47,16 +58,16 @@ export default function StudentDashboard() {
             insights={insights}
             sessions={sessions}
             courses={courses}
-            createSession={createSession}
+            createSession={handleCreateSession}
             openSessionDialog={() => setIsSessionDialogOpen(true)}
-            updateSession={updateSession}
+            updateSession={handleUpdateSession}
           />
         )}
 
         <StudySessionDialog 
           open={isSessionDialogOpen}
           onOpenChange={setIsSessionDialogOpen}
-          onCreateSession={createSession}
+          onCreateSession={handleCreateSession}
           courses={courses}
         />
       </div>
