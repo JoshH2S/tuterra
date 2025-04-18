@@ -17,8 +17,7 @@ serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
     // Get the authorization header from the request
@@ -55,11 +54,28 @@ serve(async (req) => {
     // Parse the request body
     const { action } = await req.json();
 
-    if (!action) {
+    // Get the user's subscription
+    const { data: subscriptionData, error: subscriptionError } = await supabaseClient
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (subscriptionError) {
       return new Response(
-        JSON.stringify({ error: "Missing required parameters" }),
+        JSON.stringify({ error: subscriptionError.message }),
         {
-          status: 400,
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!subscriptionData || !subscriptionData.stripe_subscription_id) {
+      return new Response(
+        JSON.stringify({ error: "No active subscription found" }),
+        {
+          status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
@@ -71,73 +87,51 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    // Get the user's subscription
-    const { data: subscriptionData, error: subscriptionError } = await supabaseClient
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if (subscriptionError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to get subscription data" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    if (!subscriptionData?.stripe_subscription_id) {
-      return new Response(
-        JSON.stringify({ error: "No active subscription found" }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
     let result;
-    if (action === "cancel") {
-      // Cancel the subscription
-      result = await stripe.subscriptions.update(
-        subscriptionData.stripe_subscription_id,
-        { cancel_at_period_end: true }
-      );
-
-      // Update the subscription in the database
-      await supabaseClient
-        .from("subscriptions")
-        .update({
-          cancel_at_period_end: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq("user_id", user.id);
-
-    } else if (action === "reactivate") {
-      // Reactivate the subscription
-      result = await stripe.subscriptions.update(
-        subscriptionData.stripe_subscription_id,
-        { cancel_at_period_end: false }
-      );
-
-      // Update the subscription in the database
-      await supabaseClient
-        .from("subscriptions")
-        .update({
-          cancel_at_period_end: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq("user_id", user.id);
-    } else {
-      return new Response(
-        JSON.stringify({ error: "Invalid action" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    
+    switch (action) {
+      case "cancel":
+        // Cancel at period end
+        result = await stripe.subscriptions.update(
+          subscriptionData.stripe_subscription_id,
+          { cancel_at_period_end: true }
+        );
+        
+        // Update in database
+        await supabaseClient
+          .from("subscriptions")
+          .update({
+            cancel_at_period_end: true,
+          })
+          .eq("id", subscriptionData.id);
+        
+        break;
+        
+      case "reactivate":
+        // Reactivate a subscription that was set to cancel
+        result = await stripe.subscriptions.update(
+          subscriptionData.stripe_subscription_id,
+          { cancel_at_period_end: false }
+        );
+        
+        // Update in database
+        await supabaseClient
+          .from("subscriptions")
+          .update({
+            cancel_at_period_end: false,
+          })
+          .eq("id", subscriptionData.id);
+          
+        break;
+        
+      default:
+        return new Response(
+          JSON.stringify({ error: "Invalid action" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
     }
 
     return new Response(JSON.stringify({ success: true, data: result }), {

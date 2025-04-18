@@ -19,14 +19,8 @@ export default function PricingPage() {
   
   const handleSelectPlan = async (planId: string) => {
     if (planId === 'free_plan') {
-      if (!isLoggedIn) {
-        // Store selected plan in localStorage and redirect to auth
-        localStorage.setItem('selectedPlan', planId);
-        navigate('/auth?tab=signup&plan=free');
-      } else {
-        // Already logged in, just go to dashboard
-        navigate('/dashboard');
-      }
+      // For free plan, redirect to auth page directly
+      navigate('/auth?tab=signup&plan=free');
       return;
     }
     
@@ -36,15 +30,14 @@ export default function PricingPage() {
       return;
     }
     
-    // For paid plans, check if the user is logged in first
+    // For pro plan, check if the user is logged in first
     if (!isLoggedIn) {
-      // Store selected plan in localStorage and redirect to auth
-      localStorage.setItem('selectedPlan', planId);
+      // Save the selected plan to URL params and redirect to auth
       navigate(`/auth?tab=signup&plan=${planId}`);
       return;
     }
     
-    // If user is already logged in and selected a paid plan, proceed to checkout
+    // If user is already logged in and selected pro plan, proceed to checkout
     setIsRedirecting(true);
     
     await createCheckoutSession({

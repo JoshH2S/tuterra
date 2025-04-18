@@ -2,47 +2,36 @@
 import { useState, useEffect } from "react";
 
 /**
- * Hook that returns true if the window matches the given media query
- * @param query Media query string (e.g. "(max-width: 768px)")
+ * Hook to detect if the current device is a mobile device
+ * based on screen width and touch capabilities
+ * @returns boolean indicating if the device is mobile
  */
-export function useMediaQuery(query: string): boolean {
-  // Start with undefined during server-side rendering
-  const [matches, setMatches] = useState<boolean>(false);
+export function useIsMobile(breakpoint = 768): boolean {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < breakpoint : false
+  );
 
   useEffect(() => {
-    // Create media query list
-    const mediaQuery = window.matchMedia(query);
-    
-    // Set initial value
-    setMatches(mediaQuery.matches);
+    if (typeof window === "undefined") return;
 
-    // Define callback for media query change
-    const handleResize = (event: MediaQueryListEvent) => {
-      setMatches(event.matches);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < breakpoint);
     };
 
-    // Add event listener
-    mediaQuery.addEventListener("change", handleResize);
-    
-    // Clean up
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
     return () => {
-      mediaQuery.removeEventListener("change", handleResize);
+      window.removeEventListener("resize", handleResize);
     };
-  }, [query]);
+  }, [breakpoint]);
 
-  return matches;
+  return isMobile;
 }
 
 /**
- * Hook that returns true if the device is mobile
- */
-export function useIsMobile(): boolean {
-  return useMediaQuery("(max-width: 768px)");
-}
-
-/**
- * Hook that detects if the current device supports touch
- * @returns boolean indicating if the device has touch capabilities
+ * Hook to detect if the current device supports touch
+ * @returns boolean indicating if the device supports touch
  */
 export function useTouchDevice(): boolean {
   const [isTouch, setIsTouch] = useState(false);

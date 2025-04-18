@@ -1,11 +1,19 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
-import { Suspense } from "react";
+import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
+import { lazyLoad } from "@/utils/lazy-loading";
 import { Toaster } from "@/components/ui/toaster";
+import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
+
+// Lazy load MainLayout
+const MainLayout = lazyLoad(
+  () => import("@/components/layout/MainLayout").then(
+    module => ({ default: module.MainLayout })
+  ),
+  "MainLayout"
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {

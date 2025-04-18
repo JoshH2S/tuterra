@@ -18,19 +18,6 @@ export const useSignUpForm = () => {
   const [formError, setFormError] = useState("");
   const { toast } = useToast();
 
-  // Get the selected plan from URL parameters or localStorage
-  const getSelectedPlan = () => {
-    // First check URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const planFromUrl = urlParams.get('plan');
-    
-    // Then check localStorage
-    const planFromStorage = localStorage.getItem('selectedPlan');
-    
-    // Return the plan from URL, storage, or default to free
-    return planFromUrl || planFromStorage || 'free_plan';
-  };
-
   useEffect(() => {
     if (password) {
       setPasswordStrength(calculatePasswordStrength(password));
@@ -88,7 +75,7 @@ export const useSignUpForm = () => {
           type: 'signup',
           email,
           options: {
-            emailRedirectTo: window.location.origin + "/verify-email?plan=" + getSelectedPlan()
+            emailRedirectTo: window.location.origin + "/verify-email"
           }
         });
         
@@ -128,10 +115,6 @@ export const useSignUpForm = () => {
     setLoading(true);
     
     try {
-      // Store selected plan in localStorage
-      const selectedPlan = getSelectedPlan();
-      localStorage.setItem('selectedPlan', selectedPlan);
-      
       // Check if user exists before attempting signup
       const userStatus = await checkExistingUser();
       
@@ -146,7 +129,7 @@ export const useSignUpForm = () => {
               last_name: lastName,
               user_type: "student",
             },
-            emailRedirectTo: window.location.origin + "/verify-email?plan=" + selectedPlan
+            emailRedirectTo: window.location.origin + "/verify-email"
           },
         });
 
@@ -193,7 +176,6 @@ export const useSignUpForm = () => {
     validatePassword,
     handleSignUp,
     verificationSent,
-    formError,
-    getSelectedPlan
+    formError
   };
 };
