@@ -34,4 +34,6 @@ export const MainLayout = () => {
       </SidebarProvider>
     </TooltipProvider>
   );
-}
+};
+
+export default MainLayout;

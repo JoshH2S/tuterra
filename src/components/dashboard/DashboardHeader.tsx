@@ -1,7 +1,7 @@
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
-interface DashboardHeaderProps {
+export interface DashboardHeaderProps {
   title: string;
   description: string;
 }

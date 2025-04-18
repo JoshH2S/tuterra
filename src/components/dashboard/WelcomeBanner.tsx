@@ -33,6 +33,8 @@ export const WelcomeBanner = ({ userName }: WelcomeBannerProps) => {
   
   if (!isVisible) return null;
   
+  const welcomeTitle = isNewUser ? 'Welcome to EduPortal' : 'Welcome back';
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -43,6 +45,7 @@ export const WelcomeBanner = ({ userName }: WelcomeBannerProps) => {
       <PremiumContentCard
         variant={subscription.tier === 'free' ? 'minimal' : 'glass'}
         className="relative overflow-hidden"
+        title={`${welcomeTitle}, ${userName}!`}
       >
         <button
           onClick={handleDismiss}
@@ -54,12 +57,11 @@ export const WelcomeBanner = ({ userName }: WelcomeBannerProps) => {
         
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-2">
           <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              {isNewUser ? 'Welcome to EduPortal' : 'Welcome back'}, {userName}!
-              {subscription.tier !== 'free' && (
+            {subscription.tier !== 'free' && (
+              <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-amber-500" />
-              )}
-            </h2>
+              </div>
+            )}
             
             {subscription.tier === 'free' ? (
               <p className="text-muted-foreground mt-1">
