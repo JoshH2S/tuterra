@@ -12,6 +12,9 @@ import { TermsOfUse } from "@/components/legal/TermsOfUse";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Shield, Mail, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SignUpFormProps {
   onSignUpSuccess?: () => void;
@@ -44,6 +47,37 @@ export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const { toast } = useToast();
+
+  const handleResendVerification = async () => {
+    try {
+      setResendingEmail(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: window.location.origin + "/verify-email"
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Verification email resent",
+        description: "Please check your inbox for the verification link.",
+      });
+    } catch (error: any) {
+      console.error('Failed to resend verification:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setResendingEmail(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     await handleSignUp(e);
@@ -74,6 +108,21 @@ export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
               Please check your inbox at <span className="font-bold">{email}</span> and click the verification link to activate your account.
             </AlertDescription>
           </Alert>
+          
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground mb-2">
+              Haven't received the email?
+            </p>
+            <Button
+              variant="outline"
+              onClick={handleResendVerification}
+              disabled={resendingEmail}
+              className="w-full"
+            >
+              {resendingEmail ? "Sending..." : "Resend verification email"}
+            </Button>
+          </div>
+
           <p className="text-sm text-muted-foreground">
             Once verified, you can log in to continue with the onboarding process.
           </p>
