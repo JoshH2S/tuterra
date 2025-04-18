@@ -1,16 +1,40 @@
 
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight } from "lucide-react";
+import { WelcomePopup } from "@/components/onboarding/WelcomePopup";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  
+  // Check if the user is coming from the signup flow
+  const isFromSignup = new URLSearchParams(location.search).get('onboarding') === 'true';
 
   useEffect(() => {
-    // Optional: you could verify the subscription status here
-    // by calling an endpoint that checks the latest subscription status
-  }, []);
+    // For users coming from signup, show the welcome popup automatically
+    if (isFromSignup) {
+      // Clear the selected plan from localStorage since it's been processed
+      localStorage.removeItem('selectedPlan');
+      
+      // Show welcome popup after a slight delay
+      setTimeout(() => {
+        setShowWelcomePopup(true);
+      }, 1000);
+    }
+  }, [isFromSignup]);
+
+  const handleContinue = () => {
+    if (isFromSignup) {
+      // If from signup, go to dashboard after onboarding
+      navigate('/dashboard', { replace: true });
+    } else {
+      // Regular subscription success flow
+      navigate('/dashboard');
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 sm:py-12 flex flex-col items-center justify-center min-h-[70vh] w-full max-w-full">
@@ -24,7 +48,7 @@ export default function SubscriptionSuccess() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button 
-            onClick={() => navigate('/dashboard')}
+            onClick={handleContinue}
             className="w-full sm:w-auto"
           >
             Go to Dashboard
@@ -39,6 +63,16 @@ export default function SubscriptionSuccess() {
           </Button>
         </div>
       </div>
+      
+      {/* Welcome popup for users coming from signup flow */}
+      <WelcomePopup 
+        isOpen={showWelcomePopup} 
+        onClose={() => {
+          setShowWelcomePopup(false);
+          // Navigate to dashboard after closing
+          navigate('/dashboard', { replace: true });
+        }} 
+      />
     </div>
   );
 }

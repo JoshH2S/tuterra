@@ -9,19 +9,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
+import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
 
 export const EmailVerification = () => {
   const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
+  const [redirectingToCheckout, setRedirectingToCheckout] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
+  const { createCheckoutSession } = useSubscriptionManagement();
   
+  // Process verification and handle plan selection
   useEffect(() => {
     const processEmailVerification = async () => {
       const searchParams = new URLSearchParams(location.search);
+      const selectedPlan = searchParams.get("plan") || localStorage.getItem("selectedPlan") || "free_plan";
       
       if (searchParams.has("error_description")) {
         setError(searchParams.get("error_description") || "Verification failed.");
@@ -40,9 +45,26 @@ export const EmailVerification = () => {
             
             if (sessionData?.session) {
               setVerificationSuccess(true);
-              setTimeout(() => {
-                setShowWelcomePopup(true);
-              }, 1500);
+              
+              // Handle plan-specific flow
+              if (selectedPlan === "free_plan") {
+                // For free plan, show welcome popup and then redirect to onboarding
+                setTimeout(() => {
+                  setShowWelcomePopup(true);
+                }, 1500);
+              } else if (selectedPlan === "pro_plan" || selectedPlan === "premium_plan") {
+                // For paid plans, redirect to Stripe checkout after a short delay
+                setTimeout(async () => {
+                  setRedirectingToCheckout(true);
+                  
+                  // Redirect to Stripe checkout
+                  await createCheckoutSession({
+                    planId: selectedPlan as "pro_plan" | "premium_plan",
+                    successUrl: `${window.location.origin}/subscription-success?onboarding=true`,
+                    cancelUrl: `${window.location.origin}/subscription-canceled?plan=${selectedPlan}`
+                  });
+                }, 1500);
+              }
             }
           } catch (err: any) {
             console.error("Verification error:", err);
@@ -55,7 +77,7 @@ export const EmailVerification = () => {
     };
     
     processEmailVerification();
-  }, [location]);
+  }, [location, createCheckoutSession, navigate]);
   
   const handleResendVerification = async () => {
     try {
@@ -83,6 +105,9 @@ export const EmailVerification = () => {
   };
   
   const handleContinue = () => {
+    // If we're on a subscription plan, this should be handled by the subscription flow
+    // For free plans, go directly to onboarding or dashboard
+    localStorage.removeItem("selectedPlan"); // Clear plan selection after use
     navigate("/", { replace: true });
   };
 
@@ -112,10 +137,12 @@ export const EmailVerification = () => {
         <div className="h-2 bg-gradient-to-r from-primary-100 to-primary-400" />
         
         <CardContent className="p-8">
-          {verifying ? (
+          {verifying || redirectingToCheckout ? (
             <div className="text-center py-8">
               <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-600">Verifying your email...</p>
+              <p className="text-gray-600">
+                {redirectingToCheckout ? "Preparing your checkout..." : "Verifying your email..."}
+              </p>
             </div>
           ) : error ? (
             <div className="space-y-6">
@@ -148,16 +175,21 @@ export const EmailVerification = () => {
               <h2 className="text-xl font-semibold text-gray-800">Email Verified!</h2>
               
               <p className="text-gray-600">
-                Your email has been successfully verified. You can now continue to set up your profile.
+                Your email has been successfully verified. 
+                {localStorage.getItem("selectedPlan") === "free_plan" ? 
+                  " You can now continue to set up your profile." : 
+                  " You'll be redirected to complete your subscription."}
               </p>
               
-              <Button
-                size="lg"
-                className="px-8"
-                onClick={handleContinue}
-              >
-                Continue to EduPortal
-              </Button>
+              {localStorage.getItem("selectedPlan") === "free_plan" && (
+                <Button
+                  size="lg"
+                  className="px-8"
+                  onClick={handleContinue}
+                >
+                  Continue to EduPortal
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
@@ -228,7 +260,11 @@ export const EmailVerification = () => {
 
       <WelcomePopup 
         isOpen={showWelcomePopup} 
-        onClose={() => setShowWelcomePopup(false)} 
+        onClose={() => {
+          setShowWelcomePopup(false);
+          // After closing welcome popup, redirect to onboarding
+          navigate("/", { replace: true });
+        }} 
       />
     </motion.div>
   );
