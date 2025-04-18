@@ -50,48 +50,57 @@ export const useSignUpForm = () => {
 
   const checkExistingUser = async () => {
     try {
-      const { data: { users }, error } = await supabase.auth.admin.listUsers({
-        filter: {
-          email: email
+      // Check if a user with this email exists using signIn
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false // Don't create a new user, just check if it exists
         }
       });
 
-      if (error) throw error;
-
-      if (users && users.length > 0) {
-        const user = users[0];
-        if (!user.email_confirmed_at) {
-          // User exists but hasn't confirmed email
-          const { error: resendError } = await supabase.auth.resend({
-            type: 'signup',
-            email,
-            options: {
-              emailRedirectTo: window.location.origin + "/verify-email"
-            }
-          });
-          
-          if (resendError) throw resendError;
-          
-          setVerificationSent(true);
-          toast({
-            title: "Email verification resent",
-            description: "Please check your inbox and verify your email to continue.",
-          });
-          return 'unconfirmed';
-        } else {
-          // User exists and has confirmed email
-          toast({
-            title: "Account already exists",
-            description: "Please log in instead.",
-            variant: "destructive",
-          });
-          return 'confirmed';
+      if (error) {
+        // If the error is about user not found, return not_found
+        if (error.message.includes("Email not found")) {
+          return 'not_found';
         }
+        
+        // For other errors, throw them
+        throw error;
       }
-      return 'not_found';
+
+      // If we get here without error, the user exists
+      try {
+        // Try to resend verification email
+        const { error: resendError } = await supabase.auth.resend({
+          type: 'signup',
+          email,
+          options: {
+            emailRedirectTo: window.location.origin + "/verify-email"
+          }
+        });
+        
+        if (resendError) throw resendError;
+        
+        setVerificationSent(true);
+        toast({
+          title: "Email verification sent",
+          description: "Please check your inbox and verify your email to continue.",
+        });
+        return 'unconfirmed';
+      } catch (resendError: any) {
+        // If there's an error resending, the user might already be confirmed
+        toast({
+          title: "Account already exists",
+          description: "Please log in instead.",
+          variant: "destructive",
+        });
+        return 'confirmed';
+      }
     } catch (error: any) {
       console.error("Error checking user:", error);
-      throw error;
+      
+      // If any unexpected error, we'll assume user doesn't exist to proceed with signup
+      return 'not_found';
     }
   };
 
