@@ -50,27 +50,22 @@ export const useSignUpForm = () => {
 
   const checkExistingUser = async () => {
     try {
-      // Check if a user with this email exists using signIn
       const { data, error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          shouldCreateUser: false // Don't create a new user, just check if it exists
+          shouldCreateUser: false
         }
       });
 
       if (error) {
-        // If the error is about user not found, return not_found
         if (error.message.includes("Email not found")) {
           return 'not_found';
         }
         
-        // For other errors, throw them
         throw error;
       }
 
-      // If we get here without error, the user exists
       try {
-        // Try to resend verification email
         const selectedPlan = localStorage.getItem('selectedPlan') || 'free_plan';
         const redirectTo = selectedPlan === 'pro_plan'
           ? `${window.location.origin}/verify-email?plan=pro_plan`
@@ -93,7 +88,6 @@ export const useSignUpForm = () => {
         });
         return 'unconfirmed';
       } catch (resendError: any) {
-        // If there's an error resending, the user might already be confirmed
         toast({
           title: "Account already exists",
           description: "Please log in instead.",
@@ -103,8 +97,6 @@ export const useSignUpForm = () => {
       }
     } catch (error: any) {
       console.error("Error checking user:", error);
-      
-      // If any unexpected error, we'll assume user doesn't exist to proceed with signup
       return 'not_found';
     }
   };
@@ -124,19 +116,11 @@ export const useSignUpForm = () => {
     setLoading(true);
     
     try {
-      // Check if user exists before attempting signup
       const userStatus = await checkExistingUser();
       
       if (userStatus === 'not_found') {
-        // Store the selected plan in localStorage before sign-up
-        localStorage.setItem("selectedPlan", selectedPlan);
+        const redirectTo = `${window.location.origin}/verify-email`;
         
-        // Set direct path rather than complex query parameters
-        const redirectTo = selectedPlan === 'pro_plan'
-          ? `${window.location.origin}/verify-email?plan=pro_plan`
-          : `${window.location.origin}/verify-email?plan=free_plan`;
-        
-        // Proceed with new signup
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -145,7 +129,6 @@ export const useSignUpForm = () => {
               first_name: firstName,
               last_name: lastName,
               user_type: "student",
-              selectedPlan: selectedPlan // Include plan in user metadata
             },
             emailRedirectTo: redirectTo
           },
@@ -160,7 +143,6 @@ export const useSignUpForm = () => {
             description: "Please check your inbox and verify your email to continue.",
           });
           
-          // Store the email for verification resend functionality
           localStorage.setItem("pendingVerificationEmail", email);
         }
       }

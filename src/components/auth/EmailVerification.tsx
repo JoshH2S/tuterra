@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +26,13 @@ export const EmailVerification = () => {
     const processEmailVerification = async () => {
       const hashParams = new URLSearchParams(location.hash.substring(1));
       
+      // Check for errors first
+      if (hashParams.has("error")) {
+        const errorDesc = hashParams.get("error_description");
+        setError(decodeURIComponent(errorDesc || "Verification failed"));
+        return;
+      }
+      
       if (hashParams.has("access_token")) {
         setVerifying(true);
         
@@ -35,7 +43,10 @@ export const EmailVerification = () => {
           
           if (sessionData?.session) {
             setVerificationSuccess(true);
-            navigate("/onboarding", { replace: true });
+            // Add a small delay before redirect to show success state
+            setTimeout(() => {
+              navigate("/onboarding", { replace: true });
+            }, 1500);
           }
         } catch (err: any) {
           console.error("Verification error:", err);
@@ -52,14 +63,12 @@ export const EmailVerification = () => {
   const handleResendVerification = async () => {
     try {
       setVerifying(true);
-      const redirectTo = `${window.location.origin}/verify-email`;
-      
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: localStorage.getItem("pendingVerificationEmail") || "",
         options: {
-          emailRedirectTo: redirectTo,
-        },
+          emailRedirectTo: `${window.location.origin}/verify-email`
+        }
       });
       
       if (error) throw error;
