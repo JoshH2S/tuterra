@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
-import { useSubscriptionManagement } from "@/hooks/use-subscription-management";
+import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
 
 export const EmailVerification = () => {
   const [verificationSuccess, setVerificationSuccess] = useState(false);
