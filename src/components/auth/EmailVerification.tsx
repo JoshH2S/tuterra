@@ -46,12 +46,11 @@ export const EmailVerification = () => {
               if (selectedPlan === 'pro_plan') {
                 await createCheckoutSession({
                   planId: 'pro_plan',
-                  successUrl: `${window.location.origin}/onboarding`,
+                  successUrl: `${window.location.origin}/onboarding-redirect`,
                   cancelUrl: `${window.location.origin}/pricing`,
                 });
               } else {
                 setTimeout(() => {
-                  setShowWelcomePopup(true);
                   navigate('/onboarding', { replace: true });
                 }, 1500);
               }
@@ -67,7 +66,7 @@ export const EmailVerification = () => {
     };
     
     processEmailVerification();
-  }, [location]);
+  }, [location, navigate, createCheckoutSession]);
   
   const handleResendVerification = async () => {
     try {
@@ -165,7 +164,7 @@ export const EmailVerification = () => {
               
               <Button
                 size="lg"
-                className="px-8"
+                className="px-8 w-full md:w-auto"
                 onClick={handleContinue}
               >
                 Continue to EduPortal
