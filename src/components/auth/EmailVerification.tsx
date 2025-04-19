@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Mail, Clock, HelpCircle, Check, AlertCircle } from "lucide-react";
-import { WelcomePopup } from "../onboarding/WelcomePopup";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -12,7 +11,6 @@ import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
 
 export const EmailVerification = () => {
   const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
   
@@ -236,11 +234,6 @@ export const EmailVerification = () => {
       <div className="mt-6 text-center text-xs text-gray-500 px-4">
         <p>Having trouble viewing this page? Please try on a larger screen or contact support.</p>
       </div>
-
-      <WelcomePopup 
-        isOpen={showWelcomePopup} 
-        onClose={() => setShowWelcomePopup(false)} 
-      />
     </motion.div>
   );
 };

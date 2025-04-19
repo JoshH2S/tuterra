@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
+import OnboardingPage from "@/pages/OnboardingPage";
 import { authRoutes } from "./AuthRoutes";
 import { dashboardRoutes } from "./DashboardRoutes";
 import { quizRoutes } from "./QuizRoutes";
@@ -116,7 +117,6 @@ export const AppRoutes = () => {
       
       {/* Unprotected Routes */}
       
-      
       <Route path="/demos/*" element={
         <Routes>
           {demoRoutes}
@@ -125,7 +125,7 @@ export const AppRoutes = () => {
       
       <Route path="/onboarding" element={
         <ProtectedRoute>
-          <ProfileSetup onComplete={() => null} />
+          <OnboardingPage />
         </ProtectedRoute>
       } />
       
