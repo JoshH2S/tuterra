@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +25,6 @@ export const EmailVerification = () => {
     const processEmailVerification = async () => {
       const hashParams = new URLSearchParams(location.hash.substring(1));
       
-      // Check for errors first
       if (hashParams.has("error")) {
         const errorDesc = hashParams.get("error_description");
         setError(decodeURIComponent(errorDesc || "Verification failed"));
@@ -43,10 +41,6 @@ export const EmailVerification = () => {
           
           if (sessionData?.session) {
             setVerificationSuccess(true);
-            // Add a small delay before redirect to show success state
-            setTimeout(() => {
-              navigate("/onboarding", { replace: true });
-            }, 1500);
           }
         } catch (err: any) {
           console.error("Verification error:", err);
@@ -58,8 +52,8 @@ export const EmailVerification = () => {
     };
     
     processEmailVerification();
-  }, [location, navigate]);
-  
+  }, [location]);
+
   const handleResendVerification = async () => {
     try {
       setVerifying(true);

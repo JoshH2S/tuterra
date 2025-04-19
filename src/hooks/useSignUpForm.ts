@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
-import { useLocation } from "react-router-dom";
 
 export const useSignUpForm = () => {
   const [email, setEmail] = useState("");
@@ -61,21 +60,15 @@ export const useSignUpForm = () => {
         if (error.message.includes("Email not found")) {
           return 'not_found';
         }
-        
         throw error;
       }
 
       try {
-        const selectedPlan = localStorage.getItem('selectedPlan') || 'free_plan';
-        const redirectTo = selectedPlan === 'pro_plan'
-          ? `${window.location.origin}/verify-email?plan=pro_plan`
-          : `${window.location.origin}/verify-email?plan=free_plan`;
-        
         const { error: resendError } = await supabase.auth.resend({
           type: 'signup',
           email,
           options: {
-            emailRedirectTo: redirectTo
+            emailRedirectTo: `${window.location.origin}/verify-email`
           }
         });
         
@@ -101,10 +94,6 @@ export const useSignUpForm = () => {
     }
   };
 
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const selectedPlan = searchParams.get('plan') || 'free_plan';
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -119,8 +108,6 @@ export const useSignUpForm = () => {
       const userStatus = await checkExistingUser();
       
       if (userStatus === 'not_found') {
-        const redirectTo = `${window.location.origin}/verify-email`;
-        
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -130,7 +117,7 @@ export const useSignUpForm = () => {
               last_name: lastName,
               user_type: "student",
             },
-            emailRedirectTo: redirectTo
+            emailRedirectTo: `${window.location.origin}/verify-email`
           },
         });
 
