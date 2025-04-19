@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import OnboardingPage from "@/pages/OnboardingPage";
@@ -20,8 +19,8 @@ import PricingPage from "@/pages/PricingPage";
 import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 import Contact from "@/pages/Contact";
+import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
 import OnboardingRedirect from "@/pages/OnboardingRedirect";
-import StripeCheckoutRedirect from "@/components/checkout/StripeCheckoutRedirect";
 
 export const AppRoutes = () => {
   return (
@@ -124,7 +123,6 @@ export const AppRoutes = () => {
         </Routes>
       } />
       
-      {/* Onboarding and checkout routes */}
       <Route path="/onboarding" element={
         <ProtectedRoute>
           <OnboardingPage />
@@ -134,12 +132,6 @@ export const AppRoutes = () => {
       <Route path="/onboarding-redirect" element={
         <ProtectedRoute>
           <OnboardingRedirect />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/checkout/stripe" element={
-        <ProtectedRoute>
-          <StripeCheckoutRedirect />
         </ProtectedRoute>
       } />
       

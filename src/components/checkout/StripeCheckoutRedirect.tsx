@@ -16,7 +16,7 @@ const StripeCheckoutRedirect = () => {
       try {
         await createCheckoutSession({
           planId: 'pro_plan',
-          successUrl: `${window.location.origin}/onboarding-redirect`,
+          successUrl: `${window.location.origin}/onboarding`,
           cancelUrl: `${window.location.origin}/pricing`,
         });
       } catch (error) {
