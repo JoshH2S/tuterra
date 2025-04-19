@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
+import { useLocation } from "react-router-dom";
 
 export const useSignUpForm = () => {
   const [email, setEmail] = useState("");
@@ -104,6 +104,10 @@ export const useSignUpForm = () => {
     }
   };
 
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const selectedPlan = searchParams.get('plan') || 'free_plan';
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -128,8 +132,9 @@ export const useSignUpForm = () => {
               first_name: firstName,
               last_name: lastName,
               user_type: "student",
+              selected_plan: selectedPlan, // Store the selected plan in user metadata
             },
-            emailRedirectTo: window.location.origin + "/verify-email"
+            emailRedirectTo: `${window.location.origin}/verify-email?plan=${selectedPlan}`
           },
         });
 
@@ -141,6 +146,10 @@ export const useSignUpForm = () => {
             title: "Verification email sent!",
             description: "Please check your inbox and verify your email to continue.",
           });
+          
+          // Store the email for verification resend functionality
+          localStorage.setItem("pendingVerificationEmail", email);
+          localStorage.setItem("selectedPlan", selectedPlan);
         }
       }
     } catch (error: any) {

@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
+import { useSubscriptionManagement } from "@/hooks/use-subscription-management";
 
 export const EmailVerification = () => {
   const [verificationSuccess, setVerificationSuccess] = useState(false);
@@ -18,10 +18,12 @@ export const EmailVerification = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+  const { createCheckoutSession } = useSubscriptionManagement();
   
   useEffect(() => {
     const processEmailVerification = async () => {
       const searchParams = new URLSearchParams(location.search);
+      const selectedPlan = searchParams.get('plan') || localStorage.getItem('selectedPlan') || 'free_plan';
       
       if (searchParams.has("error_description")) {
         setError(searchParams.get("error_description") || "Verification failed.");
@@ -40,9 +42,19 @@ export const EmailVerification = () => {
             
             if (sessionData?.session) {
               setVerificationSuccess(true);
-              setTimeout(() => {
-                setShowWelcomePopup(true);
-              }, 1500);
+
+              if (selectedPlan === 'pro_plan') {
+                await createCheckoutSession({
+                  planId: 'pro_plan',
+                  successUrl: `${window.location.origin}/onboarding`,
+                  cancelUrl: `${window.location.origin}/pricing`,
+                });
+              } else {
+                setTimeout(() => {
+                  setShowWelcomePopup(true);
+                  navigate('/onboarding', { replace: true });
+                }, 1500);
+              }
             }
           } catch (err: any) {
             console.error("Verification error:", err);

@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { authRoutes } from "./AuthRoutes";
@@ -19,6 +18,8 @@ import PricingPage from "@/pages/PricingPage";
 import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 import Contact from "@/pages/Contact";
+import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
+import OnboardingRedirect from "@/pages/OnboardingRedirect";
 
 export const AppRoutes = () => {
   return (
@@ -120,6 +121,18 @@ export const AppRoutes = () => {
         <Routes>
           {demoRoutes}
         </Routes>
+      } />
+      
+      <Route path="/onboarding" element={
+        <ProtectedRoute>
+          <ProfileSetup onComplete={() => null} />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/onboarding-redirect" element={
+        <ProtectedRoute>
+          <OnboardingRedirect />
+        </ProtectedRoute>
       } />
       
       {/* Fallback routes */}
