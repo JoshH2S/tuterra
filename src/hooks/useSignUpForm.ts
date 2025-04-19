@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,10 +131,10 @@ export const useSignUpForm = () => {
         // Store the selected plan in localStorage before sign-up
         localStorage.setItem("selectedPlan", selectedPlan);
         
-        // Prepare the redirect URL with the plan
+        // Prepare the redirect URL based on plan
         const redirectTo = selectedPlan === 'pro_plan'
-          ? `${window.location.origin}/verify-email?plan=pro_plan`
-          : `${window.location.origin}/verify-email?plan=free_plan`;
+          ? `${window.location.origin}/checkout/stripe?plan=pro`
+          : `${window.location.origin}/onboarding?plan=free`;
         
         // Proceed with new signup
         const { data, error } = await supabase.auth.signUp({
@@ -146,7 +145,7 @@ export const useSignUpForm = () => {
               first_name: firstName,
               last_name: lastName,
               user_type: "student",
-              selected_plan: selectedPlan, // Store the selected plan in user metadata
+              selected_plan: selectedPlan,
             },
             emailRedirectTo: redirectTo
           },
