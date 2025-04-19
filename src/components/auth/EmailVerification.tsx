@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,11 +71,16 @@ export const EmailVerification = () => {
   const handleResendVerification = async () => {
     try {
       setVerifying(true);
+      const selectedPlan = localStorage.getItem('selectedPlan') || 'free_plan';
+      const redirectTo = selectedPlan === 'pro_plan'
+        ? `${window.location.origin}/verify-email?plan=pro_plan`
+        : `${window.location.origin}/verify-email?plan=free_plan`;
+      
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: localStorage.getItem("pendingVerificationEmail") || "",
         options: {
-          emailRedirectTo: window.location.origin + "/verify-email",
+          emailRedirectTo: redirectTo,
         },
       });
       

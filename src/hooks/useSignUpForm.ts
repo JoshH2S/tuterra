@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,11 +72,16 @@ export const useSignUpForm = () => {
       // If we get here without error, the user exists
       try {
         // Try to resend verification email
+        const selectedPlan = localStorage.getItem('selectedPlan') || 'free_plan';
+        const redirectTo = selectedPlan === 'pro_plan'
+          ? `${window.location.origin}/verify-email?plan=pro_plan`
+          : `${window.location.origin}/verify-email?plan=free_plan`;
+        
         const { error: resendError } = await supabase.auth.resend({
           type: 'signup',
           email,
           options: {
-            emailRedirectTo: window.location.origin + "/verify-email"
+            emailRedirectTo: redirectTo
           }
         });
         
@@ -123,6 +129,14 @@ export const useSignUpForm = () => {
       const userStatus = await checkExistingUser();
       
       if (userStatus === 'not_found') {
+        // Store the selected plan in localStorage before sign-up
+        localStorage.setItem("selectedPlan", selectedPlan);
+        
+        // Prepare the redirect URL with the plan
+        const redirectTo = selectedPlan === 'pro_plan'
+          ? `${window.location.origin}/verify-email?plan=pro_plan`
+          : `${window.location.origin}/verify-email?plan=free_plan`;
+        
         // Proceed with new signup
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -134,7 +148,7 @@ export const useSignUpForm = () => {
               user_type: "student",
               selected_plan: selectedPlan, // Store the selected plan in user metadata
             },
-            emailRedirectTo: `${window.location.origin}/verify-email?plan=${selectedPlan}`
+            emailRedirectTo: redirectTo
           },
         });
 
@@ -149,7 +163,6 @@ export const useSignUpForm = () => {
           
           // Store the email for verification resend functionality
           localStorage.setItem("pendingVerificationEmail", email);
-          localStorage.setItem("selectedPlan", selectedPlan);
         }
       }
     } catch (error: any) {

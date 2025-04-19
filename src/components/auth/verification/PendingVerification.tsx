@@ -3,6 +3,7 @@ import { Mail, Clock, HelpCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 interface PendingVerificationProps {
   onResend: () => void;
@@ -10,6 +11,14 @@ interface PendingVerificationProps {
 }
 
 export const PendingVerification = ({ onResend, verifying }: PendingVerificationProps) => {
+  const [resending, setResending] = useState(false);
+  
+  const handleResend = async () => {
+    setResending(true);
+    await onResend();
+    setResending(false);
+  };
+  
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
@@ -45,11 +54,11 @@ export const PendingVerification = ({ onResend, verifying }: PendingVerification
         <div className="flex justify-center py-2">
           <Button 
             variant="outline" 
-            onClick={onResend} 
-            disabled={verifying}
+            onClick={handleResend} 
+            disabled={verifying || resending}
             className="bg-white hover:bg-gray-50 active:scale-95 transition-transform touch-manipulation"
           >
-            {verifying ? "Sending..." : "Resend Verification Email"}
+            {verifying || resending ? "Sending..." : "Resend Verification Email"}
           </Button>
         </div>
       </div>
