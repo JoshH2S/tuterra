@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +17,6 @@ export const EmailVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Add the missing handleContinue function
   const handleContinue = () => {
     navigate("/onboarding", { replace: true });
   };
@@ -27,13 +25,7 @@ export const EmailVerification = () => {
     const processEmailVerification = async () => {
       const hashParams = new URLSearchParams(location.hash.substring(1));
       
-      if (hashParams.has("error")) {
-        const errorDesc = hashParams.get("error_description");
-        setError(errorDesc || "Verification failed. Please try again.");
-        return;
-      }
-      
-      if (location.hash && hashParams.has("access_token")) {
+      if (hashParams.has("access_token")) {
         setVerifying(true);
         
         try {
