@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -10,6 +11,7 @@ import { PremiumContentCard } from "@/components/ui/premium-card";
 import { Mail, Info, Check } from "lucide-react";
 import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
 import { useCallback, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast"; // Added toast import
 
 export default function PricingPage() {
   const { isLoggedIn } = useAuthStatus();
@@ -17,6 +19,7 @@ export default function PricingPage() {
   const { createCheckoutSession, subscription, subscriptionLoading } = useSubscriptionManagement();
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const { toast } = useToast(); // Using the toast hook
   
   const handleSelectPlan = async (planId: string) => {
     if (planId === 'free_plan') {
@@ -103,6 +106,7 @@ export default function PricingPage() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
   };
 
+  // Converting the JSX elements to strings for the features prop
   const tierFeatures = {
     free: [
       "5 AI tutor messages per month",
@@ -124,6 +128,27 @@ export default function PricingPage() {
       "Content alignment with school curriculum",
       "Admin panel to manage learners",
     ],
+  };
+
+  // Function to render features with tooltips
+  const renderFeatures = (features: string[], tooltips?: Record<string, string>) => {
+    return features.map((feature) => (
+      <PlanFeature 
+        key={feature} 
+        feature={feature}
+        tooltip={tooltips?.[feature]}
+      />
+    ));
+  };
+
+  const proTooltips = {
+    "AI feedback on every quiz and skill report": "Powered by advanced language models",
+    "Learning path planning & skill progress tracking": "Personalized learning recommendations",
+  };
+
+  const enterpriseTooltips = {
+    "Group analytics and LMS integrations": "Advanced reporting and insights",
+    "Admin panel to manage learners": "Comprehensive user management tools",
   };
 
   const isCurrentPlan = (planId: string) => {
@@ -175,12 +200,7 @@ export default function PricingPage() {
           title="Free"
           price="$0"
           description="Explore core tools with limited usage"
-          features={tierFeatures.free.map(feature => (
-            <PlanFeature 
-              key={feature} 
-              feature={feature}
-            />
-          ))}
+          features={tierFeatures.free}
           planId="free_plan"
           onSelect={handleSelectPlan}
           buttonText="Start Free"
@@ -192,13 +212,7 @@ export default function PricingPage() {
           title="Pro"
           price={billingInterval === 'monthly' ? "$9.99" : "$95.88"}
           description="Everything you need for serious learning"
-          features={tierFeatures.pro.map(feature => (
-            <PlanFeature 
-              key={feature} 
-              feature={feature}
-              tooltip={feature.includes("AI") ? "Powered by advanced language models" : undefined}
-            />
-          ))}
+          features={tierFeatures.pro}
           planId="pro_plan"
           isPopular={true}
           onSelect={handleSelectPlan}
@@ -219,13 +233,7 @@ export default function PricingPage() {
           title="Enterprise"
           price="Custom pricing"
           description="For schools, institutions, and organizations"
-          features={tierFeatures.enterprise.map(feature => (
-            <PlanFeature 
-              key={feature} 
-              feature={feature}
-              tooltip={feature.includes("analytics") ? "Advanced reporting and insights" : undefined}
-            />
-          ))}
+          features={tierFeatures.enterprise}
           planId="enterprise_plan"
           onSelect={handleSelectPlan}
           buttonText="Contact Sales"
