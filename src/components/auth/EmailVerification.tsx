@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
 import { toast } from "@/hooks/use-toast";
 import { VerificationProgress } from "./verification/VerificationProgress";
 import { VerificationError } from "./verification/VerificationError";
@@ -18,65 +16,45 @@ export const EmailVerification = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const { createCheckoutSession } = useSubscriptionManagement();
 
   useEffect(() => {
     const processEmailVerification = async () => {
-      const searchParams = new URLSearchParams(location.search);
-      const selectedPlan = searchParams.get('plan') || localStorage.getItem('selectedPlan') || 'free_plan';
+      const hashParams = new URLSearchParams(location.hash.substring(1));
       
-      if (searchParams.has("error_description")) {
-        setError(searchParams.get("error_description") || "Verification failed.");
+      if (hashParams.has("error")) {
+        const errorDesc = hashParams.get("error_description");
+        setError(errorDesc || "Verification failed. Please try again.");
         return;
       }
       
-      if (location.hash) {
-        const hashParams = new URLSearchParams(location.hash.substring(1));
-        if (hashParams.has("access_token")) {
-          setVerifying(true);
+      if (location.hash && hashParams.has("access_token")) {
+        setVerifying(true);
+        
+        try {
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
           
-          try {
-            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-            
-            if (sessionError) throw sessionError;
-            
-            if (sessionData?.session) {
-              setVerificationSuccess(true);
-
-              // Use a timeout to allow the success UI to be seen briefly
-              setTimeout(() => {
-                if (selectedPlan === 'pro_plan') {
-                  createCheckoutSession({
-                    planId: 'pro_plan',
-                    successUrl: `${window.location.origin}/onboarding`,
-                    cancelUrl: `${window.location.origin}/pricing`,
-                  });
-                } else {
-                  // Direct navigation to onboarding for free plan users
-                  navigate('/onboarding', { replace: true });
-                }
-              }, 1500);
-            }
-          } catch (err: any) {
-            console.error("Verification error:", err);
-            setError(err.message || "Failed to verify email. Please try again.");
-          } finally {
-            setVerifying(false);
+          if (sessionError) throw sessionError;
+          
+          if (sessionData?.session) {
+            setVerificationSuccess(true);
+            navigate("/onboarding", { replace: true });
           }
+        } catch (err: any) {
+          console.error("Verification error:", err);
+          setError(err.message || "Failed to verify email. Please try again.");
+        } finally {
+          setVerifying(false);
         }
       }
     };
     
     processEmailVerification();
-  }, [location, navigate, createCheckoutSession]);
+  }, [location, navigate]);
   
   const handleResendVerification = async () => {
     try {
       setVerifying(true);
-      const selectedPlan = localStorage.getItem('selectedPlan') || 'free_plan';
-      const redirectTo = selectedPlan === 'pro_plan'
-        ? `${window.location.origin}/verify-email?plan=pro_plan`
-        : `${window.location.origin}/verify-email?plan=free_plan`;
+      const redirectTo = `${window.location.origin}/verify-email`;
       
       const { error } = await supabase.auth.resend({
         type: "signup",
@@ -97,29 +75,6 @@ export const EmailVerification = () => {
       setError(err.message || "Failed to resend verification email.");
     } finally {
       setVerifying(false);
-    }
-  };
-  
-  const handleContinue = async () => {
-    const selectedPlan = localStorage.getItem('selectedPlan') || 'free_plan';
-    
-    if (selectedPlan === 'pro_plan') {
-      try {
-        await createCheckoutSession({
-          planId: 'pro_plan',
-          successUrl: `${window.location.origin}/onboarding`,
-          cancelUrl: `${window.location.origin}/pricing`,
-        });
-      } catch (error) {
-        console.error('Failed to create checkout session:', error);
-        toast({
-          title: "Error",
-          description: "Failed to redirect to checkout. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      navigate("/onboarding", { replace: true });
     }
   };
 
