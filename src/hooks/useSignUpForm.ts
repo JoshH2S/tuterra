@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -145,7 +146,7 @@ export const useSignUpForm = () => {
               first_name: firstName,
               last_name: lastName,
               user_type: "student",
-              selected_plan: selectedPlan,
+              selectedPlan: selectedPlan // Include plan in user metadata
             },
             emailRedirectTo: redirectTo
           },
