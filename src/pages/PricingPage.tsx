@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -8,7 +7,9 @@ import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PremiumContentCard } from "@/components/ui/premium-card";
-import { Mail } from "lucide-react";
+import { Mail, Info, Check } from "lucide-react";
+import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
+import { useCallback, useEffect } from "react";
 
 export default function PricingPage() {
   const { isLoggedIn } = useAuthStatus();
@@ -40,13 +41,63 @@ export default function PricingPage() {
     // If user is already logged in and selected pro plan, proceed to checkout
     setIsRedirecting(true);
     
-    await createCheckoutSession({
-      planId: planId as "pro_plan", // Type cast to the expected type
-      successUrl: `${window.location.origin}/subscription-success`,
-      cancelUrl: `${window.location.origin}/subscription-canceled`,
-    });
+    try {
+      const success = await createCheckoutSession({
+        planId: planId as "pro_plan", // Type cast to the expected type
+        successUrl: `${window.location.origin}/subscription-success`,
+        cancelUrl: `${window.location.origin}/subscription-canceled`,
+      });
+
+      if (!success) {
+        throw new Error('Failed to create checkout session');
+      }
+    } catch (error) {
+      setIsRedirecting(false);
+      toast({
+        title: "Checkout Error",
+        description: "There was a problem starting the checkout process. Please try again or contact support.",
+        variant: "destructive",
+      });
+    }
   };
-  
+
+  // Handle browser back button during redirect
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isRedirecting) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isRedirecting]);
+
+  // Calculate annual savings
+  const calculateAnnualSavings = useCallback((monthlyPrice: number) => {
+    const monthlyTotal = monthlyPrice * 12;
+    const yearlyPrice = monthlyTotal * 0.8; // 20% discount
+    const savings = ((monthlyTotal - yearlyPrice) / monthlyTotal) * 100;
+    return Math.round(savings);
+  }, []);
+
+  // Feature with tooltip component
+  const PlanFeature = ({ feature, tooltip }: { feature: string; tooltip?: string }) => (
+    <li className="flex text-sm">
+      <Check className="h-5 w-5 flex-shrink-0 text-green-500" />
+      <span className="ml-3 flex items-center gap-2">
+        {feature}
+        {tooltip && (
+          <InteractiveTooltip
+            trigger={<Info className="h-4 w-4 text-muted-foreground cursor-help" />}
+            content={tooltip}
+          />
+        )}
+      </span>
+    </li>
+  );
+
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
@@ -124,7 +175,12 @@ export default function PricingPage() {
           title="Free"
           price="$0"
           description="Explore core tools with limited usage"
-          features={tierFeatures.free}
+          features={tierFeatures.free.map(feature => (
+            <PlanFeature 
+              key={feature} 
+              feature={feature}
+            />
+          ))}
           planId="free_plan"
           onSelect={handleSelectPlan}
           buttonText="Start Free"
@@ -136,18 +192,26 @@ export default function PricingPage() {
           title="Pro"
           price={billingInterval === 'monthly' ? "$9.99" : "$95.88"}
           description="Everything you need for serious learning"
-          features={tierFeatures.pro}
+          features={tierFeatures.pro.map(feature => (
+            <PlanFeature 
+              key={feature} 
+              feature={feature}
+              tooltip={feature.includes("AI") ? "Powered by advanced language models" : undefined}
+            />
+          ))}
           planId="pro_plan"
           isPopular={true}
           onSelect={handleSelectPlan}
           buttonText={
             isCurrentPlan('pro_plan') 
               ? "Current Plan" 
-              : isRedirecting 
-                ? "Redirecting..." 
-                : "Choose Pro"
+              : subscriptionLoading
+                ? "Loading..."
+                : isRedirecting 
+                  ? "Redirecting..." 
+                  : "Choose Pro"
           }
-          buttonDisabled={isCurrentPlan('pro_plan') || isRedirecting}
+          buttonDisabled={isCurrentPlan('pro_plan') || isRedirecting || subscriptionLoading}
         />
 
         {/* Enterprise Plan */}
@@ -155,7 +219,13 @@ export default function PricingPage() {
           title="Enterprise"
           price="Custom pricing"
           description="For schools, institutions, and organizations"
-          features={tierFeatures.enterprise}
+          features={tierFeatures.enterprise.map(feature => (
+            <PlanFeature 
+              key={feature} 
+              feature={feature}
+              tooltip={feature.includes("analytics") ? "Advanced reporting and insights" : undefined}
+            />
+          ))}
           planId="enterprise_plan"
           onSelect={handleSelectPlan}
           buttonText="Contact Sales"
