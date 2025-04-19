@@ -132,10 +132,10 @@ export const useSignUpForm = () => {
         // Store the selected plan in localStorage before sign-up
         localStorage.setItem("selectedPlan", selectedPlan);
         
-        // Prepare the redirect URL based on plan
+        // Set direct path rather than complex query parameters
         const redirectTo = selectedPlan === 'pro_plan'
-          ? `${window.location.origin}/checkout/stripe?plan=pro`
-          : `${window.location.origin}/onboarding?plan=free`;
+          ? `${window.location.origin}/verify-email?plan=pro_plan`
+          : `${window.location.origin}/verify-email?plan=free_plan`;
         
         // Proceed with new signup
         const { data, error } = await supabase.auth.signUp({

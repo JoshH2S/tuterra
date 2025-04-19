@@ -43,17 +43,19 @@ export const EmailVerification = () => {
             if (sessionData?.session) {
               setVerificationSuccess(true);
 
-              if (selectedPlan === 'pro_plan') {
-                await createCheckoutSession({
-                  planId: 'pro_plan',
-                  successUrl: `${window.location.origin}/onboarding-redirect`,
-                  cancelUrl: `${window.location.origin}/pricing`,
-                });
-              } else {
-                setTimeout(() => {
+              // Use a timeout to allow the success UI to be seen briefly
+              setTimeout(() => {
+                if (selectedPlan === 'pro_plan') {
+                  createCheckoutSession({
+                    planId: 'pro_plan',
+                    successUrl: `${window.location.origin}/onboarding`,
+                    cancelUrl: `${window.location.origin}/pricing`,
+                  });
+                } else {
+                  // Direct navigation to onboarding for free plan users
                   navigate('/onboarding', { replace: true });
-                }, 1500);
-              }
+                }
+              }, 1500);
             }
           } catch (err: any) {
             console.error("Verification error:", err);
@@ -105,7 +107,7 @@ export const EmailVerification = () => {
       try {
         await createCheckoutSession({
           planId: 'pro_plan',
-          successUrl: `${window.location.origin}/onboarding-redirect`,
+          successUrl: `${window.location.origin}/onboarding`,
           cancelUrl: `${window.location.origin}/pricing`,
         });
       } catch (error) {

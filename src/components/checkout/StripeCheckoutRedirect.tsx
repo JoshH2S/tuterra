@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSubscriptionManagement } from '@/hooks/useSubscriptionManagement';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -8,7 +8,6 @@ import { motion } from 'framer-motion';
 
 const StripeCheckoutRedirect = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { createCheckoutSession } = useSubscriptionManagement();
 
   useEffect(() => {
