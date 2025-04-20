@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
@@ -8,28 +8,12 @@ import { Database } from "@/integrations/supabase/types";
 type NewsTopic = Database["public"]["Enums"]["news_topic"];
 
 export const useProfileSetup = (onComplete: () => void) => {
-  // Initialize state from localStorage if available to persist progress
-  const savedProgress = typeof window !== 'undefined' 
-    ? localStorage.getItem('onboarding_progress') 
-    : null;
-  
-  const initialState = savedProgress ? JSON.parse(savedProgress) : {};
-  
-  const [step, setStep] = useState(initialState.step || 0);
+  const [step, setStep] = useState(1);
   const totalSteps = 2;
-  const [selectedTopics, setSelectedTopics] = useState<string[]>(initialState.selectedTopics || []);
-  const [educationLevel, setEducationLevel] = useState<string>(initialState.educationLevel || "");
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [educationLevel, setEducationLevel] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-
-  // Save progress to localStorage whenever key states change
-  useEffect(() => {
-    localStorage.setItem('onboarding_progress', JSON.stringify({
-      step,
-      selectedTopics,
-      educationLevel
-    }));
-  }, [step, selectedTopics, educationLevel]);
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -38,7 +22,7 @@ export const useProfileSetup = (onComplete: () => void) => {
   };
 
   const handleBack = () => {
-    if (step > 0) {
+    if (step > 1) {
       setStep(step - 1);
     }
   };
@@ -66,7 +50,6 @@ export const useProfileSetup = (onComplete: () => void) => {
   };
 
   const isCurrentStepValid = () => {
-    if (step === 0) return true; // Welcome step is always valid
     if (step === 1) return selectedTopics.length > 0;
     if (step === 2) return !!educationLevel;
     return false;
@@ -136,9 +119,6 @@ export const useProfileSetup = (onComplete: () => void) => {
           // If no session exists, refresh it to ensure navigation works properly
           await supabase.auth.refreshSession();
         }
-
-        // Clear onboarding progress from localStorage after successful completion
-        localStorage.removeItem('onboarding_progress');
 
         // Call the completion callback after everything is successfully saved
         onComplete();

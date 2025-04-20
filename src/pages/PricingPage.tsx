@@ -8,10 +8,7 @@ import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PremiumContentCard } from "@/components/ui/premium-card";
-import { Mail, Info, Check } from "lucide-react";
-import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
-import { useCallback, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast"; // Added toast import
+import { Mail } from "lucide-react";
 
 export default function PricingPage() {
   const { isLoggedIn } = useAuthStatus();
@@ -19,7 +16,6 @@ export default function PricingPage() {
   const { createCheckoutSession, subscription, subscriptionLoading } = useSubscriptionManagement();
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const { toast } = useToast(); // Using the toast hook
   
   const handleSelectPlan = async (planId: string) => {
     if (planId === 'free_plan') {
@@ -44,69 +40,18 @@ export default function PricingPage() {
     // If user is already logged in and selected pro plan, proceed to checkout
     setIsRedirecting(true);
     
-    try {
-      const success = await createCheckoutSession({
-        planId: planId as "pro_plan", // Type cast to the expected type
-        successUrl: `${window.location.origin}/subscription-success`,
-        cancelUrl: `${window.location.origin}/subscription-canceled`,
-      });
-
-      if (!success) {
-        throw new Error('Failed to create checkout session');
-      }
-    } catch (error) {
-      setIsRedirecting(false);
-      toast({
-        title: "Checkout Error",
-        description: "There was a problem starting the checkout process. Please try again or contact support.",
-        variant: "destructive",
-      });
-    }
+    await createCheckoutSession({
+      planId: planId as "pro_plan", // Type cast to the expected type
+      successUrl: `${window.location.origin}/subscription-success`,
+      cancelUrl: `${window.location.origin}/subscription-canceled`,
+    });
   };
-
-  // Handle browser back button during redirect
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isRedirecting) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isRedirecting]);
-
-  // Calculate annual savings
-  const calculateAnnualSavings = useCallback((monthlyPrice: number) => {
-    const monthlyTotal = monthlyPrice * 12;
-    const yearlyPrice = monthlyTotal * 0.8; // 20% discount
-    const savings = ((monthlyTotal - yearlyPrice) / monthlyTotal) * 100;
-    return Math.round(savings);
-  }, []);
-
-  // Feature with tooltip component
-  const PlanFeature = ({ feature, tooltip }: { feature: string; tooltip?: string }) => (
-    <li className="flex text-sm">
-      <Check className="h-5 w-5 flex-shrink-0 text-green-500" />
-      <span className="ml-3 flex items-center gap-2">
-        {feature}
-        {tooltip && (
-          <InteractiveTooltip
-            trigger={<Info className="h-4 w-4 text-muted-foreground cursor-help" />}
-            content={tooltip}
-          />
-        )}
-      </span>
-    </li>
-  );
-
+  
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
   };
 
-  // Converting the JSX elements to strings for the features prop
   const tierFeatures = {
     free: [
       "5 AI tutor messages per month",
@@ -128,27 +73,6 @@ export default function PricingPage() {
       "Content alignment with school curriculum",
       "Admin panel to manage learners",
     ],
-  };
-
-  // Function to render features with tooltips
-  const renderFeatures = (features: string[], tooltips?: Record<string, string>) => {
-    return features.map((feature) => (
-      <PlanFeature 
-        key={feature} 
-        feature={feature}
-        tooltip={tooltips?.[feature]}
-      />
-    ));
-  };
-
-  const proTooltips = {
-    "AI feedback on every quiz and skill report": "Powered by advanced language models",
-    "Learning path planning & skill progress tracking": "Personalized learning recommendations",
-  };
-
-  const enterpriseTooltips = {
-    "Group analytics and LMS integrations": "Advanced reporting and insights",
-    "Admin panel to manage learners": "Comprehensive user management tools",
   };
 
   const isCurrentPlan = (planId: string) => {
@@ -219,13 +143,11 @@ export default function PricingPage() {
           buttonText={
             isCurrentPlan('pro_plan') 
               ? "Current Plan" 
-              : subscriptionLoading
-                ? "Loading..."
-                : isRedirecting 
-                  ? "Redirecting..." 
-                  : "Choose Pro"
+              : isRedirecting 
+                ? "Redirecting..." 
+                : "Choose Pro"
           }
-          buttonDisabled={isCurrentPlan('pro_plan') || isRedirecting || subscriptionLoading}
+          buttonDisabled={isCurrentPlan('pro_plan') || isRedirecting}
         />
 
         {/* Enterprise Plan */}

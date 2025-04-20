@@ -8,6 +8,7 @@ import { EmailVerification } from "@/components/auth/EmailVerification";
 import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { WelcomePopup } from "@/components/onboarding/WelcomePopup";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthProps {
@@ -17,6 +18,7 @@ interface AuthProps {
 const Auth = ({
   mode: propMode
 }: AuthProps = {}) => {
+  const [showWelcome, setShowWelcome] = useState(false);
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const queryMode = queryParams.get("mode") as "emailVerification" | "resetPassword" | null;
@@ -25,6 +27,8 @@ const Auth = ({
   // Save email for potential resend verification
   useEffect(() => {
     const saveEmailForVerification = async () => {
+      // When the signup form shows success, save the email to localStorage so 
+      // we can use it on the verification page if needed
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session && location.pathname.includes("auth") && !mode) {
@@ -79,7 +83,13 @@ const Auth = ({
               <SignInForm />
             </TabsContent>
             <TabsContent value="signup">
-              <SignUpForm />
+              <SignUpForm onSignUpSuccess={() => {
+                // Using setTimeout so user can see the verification sent message first
+                setTimeout(() => {
+                  // We'll set the welcome popup to show after the user verifies their email
+                  // and gets redirected back to the app
+                }, 500);
+              }} />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -97,6 +107,8 @@ const Auth = ({
     }} className="w-[200px]">
         <img alt="EduPortal Logo" className="w-full h-auto" src="/lovable-uploads/7ab2ba58-1918-4a73-85e1-7793751f29b4.png" />
       </motion.div>
+
+      <WelcomePopup isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
     </motion.div>;
 };
 
