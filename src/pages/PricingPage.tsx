@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
@@ -10,8 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PremiumContentCard } from "@/components/ui/premium-card";
 import { Mail, Info, Check } from "lucide-react";
 import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
-import { useCallback, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast"; // Added toast import
+import { useToast } from "@/hooks/use-toast";
 
 export default function PricingPage() {
   const { isLoggedIn } = useAuthStatus();
@@ -19,17 +18,17 @@ export default function PricingPage() {
   const { createCheckoutSession, subscription, subscriptionLoading } = useSubscriptionManagement();
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const { toast } = useToast(); // Using the toast hook
+  const { toast } = useToast();
   
   const handleSelectPlan = async (planId: string) => {
+    // For free plan, redirect to auth page directly
     if (planId === 'free_plan') {
-      // For free plan, redirect to auth page directly
       navigate('/auth?tab=signup&plan=free');
       return;
     }
     
+    // For enterprise plan, redirect to contact page
     if (planId === 'enterprise_plan') {
-      // For enterprise plan, redirect to contact page
       navigate('/contact');
       return;
     }
@@ -45,21 +44,29 @@ export default function PricingPage() {
     setIsRedirecting(true);
     
     try {
+      console.log('Starting checkout for plan:', planId);
+      
       const success = await createCheckoutSession({
-        planId: planId as "pro_plan", // Type cast to the expected type
+        planId: planId,
         successUrl: `${window.location.origin}/subscription-success`,
         cancelUrl: `${window.location.origin}/subscription-canceled`,
       });
 
       if (!success) {
+        console.error('Checkout session creation failed');
         throw new Error('Failed to create checkout session');
       }
-    } catch (error) {
+      
+      // Note: redirection happens in createCheckoutSession
+    } catch (error: any) {
+      console.error('Checkout error:', error);
       setIsRedirecting(false);
+      
       toast({
         title: "Checkout Error",
         description: "There was a problem starting the checkout process. Please try again or contact support.",
         variant: "destructive",
+        duration: 5000,
       });
     }
   };

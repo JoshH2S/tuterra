@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 
 export interface CheckoutOptions {
-  planId: "pro_plan" | "premium_plan" | string;
+  planId: "pro_plan" | string;
   successUrl: string;
   cancelUrl: string;
 }
@@ -19,6 +19,9 @@ export const useSubscriptionManagement = () => {
     setLoading(true);
     
     try {
+      // Log request details for debugging
+      console.log('Creating checkout session for:', { planId, successUrl, cancelUrl });
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           planId,
@@ -28,21 +31,30 @@ export const useSubscriptionManagement = () => {
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Error invoking checkout service');
+      }
+
+      if (!data) {
+        console.error('No data returned from checkout function');
+        throw new Error('No response from checkout service');
       }
 
       if (data?.url) {
+        console.log('Redirecting to checkout URL:', data.url);
         window.location.href = data.url;
         return true;
       } else {
+        console.error('No URL in checkout response:', data);
         throw new Error('No checkout URL returned');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating checkout session:', error);
       toast({
-        title: "Error",
-        description: `Failed to create checkout session: ${error.message}`,
+        title: "Checkout Error",
+        description: error.message || "Failed to create checkout session. Please try again or contact support.",
         variant: "destructive",
+        duration: 5000,
       });
       return false;
     } finally {
@@ -70,7 +82,7 @@ export const useSubscriptionManagement = () => {
       });
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error cancelling subscription:', error);
       toast({
         title: "Error",
@@ -103,7 +115,7 @@ export const useSubscriptionManagement = () => {
       });
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error reactivating subscription:', error);
       toast({
         title: "Error",
@@ -136,7 +148,7 @@ export const useSubscriptionManagement = () => {
       } else {
         throw new Error('No portal URL returned');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating billing portal session:', error);
       toast({
         title: "Error",
