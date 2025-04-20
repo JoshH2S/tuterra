@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { VerificationProgress } from "./verification/VerificationProgress";
 import { VerificationError } from "./verification/VerificationError";
 import { VerificationSuccess } from "./verification/VerificationSuccess";
@@ -20,6 +20,7 @@ export const EmailVerification = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   const handleContinue = () => {
     navigate("/onboarding", { replace: true });
@@ -43,6 +44,21 @@ export const EmailVerification = () => {
 
   useEffect(() => {
     const processEmailVerification = async () => {
+      // Handle errors in the URL parameters (query parameters)
+      const searchParams = new URLSearchParams(location.search);
+      if (searchParams.has("error")) {
+        const errorCode = searchParams.get("error_code");
+        const errorDescription = searchParams.get("error_description");
+        
+        if (errorCode === "otp_expired") {
+          setError("Your verification link has expired. Please request a new one.");
+        } else {
+          setError(errorDescription || "Verification failed. Please try again.");
+        }
+        return;
+      }
+      
+      // Handle hash fragments for Supabase auth
       const hashParams = new URLSearchParams(location.hash.substring(1));
       
       if (hashParams.has("error")) {
