@@ -22,6 +22,16 @@ export const useSubscriptionManagement = () => {
       // Log request details for debugging
       console.log('Creating checkout session for:', { planId, successUrl, cancelUrl });
       
+      // Ensure the user's session is active and we have an access token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('No active session found');
+        throw new Error('You need to be logged in to access this feature');
+      }
+      
+      console.log('Session verified, invoking checkout function');
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           planId,
