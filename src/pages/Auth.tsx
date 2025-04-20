@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
@@ -39,14 +38,18 @@ const Auth = ({
     saveEmailForVerification();
   }, [location, mode, queryParams]);
   
+  // Display correct component based on mode or URL path
   if (mode === "emailVerification" || location.pathname.includes("verify-email")) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <EmailVerification />
-      </div>;
+      </div>
+    );
   }
   
   if (mode === "resetPassword") {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center">Reset Password</CardTitle>
@@ -55,16 +58,17 @@ const Auth = ({
             <ResetPasswordForm />
           </CardContent>
         </Card>
-      </div>;
+      </div>
+    );
   }
   
-  return <motion.div initial={{
-    opacity: 0
-  }} animate={{
-    opacity: 1
-  }} transition={{
-    duration: 0.5
-  }} className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      transition={{ duration: 0.5 }} 
+      className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+    >
       <Card className="w-full max-w-md shadow-lg border-0 mb-8">
         <CardHeader>
           <CardTitle className="text-center">Welcome to Tuterra</CardTitle>
@@ -86,18 +90,19 @@ const Auth = ({
       </Card>
       
       <motion.div initial={{
-      y: 20,
-      opacity: 0
-    }} animate={{
-      y: 0,
-      opacity: 1
-    }} transition={{
-      delay: 0.2,
-      duration: 0.5
-    }} className="w-[200px]">
+        y: 20,
+        opacity: 0
+      }} animate={{
+        y: 0,
+        opacity: 1
+      }} transition={{
+        delay: 0.2,
+        duration: 0.5
+      }} className="w-[200px]">
         <img alt="EduPortal Logo" className="w-full h-auto" src="/lovable-uploads/7ab2ba58-1918-4a73-85e1-7793751f29b4.png" />
       </motion.div>
-    </motion.div>;
+    </motion.div>
+  );
 };
 
 export default Auth;
