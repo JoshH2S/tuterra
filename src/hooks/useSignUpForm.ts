@@ -4,6 +4,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
 
+// Use this for consistent URLs across environments
+const SITE_URL = window.location.origin;
+
 export const useSignUpForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -69,7 +72,7 @@ export const useSignUpForm = () => {
           type: 'signup',
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/verify-email`
+            emailRedirectTo: `${SITE_URL}/verify-email`
           }
         });
         
@@ -118,7 +121,7 @@ export const useSignUpForm = () => {
               last_name: lastName,
               user_type: "student",
             },
-            emailRedirectTo: `${window.location.origin}/verify-email`
+            emailRedirectTo: `${SITE_URL}/verify-email`
           },
         });
 

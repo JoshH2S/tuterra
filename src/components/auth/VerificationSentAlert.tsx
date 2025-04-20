@@ -3,6 +3,9 @@ import { Mail } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
+// Use this for consistent URLs across environments
+const SITE_URL = window.location.origin;
+
 interface VerificationSentAlertProps {
   email: string;
   onResend: () => void;
@@ -32,7 +35,7 @@ export const VerificationSentAlert = ({
           variant="outline"
           onClick={onResend}
           disabled={isResending}
-          className="w-full"
+          className="w-full touch-manipulation"
         >
           {isResending ? "Sending..." : "Resend verification email"}
         </Button>

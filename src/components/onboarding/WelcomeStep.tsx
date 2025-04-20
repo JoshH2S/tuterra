@@ -42,11 +42,11 @@ export const WelcomeStep = ({ onStart }: WelcomeStepProps) => {
         >
           <img 
             src="/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png"
-            alt="EduPortal Logo"
+            alt="Tuterra Logo"
             className="h-12 mx-auto"
           />
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
-            Welcome to EduPortal
+            Welcome to Tuterra
           </h1>
           <p className="text-lg text-gray-600 max-w-xl mx-auto">
             Let's personalize your learning journey in just a few steps
@@ -88,25 +88,11 @@ export const WelcomeStep = ({ onStart }: WelcomeStepProps) => {
           <Button
             onClick={onStart}
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-full text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 group"
+            className="bg-primary hover:bg-primary/90 text-white px-8 py-6 rounded-full text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 group touch-manipulation"
           >
             Get Started
             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="text-center mt-4"
-        >
-          <button
-            onClick={onStart}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            Skip for now
-          </button>
         </motion.div>
       </div>
     </motion.div>
