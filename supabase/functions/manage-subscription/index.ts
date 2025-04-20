@@ -8,6 +8,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper function for debugging logs
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[MANAGE-SUBSCRIPTION] ${step}${detailsStr}`);
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -15,14 +21,18 @@ serve(async (req) => {
   }
 
   try {
+    logStep("Function started");
+    
+    // Create Supabase client with service role key to bypass RLS
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     // Get the authorization header from the request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      logStep("Error: No authorization header");
       return new Response(
         JSON.stringify({ error: "No authorization header provided" }),
         {
@@ -42,6 +52,7 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser(token);
 
     if (userError || !user) {
+      logStep("Error: Invalid user token", { error: userError });
       return new Response(
         JSON.stringify({ error: "Invalid user token" }),
         {
@@ -50,20 +61,15 @@ serve(async (req) => {
         }
       );
     }
+    
+    logStep("Authenticated user", { userId: user.id, email: user.email });
 
-    // Parse the request body
-    const { action } = await req.json();
-
-    // Get the user's subscription
-    const { data: subscriptionData, error: subscriptionError } = await supabaseClient
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (subscriptionError) {
+    // Get Stripe key from environment
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      logStep("Error: Missing Stripe secret key");
       return new Response(
-        JSON.stringify({ error: subscriptionError.message }),
+        JSON.stringify({ error: "Server configuration error: Missing Stripe key" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -71,7 +77,61 @@ serve(async (req) => {
       );
     }
 
-    if (!subscriptionData || !subscriptionData.stripe_subscription_id) {
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      logStep("Parsed request body", requestBody);
+    } catch (e) {
+      logStep("Error parsing request body", { error: e.message });
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { action } = requestBody;
+    if (!action) {
+      logStep("Error: Missing action parameter");
+      return new Response(
+        JSON.stringify({ error: "Missing action parameter" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Initialize Stripe
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: "2023-10-16",
+      httpClient: Stripe.createFetchHttpClient(),
+    });
+
+    // Get the user's subscription
+    const { data: subscriptionData, error: subscriptionError } = await supabaseClient
+      .from("subscriptions")
+      .select("stripe_subscription_id, stripe_customer_id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (subscriptionError) {
+      logStep("Error retrieving subscription", { error: subscriptionError });
+      return new Response(
+        JSON.stringify({ error: "Could not retrieve subscription information" }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { stripe_subscription_id, stripe_customer_id } = subscriptionData;
+    if (!stripe_subscription_id) {
+      logStep("No active subscription found");
       return new Response(
         JSON.stringify({ error: "No active subscription found" }),
         {
@@ -81,50 +141,46 @@ serve(async (req) => {
       );
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
-      httpClient: Stripe.createFetchHttpClient(),
-    });
-
-    let result;
-    
-    switch (action) {
-      case "cancel":
-        // Cancel at period end
+    try {
+      let result;
+      if (action === 'cancel') {
+        logStep("Cancelling subscription", { subscriptionId: stripe_subscription_id });
         result = await stripe.subscriptions.update(
-          subscriptionData.stripe_subscription_id,
+          stripe_subscription_id,
           { cancel_at_period_end: true }
         );
         
-        // Update in database
+        // Update the local record
         await supabaseClient
           .from("subscriptions")
-          .update({
+          .update({ 
             cancel_at_period_end: true,
+            updated_at: new Date().toISOString()
           })
-          .eq("id", subscriptionData.id);
-        
-        break;
-        
-      case "reactivate":
-        // Reactivate a subscription that was set to cancel
+          .eq("user_id", user.id);
+          
+        logStep("Subscription marked for cancellation");
+      } 
+      else if (action === 'reactivate') {
+        logStep("Reactivating subscription", { subscriptionId: stripe_subscription_id });
         result = await stripe.subscriptions.update(
-          subscriptionData.stripe_subscription_id,
+          stripe_subscription_id,
           { cancel_at_period_end: false }
         );
         
-        // Update in database
+        // Update the local record
         await supabaseClient
           .from("subscriptions")
-          .update({
+          .update({ 
             cancel_at_period_end: false,
+            updated_at: new Date().toISOString()
           })
-          .eq("id", subscriptionData.id);
+          .eq("user_id", user.id);
           
-        break;
-        
-      default:
+        logStep("Subscription reactivated");
+      }
+      else {
+        logStep("Invalid action requested", { action });
         return new Response(
           JSON.stringify({ error: "Invalid action" }),
           {
@@ -132,14 +188,32 @@ serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
-    }
+      }
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+      return new Response(
+        JSON.stringify({ success: true, data: result }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } catch (error) {
+      logStep("Error managing subscription", { 
+        error: error.message,
+        type: error.type,
+        code: error.code
+      });
+      
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
   } catch (error) {
-    console.error("Error:", error);
+    logStep("Unexpected error", { error: error.message });
     return new Response(
       JSON.stringify({ error: error.message }),
       {
