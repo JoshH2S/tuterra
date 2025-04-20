@@ -71,17 +71,15 @@ export const EmailVerification = () => {
         setVerifying(true);
         
         try {
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          // Use exchangeCodeForSession instead of getSession to properly process the token in the URL
+          const { error } = await supabase.auth.exchangeCodeForSession();
+          if (error) throw error;
           
-          if (sessionError) throw sessionError;
-          
-          if (sessionData?.session) {
-            setVerificationSuccess(true);
-            // Add delay to show success state before redirect
-            setTimeout(() => {
-              navigate("/onboarding", { replace: true });
-            }, 1500);
-          }
+          setVerificationSuccess(true);
+          // Add delay to show success state before redirect
+          setTimeout(() => {
+            navigate("/onboarding", { replace: true });
+          }, 1500);
         } catch (err: any) {
           console.error("Verification error:", err);
           setError(err.message || "Failed to verify email. Please try again.");
