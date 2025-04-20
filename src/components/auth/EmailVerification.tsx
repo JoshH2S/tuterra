@@ -71,8 +71,8 @@ export const EmailVerification = () => {
         setVerifying(true);
         
         try {
-          // Use exchangeCodeForSession instead of getSession to properly process the token in the URL
-          const { error } = await supabase.auth.exchangeCodeForSession();
+          // Pass the current URL to exchangeCodeForSession
+          const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
           if (error) throw error;
           
           setVerificationSuccess(true);
