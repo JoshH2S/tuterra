@@ -92,6 +92,30 @@ serve(async (req) => {
       );
     }
 
+    // Validate URLs
+    try {
+      const origin = req.headers.get("origin") || "";
+      if (!successUrl.startsWith("http") || !cancelUrl.startsWith("http")) {
+        logStep("Error: Invalid URLs", { successUrl, cancelUrl });
+        return new Response(
+          JSON.stringify({ error: "Invalid success or cancel URLs format" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+    } catch (error) {
+      logStep("Error validating URLs", { error: error.message });
+      return new Response(
+        JSON.stringify({ error: "URL validation failed: " + error.message }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Get Stripe key from environment
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
@@ -134,6 +158,21 @@ serve(async (req) => {
         });
         customerId = customer.id;
         logStep("Created new Stripe customer", { customerId });
+        
+        // Store the customer ID in the subscriptions table
+        const { error: insertError } = await supabaseClient
+          .from("subscriptions")
+          .insert({
+            user_id: user.id,
+            stripe_customer_id: customerId,
+            status: 'incomplete',
+            plan_id: planId
+          });
+
+        if (insertError) {
+          logStep("Error storing customer ID", { error: insertError });
+          // Don't throw, just log - this isn't critical for checkout
+        }
       } catch (error) {
         logStep("Error creating Stripe customer", { error: error.message });
         return new Response(
@@ -144,6 +183,19 @@ serve(async (req) => {
           }
         );
       }
+    }
+
+    // Get price ID from environment variable
+    const priceId = Deno.env.get("STRIPE_PRO_PLAN_PRICE_ID");
+    if (!priceId) {
+      logStep("Error: Missing price ID configuration");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error: Missing price ID" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Define price IDs for each plan - use environment variables if available
@@ -164,13 +216,41 @@ serve(async (req) => {
       );
     }
 
+    // Validate the price exists and is active
+    try {
+      logStep("Validating price", { priceId: priceIds[planId] });
+      const price = await stripe.prices.retrieve(priceIds[planId]);
+      if (!price.active) {
+        logStep("Error: Price is not active", { priceId: priceIds[planId] });
+        return new Response(
+          JSON.stringify({ error: "Selected plan is not currently available" }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      logStep("Price validated successfully", { priceId: priceIds[planId], active: price.active });
+    } catch (error) {
+      logStep("Error validating price", { error: error.message, priceId: priceIds[planId] });
+      return new Response(
+        JSON.stringify({ error: "Invalid price configuration: " + error.message }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Create a checkout session
     try {
       logStep("Creating checkout session", { 
         customer: customerId, 
         priceId: priceIds[planId],
         successUrl,
-        cancelUrl
+        cancelUrl,
+        userEmail: user.email,
+        userId: user.id
       });
       
       const session = await stripe.checkout.sessions.create({
@@ -190,9 +270,18 @@ serve(async (req) => {
             plan_id: planId,
           },
         },
+        payment_method_types: ['card'],
+        allow_promotion_codes: true,
       });
 
-      logStep("Checkout session created", { sessionId: session.id, url: session.url });
+      // Log the session details (excluding sensitive data)
+      logStep("Checkout session created", { 
+        sessionId: session.id, 
+        url: session.url,
+        status: session.status,
+        mode: session.mode,
+        paymentStatus: session.payment_status
+      });
 
       return new Response(JSON.stringify({ url: session.url }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -202,7 +291,9 @@ serve(async (req) => {
       logStep("Error creating checkout session", { 
         error: error.message,
         type: error.type,
-        code: error.code
+        code: error.code,
+        decline_code: error.decline_code,
+        param: error.param
       });
       
       return new Response(
