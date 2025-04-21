@@ -197,10 +197,12 @@ export const useProfileSetup = (onComplete: () => void) => {
       }
 
       if (data?.status === 'success') {
-        // Update profiles table to mark welcome email as sent using the new column
+        // Update profiles table to mark welcome email as sent using the column
         await supabase
           .from('profiles')
-          .update({ welcome_email_sent: true })
+          .update({ 
+            welcome_email_sent: true 
+          })
           .eq('id', user.id);
 
         console.log("[WelcomeEmail] Successfully sent for user:", user.id);
