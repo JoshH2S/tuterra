@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,7 @@ function Header1() {
     const navigate = useNavigate();
 
     const handleGetStarted = () => {
-        navigate('/pricing');
+        navigate('/auth?tab=signup');
     };
 
     return (
