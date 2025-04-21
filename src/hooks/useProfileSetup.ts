@@ -168,15 +168,9 @@ export const useProfileSetup = (onComplete: () => void) => {
     }
   };
 
-  // Improved helper function to send welcome email
   const sendWelcomeEmail = async (user: any, session: any) => {
     if (!session?.access_token) {
-      console.error("[WelcomeEmail] No access token available");
-      toast({
-        title: "Welcome Email Failed",
-        description: "No session token – try again or contact support.",
-        variant: "destructive",
-      });
+      console.error("[WelcomeEmail] No valid session for email sending");
       return false;
     }
 
@@ -184,34 +178,37 @@ export const useProfileSetup = (onComplete: () => void) => {
       const { data, error } = await supabase.functions.invoke("send-welcome-email", {
         body: {
           email: user.email,
-          firstName: user.user_metadata?.first_name ||
-                    user.user_metadata?.firstName ||
-                    "",
+          firstName: user.user_metadata?.first_name || 
+                    user.user_metadata?.firstName || 
+                    user.email.split('@')[0]
         },
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) {
-        throw new Error(`SendGrid error: ${error.message}`);
+        throw new Error(error.message);
       }
 
       if (data?.status === 'success') {
-        setWelcomeEmailSent(user.id);
-        console.log("[WelcomeEmail] Successfully sent welcome email for user:", user.id);
+        // Update profiles table to mark welcome email as sent
+        await supabase
+          .from('profiles')
+          .update({ welcome_email_sent: true })
+          .eq('id', user.id);
+
+        console.log("[WelcomeEmail] Successfully sent for user:", user.id);
         return true;
-      } else if (data?.error) {
-        throw new Error(data.error + (data.details ? `: ${data.details}` : ""));
-      } else {
-        throw new Error('Failed to send welcome email - no success status');
       }
-    } catch (e: any) {
-      console.error("[WelcomeEmail] Failed to send welcome email:", e);
+
+      throw new Error('Email sending failed');
+    } catch (error: any) {
+      console.error("[WelcomeEmail] Sending failed:", error);
       toast({
-        title: "Welcome Email Failed",
-        description: e?.message || "We'll make sure to send it later.",
-        variant: "destructive",
+        title: "Welcome Email",
+        description: "We couldn't send the welcome email. We'll try again later.",
+        variant: "default"
       });
       return false;
     }
