@@ -46,60 +46,108 @@ serve(async (req) => {
       requestBody = await req.json();
       logStep("Parsed request body", requestBody);
     } catch (e) {
-      logStep("Error parsing request body", { error: e.message });
+      logStep("Error parsing request body", { error: e instanceof Error ? e.message : String(e) });
       throw new Error("Invalid request body");
     }
 
     const { sessionId } = requestBody;
 
-    const { data: subscriptionData } = await supabaseAdmin
-      .from("subscriptions")
-      .select("stripe_customer_id, stripe_subscription_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    let stripeSubscriptionId = subscriptionData?.stripe_subscription_id;
-    let stripeCustomerId = subscriptionData?.stripe_customer_id;
-
-    // Get updated data from checkout session if available
-    const checkoutData = await getStripeSubscriptionData(stripe, sessionId);
-    if (checkoutData) {
-      stripeCustomerId = checkoutData.stripe_customer_id;
-      stripeSubscriptionId = checkoutData.stripe_subscription_id;
-    }
-
-    // If we have a subscription ID, update the status
-    if (stripeSubscriptionId && stripeCustomerId) {
-      try {
-        const result = await updateSubscriptionStatus(
-          stripe,
-          stripeSubscriptionId,
-          stripeCustomerId,
-          user.id,
-          supabaseAdmin
-        );
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      } catch (error) {
-        logStep("Error updating subscription", { error: error.message });
+    try {
+      // Fetch current subscription data from database
+      const { data: subscriptionData, error: dbError } = await supabaseAdmin
+        .from("subscriptions")
+        .select("stripe_customer_id, stripe_subscription_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (dbError) {
+        logStep("Database error fetching subscription", { error: dbError.message });
       }
-    }
 
+      let stripeSubscriptionId = subscriptionData?.stripe_subscription_id;
+      let stripeCustomerId = subscriptionData?.stripe_customer_id;
+
+      // Get updated data from checkout session if available
+      if (sessionId) {
+        try {
+          const checkoutData = await getStripeSubscriptionData(stripe, sessionId);
+          if (checkoutData) {
+            logStep("Retrieved data from checkout session", checkoutData);
+            stripeCustomerId = checkoutData.stripe_customer_id;
+            stripeSubscriptionId = checkoutData.stripe_subscription_id;
+          }
+        } catch (checkoutError) {
+          logStep("Error retrieving checkout session", { 
+            error: checkoutError instanceof Error ? checkoutError.message : String(checkoutError) 
+          });
+          // Continue with existing subscription data if we can't get new data
+        }
+      }
+
+      // If we have a subscription ID, update the status
+      if (stripeSubscriptionId && stripeCustomerId) {
+        try {
+          const result = await updateSubscriptionStatus(
+            stripe,
+            stripeSubscriptionId,
+            stripeCustomerId,
+            user.id,
+            supabaseAdmin
+          );
+          
+          logStep("Subscription status updated successfully", result);
+          
+          return new Response(JSON.stringify(result), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        } catch (updateError) {
+          logStep("Error updating subscription", { 
+            error: updateError instanceof Error ? updateError.message : String(updateError)
+          });
+          // Continue to return a controlled response even if update fails
+        }
+      } else {
+        logStep("No subscription data found to update");
+      }
+
+      // Return a controlled response even if we couldn't update
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: "Could not update subscription status",
+        subscription_status: subscriptionData ? "unknown" : "none"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Still return 200 to prevent client errors
+      });
+    } catch (processingError) {
+      // Handle any unexpected errors during processing
+      logStep("Error in subscription processing", { 
+        error: processingError instanceof Error ? processingError.message : String(processingError)
+      });
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: "Error processing subscription information",
+        error: processingError instanceof Error ? processingError.message : "Unknown error"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Still return 200 to prevent client errors
+      });
+    }
+  } catch (error) {
+    // Handle any unexpected errors in the main try/catch
+    logStep("Unexpected error", { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
     return new Response(JSON.stringify({ 
       success: false, 
-      message: "Could not update subscription status" 
+      error: error instanceof Error ? error.message : "Unknown error" 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-
-  } catch (error) {
-    logStep("Unexpected error", { error: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: 200, // Still return 200 to prevent client errors
     });
   }
 });
