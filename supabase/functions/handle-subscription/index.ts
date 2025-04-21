@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -110,22 +109,44 @@ serve(async (req) => {
         }
 
         if (subscription && customerId) {
+          const planId = subscription.metadata.plan_id || 'pro_plan';
+          logStep("Calling handle_user_subscription", {
+            userId,
+            subscriptionId: subscription.id,
+            customerId,
+            planId,
+            status: subscription.status,
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end
+          });
+
           const { error } = await supabaseClient.rpc('handle_user_subscription', {
             p_user_id: userId,
             p_stripe_subscription_id: subscription.id,
             p_stripe_customer_id: customerId,
-            p_plan_id: subscription.metadata.plan_id || 'pro_plan',
+            p_plan_id: planId,
             p_status: subscription.status,
             p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             p_cancel_at_period_end: subscription.cancel_at_period_end
           });
 
           if (error) {
-            logStep("Error updating subscription status", { error });
+            logStep("Error updating subscription status", { 
+              error,
+              errorMessage: error.message,
+              errorDetails: error.details,
+              hint: error.hint
+            });
             throw error;
           }
           
-          logStep("Successfully updated subscription status");
+          logStep("Successfully updated subscription status", {
+            userId,
+            subscriptionId: subscription.id,
+            status: subscription.status,
+            planId,
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString()
+          });
         }
         break;
       }
@@ -137,20 +158,44 @@ serve(async (req) => {
         const userId = subscription.metadata.user_id;
 
         if (userId) {
+          const planId = subscription.metadata.plan_id || 'pro_plan';
+          logStep("Handling subscription update/creation", {
+            userId,
+            subscriptionId: subscription.id,
+            customerId: subscription.customer,
+            planId,
+            status: subscription.status,
+            event: event.type
+          });
+
           const { error } = await supabaseClient.rpc('handle_user_subscription', {
             p_user_id: userId,
             p_stripe_subscription_id: subscription.id,
             p_stripe_customer_id: subscription.customer,
-            p_plan_id: subscription.metadata.plan_id || 'pro_plan',
+            p_plan_id: planId,
             p_status: subscription.status,
             p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             p_cancel_at_period_end: subscription.cancel_at_period_end
           });
 
           if (error) {
-            logStep("Error updating subscription status", { error });
+            logStep("Error updating subscription status", { 
+              error,
+              errorMessage: error.message,
+              errorDetails: error.details,
+              hint: error.hint,
+              event: event.type
+            });
             throw error;
           }
+
+          logStep("Successfully processed subscription update/creation", {
+            userId,
+            subscriptionId: subscription.id,
+            status: subscription.status,
+            planId,
+            event: event.type
+          });
         }
         break;
       }
@@ -201,7 +246,11 @@ serve(async (req) => {
       status: 200,
     });
   } catch (err) {
-    logStep("Webhook processing error", { err: err instanceof Error ? err.message : err, stack: err && err.stack });
+    logStep("Webhook processing error", { 
+      error: err instanceof Error ? err.message : err, 
+      stack: err && err.stack,
+      event: event?.type
+    });
     return new Response(
       JSON.stringify({ error: "Webhook error processing event: " + (err && err.message ? err.message : String(err)) }),
       {
