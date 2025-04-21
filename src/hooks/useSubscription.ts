@@ -43,6 +43,7 @@ export const useSubscription = () => {
   });
   const [loading, setLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const fetchSubscription = useCallback(async (force = false) => {
     if (!user) {
@@ -185,9 +186,15 @@ export const useSubscription = () => {
   }, [user?.id, fetchSubscription]);
 
   useEffect(() => {
-    fetchSubscription();
-    // We're NOT automatically calling syncWithStripe() on initial load
+    // On initial load, just fetch from database, don't call edge function
+    if (user) {
+      fetchSubscription();
+      setIsInitialLoad(false);
+    }
+    
+    // We EXPLICITLY don't call syncWithStripe() on initial load
     // This prevents potential errors from crashing the app on page load
+    // User can manually refresh or it will be called when needed from components
   }, [user, fetchSubscription]);
 
   return { 
