@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -72,6 +71,10 @@ serve(async (req) => {
         let subscription: any = null;
         if (subscriptionId) {
           subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          logStep("Retrieved subscription details", { 
+            status: subscription.status,
+            items: subscription.items.data.length
+          });
         } else {
           logStep("Unable to retrieve subscription id for session", { sessionId: session.id });
         }
@@ -82,6 +85,8 @@ serve(async (req) => {
         const priceId = subscription?.items?.data?.[0]?.price?.id;
         let tier = "pro";
         if (planId && planId.includes("premium")) tier = "premium";
+
+        logStep("Determined tier and plan", { tier, planId });
 
         // Upsert subscription row
         if (userId && subscription && customerId) {
@@ -103,16 +108,22 @@ serve(async (req) => {
             logStep("Upserted subscription row");
           }
 
-          // Update user profile tier
+          // Update user profile tier - DIRECTLY, not relying on triggers
           const { error: profileError } = await supabaseClient
             .from("profiles")
             .update({ subscription_tier: tier })
             .eq("id", userId);
           if (profileError) {
             logStep("Error updating user profile tier on checkout.session.completed", { profileError });
+          } else {
+            logStep("Updated user profile subscription_tier to", { tier });
           }
         } else {
-          logStep("Missing userId, customerId, or subscription; could not upsert");
+          logStep("Missing userId, customerId, or subscription; could not upsert", { 
+            hasUserId: !!userId,
+            hasCustomerId: !!customerId,
+            hasSubscription: !!subscription
+          });
         }
         break;
       }

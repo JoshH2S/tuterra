@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const OnboardingRedirect = () => {
   const navigate = useNavigate();
@@ -27,9 +28,19 @@ const OnboardingRedirect = () => {
           });
           
           // Short delay to allow webhook to process subscription
-          setTimeout(() => {
-            navigate('/onboarding', { replace: true });
-          }, 1500);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+
+          // Force a sync of the subscription status from Stripe
+          try {
+            await supabase.functions.invoke('check-subscription-status', {
+              body: { sessionId }
+            });
+            console.log("Manually synced subscription status after checkout");
+          } catch (err) {
+            console.error("Failed to sync subscription status:", err);
+          }
+          
+          navigate('/subscription-success', { replace: true });
         } else {
           // Direct access or after free plan selection - navigate to onboarding immediately
           navigate('/onboarding', { replace: true });
