@@ -133,9 +133,14 @@ export const useProfileSetup = (onComplete: () => void) => {
           description: "Your preferences have been saved.",
         });
 
-        // Check if welcome email needs to be sent
-        if (!hasWelcomeEmailSent(user.id)) {
-          // Make sure the session is available
+        // Check if welcome email has been sent by querying the profiles table
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('welcome_email_sent')
+          .eq('id', user.id)
+          .single();
+
+        if (!profileData?.welcome_email_sent) {
           if (!session?.access_token) {
             console.warn("[WelcomeEmail] No session access token available, refreshing session");
             await supabase.auth.refreshSession();
@@ -192,7 +197,7 @@ export const useProfileSetup = (onComplete: () => void) => {
       }
 
       if (data?.status === 'success') {
-        // Update profiles table to mark welcome email as sent
+        // Update profiles table to mark welcome email as sent using the new column
         await supabase
           .from('profiles')
           .update({ welcome_email_sent: true })
