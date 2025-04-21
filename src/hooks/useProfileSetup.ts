@@ -134,19 +134,24 @@ export const useProfileSetup = (onComplete: () => void) => {
           description: "Your preferences have been saved.",
         });
 
-        // Check if we need to refresh the session
-        if (!session) {
-          await supabase.auth.refreshSession();
-          // Get the refreshed session
-          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-          
-          if (!hasWelcomeEmailSent(user.id)) {
-            await sendWelcomeEmail(user, refreshedSession);
-          }
-        } else {
-          if (!hasWelcomeEmailSent(user.id)) {
+        // Check if welcome email needs to be sent
+        if (!hasWelcomeEmailSent(user.id)) {
+          // Make sure the session is available
+          if (!session?.access_token) {
+            console.warn("[WelcomeEmail] No session access token available, refreshing session");
+            await supabase.auth.refreshSession();
+            const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+            
+            if (refreshedSession?.access_token) {
+              await sendWelcomeEmail(user, refreshedSession);
+            } else {
+              console.error("[WelcomeEmail] Still no session token after refresh");
+            }
+          } else {
             await sendWelcomeEmail(user, session);
           }
+        } else {
+          console.log("[WelcomeEmail] Welcome email already sent for user:", user.id);
         }
 
         localStorage.removeItem('onboarding_progress');
@@ -164,25 +169,55 @@ export const useProfileSetup = (onComplete: () => void) => {
     }
   };
 
-  // Helper function to send welcome email
+  // Improved helper function to send welcome email
   const sendWelcomeEmail = async (user: any, session: any) => {
+    if (!session?.access_token) {
+      console.error("[WelcomeEmail] No access token available");
+      return false;
+    }
+
     try {
-      await supabase.functions.invoke("send-welcome-email", {
+      console.log("[WelcomeEmail] Sending welcome email to:", user.email);
+      
+      const firstName = 
+        (user.user_metadata && user.user_metadata.first_name) ||
+        user.user_metadata?.firstName || 
+        "";
+      
+      const { data, error } = await supabase.functions.invoke("send-welcome-email", {
         body: {
           email: user.email,
-          firstName:
-            (user.user_metadata && user.user_metadata.first_name) ||
-            user.user_metadata?.firstName || // fallback naming
-            "",
+          firstName: firstName,
         },
         headers: {
-          Authorization: `Bearer ${session?.access_token || ""}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
-      setWelcomeEmailSent(user.id);
-      console.log("[WelcomeEmail] Sent welcome email for user:", user.id);
+
+      if (error) {
+        throw new Error(`Error calling function: ${error.message}`);
+      }
+
+      console.log("[WelcomeEmail] Response:", data);
+
+      if (data?.status === 'success') {
+        setWelcomeEmailSent(user.id);
+        console.log("[WelcomeEmail] Successfully sent welcome email for user:", user.id);
+        return true;
+      } else {
+        throw new Error(`Unexpected response: ${JSON.stringify(data)}`);
+      }
     } catch (e) {
-      console.error("[WelcomeEmail] Failed to send welcome email", e);
+      console.error("[WelcomeEmail] Failed to send welcome email:", e);
+      
+      // Notify user but don't block the onboarding flow
+      toast({
+        title: "Welcome Email",
+        description: "We'll send you a welcome email shortly.",
+        variant: "default",
+      });
+      
+      return false;
     }
   };
 
