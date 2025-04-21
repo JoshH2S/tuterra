@@ -8,14 +8,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function for debugging logs
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[MANAGE-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -23,203 +21,103 @@ serve(async (req) => {
   try {
     logStep("Function started");
     
-    // Create Supabase client with service role key to bypass RLS
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get the authorization header from the request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      logStep("Error: No authorization header");
-      return new Response(
-        JSON.stringify({ error: "No authorization header provided" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      throw new Error("No authorization header provided");
     }
 
-    // Get the JWT token from the authorization header
     const token = authHeader.replace("Bearer ", "");
-    
-    // Get the user from the JWT token
-    const {
-      data: { user },
-      error: userError,
-    } = await supabaseClient.auth.getUser(token);
-
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !user) {
-      logStep("Error: Invalid user token", { error: userError });
-      return new Response(
-        JSON.stringify({ error: "Invalid user token" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      throw new Error("Invalid user token");
     }
     
     logStep("Authenticated user", { userId: user.id, email: user.email });
 
-    // Get Stripe key from environment
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      logStep("Error: Missing Stripe secret key");
-      return new Response(
-        JSON.stringify({ error: "Server configuration error: Missing Stripe key" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
-    // Parse request body
-    let requestBody;
-    try {
-      requestBody = await req.json();
-      logStep("Parsed request body", requestBody);
-    } catch (e) {
-      logStep("Error parsing request body", { error: e.message });
-      return new Response(
-        JSON.stringify({ error: "Invalid request body" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const { action } = requestBody;
-    if (!action) {
-      logStep("Error: Missing action parameter");
-      return new Response(
-        JSON.stringify({ error: "Missing action parameter" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Initialize Stripe
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    // Get the user's subscription
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      logStep("Parsed request body", requestBody);
+    } catch (e) {
+      throw new Error("Invalid request body");
+    }
+
+    const { action } = requestBody;
+    if (!action) {
+      throw new Error("Missing action parameter");
+    }
+
     const { data: subscriptionData, error: subscriptionError } = await supabaseClient
       .from("subscriptions")
       .select("stripe_subscription_id, stripe_customer_id")
       .eq("user_id", user.id)
       .single();
 
-    if (subscriptionError) {
-      logStep("Error retrieving subscription", { error: subscriptionError });
-      return new Response(
-        JSON.stringify({ error: "Could not retrieve subscription information" }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    if (subscriptionError || !subscriptionData?.stripe_subscription_id) {
+      throw new Error("Could not retrieve subscription information");
     }
 
     const { stripe_subscription_id, stripe_customer_id } = subscriptionData;
-    if (!stripe_subscription_id) {
-      logStep("No active subscription found");
-      return new Response(
-        JSON.stringify({ error: "No active subscription found" }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
 
     try {
-      let result;
+      let subscription;
       if (action === 'cancel') {
         logStep("Cancelling subscription", { subscriptionId: stripe_subscription_id });
-        result = await stripe.subscriptions.update(
+        subscription = await stripe.subscriptions.update(
           stripe_subscription_id,
           { cancel_at_period_end: true }
         );
-        
-        // Update the local record
-        await supabaseClient
-          .from("subscriptions")
-          .update({ 
-            cancel_at_period_end: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq("user_id", user.id);
-          
-        logStep("Subscription marked for cancellation");
       } 
       else if (action === 'reactivate') {
         logStep("Reactivating subscription", { subscriptionId: stripe_subscription_id });
-        result = await stripe.subscriptions.update(
+        subscription = await stripe.subscriptions.update(
           stripe_subscription_id,
           { cancel_at_period_end: false }
         );
-        
-        // Update the local record
-        await supabaseClient
-          .from("subscriptions")
-          .update({ 
-            cancel_at_period_end: false,
-            updated_at: new Date().toISOString()
-          })
-          .eq("user_id", user.id);
-          
-        logStep("Subscription reactivated");
       }
       else {
-        logStep("Invalid action requested", { action });
-        return new Response(
-          JSON.stringify({ error: "Invalid action" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
+        throw new Error("Invalid action");
       }
 
-      return new Response(
-        JSON.stringify({ success: true, data: result }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    } catch (error) {
-      logStep("Error managing subscription", { 
-        error: error.message,
-        type: error.type,
-        code: error.code
+      // Use handle_user_subscription to update the status
+      const { error: updateError } = await supabaseClient.rpc('handle_user_subscription', {
+        p_user_id: user.id,
+        p_stripe_subscription_id: subscription.id,
+        p_stripe_customer_id: stripe_customer_id,
+        p_plan_id: subscription.metadata.plan_id || 'pro_plan',
+        p_status: subscription.status,
+        p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        p_cancel_at_period_end: subscription.cancel_at_period_end
       });
-      
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+
+      if (updateError) throw updateError;
+
+      return new Response(JSON.stringify({ success: true, data: subscription }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } catch (error) {
+      logStep("Error managing subscription", { error: error.message });
+      throw error;
     }
   } catch (error) {
     logStep("Unexpected error", { error: error.message });
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
   }
 });
