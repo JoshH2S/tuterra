@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "./useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +20,6 @@ export interface Subscription {
   stripeSubscriptionId?: string;
 }
 
-// Define custom interface for subscription data
 interface SubscriptionData {
   plan_id: string;
   status: string;
@@ -51,7 +49,6 @@ export const useSubscription = () => {
       return;
     }
 
-    // If it's been less than 5 seconds since the last fetch and not forced, skip
     const now = Date.now();
     if (!force && now - lastFetchTime < 5000) {
       console.log("Skipping subscription fetch - too soon since last fetch");
@@ -64,7 +61,6 @@ export const useSubscription = () => {
     try {
       console.log("Fetching subscription data...");
       
-      // Get subscription tier from profiles table
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("subscription_tier")
@@ -76,14 +72,12 @@ export const useSubscription = () => {
       const tier = (profileData?.subscription_tier || "free") as SubscriptionTier;
       console.log("Fetched profile tier:", tier);
       
-      // Get subscription details from subscriptions table
       const { data: subscriptionData, error: subscriptionError } = await supabase
         .from("subscriptions")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      // Set features based on tier
       const subscriptionInfo: Subscription = {
         tier,
         features: {
@@ -94,9 +88,7 @@ export const useSubscription = () => {
         }
       };
 
-      // Add subscription details if available
       if (!subscriptionError && subscriptionData) {
-        // Type assert the data to our interface
         const typedData = subscriptionData as unknown as SubscriptionData;
         
         subscriptionInfo.planId = typedData.plan_id;
@@ -121,15 +113,30 @@ export const useSubscription = () => {
     }
   }, [user, lastFetchTime]);
 
-  // Function to force a refresh of subscription data
-  const refetch = useCallback(() => {
-    return fetchSubscription(true);
-  }, [fetchSubscription]);
+  useEffect(() => {
+    if (!user?.id) return;
 
-  // Fetch on initial load
+    const channel = supabase
+      .channel(`public:profiles:id=eq.${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${user.id}`
+      }, (payload) => {
+        console.log('Profile changed:', payload);
+        fetchSubscription(true);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchSubscription]);
+
   useEffect(() => {
     fetchSubscription();
   }, [user, fetchSubscription]);
 
-  return { subscription, loading, refetch };
+  return { subscription, loading, refetch: fetchSubscription };
 };

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -257,6 +256,7 @@ serve(async (req) => {
       
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
+        customer_email: customerId ? undefined : user.email,
         line_items: [
           {
             price: priceIds[planId],
@@ -266,8 +266,12 @@ serve(async (req) => {
         mode: "subscription",
         success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: cancelUrl,
+        metadata: {  // Add session-level metadata
+          user_id: user.id,
+          plan_id: planId,
+        },
         subscription_data: {
-          metadata: {
+          metadata: {  // Add subscription-level metadata
             user_id: user.id,
             plan_id: planId,
           },

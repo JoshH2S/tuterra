@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -85,12 +84,17 @@ serve(async (req) => {
         const subscriptionId = session.subscription;
         const customerId = session.customer;
         const userId = session.metadata?.user_id || session.client_reference_id;
+        
         logStep("Session complete", {
           userId,
           customerId,
           subscriptionId,
           email: session.customer_email,
         });
+
+        if (!userId) {
+          throw new Error('No user ID found in session metadata');
+        }
 
         // Retrieve subscription details from Stripe
         let subscription: any = null;
@@ -101,108 +105,50 @@ serve(async (req) => {
             items: subscription.items.data.length,
             planNickname: subscription.items.data[0]?.plan?.nickname
           });
-        } else {
-          logStep("Unable to retrieve subscription id for session", { sessionId: session.id });
         }
 
-        // Determine plan ID and tier from Stripe subscription/pricing
-        const planId = determinePlanId(subscription);
-        let tier = "pro";
-        if (planId && planId.includes("premium")) tier = "premium";
-
-        logStep("Determined tier and plan", { tier, planId });
-
-        // Upsert subscription row
-        if (userId && subscription && customerId) {
-          const { error: subError } = await supabaseClient
-            .from("subscriptions")
-            .upsert({
-              user_id: userId,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscription.id,
-              status: subscription.status,
-              plan_id: planId,
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              cancel_at_period_end: subscription.cancel_at_period_end,
-              updated_at: new Date().toISOString(),
-            }, {
-              onConflict: 'user_id',
-              ignoreDuplicates: false
-            });
-            
-          if (subError) {
-            logStep("Error upserting subscription on checkout.session.completed", { subError });
-          } else {
-            logStep("Upserted subscription row");
-          }
-
-          // Update user profile tier - DIRECTLY, not relying on triggers
-          const { error: profileError } = await supabaseClient
-            .from("profiles")
-            .update({ subscription_tier: tier })
-            .eq("id", userId);
-          if (profileError) {
-            logStep("Error updating user profile tier on checkout.session.completed", { profileError });
-          } else {
-            logStep("Updated user profile subscription_tier to", { tier });
-          }
-        } else {
-          logStep("Missing userId, customerId, or subscription; could not upsert", { 
-            hasUserId: !!userId,
-            hasCustomerId: !!customerId,
-            hasSubscription: !!subscription
+        if (subscription && customerId) {
+          const { error } = await supabaseClient.rpc('update_user_subscription', {
+            p_user_id: userId,
+            p_stripe_subscription_id: subscription.id,
+            p_stripe_customer_id: customerId,
+            p_plan_id: subscription.metadata.plan_id || 'pro_plan',
+            p_status: subscription.status,
+            p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            p_cancel_at_period_end: subscription.cancel_at_period_end
           });
+
+          if (error) {
+            logStep("Error updating subscription status", { error });
+            throw error;
+          }
+          
+          logStep("Successfully updated subscription status");
         }
         break;
       }
 
-      case "customer.subscription.created":
-      case "customer.subscription.updated": {
+      case "customer.subscription.updated":
+      case "customer.subscription.created": {
         logStep(`${event.type} received`);
         const subscription = event.data.object;
         const userId = subscription.metadata.user_id;
-        const planId = determinePlanId(subscription);
-        let tier = "pro";
-        if (planId && planId.includes("premium")) tier = "premium";
-
-        logStep("Updating DB from subscription event", { userId, planId, status: subscription.status });
 
         if (userId) {
-          // Upsert subscription table
-          const { error: subError } = await supabaseClient
-            .from("subscriptions")
-            .upsert({
-              user_id: userId,
-              stripe_customer_id: subscription.customer,
-              stripe_subscription_id: subscription.id,
-              status: subscription.status,
-              plan_id: planId,
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              cancel_at_period_end: subscription.cancel_at_period_end,
-              updated_at: new Date().toISOString(),
-            }, {
-              onConflict: 'user_id',
-              ignoreDuplicates: false
-            });
-            
-          if (subError) {
-            logStep("Error upserting subscription on created/updated", { subError });
-          } else {
-            logStep("Upserted subscription row (created/updated)");
-          }
+          const { error } = await supabaseClient.rpc('update_user_subscription', {
+            p_user_id: userId,
+            p_stripe_subscription_id: subscription.id,
+            p_stripe_customer_id: subscription.customer,
+            p_plan_id: subscription.metadata.plan_id || 'pro_plan',
+            p_status: subscription.status,
+            p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            p_cancel_at_period_end: subscription.cancel_at_period_end
+          });
 
-          // Update profile tier
-          const { error: profileErr } = await supabaseClient
-            .from("profiles")
-            .update({ subscription_tier: tier })
-            .eq("id", userId);
-          if (profileErr) {
-            logStep("Error updating profile tier on created/updated", { profileErr });
-          } else {
-            logStep("Successfully updated profile tier to", { tier });
+          if (error) {
+            logStep("Error updating subscription status", { error });
+            throw error;
           }
-        } else {
-          logStep("No userId found in subscription event", { subPayload: subscription });
         }
         break;
       }
