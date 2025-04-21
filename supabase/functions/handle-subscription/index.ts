@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -64,9 +65,10 @@ serve(async (req) => {
   const sig = req.headers.get("stripe-signature") || "";
   const payload = await req.text();
 
-  // Securely verify stripe signature
+  // Securely verify stripe signature - using the async version
   try {
-    event = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
+    // Important: Use constructEventAsync instead of constructEvent
+    event = await stripe.webhooks.constructEventAsync(payload, sig, webhookSecret);
     logStep("Webhook event constructed", { type: event.type });
   } catch (err) {
     logStep("Invalid Stripe signature", { error: err instanceof Error ? err.message : err });
