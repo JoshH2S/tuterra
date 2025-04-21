@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "./useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,22 +62,33 @@ export const useSubscription = () => {
     try {
       console.log("Fetching subscription data...");
       
+      // First get the subscription tier from profiles table
+      // This is a database call, not an edge function, so it's more reliable
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("subscription_tier")
         .eq("id", user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Error fetching profile tier:", profileError);
+        // Don't throw - continue with default free tier
+      }
 
       const tier = (profileData?.subscription_tier || "free") as SubscriptionTier;
       console.log("Fetched profile tier:", tier);
       
+      // Then get detailed subscription data
       const { data: subscriptionData, error: subscriptionError } = await supabase
         .from("subscriptions")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      if (subscriptionError) {
+        console.error("Error fetching subscription details:", subscriptionError);
+        // Don't throw - continue with basic subscription data
+      }
 
       const subscriptionInfo: Subscription = {
         tier,
@@ -88,7 +100,7 @@ export const useSubscription = () => {
         }
       };
 
-      if (!subscriptionError && subscriptionData) {
+      if (subscriptionData) {
         const typedData = subscriptionData as unknown as SubscriptionData;
         
         subscriptionInfo.planId = typedData.plan_id;
@@ -108,14 +120,43 @@ export const useSubscription = () => {
       console.log("Subscription data updated", subscriptionInfo);
     } catch (error) {
       console.error("Error fetching subscription:", error);
+      // Don't rethrow - ensure we don't crash the app
     } finally {
       setLoading(false);
     }
   }, [user, lastFetchTime]);
 
+  // Only call check-subscription-status when really needed and with proper error handling
+  const syncWithStripe = useCallback(async (sessionId?: string) => {
+    if (!user) return;
+    
+    try {
+      console.log("Syncing subscription with Stripe", sessionId ? { sessionId } : "");
+      
+      const { data, error } = await supabase.functions.invoke('check-subscription-status', {
+        body: sessionId ? { sessionId } : {}
+      });
+      
+      if (error) {
+        console.error("Error syncing with Stripe:", error);
+        return;
+      }
+      
+      if (data?.success) {
+        console.log("Successfully synced subscription with Stripe:", data);
+        // Force refresh subscription data from database
+        fetchSubscription(true);
+      }
+    } catch (err) {
+      console.error("Exception in syncWithStripe:", err);
+      // Don't rethrow - ensure we don't crash the app
+    }
+  }, [user, fetchSubscription]);
+
   useEffect(() => {
     if (!user?.id) return;
 
+    // Set up real-time listeners for subscription changes
     const channel = supabase
       .channel(`profiles:subscription:${user.id}`)
       .on('postgres_changes', {
@@ -145,7 +186,14 @@ export const useSubscription = () => {
 
   useEffect(() => {
     fetchSubscription();
+    // We're NOT automatically calling syncWithStripe() on initial load
+    // This prevents potential errors from crashing the app on page load
   }, [user, fetchSubscription]);
 
-  return { subscription, loading, refetch: fetchSubscription };
+  return { 
+    subscription, 
+    loading, 
+    refetch: fetchSubscription,
+    syncWithStripe 
+  };
 };
