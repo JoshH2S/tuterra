@@ -117,7 +117,7 @@ export const useSubscription = () => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel(`public:profiles:id=eq.${user.id}`)
+      .channel(`profiles:subscription:${user.id}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -125,6 +125,15 @@ export const useSubscription = () => {
         filter: `id=eq.${user.id}`
       }, (payload) => {
         console.log('Profile changed:', payload);
+        fetchSubscription(true);
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'subscriptions',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('Subscription changed:', payload);
         fetchSubscription(true);
       })
       .subscribe();

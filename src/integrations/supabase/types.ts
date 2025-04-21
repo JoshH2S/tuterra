@@ -1916,6 +1916,18 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      handle_user_subscription: {
+        Args: {
+          p_user_id: string
+          p_stripe_subscription_id: string
+          p_stripe_customer_id: string
+          p_plan_id: string
+          p_status: string
+          p_current_period_end: string
+          p_cancel_at_period_end: boolean
+        }
+        Returns: undefined
+      }
       hnsw_bit_support: {
         Args: { "": unknown }
         Returns: unknown

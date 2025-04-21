@@ -108,7 +108,7 @@ serve(async (req) => {
         }
 
         if (subscription && customerId) {
-          const { error } = await supabaseClient.rpc('update_user_subscription', {
+          const { error } = await supabaseClient.rpc('handle_user_subscription', {
             p_user_id: userId,
             p_stripe_subscription_id: subscription.id,
             p_stripe_customer_id: customerId,
@@ -135,7 +135,7 @@ serve(async (req) => {
         const userId = subscription.metadata.user_id;
 
         if (userId) {
-          const { error } = await supabaseClient.rpc('update_user_subscription', {
+          const { error } = await supabaseClient.rpc('handle_user_subscription', {
             p_user_id: userId,
             p_stripe_subscription_id: subscription.id,
             p_stripe_customer_id: subscription.customer,
