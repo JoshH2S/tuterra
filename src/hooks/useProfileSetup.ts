@@ -1,14 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
 
-// Define the specific news topic types from the Supabase database
 type NewsTopic = Database["public"]["Enums"]["news_topic"];
 
 export const useProfileSetup = (onComplete: () => void) => {
-  // Initialize state from localStorage if available to persist progress
   const savedProgress = typeof window !== 'undefined' 
     ? localStorage.getItem('onboarding_progress') 
     : null;
@@ -22,7 +19,13 @@ export const useProfileSetup = (onComplete: () => void) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Save progress to localStorage whenever key states change
+  const setWelcomeEmailSent = (userId: string) => {
+    localStorage.setItem(`welcome_email_sent_${userId}`, "1");
+  };
+  const hasWelcomeEmailSent = (userId: string) => {
+    return localStorage.getItem(`welcome_email_sent_${userId}`) === "1";
+  };
+
   useEffect(() => {
     localStorage.setItem('onboarding_progress', JSON.stringify({
       step,
@@ -46,7 +49,6 @@ export const useProfileSetup = (onComplete: () => void) => {
   const getProgressPercentage = () => {
     let percentage = ((step - 1) / totalSteps) * 100;
     
-    // Add additional progress based on selections in current step
     if (step === 1 && selectedTopics.length > 0) {
       percentage += (1 / totalSteps) * (selectedTopics.length > 3 ? 100 : (selectedTopics.length / 3) * 100);
     } else if (step === 2 && educationLevel) {
@@ -66,7 +68,7 @@ export const useProfileSetup = (onComplete: () => void) => {
   };
 
   const isCurrentStepValid = () => {
-    if (step === 0) return true; // Welcome step is always valid
+    if (step === 0) return true;
     if (step === 1) return selectedTopics.length > 0;
     if (step === 2) return !!educationLevel;
     return false;
@@ -84,10 +86,9 @@ export const useProfileSetup = (onComplete: () => void) => {
     setIsSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const { data: { user, session } } = await supabase.auth.getUser();
+
       if (user) {
-        // Update profile with education level stored in school field
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
@@ -97,9 +98,7 @@ export const useProfileSetup = (onComplete: () => void) => {
 
         if (profileError) throw profileError;
 
-        // Save topics preferences if any are selected
         if (selectedTopics.length > 0) {
-          // Convert string[] to the required news_topic[] enum type
           const typedTopics = selectedTopics.filter(topic => 
             [
               'business_economics',
@@ -130,17 +129,33 @@ export const useProfileSetup = (onComplete: () => void) => {
           description: "Your preferences have been saved.",
         });
 
-        // Ensure we have a valid session before navigating
-        const { data: { session }} = await supabase.auth.getSession();
-        if (!session) {
-          // If no session exists, refresh it to ensure navigation works properly
+        const { data: { session: newSession }} = await supabase.auth.getSession();
+        if (!newSession) {
           await supabase.auth.refreshSession();
         }
 
-        // Clear onboarding progress from localStorage after successful completion
-        localStorage.removeItem('onboarding_progress');
+        if (!hasWelcomeEmailSent(user.id)) {
+          try {
+            await supabase.functions.invoke("send-welcome-email", {
+              body: {
+                email: user.email,
+                firstName:
+                  (user.user_metadata && user.user_metadata.first_name) ||
+                  user.user_metadata?.firstName || // fallback naming
+                  "",
+              },
+              headers: {
+                Authorization: `Bearer ${session?.access_token || newSession?.access_token || ""}`,
+              },
+            });
+            setWelcomeEmailSent(user.id);
+            console.log("[WelcomeEmail] Sent welcome email for user:", user.id);
+          } catch (e) {
+            console.error("[WelcomeEmail] Failed to send welcome email", e);
+          }
+        }
 
-        // Call the completion callback after everything is successfully saved
+        localStorage.removeItem('onboarding_progress');
         onComplete();
       }
     } catch (error) {
