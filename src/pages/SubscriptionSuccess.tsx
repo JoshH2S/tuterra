@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { subscription, loading: subscriptionLoading, refetch } = useSubscription();
+  const { subscription, loading: subscriptionLoading, refetch, syncWithStripe } = useSubscription();
   const [syncing, setSyncing] = useState(true);
   const [syncAttempt, setSyncAttempt] = useState(1);
   const [maxAttempts] = useState(5);
@@ -58,18 +58,8 @@ export default function SubscriptionSuccess() {
       setSyncAttempt(attempt);
       
       try {
-        // Try to sync using the subscription hook's syncWithStripe function first
-        if (subscription?.syncWithStripe) {
-          await subscription.syncWithStripe(sessionId);
-        } else {
-          // Otherwise fall back to invoking the edge function directly
-          const { data, error } = await supabase.functions.invoke('check-subscription-status', {
-            body: { sessionId }
-          });
-          
-          if (error) throw error;
-          console.log("Subscription check result:", data);
-        }
+        // Use the syncWithStripe function from the useSubscription hook
+        await syncWithStripe(sessionId);
         
         // Refetch subscription data to update UI
         await refetch(true);
