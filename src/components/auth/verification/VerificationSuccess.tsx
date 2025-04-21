@@ -24,7 +24,7 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
         className="px-8 w-full md:w-auto"
         onClick={onContinue}
       >
-        Continue to EduPortal
+        Continue to Tuterra!
       </Button>
     </div>
   );
