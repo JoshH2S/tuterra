@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,12 @@ import { CreditsSummaryPopup } from "@/components/credits/CreditsSummaryPopup";
 export function DesktopHeader() {
   const navigate = useNavigate();
   const { subscription } = useSubscription();
-  
+
+  // Show header features only for free plan users
+  if (subscription?.tier !== "free") {
+    return null;
+  }
+
   const handleUpgradeClick = () => {
     navigate('/pricing');
   };
@@ -20,20 +24,17 @@ export function DesktopHeader() {
         <div className="flex items-center gap-2">
           <div className="text-lg font-semibold">EduPortal</div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <CreditsSummaryPopup />
-          
-          {subscription?.tier === 'free' && (
-            <Button
-              variant="default"
-              onClick={handleUpgradeClick}
-              className="gap-2"
-            >
-              <CreditCard className="h-4 w-4" />
-              Upgrade to Premium
-            </Button>
-          )}
+          <Button
+            variant="default"
+            onClick={handleUpgradeClick}
+            className="gap-2"
+          >
+            <CreditCard className="h-4 w-4" />
+            Upgrade to Premium
+          </Button>
         </div>
       </div>
     </header>

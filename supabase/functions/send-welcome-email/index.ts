@@ -18,20 +18,20 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
-  
-  // Validate authorization
+
+  // Strictly validate authorization
   const authHeader = req.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.error("[WelcomeEmail] Missing or invalid authorization header");
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: "Unauthorized",
-      details: "Valid authorization header is required" 
+      details: "Valid bearer Authorization header required"
     }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  
+
   try {
     const { email, firstName } = await req.json();
 
@@ -42,20 +42,18 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    
+
     if (!SENDGRID_API_KEY || !SENDGRID_TEMPLATE_ID) {
       console.error("[WelcomeEmail] Missing SendGrid credentials");
-      return new Response(JSON.stringify({ 
-        error: "Configuration error", 
-        details: "SendGrid API key or template ID is missing" 
+      return new Response(JSON.stringify({
+        error: "Configuration error",
+        details: "SendGrid API key or template ID is missing"
       }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Make sure to use a verified sender email from your SendGrid account
-    // This should match what's verified in your SendGrid dashboard
     const emailPayload = {
       personalizations: [
         {
@@ -66,7 +64,8 @@ serve(async (req: Request) => {
         },
       ],
       from: {
-        email: "admin@tuterra.ai", // Updated to match verified sender in SendGrid
+        // !! This must match a verified sender
+        email: "admin@tuterra.ai",
         name: "Tuterra",
       },
       template_id: SENDGRID_TEMPLATE_ID,
@@ -90,12 +89,12 @@ serve(async (req: Request) => {
       } catch (e) {
         errorDetails = await apiRes.text();
       }
-      
+
       console.error(`[WelcomeEmail] SendGrid error (${apiRes.status}):`, errorDetails);
-      return new Response(JSON.stringify({ 
-        error: "SendGrid error", 
+      return new Response(JSON.stringify({
+        error: "SendGrid error",
         status: apiRes.status,
-        details: errorDetails 
+        details: errorDetails
       }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -107,9 +106,12 @@ serve(async (req: Request) => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("[WelcomeEmail] Error:", err);
-    return new Response(JSON.stringify({ error: "Internal error", details: err.message }), {
+    return new Response(JSON.stringify({
+      error: "Internal error",
+      details: err?.message ?? String(err)
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

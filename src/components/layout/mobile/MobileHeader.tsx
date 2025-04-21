@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, Bell, Search, CreditCard, Coins } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
@@ -7,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { MobileSearch } from "./MobileSearch";
 import { MobileMenu } from "./MobileMenu";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { CreditsSummaryPopup } from "@/components/credits/CreditsSummaryPopup";

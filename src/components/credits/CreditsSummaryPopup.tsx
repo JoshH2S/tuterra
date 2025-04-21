@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { CreditsDisplay } from "@/components/credits/CreditsDisplay";
@@ -18,6 +17,10 @@ import { useAuth } from "@/hooks/useAuth";
 
 export function CreditsSummaryPopup() {
   const { subscription } = useSubscription();
+  // Never render for non-free users
+  if (subscription.tier !== "free") {
+    return null;
+  }
   const { fetchUserCredits, loading, error, credits } = useUserCredits();
   const { user } = useAuth();
   const navigate = useNavigate();

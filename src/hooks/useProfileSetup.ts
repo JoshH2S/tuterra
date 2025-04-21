@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -173,21 +172,21 @@ export const useProfileSetup = (onComplete: () => void) => {
   const sendWelcomeEmail = async (user: any, session: any) => {
     if (!session?.access_token) {
       console.error("[WelcomeEmail] No access token available");
+      toast({
+        title: "Welcome Email Failed",
+        description: "No session token – try again or contact support.",
+        variant: "destructive",
+      });
       return false;
     }
 
     try {
-      console.log("[WelcomeEmail] Sending welcome email to:", user.email);
-      
-      const firstName = 
-        (user.user_metadata && user.user_metadata.first_name) ||
-        user.user_metadata?.firstName || 
-        "";
-      
       const { data, error } = await supabase.functions.invoke("send-welcome-email", {
         body: {
           email: user.email,
-          firstName: firstName,
+          firstName: user.user_metadata?.first_name ||
+                    user.user_metadata?.firstName ||
+                    "",
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -195,28 +194,25 @@ export const useProfileSetup = (onComplete: () => void) => {
       });
 
       if (error) {
-        throw new Error(`Error calling function: ${error.message}`);
+        throw new Error(`SendGrid error: ${error.message}`);
       }
-
-      console.log("[WelcomeEmail] Response:", data);
 
       if (data?.status === 'success') {
         setWelcomeEmailSent(user.id);
         console.log("[WelcomeEmail] Successfully sent welcome email for user:", user.id);
         return true;
+      } else if (data?.error) {
+        throw new Error(data.error + (data.details ? `: ${data.details}` : ""));
       } else {
-        throw new Error(`Unexpected response: ${JSON.stringify(data)}`);
+        throw new Error('Failed to send welcome email - no success status');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("[WelcomeEmail] Failed to send welcome email:", e);
-      
-      // Notify user but don't block the onboarding flow
       toast({
-        title: "Welcome Email",
-        description: "We'll send you a welcome email shortly.",
-        variant: "default",
+        title: "Welcome Email Failed",
+        description: e?.message || "We'll make sure to send it later.",
+        variant: "destructive",
       });
-      
       return false;
     }
   };
