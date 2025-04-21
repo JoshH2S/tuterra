@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -86,7 +87,11 @@ export const useProfileSetup = (onComplete: () => void) => {
     setIsSubmitting(true);
 
     try {
-      const { data: { user, session } } = await supabase.auth.getUser();
+      // First get the user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Get the session separately
+      const { data: { session } } = await supabase.auth.getSession();
 
       if (user) {
         const { error: profileError } = await supabase
@@ -129,29 +134,18 @@ export const useProfileSetup = (onComplete: () => void) => {
           description: "Your preferences have been saved.",
         });
 
-        const { data: { session: newSession }} = await supabase.auth.getSession();
-        if (!newSession) {
+        // Check if we need to refresh the session
+        if (!session) {
           await supabase.auth.refreshSession();
-        }
-
-        if (!hasWelcomeEmailSent(user.id)) {
-          try {
-            await supabase.functions.invoke("send-welcome-email", {
-              body: {
-                email: user.email,
-                firstName:
-                  (user.user_metadata && user.user_metadata.first_name) ||
-                  user.user_metadata?.firstName || // fallback naming
-                  "",
-              },
-              headers: {
-                Authorization: `Bearer ${session?.access_token || newSession?.access_token || ""}`,
-              },
-            });
-            setWelcomeEmailSent(user.id);
-            console.log("[WelcomeEmail] Sent welcome email for user:", user.id);
-          } catch (e) {
-            console.error("[WelcomeEmail] Failed to send welcome email", e);
+          // Get the refreshed session
+          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+          
+          if (!hasWelcomeEmailSent(user.id)) {
+            await sendWelcomeEmail(user, refreshedSession);
+          }
+        } else {
+          if (!hasWelcomeEmailSent(user.id)) {
+            await sendWelcomeEmail(user, session);
           }
         }
 
@@ -167,6 +161,28 @@ export const useProfileSetup = (onComplete: () => void) => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Helper function to send welcome email
+  const sendWelcomeEmail = async (user: any, session: any) => {
+    try {
+      await supabase.functions.invoke("send-welcome-email", {
+        body: {
+          email: user.email,
+          firstName:
+            (user.user_metadata && user.user_metadata.first_name) ||
+            user.user_metadata?.firstName || // fallback naming
+            "",
+        },
+        headers: {
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+      });
+      setWelcomeEmailSent(user.id);
+      console.log("[WelcomeEmail] Sent welcome email for user:", user.id);
+    } catch (e) {
+      console.error("[WelcomeEmail] Failed to send welcome email", e);
     }
   };
 
