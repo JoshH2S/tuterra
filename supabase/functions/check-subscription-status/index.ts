@@ -14,6 +14,30 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// Helper function to determine plan ID from subscription
+const determinePlanId = (subscription: Stripe.Subscription) => {
+  // First check metadata
+  if (subscription.metadata?.plan_id) {
+    logStep("Found plan_id in metadata", { plan_id: subscription.metadata.plan_id });
+    return subscription.metadata.plan_id;
+  }
+  
+  // Then check plan nickname
+  const planNickname = subscription.items?.data[0]?.plan?.nickname?.toLowerCase() || '';
+  logStep("Checking plan nickname", { planNickname });
+  
+  if (planNickname.includes('pro')) {
+    return 'pro_plan';
+  }
+  if (planNickname.includes('premium')) {
+    return 'premium_plan';
+  }
+  
+  // Default to pro_plan if we can't determine (since that's what most users select)
+  logStep("Could not determine plan from metadata or nickname, defaulting to pro_plan");
+  return 'pro_plan';
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -146,17 +170,21 @@ serve(async (req) => {
         logStep("Retrieved subscription", { 
           id: subscription.id, 
           status: subscription.status,
-          planId: subscription.items.data[0]?.plan?.nickname || 'unknown'
+          planDetails: {
+            nickname: subscription.items.data[0]?.plan?.nickname,
+            productId: subscription.items.data[0]?.plan?.product
+          }
         });
 
-        // Determine plan ID and tier from Stripe subscription
-        const planId = subscription.metadata?.plan_id ||
-          (subscription.items?.data[0]?.plan?.nickname === "Pro Plan" ? "pro_plan" : "premium_plan");
+        // Determine plan ID and tier using our helper function
+        const planId = determinePlanId(subscription);
         
         let tier = "pro";
         if (planId && planId.includes("premium")) tier = "premium";
 
-        // Update subscription data in Supabase
+        logStep("Determined tier and plan", { tier, planId });
+
+        // Update subscription data in Supabase with onConflict strategy
         const { error: updateSubscriptionError } = await supabaseAdmin
           .from("subscriptions")
           .upsert({
@@ -168,6 +196,9 @@ serve(async (req) => {
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             cancel_at_period_end: subscription.cancel_at_period_end,
             updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id',
+            ignoreDuplicates: false
           });
 
         if (updateSubscriptionError) {
@@ -176,7 +207,7 @@ serve(async (req) => {
           logStep("Updated subscription data");
         }
 
-        // Update profile tier directly
+        // Update profile tier directly - FORCE update the subscription tier
         const { error: updateProfileError } = await supabaseAdmin
           .from("profiles")
           .update({ subscription_tier: tier })
@@ -192,7 +223,8 @@ serve(async (req) => {
           JSON.stringify({ 
             success: true, 
             subscription_tier: tier,
-            subscription_status: subscription.status
+            subscription_status: subscription.status,
+            plan_id: planId
           }),
           {
             status: 200,

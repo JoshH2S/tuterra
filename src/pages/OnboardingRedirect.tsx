@@ -12,6 +12,50 @@ const OnboardingRedirect = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [redirecting, setRedirecting] = useState(true);
+  const [syncAttempt, setSyncAttempt] = useState(0);
+  
+  // Recursive function to retry subscription status sync with exponential backoff
+  const syncSubscriptionStatus = async (sessionId: string, maxRetries = 3, attemptNum = 0) => {
+    try {
+      // Exponential backoff delay
+      const delayMs = 1500 * Math.pow(1.5, attemptNum);
+      console.log(`Attempt ${attemptNum + 1}: Waiting ${delayMs}ms before checking subscription status`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      
+      // Force a sync of the subscription status from Stripe
+      const { data, error } = await supabase.functions.invoke('check-subscription-status', {
+        body: { sessionId }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log("Subscription status check result:", data);
+      
+      if (data?.success && data?.subscription_tier && data?.subscription_status === 'active') {
+        console.log("Subscription active and tier updated successfully:", data);
+        return true;
+      }
+      
+      // Retry if we haven't hit max attempts
+      if (attemptNum < maxRetries - 1) {
+        setSyncAttempt(attemptNum + 1);
+        return await syncSubscriptionStatus(sessionId, maxRetries, attemptNum + 1);
+      }
+      
+      console.warn("Failed to sync subscription after max retries");
+      return false;
+    } catch (err) {
+      console.error(`Subscription sync error (attempt ${attemptNum + 1}):`, err);
+      // Still retry on error if attempts remain
+      if (attemptNum < maxRetries - 1) {
+        setSyncAttempt(attemptNum + 1);
+        return await syncSubscriptionStatus(sessionId, maxRetries, attemptNum + 1);
+      }
+      return false;
+    }
+  };
   
   useEffect(() => {
     const handleRedirect = async () => {
@@ -27,20 +71,16 @@ const OnboardingRedirect = () => {
             description: "Your pro subscription is now active.",
           });
           
-          // Short delay to allow webhook to process subscription
-          await new Promise(resolve => setTimeout(resolve, 1500));
-
-          // Force a sync of the subscription status from Stripe
-          try {
-            await supabase.functions.invoke('check-subscription-status', {
-              body: { sessionId }
-            });
-            console.log("Manually synced subscription status after checkout");
-          } catch (err) {
-            console.error("Failed to sync subscription status:", err);
+          // Attempt to sync subscription status with retries
+          const synced = await syncSubscriptionStatus(sessionId);
+          
+          if (synced) {
+            console.log("Subscription status successfully synced");
+          } else {
+            console.warn("Subscription sync incomplete - continuing to success page");
           }
           
-          navigate('/subscription-success', { replace: true });
+          navigate('/subscription-success?session_id=' + sessionId, { replace: true });
         } else {
           // Direct access or after free plan selection - navigate to onboarding immediately
           navigate('/onboarding', { replace: true });
@@ -69,6 +109,9 @@ const OnboardingRedirect = () => {
             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Setting up your account</h2>
             <p className="text-muted-foreground">Just a moment while we prepare your dashboard...</p>
+            {syncAttempt > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">Syncing subscription data (attempt {syncAttempt})...</p>
+            )}
           </Card>
         </motion.div>
       </div>

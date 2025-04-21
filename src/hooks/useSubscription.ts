@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "./useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -43,67 +43,93 @@ export const useSubscription = () => {
     }
   });
   const [loading, setLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
 
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+  const fetchSubscription = useCallback(async (force = false) => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        // Get subscription tier from profiles table
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("subscription_tier")
-          .eq("id", user.id)
-          .single();
+    // If it's been less than 5 seconds since the last fetch and not forced, skip
+    const now = Date.now();
+    if (!force && now - lastFetchTime < 5000) {
+      console.log("Skipping subscription fetch - too soon since last fetch");
+      return;
+    }
 
-        if (profileError) throw profileError;
+    setLoading(true);
+    setLastFetchTime(now);
 
-        const tier = (profileData?.subscription_tier || "free") as SubscriptionTier;
-        
-        // Get subscription details from subscriptions table
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from("subscriptions")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
+    try {
+      console.log("Fetching subscription data...");
+      
+      // Get subscription tier from profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("subscription_tier")
+        .eq("id", user.id)
+        .single();
 
-        // Set features based on tier
-        const subscriptionInfo: Subscription = {
-          tier,
-          features: {
-            smartNotes: tier === "premium",
-            advancedModel: tier !== "free",
-            learningPath: tier !== "free",
-            streaming: tier !== "free"
-          }
-        };
+      if (profileError) throw profileError;
 
-        // Add subscription details if available
-        if (!subscriptionError && subscriptionData) {
-          // Type assert the data to our interface
-          const typedData = subscriptionData as unknown as SubscriptionData;
-          
-          subscriptionInfo.planId = typedData.plan_id;
-          subscriptionInfo.status = typedData.status;
-          subscriptionInfo.currentPeriodEnd = typedData.current_period_end;
-          subscriptionInfo.cancelAtPeriodEnd = typedData.cancel_at_period_end;
-          subscriptionInfo.stripeCustomerId = typedData.stripe_customer_id;
-          subscriptionInfo.stripeSubscriptionId = typedData.stripe_subscription_id;
+      const tier = (profileData?.subscription_tier || "free") as SubscriptionTier;
+      console.log("Fetched profile tier:", tier);
+      
+      // Get subscription details from subscriptions table
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // Set features based on tier
+      const subscriptionInfo: Subscription = {
+        tier,
+        features: {
+          smartNotes: tier === "premium",
+          advancedModel: tier !== "free",
+          learningPath: tier !== "free",
+          streaming: tier !== "free"
         }
+      };
 
-        setSubscription(subscriptionInfo);
-      } catch (error) {
-        console.error("Error fetching subscription:", error);
-      } finally {
-        setLoading(false);
+      // Add subscription details if available
+      if (!subscriptionError && subscriptionData) {
+        // Type assert the data to our interface
+        const typedData = subscriptionData as unknown as SubscriptionData;
+        
+        subscriptionInfo.planId = typedData.plan_id;
+        subscriptionInfo.status = typedData.status;
+        subscriptionInfo.currentPeriodEnd = typedData.current_period_end;
+        subscriptionInfo.cancelAtPeriodEnd = typedData.cancel_at_period_end;
+        subscriptionInfo.stripeCustomerId = typedData.stripe_customer_id;
+        subscriptionInfo.stripeSubscriptionId = typedData.stripe_subscription_id;
+        
+        console.log("Fetched subscription details:", {
+          planId: typedData.plan_id,
+          status: typedData.status
+        });
       }
-    };
 
+      setSubscription(subscriptionInfo);
+      console.log("Subscription data updated", subscriptionInfo);
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, lastFetchTime]);
+
+  // Function to force a refresh of subscription data
+  const refetch = useCallback(() => {
+    return fetchSubscription(true);
+  }, [fetchSubscription]);
+
+  // Fetch on initial load
+  useEffect(() => {
     fetchSubscription();
-  }, [user]);
+  }, [user, fetchSubscription]);
 
-  return { subscription, loading };
+  return { subscription, loading, refetch };
 };

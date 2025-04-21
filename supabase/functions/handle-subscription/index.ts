@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -11,6 +12,30 @@ const corsHeaders = {
 const logStep = (step: string, details?: unknown) => {
   const msg = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[WEBHOOK] ${step}${msg}`);
+};
+
+// Helper function to determine plan ID from subscription
+const determinePlanId = (subscription: Stripe.Subscription) => {
+  // First check metadata
+  if (subscription.metadata?.plan_id) {
+    logStep("Found plan_id in metadata", { plan_id: subscription.metadata.plan_id });
+    return subscription.metadata.plan_id;
+  }
+  
+  // Then check plan nickname
+  const planNickname = subscription.items?.data[0]?.plan?.nickname?.toLowerCase() || '';
+  logStep("Checking plan nickname", { planNickname });
+  
+  if (planNickname.includes('pro')) {
+    return 'pro_plan';
+  }
+  if (planNickname.includes('premium')) {
+    return 'premium_plan';
+  }
+  
+  // Default to pro_plan if we can't determine
+  logStep("Could not determine plan from metadata or nickname, defaulting to pro_plan");
+  return 'pro_plan';
 };
 
 serve(async (req) => {
@@ -73,16 +98,15 @@ serve(async (req) => {
           subscription = await stripe.subscriptions.retrieve(subscriptionId);
           logStep("Retrieved subscription details", { 
             status: subscription.status,
-            items: subscription.items.data.length
+            items: subscription.items.data.length,
+            planNickname: subscription.items.data[0]?.plan?.nickname
           });
         } else {
           logStep("Unable to retrieve subscription id for session", { sessionId: session.id });
         }
 
         // Determine plan ID and tier from Stripe subscription/pricing
-        const planId = subscription?.metadata?.plan_id ||
-          (subscription?.items?.data?.[0]?.plan?.nickname === "Pro Plan" ? "pro_plan" : "premium_plan");
-        const priceId = subscription?.items?.data?.[0]?.price?.id;
+        const planId = determinePlanId(subscription);
         let tier = "pro";
         if (planId && planId.includes("premium")) tier = "premium";
 
@@ -101,7 +125,11 @@ serve(async (req) => {
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
               cancel_at_period_end: subscription.cancel_at_period_end,
               updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id',
+              ignoreDuplicates: false
             });
+            
           if (subError) {
             logStep("Error upserting subscription on checkout.session.completed", { subError });
           } else {
@@ -133,9 +161,7 @@ serve(async (req) => {
         logStep(`${event.type} received`);
         const subscription = event.data.object;
         const userId = subscription.metadata.user_id;
-        const planId = subscription.metadata.plan_id ||
-          (subscription.items.data[0]?.plan?.nickname === "Pro Plan" ? "pro_plan" : "premium_plan");
-        const priceId = subscription.items.data[0]?.price?.id;
+        const planId = determinePlanId(subscription);
         let tier = "pro";
         if (planId && planId.includes("premium")) tier = "premium";
 
@@ -154,7 +180,11 @@ serve(async (req) => {
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
               cancel_at_period_end: subscription.cancel_at_period_end,
               updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id',
+              ignoreDuplicates: false
             });
+            
           if (subError) {
             logStep("Error upserting subscription on created/updated", { subError });
           } else {
@@ -168,6 +198,8 @@ serve(async (req) => {
             .eq("id", userId);
           if (profileErr) {
             logStep("Error updating profile tier on created/updated", { profileErr });
+          } else {
+            logStep("Successfully updated profile tier to", { tier });
           }
         } else {
           logStep("No userId found in subscription event", { subPayload: subscription });
