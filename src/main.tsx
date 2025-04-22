@@ -4,6 +4,14 @@ import { createRoot } from 'react-dom/client'
 import { Loader2 } from 'lucide-react'
 import './index.css'
 
+// ----- Hook Debug Import (only in dev) -----
+if (import.meta.env.MODE === 'development') {
+  // This will be tree-shaken away in production
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require('./utils/hookDebug.ts');
+}
+// -------------------------
+
 // Lazy load the App component to avoid triggering API calls immediately
 const App = lazy(() => import('./App.tsx'))
 
@@ -62,3 +70,4 @@ createRoot(document.getElementById("root")!).render(
     </Suspense>
   </ErrorBoundary>
 );
+
