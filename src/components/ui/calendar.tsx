@@ -95,7 +95,7 @@ function Calendar({
                 {options.map((option) => (
                   <SelectItem
                     key={option.props.value}
-                    value={option.props.value.toString()}
+                    value={option.props.value?.toString()}
                     className="text-sm"
                   >
                     {option.props.name === "months" 
