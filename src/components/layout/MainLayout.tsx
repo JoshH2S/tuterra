@@ -21,7 +21,7 @@ export const MainLayout = () => {
   }, [location.pathname]);
 
   // Don't show sidebar on landing page and auth pages
-  const hideSidebar = location.pathname === "/" || location.pathname === "/auth";
+  const hideSidebar = location.pathname === "/" || location.pathname.startsWith("/auth");
 
   return (
     <TooltipProvider>
@@ -34,4 +34,4 @@ export const MainLayout = () => {
       </SidebarProvider>
     </TooltipProvider>
   );
-}
+};

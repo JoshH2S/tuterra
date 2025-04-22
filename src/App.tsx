@@ -1,29 +1,21 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import { lazyLoad } from "@/utils/lazy-loading";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { Toaster } from "@/components/ui/toaster";
 import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
-
-// Lazy load MainLayout
-const MainLayout = lazyLoad(
-  () => import("@/components/layout/MainLayout").then(
-    module => ({ default: module.MainLayout })
-  ),
-  "MainLayout"
-);
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false, // Improves performance by preventing refetches on window focus
+      refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 2, // Retry failed requests twice
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
       meta: {
-        // Use meta instead of onError for error handling
         errorHandler: (error: Error) => {
           console.error('Query error:', error);
         }
@@ -41,15 +33,17 @@ const AppLoading = () => (
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ConnectionStatusBanner />
-        <Suspense fallback={<AppLoading />}>
-          <MainLayout />
-        </Suspense>
-        <Toaster />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <ConnectionStatusBanner />
+          <Suspense fallback={<AppLoading />}>
+            <MainLayout />
+          </Suspense>
+          <Toaster />
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

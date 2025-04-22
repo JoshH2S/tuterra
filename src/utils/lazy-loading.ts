@@ -11,16 +11,14 @@ export function lazyLoad<T extends ComponentType<any>>(
   importFunc: () => Promise<{ default: T }>,
   componentName: string
 ): React.LazyExoticComponent<T> {
-  const LazyComponent = lazy(async () => {
-    try {
-      return await importFunc();
-    } catch (error) {
-      console.error(`Error loading ${componentName}:`, error);
-      throw error;
-    }
+  const LazyComponent = lazy(() => {
+    console.log(`Loading component: ${componentName}`);
+    return importFunc()
+      .catch(error => {
+        console.error(`Error loading ${componentName}:`, error);
+        throw error;
+      });
   });
-  
-  // Removed setting displayName as it's not supported on LazyExoticComponent
   
   return LazyComponent;
 }
@@ -37,14 +35,14 @@ export function lazyLoadNamed<T extends ComponentType<any>>(
   exportName: string,
   componentName: string
 ): React.LazyExoticComponent<T> {
-  const LazyComponent = lazy(async () => {
-    try {
-      const module = await importFunc();
-      return { default: module[exportName] };
-    } catch (error) {
-      console.error(`Error loading ${componentName}:`, error);
-      throw error;
-    }
+  const LazyComponent = lazy(() => {
+    console.log(`Loading named component: ${componentName}`);
+    return importFunc()
+      .then(module => ({ default: module[exportName] }))
+      .catch(error => {
+        console.error(`Error loading ${componentName} (${exportName}):`, error);
+        throw error;
+      });
   });
   
   return LazyComponent;
