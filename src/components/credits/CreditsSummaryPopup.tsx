@@ -36,11 +36,6 @@ export function CreditsSummaryPopup() {
     }
   }, [user, subscription.tier, fetchUserCredits]);
 
-  // Now we can conditionally return after all hooks are called
-  if (subscription.tier !== "free") {
-    return null;
-  }
-
   const handleOpenChange = (open: boolean) => {
     if (open) {
       fetchUserCredits();
@@ -64,32 +59,35 @@ export function CreditsSummaryPopup() {
     }
   }, [credits]);
 
+  // Use CSS classes to conditionally show/hide instead of conditional return
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-1.5 h-8 touch-manipulation"
-          onClick={() => console.log("Free Credits button clicked")}
-        >
-          <Coins className="h-3.5 w-3.5" />
-          <span>Free Credits</span>
-          <CreditsBadge />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-center">Your Free Credits</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <CreditsDisplay 
-            compact={false} 
-            showUpgradeButton={true} 
-            onRetry={handleRetry}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <div className={subscription.tier !== "free" ? "hidden" : ""}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5 h-8 touch-manipulation"
+            onClick={() => console.log("Free Credits button clicked")}
+          >
+            <Coins className="h-3.5 w-3.5" />
+            <span>Free Credits</span>
+            <CreditsBadge />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">Your Free Credits</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <CreditsDisplay 
+              compact={false} 
+              showUpgradeButton={true} 
+              onRetry={handleRetry}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
