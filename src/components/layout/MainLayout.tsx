@@ -10,7 +10,6 @@ import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useAuth } from "@/hooks/useAuth";
-// Add DesktopHeader and SidebarUserProfile for debug toggling
 import { DesktopHeader } from "../layout/desktop/DesktopHeader";
 import { SidebarUserProfile } from "../layout/sidebar/SidebarUserProfile";
 
