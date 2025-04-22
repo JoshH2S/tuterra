@@ -64,8 +64,15 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-5 w-5" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-5 w-5" />,
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
-          // Type safety for options
-          const options = React.Children.toArray(children) as React.ReactElement[];
+          // Explicitly type the options to ensure they have the expected properties
+          type OptionProps = {
+            value: string | number;
+            children: React.ReactNode;
+            disabled?: boolean;
+          };
+
+          // Cast children to a properly typed array
+          const options = React.Children.toArray(children) as React.ReactElement<OptionProps>[];
           
           // Create a proper handler that adapts the string value to match the expected type
           const handleValueChange = (newValue: string) => {
@@ -94,21 +101,25 @@ function Calendar({
               </SelectTrigger>
               <SelectContent position="popper" className="z-[60] min-w-[8rem]">
                 {options.map((option) => {
-                  if (!React.isValidElement(option)) return null;
+                  if (!React.isValidElement<OptionProps>(option)) return null;
                   
+                  // Safely access props with type checking
                   const optionProps = option.props || {};
                   const optionValue = optionProps.value !== undefined ? String(optionProps.value) : "";
                   const isMonth = propName === "months";
+                  const optionChildren = optionProps.children;
+                  const optionDisabled = optionProps.disabled;
                   
                   return (
                     <SelectItem
                       key={optionValue}
                       value={optionValue}
                       className="text-sm"
+                      disabled={optionDisabled}
                     >
                       {isMonth && typeof optionProps.value === "number"
                         ? format(new Date(0, optionProps.value), 'MMMM')
-                        : optionProps.children}
+                        : optionChildren}
                     </SelectItem>
                   );
                 })}
