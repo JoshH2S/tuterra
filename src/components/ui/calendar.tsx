@@ -64,15 +64,15 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-5 w-5" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-5 w-5" />,
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
-          // Explicitly type the options to ensure they have the expected properties
-          type OptionProps = {
+          // Define proper type for the option props
+          interface OptionProps {
             value: string | number;
             children: React.ReactNode;
             disabled?: boolean;
-          };
-
-          // Cast children to a properly typed array
-          const options = React.Children.toArray(children) as React.ReactElement<OptionProps>[];
+          }
+          
+          // Cast children to any array first and then properly type each child
+          const childrenArray = React.Children.toArray(children);
           
           // Create a proper handler that adapts the string value to match the expected type
           const handleValueChange = (newValue: string) => {
@@ -100,25 +100,24 @@ function Calendar({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent position="popper" className="z-[60] min-w-[8rem]">
-                {options.map((option) => {
-                  if (!React.isValidElement<OptionProps>(option)) return null;
+                {childrenArray.map((option, index) => {
+                  if (!React.isValidElement(option)) return null;
                   
-                  // Safely access props with type checking
-                  const optionProps = option.props || {};
-                  const optionValue = optionProps.value !== undefined ? String(optionProps.value) : "";
+                  // Safely extract props from each option
+                  const optionValue = option.props?.value !== undefined ? String(option.props.value) : "";
+                  const optionChildren = option.props?.children;
+                  const optionDisabled = option.props?.disabled;
                   const isMonth = propName === "months";
-                  const optionChildren = optionProps.children;
-                  const optionDisabled = optionProps.disabled;
                   
                   return (
                     <SelectItem
-                      key={optionValue}
+                      key={optionValue || index}
                       value={optionValue}
                       className="text-sm"
                       disabled={optionDisabled}
                     >
-                      {isMonth && typeof optionProps.value === "number"
-                        ? format(new Date(0, optionProps.value), 'MMMM')
+                      {isMonth && typeof option.props?.value === "number"
+                        ? format(new Date(0, option.props.value), 'MMMM')
                         : optionChildren}
                     </SelectItem>
                   );
