@@ -11,12 +11,10 @@ import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { DesktopHeader } from "../layout/desktop/DesktopHeader";
-// Removed SidebarUserProfile import, as it is now handled by MainSidebar
 
 export const MainLayout = () => {
   // Debug flags
   const DEBUG_DISABLE_HEADER = false;
-
 
   // Move all hooks to the top
   useCustomFont();
@@ -54,8 +52,7 @@ export const MainLayout = () => {
       <Toaster />
       <Sonner />
       <SidebarProvider>
-        {/* Debug header should only be present if not disabled */}
-        {!DEBUG_DISABLE_HEADER && <DesktopHeader />}
+        {/* No debug header check or SidebarUserProfile here anymore, all handled by Layout */}
         <Layout isLandingPage={hideSidebar}>
           <AppRoutes />
         </Layout>

@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,11 +48,12 @@ export const MainSidebar = () => {
             </Link>
           </motion.div>
         </SidebarHeader>
-        {/* Move user profile up here inside Sidebar */}
+        
+        {/* Keep user profile in the sidebar */}
         <SidebarUserProfile isCollapsed={false} />
+        
         <SidebarContent className="flex flex-col justify-between h-[calc(100vh-64px)]">
           <SidebarNavigation isCollapsed={false} />
-          {/* SidebarUserProfile removed from here, now only at top of sidebar */}
         </SidebarContent>
       </Sidebar>
     </div>
