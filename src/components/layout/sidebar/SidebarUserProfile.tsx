@@ -85,19 +85,18 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
               <SubscriptionBadge tier={subscription.tier} className="h-5 px-1.5 py-0" />
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-2">
-              {subscription.tier === "free" ? (
-                <>
-                  Free Plan
-                  <CreditsBadge />
-                  <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
-                    <Sparkles className="h-3 w-3 text-amber-500" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {subscription.tier === "premium" ? "Premium Plan" : "Pro Plan"}
-                </>
+              {/* Always render the plan info, but show/hide free components */}
+              {subscription.tier === "free" ? "Free Plan" : (
+                subscription.tier === "premium" ? "Premium Plan" : "Pro Plan"
               )}
+              
+              {/* Use display classes instead of conditional rendering */}
+              <div className={subscription.tier === "free" ? "flex items-center" : "hidden"}>
+                <CreditsBadge />
+                <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
+                  <Sparkles className="h-3 w-3 text-amber-500" />
+                </Button>
+              </div>
             </div>
             {/* Logout button positioned below plan information */}
             <Button 

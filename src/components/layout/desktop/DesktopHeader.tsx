@@ -14,19 +14,7 @@ export function DesktopHeader() {
     navigate('/pricing');
   };
 
-  // Return a null or simplified header for non-free users
-  if (subscription?.tier !== "free") {
-    return (
-      <header className="sticky top-0 z-40 hidden lg:block border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-2">
-            <div className="text-lg font-semibold">EduPortal</div>
-          </div>
-        </div>
-      </header>
-    );
-  }
-
+  // Always render the same component structure, regardless of subscription tier
   return (
     <header className="sticky top-0 z-40 hidden lg:block border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-6">
@@ -35,15 +23,19 @@ export function DesktopHeader() {
         </div>
 
         <div className="flex items-center gap-4">
-          <CreditsSummaryPopup />
-          <Button
-            variant="default"
-            onClick={handleUpgradeClick}
-            className="gap-2"
-          >
-            <CreditCard className="h-4 w-4" />
-            Upgrade to Premium
-          </Button>
+          {subscription?.tier === 'free' && (
+            <CreditsSummaryPopup />
+          )}
+          {subscription?.tier === 'free' && (
+            <Button
+              variant="default"
+              onClick={handleUpgradeClick}
+              className="gap-2"
+            >
+              <CreditCard className="h-4 w-4" />
+              Upgrade to Premium
+            </Button>
+          )}
         </div>
       </div>
     </header>
