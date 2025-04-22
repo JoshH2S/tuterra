@@ -7,7 +7,7 @@ import { InsightsSection } from "./InsightsSection";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { CoursePerformanceCard } from "./CoursePerformanceCard";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSwipeable } from "react-swipeable";
 
 interface MobileDashboardProps {
@@ -29,12 +29,11 @@ export function MobileDashboard({
   openSessionDialog,
   onUpdateSession
 }: MobileDashboardProps) {
+  const [activeTab, setActiveTab] = useState("overview");
+  
   // Always define the handler to avoid conditional hook usage
   const handleUpdateSession = onUpdateSession || ((id: string, updates: Partial<StudySession>) => Promise.resolve());
   
-  // Use tabs state for swipe gestures
-  const [activeTab, setActiveTab] = useState("overview");
-
   // Setup swipe handlers for mobile navigation
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => {
@@ -84,6 +83,3 @@ export function MobileDashboard({
     </div>
   );
 }
-
-// Add the missing useState import
-import { useState } from "react";
