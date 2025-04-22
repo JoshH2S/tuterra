@@ -13,7 +13,7 @@ export interface CheckoutOptions {
 export const useSubscriptionManagement = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { subscription, loading: subscriptionLoading, refetch, syncWithStripe } = useSubscription();
+  const { subscription, loading: subscriptionLoading } = useSubscription();
 
   const createCheckoutSession = async ({ planId, successUrl, cancelUrl }: CheckoutOptions) => {
     setLoading(true);
@@ -91,9 +91,6 @@ export const useSubscriptionManagement = () => {
         description: "Your subscription has been canceled. You'll still have access until the end of your billing period.",
       });
       
-      // Refresh subscription data
-      await refetch(true);
-      
       return true;
     } catch (error: any) {
       console.error('Error cancelling subscription:', error);
@@ -126,9 +123,6 @@ export const useSubscriptionManagement = () => {
         title: "Success",
         description: "Your subscription has been reactivated.",
       });
-      
-      // Refresh subscription data
-      await refetch(true);
       
       return true;
     } catch (error: any) {
@@ -184,7 +178,6 @@ export const useSubscriptionManagement = () => {
     createBillingPortalSession,
     loading,
     subscription,
-    subscriptionLoading,
-    syncWithStripe
+    subscriptionLoading
   };
 };

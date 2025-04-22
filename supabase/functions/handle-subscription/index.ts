@@ -64,10 +64,9 @@ serve(async (req) => {
   const sig = req.headers.get("stripe-signature") || "";
   const payload = await req.text();
 
-  // Securely verify stripe signature - using the async version
+  // Securely verify stripe signature
   try {
-    // Important: Use constructEventAsync instead of constructEvent
-    event = await stripe.webhooks.constructEventAsync(payload, sig, webhookSecret);
+    event = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
     logStep("Webhook event constructed", { type: event.type });
   } catch (err) {
     logStep("Invalid Stripe signature", { error: err instanceof Error ? err.message : err });
@@ -109,44 +108,22 @@ serve(async (req) => {
         }
 
         if (subscription && customerId) {
-          const planId = subscription.metadata.plan_id || 'pro_plan';
-          logStep("Calling handle_user_subscription", {
-            userId,
-            subscriptionId: subscription.id,
-            customerId,
-            planId,
-            status: subscription.status,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancelAtPeriodEnd: subscription.cancel_at_period_end
-          });
-
           const { error } = await supabaseClient.rpc('handle_user_subscription', {
             p_user_id: userId,
             p_stripe_subscription_id: subscription.id,
             p_stripe_customer_id: customerId,
-            p_plan_id: planId,
+            p_plan_id: subscription.metadata.plan_id || 'pro_plan',
             p_status: subscription.status,
             p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             p_cancel_at_period_end: subscription.cancel_at_period_end
           });
 
           if (error) {
-            logStep("Error updating subscription status", { 
-              error,
-              errorMessage: error.message,
-              errorDetails: error.details,
-              hint: error.hint
-            });
+            logStep("Error updating subscription status", { error });
             throw error;
           }
           
-          logStep("Successfully updated subscription status", {
-            userId,
-            subscriptionId: subscription.id,
-            status: subscription.status,
-            planId,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString()
-          });
+          logStep("Successfully updated subscription status");
         }
         break;
       }
@@ -158,44 +135,20 @@ serve(async (req) => {
         const userId = subscription.metadata.user_id;
 
         if (userId) {
-          const planId = subscription.metadata.plan_id || 'pro_plan';
-          logStep("Handling subscription update/creation", {
-            userId,
-            subscriptionId: subscription.id,
-            customerId: subscription.customer,
-            planId,
-            status: subscription.status,
-            event: event.type
-          });
-
           const { error } = await supabaseClient.rpc('handle_user_subscription', {
             p_user_id: userId,
             p_stripe_subscription_id: subscription.id,
             p_stripe_customer_id: subscription.customer,
-            p_plan_id: planId,
+            p_plan_id: subscription.metadata.plan_id || 'pro_plan',
             p_status: subscription.status,
             p_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             p_cancel_at_period_end: subscription.cancel_at_period_end
           });
 
           if (error) {
-            logStep("Error updating subscription status", { 
-              error,
-              errorMessage: error.message,
-              errorDetails: error.details,
-              hint: error.hint,
-              event: event.type
-            });
+            logStep("Error updating subscription status", { error });
             throw error;
           }
-
-          logStep("Successfully processed subscription update/creation", {
-            userId,
-            subscriptionId: subscription.id,
-            status: subscription.status,
-            planId,
-            event: event.type
-          });
         }
         break;
       }
@@ -246,11 +199,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (err) {
-    logStep("Webhook processing error", { 
-      error: err instanceof Error ? err.message : err, 
-      stack: err && err.stack,
-      event: event?.type
-    });
+    logStep("Webhook processing error", { err: err instanceof Error ? err.message : err, stack: err && err.stack });
     return new Response(
       JSON.stringify({ error: "Webhook error processing event: " + (err && err.message ? err.message : String(err)) }),
       {
