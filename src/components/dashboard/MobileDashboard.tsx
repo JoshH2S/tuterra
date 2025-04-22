@@ -7,6 +7,8 @@ import { InsightsSection } from "./InsightsSection";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { CoursePerformanceCard } from "./CoursePerformanceCard";
+import { useState, useEffect } from "react";
+import { useSwipeable } from "react-swipeable";
 
 interface MobileDashboardProps {
   performance: any[];
@@ -27,9 +29,27 @@ export function MobileDashboard({
   openSessionDialog,
   onUpdateSession
 }: MobileDashboardProps) {
+  const [activeTab, setActiveTab] = useState("overview");
+  
+  // Always define the handler to avoid conditional hook usage
+  const handleUpdateSession = onUpdateSession || ((id: string, updates: Partial<StudySession>) => Promise.resolve());
+  
+  // Setup swipe handlers for mobile navigation
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (activeTab === "overview") setActiveTab("calendar");
+      else if (activeTab === "calendar") setActiveTab("insights");
+    },
+    onSwipedRight: () => {
+      if (activeTab === "insights") setActiveTab("calendar");
+      else if (activeTab === "calendar") setActiveTab("overview");
+    },
+    trackMouse: false
+  });
+
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="overview" className="w-full">
+    <div className="space-y-6" {...swipeHandlers}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-3 h-auto">
           <TabsTrigger value="overview" className="py-2.5">Overview</TabsTrigger>
           <TabsTrigger value="calendar" className="py-2.5">Calendar</TabsTrigger>
@@ -45,7 +65,7 @@ export function MobileDashboard({
             sessions={sessions} 
             courses={courses} 
             onCreateSession={openSessionDialog}
-            onUpdateSession={onUpdateSession}
+            onUpdateSession={handleUpdateSession}
           />
         </TabsContent>
         

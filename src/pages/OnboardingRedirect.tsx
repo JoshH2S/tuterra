@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const OnboardingRedirect = () => {
   const navigate = useNavigate();
@@ -13,46 +14,32 @@ const OnboardingRedirect = () => {
   const { toast } = useToast();
   const [redirecting, setRedirecting] = useState(true);
   const [syncAttempt, setSyncAttempt] = useState(0);
+  const { syncWithStripe } = useSubscription();
   
   // Recursive function to retry subscription status sync with exponential backoff
-  const syncSubscriptionStatus = async (sessionId: string, maxRetries = 3, attemptNum = 0) => {
+  const attemptSubscriptionSync = async (sessionId: string, maxRetries = 3, attemptNum = 0) => {
     try {
       // Exponential backoff delay
       const delayMs = 1500 * Math.pow(1.5, attemptNum);
       console.log(`Attempt ${attemptNum + 1}: Waiting ${delayMs}ms before checking subscription status`);
       await new Promise(resolve => setTimeout(resolve, delayMs));
       
-      // Force a sync of the subscription status from Stripe
-      const { data, error } = await supabase.functions.invoke('check-subscription-status', {
-        body: { sessionId }
-      });
+      setSyncAttempt(attemptNum + 1);
       
-      if (error) {
-        throw error;
-      }
+      // Use the syncWithStripe function from useSubscription hook
+      await syncWithStripe(sessionId);
       
-      console.log("Subscription status check result:", data);
+      // If we reached here without errors, consider it a success
+      return true;
+    } catch (err) {
+      console.error(`Subscription sync error (attempt ${attemptNum + 1}):`, err);
       
-      if (data?.success && data?.subscription_tier && data?.subscription_status === 'active') {
-        console.log("Subscription active and tier updated successfully:", data);
-        return true;
-      }
-      
-      // Retry if we haven't hit max attempts
+      // Still retry on error if attempts remain
       if (attemptNum < maxRetries - 1) {
-        setSyncAttempt(attemptNum + 1);
-        return await syncSubscriptionStatus(sessionId, maxRetries, attemptNum + 1);
+        return await attemptSubscriptionSync(sessionId, maxRetries, attemptNum + 1);
       }
       
       console.warn("Failed to sync subscription after max retries");
-      return false;
-    } catch (err) {
-      console.error(`Subscription sync error (attempt ${attemptNum + 1}):`, err);
-      // Still retry on error if attempts remain
-      if (attemptNum < maxRetries - 1) {
-        setSyncAttempt(attemptNum + 1);
-        return await syncSubscriptionStatus(sessionId, maxRetries, attemptNum + 1);
-      }
       return false;
     }
   };
@@ -72,15 +59,11 @@ const OnboardingRedirect = () => {
           });
           
           // Attempt to sync subscription status with retries
-          const synced = await syncSubscriptionStatus(sessionId);
+          await attemptSubscriptionSync(sessionId);
           
-          if (synced) {
-            console.log("Subscription status successfully synced");
-          } else {
-            console.warn("Subscription sync incomplete - continuing to success page");
-          }
-          
-          navigate('/subscription-success?session_id=' + sessionId, { replace: true });
+          // Even if sync fails, we still navigate to success page
+          // Important: Use the right route path that matches our route configuration
+          navigate(`/subscription-success?session_id=${sessionId}`, { replace: true });
         } else {
           // Direct access or after free plan selection - navigate to onboarding immediately
           navigate('/onboarding', { replace: true });
@@ -95,7 +78,7 @@ const OnboardingRedirect = () => {
     };
     
     handleRedirect();
-  }, [location, navigate, toast]);
+  }, [location, navigate, toast, syncWithStripe]);
 
   if (redirecting) {
     return (

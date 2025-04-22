@@ -29,6 +29,9 @@ export function DesktopDashboard({
   openSessionDialog,
   updateSession
 }: DesktopDashboardProps) {
+  // Always define the handler function
+  const handleUpdateSession = updateSession || ((id: string, updates: Partial<StudySession>) => Promise.resolve());
+  
   return (
     <div className="space-y-6">
       <StatsCards performance={performance} />
@@ -41,7 +44,7 @@ export function DesktopDashboard({
               sessions={sessions} 
               courses={courses} 
               onCreateSession={openSessionDialog}
-              onUpdateSession={updateSession}
+              onUpdateSession={handleUpdateSession}
             />
           </div>
           

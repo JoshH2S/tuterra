@@ -8,7 +8,136 @@
     <meta name="description" content="Lovable Generated Project" />
     <meta name="author" content="Lovable" />
     <meta property="og:image" content="/og-image.png" />
+    
+    <!-- Favicon configurations -->
+    <link rel="icon" type="image/png" href="https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/favicon//favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/favicon//favicon.svg" />
+    <link rel="shortcut icon" href="https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/favicon//favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/favicon//apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Tuterra" />
+    <link rel="manifest" href="https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/favicon//site.webmanifest" />
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap">
+    
+    <!-- Early execution diagnostic script - runs before anything else -->
+    <script>
+      (function() {
+        window.__tuterra_diagnostics = {
+          loadTimestamp: Date.now(),
+          pageLoadEvents: [],
+          recordEvent: function(event) {
+            this.pageLoadEvents.push({
+              timestamp: Date.now(),
+              timeSinceLoad: Date.now() - this.loadTimestamp,
+              event: event
+            });
+          }
+        };
+        
+        window.__tuterra_diagnostics.recordEvent('Pre-initialization');
+        
+        // Browser feature detection
+        const diagnostics = {
+          timestamp: Date.now(),
+          userAgent: navigator.userAgent,
+          features: {
+            localStorage: typeof localStorage !== 'undefined',
+            sessionStorage: typeof sessionStorage !== 'undefined',
+            indexedDB: typeof indexedDB !== 'undefined',
+            serviceWorker: 'serviceWorker' in navigator,
+            permissions: 'permissions' in navigator,
+            cookies: navigator.cookieEnabled
+          },
+          // Check if any browser APIs are being polyfilled
+          isNative: {
+            fetch: window.fetch && window.fetch.toString().indexOf('[native code]') !== -1,
+            localStorage: window.localStorage && window.localStorage.toString().indexOf('[native code]') !== -1,
+          },
+          // Check for any browser extensions interfering
+          hasExtensionAPIs: !!(window.chrome && window.chrome.runtime),
+        };
+        
+        console.log('[TUTERRA DIAGNOSTICS] Browser Diagnostics:', diagnostics);
+        
+        // Storage access check
+        try {
+          localStorage.setItem('tuterra_diagnostic_test', 'test');
+          const storedValue = localStorage.getItem('tuterra_diagnostic_test');
+          console.log('[TUTERRA DIAGNOSTICS] Storage access:', {
+            canWrite: true,
+            canRead: storedValue === 'test',
+            value: storedValue
+          });
+          localStorage.removeItem('tuterra_diagnostic_test');
+        } catch (e) {
+          console.error('[TUTERRA DIAGNOSTICS] Storage access error:', e);
+        }
+        
+        // Global error logging
+        window.addEventListener('error', function(e) {
+          console.error('[TUTERRA DIAGNOSTICS] Global Error:', {
+            message: e.message,
+            filename: e.filename,
+            lineno: e.lineno,
+            colno: e.colno,
+            error: e.error,
+            timestamp: Date.now(),
+            timeSinceLoad: Date.now() - window.__tuterra_diagnostics.loadTimestamp
+          });
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+          console.error('[TUTERRA DIAGNOSTICS] Unhandled Promise Rejection:', e.reason);
+        });
+        
+        // Network state monitoring
+        const checkConnection = () => {
+          const connection = navigator.connection || 
+            (navigator).mozConnection || 
+            (navigator).webkitConnection;
+          
+          return {
+            online: navigator.onLine,
+            connectionType: connection?.type,
+            effectiveType: connection?.effectiveType,
+          };
+        };
+        
+        console.log('[TUTERRA DIAGNOSTICS] Initial Network State:', checkConnection());
+        
+        // Track document state changes
+        document.addEventListener('readystatechange', () => {
+          window.__tuterra_diagnostics.recordEvent(`Document state: ${document.readyState}`);
+          console.log('[TUTERRA DIAGNOSTICS] Document ready state changed:', document.readyState);
+        });
+        
+        // Resource loading analysis
+        window.addEventListener('load', (event) => {
+          window.__tuterra_diagnostics.recordEvent('Window load event');
+          console.log('[TUTERRA DIAGNOSTICS] Window load event fired');
+          
+          try {
+            const resources = performance.getEntriesByType('resource');
+            console.log('[TUTERRA DIAGNOSTICS] Resource Loading Order:', 
+              resources.map(r => ({
+                name: r.name,
+                timing: r.startTime,
+                duration: r.duration,
+                type: r.initiatorType
+              }))
+            );
+            
+            // Check for any failed resources
+            const failedResources = resources.filter(r => r.duration === 0 || r.transferSize === 0);
+            if (failedResources.length > 0) {
+              console.warn('[TUTERRA DIAGNOSTICS] Potentially failed resources:', failedResources);
+            }
+          } catch (e) {
+            console.error('[TUTERRA DIAGNOSTICS] Error processing resources:', e);
+          }
+        });
+      })();
+    </script>
   </head>
 
   <body>
