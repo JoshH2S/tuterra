@@ -14,18 +14,19 @@ export function DesktopHeader() {
     navigate('/pricing');
   };
 
-  // Always render the same component structure, regardless of subscription tier
+  // Always render the component structure; use conditional JSX only inside, never early-return
   return (
     <header className="sticky top-0 z-40 hidden lg:block border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-2">
           <div className="text-lg font-semibold">EduPortal</div>
         </div>
-
         <div className="flex items-center gap-4">
-          {subscription?.tier === 'free' && (
+          {/* CreditsSummaryPopup is always rendered, toggled by subscription tier */}
+          <div className={subscription?.tier === 'free' ? "" : "hidden"}>
             <CreditsSummaryPopup />
-          )}
+          </div>
+          {/* Upgrade button only appears for free users */}
           {subscription?.tier === 'free' && (
             <Button
               variant="default"

@@ -10,18 +10,25 @@ import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useAuth } from "@/hooks/useAuth";
+// Add DesktopHeader and SidebarUserProfile for debug toggling
+import { DesktopHeader } from "../layout/desktop/DesktopHeader";
+import { SidebarUserProfile } from "../layout/sidebar/SidebarUserProfile";
 
 export const MainLayout = () => {
+  // Debug flags
+  const DEBUG_DISABLE_HEADER = true;
+  const DEBUG_DISABLE_SIDEBAR = true;
+
   // Move all hooks to the top
   useCustomFont();
   useKeyboardNavigation();
   const location = useLocation();
   const { user, loading } = useAuth();
   const [isLayoutReady, setIsLayoutReady] = useState(false);
-  
+
   // Determine if sidebar should be hidden (synchronous)
   const hideSidebar = location.pathname === "/" || location.pathname === "/auth";
-  
+
   // Handle auth state transitions
   useEffect(() => {
     if (!loading) {
@@ -48,8 +55,12 @@ export const MainLayout = () => {
       <Toaster />
       <Sonner />
       <SidebarProvider>
+        {/* Debug header should only be present if not disabled */}
+        {!DEBUG_DISABLE_HEADER && <DesktopHeader />}
         <Layout isLandingPage={hideSidebar}>
           <AppRoutes />
+          {/* Debug sidebar user profile, if not disabled */}
+          {!DEBUG_DISABLE_SIDEBAR && <SidebarUserProfile />}
         </Layout>
       </SidebarProvider>
     </TooltipProvider>

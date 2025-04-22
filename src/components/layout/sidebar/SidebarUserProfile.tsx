@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { User, Sparkles, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,10 +27,8 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
   useEffect(() => {
     if (!user) return;
 
-    // Initial avatar URL from user metadata
     setAvatarUrl(user.user_metadata?.avatar_url || null);
 
-    // Subscribe to profile changes
     const channel = supabase
       .channel('profile-changes')
       .on(
@@ -48,7 +45,6 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
       )
       .subscribe();
 
-    // Subscribe to user metadata changes
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
         if (event === 'USER_UPDATED') {
@@ -85,12 +81,9 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
               <SubscriptionBadge tier={subscription.tier} className="h-5 px-1.5 py-0" />
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-2">
-              {/* Always render the plan info, but show/hide free components */}
               {subscription.tier === "free" ? "Free Plan" : (
                 subscription.tier === "premium" ? "Premium Plan" : "Pro Plan"
               )}
-              
-              {/* Use display classes instead of conditional rendering */}
               <div className={subscription.tier === "free" ? "flex items-center" : "hidden"}>
                 <CreditsBadge />
                 <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
@@ -98,7 +91,6 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
                 </Button>
               </div>
             </div>
-            {/* Logout button positioned below plan information */}
             <Button 
               variant="ghost" 
               size="sm" 
