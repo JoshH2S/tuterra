@@ -46,7 +46,7 @@ export default function StudentDashboard() {
     new Set(performance.flatMap(p => p.areas_for_improvement || []))
   );
 
-  // Loading state - use a separate return for this
+  // Loading state - use a separate JSX element for this rather than a conditional return
   if (isLoading || isLoadingSessions) {
     return (
       <div className="container mx-auto px-4 w-full">
@@ -62,7 +62,7 @@ export default function StudentDashboard() {
     );
   }
 
-  // Main content - after loading check
+  // Main content - only reached after all hooks are evaluated
   return (
     <div className="container mx-auto px-4 w-full max-w-full">
       <DashboardHeader 

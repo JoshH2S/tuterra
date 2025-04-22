@@ -80,28 +80,29 @@ const OnboardingRedirect = () => {
     handleRedirect();
   }, [location, navigate, toast, syncWithStripe]);
 
-  if (redirecting) {
-    return (
-      <div className="flex items-center justify-center h-screen w-full">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center p-8"
-        >
-          <Card className="p-8 shadow-lg">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Setting up your account</h2>
-            <p className="text-muted-foreground">Just a moment while we prepare your dashboard...</p>
-            {syncAttempt > 0 && (
-              <p className="text-xs text-muted-foreground mt-2">Syncing subscription data (attempt {syncAttempt})...</p>
-            )}
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
-
-  return null;
+  // Always render the component, but conditionally show loading or nothing
+  return (
+    <>
+      {redirecting && (
+        <div className="flex items-center justify-center h-screen w-full">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center p-8"
+          >
+            <Card className="p-8 shadow-lg">
+              <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Setting up your account</h2>
+              <p className="text-muted-foreground">Just a moment while we prepare your dashboard...</p>
+              {syncAttempt > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">Syncing subscription data (attempt {syncAttempt})...</p>
+              )}
+            </Card>
+          </motion.div>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default OnboardingRedirect;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, Bell, Search, CreditCard, Coins } from "lucide-react";
@@ -11,6 +12,7 @@ import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { CreditsSummaryPopup } from "@/components/credits/CreditsSummaryPopup";
 
 export function MobileHeader() {
+  // All hooks at the top
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,6 +28,8 @@ export function MobileHeader() {
   const handleUpgradeClick = () => {
     navigate('/pricing');
   };
+
+  // No conditional returns before this point, all hooks are called unconditionally
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
