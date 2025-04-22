@@ -3,17 +3,23 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StudentCourse, StudentPerformance } from "@/types/student";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export const useStudentDashboard = () => {
   const [courses, setCourses] = useState<StudentCourse[]>([]);
   const [performance, setPerformance] = useState<StudentPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
 
   const fetchDashboardData = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+    // Don't fetch data if user is not authenticated yet
+    if (authLoading || !user) {
+      return;
+    }
 
+    try {
+      setIsLoading(true);
+      
       // Create a single batch request for both queries
       const [coursesResult, performanceResult] = await Promise.all([
         // Fetch enrolled courses - only select needed fields
@@ -91,11 +97,14 @@ export const useStudentDashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user, authLoading]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    // Only fetch data when authentication is complete and we have a user
+    if (!authLoading && user) {
+      fetchDashboardData();
+    }
+  }, [fetchDashboardData, user, authLoading]);
 
   return { courses, performance, isLoading, refreshData: fetchDashboardData };
 };

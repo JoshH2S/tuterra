@@ -13,6 +13,9 @@ import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { InsightsSection } from "@/components/dashboard/InsightsSection";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -20,18 +23,28 @@ export default function StudentDashboard() {
   const { sessions, createSession, updateSession, isLoading: isLoadingSessions } = useStudySessions();
   const isMobile = useIsMobile();
   const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    console.log("Courses in StudentDashboard:", courses);
-  }, [courses]);
+    // Reset error state when data changes
+    setError(null);
+  }, [courses, performance, sessions]);
 
   const handleCreateSession = async (sessionData: CreateStudySessionData) => {
-    await createSession(sessionData);
-    setSessionDialogOpen(false);
+    try {
+      await createSession(sessionData);
+      setSessionDialogOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to create session'));
+    }
   };
 
   const handleUpdateSession = async (id: string, updates: Partial<StudySession>) => {
-    await updateSession(id, updates);
+    try {
+      await updateSession(id, updates);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to update session'));
+    }
   };
 
   const openSessionDialog = () => {
@@ -46,6 +59,20 @@ export default function StudentDashboard() {
   const uniqueAreasForImprovement = Array.from(
     new Set(performance.flatMap(p => p.areas_for_improvement || []))
   );
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 w-full max-w-full py-6">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error.message || "An error occurred. Please try again."}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   if (isLoading || isLoadingSessions) {
     return (
@@ -63,58 +90,60 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 w-full max-w-full">
-      <DashboardHeader 
-        title="My Dashboard" 
-        description="Track your progress and performance across all your courses" 
-      />
+    <ErrorBoundary>
+      <div className="container mx-auto px-4 w-full max-w-full">
+        <DashboardHeader 
+          title="My Dashboard" 
+          description="Track your progress and performance across all your courses" 
+        />
 
-      <div className="space-y-4 sm:space-y-6">
-        {/* News Feed at the top */}
-        <NewsFeed courses={courses} />
+        <div className="space-y-4 sm:space-y-6">
+          {/* News Feed at the top */}
+          <NewsFeed courses={courses} />
 
-        {isMobile ? (
-          <MobileDashboard 
-            performance={performance}
-            insights={insights}
-            sessions={sessions}
-            courses={courses}
-            onCreateSession={handleCreateSession}
-            openSessionDialog={openSessionDialog}
-            onUpdateSession={handleUpdateSession}
-          />
-        ) : (
-          <>
-            {/* Insights Section */}
-            <InsightsSection insights={insights} />
+          {isMobile ? (
+            <MobileDashboard 
+              performance={performance}
+              insights={insights}
+              sessions={sessions}
+              courses={courses}
+              onCreateSession={handleCreateSession}
+              openSessionDialog={openSessionDialog}
+              onUpdateSession={handleUpdateSession}
+            />
+          ) : (
+            <>
+              {/* Insights Section */}
+              <InsightsSection insights={insights} />
 
-            {/* Main Content Stack */}
-            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
-              <div className="space-y-6">
-                <PerformanceOverview performance={performance} />
-                
-                {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
-                  <StrengthsAndAreas 
-                    strengths={uniqueStrengths} 
-                    areasForImprovement={uniqueAreasForImprovement} 
+              {/* Main Content Stack */}
+              <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
+                <div className="space-y-6">
+                  <PerformanceOverview performance={performance} />
+                  
+                  {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
+                    <StrengthsAndAreas 
+                      strengths={uniqueStrengths} 
+                      areasForImprovement={uniqueAreasForImprovement} 
+                    />
+                  )}
+
+                  <StudyCalendar 
+                    sessions={sessions}
+                    onCreateSession={handleCreateSession}
                   />
-                )}
-
-                <StudyCalendar 
-                  sessions={sessions}
-                  onCreateSession={handleCreateSession}
-                />
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            </>
+          )}
+        </div>
 
-      <StudySessionDialog
-        open={sessionDialogOpen}
-        onOpenChange={setSessionDialogOpen}
-        onCreateSession={handleCreateSession}
-      />
-    </div>
+        <StudySessionDialog
+          open={sessionDialogOpen}
+          onOpenChange={setSessionDialogOpen}
+          onCreateSession={handleCreateSession}
+        />
+      </div>
+    </ErrorBoundary>
   );
 }

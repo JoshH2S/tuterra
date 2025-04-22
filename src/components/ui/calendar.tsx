@@ -64,22 +64,21 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-5 w-5" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-5 w-5" />,
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
+          // Type safety for options
           const options = React.Children.toArray(children) as React.ReactElement[];
           
           // Create a proper handler that adapts the string value to match the expected type
           const handleValueChange = (newValue: string) => {
-            // The DayPicker component expects the onChange to be called with the value
-            // directly, not wrapped in an event. We need to check the type of onChange
             if (onChange) {
-              // Here we call onChange with the newValue directly
               onChange(newValue as any);
             }
           };
 
-          // Format the month name correctly when it's a month dropdown
-          const formattedValue = props.name === "months" && typeof value === "number" 
+          // Safely handle props when determining formatted value
+          const propName = props.name as string | undefined;
+          const formattedValue = propName === "months" && typeof value === "number" 
             ? format(new Date(0, value), 'MMMM')
-            : value;
+            : String(value);
           
           return (
             <Select
@@ -92,17 +91,25 @@ function Calendar({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent position="popper" className="z-[60] min-w-[8rem]">
-                {options.map((option) => (
-                  <SelectItem
-                    key={option.props.value}
-                    value={option.props.value.toString()}
-                    className="text-sm"
-                  >
-                    {option.props.name === "months" 
-                      ? format(new Date(0, Number(option.props.value)), 'MMMM')
-                      : option.props.children}
-                  </SelectItem>
-                ))}
+                {options.map((option) => {
+                  if (!React.isValidElement(option)) return null;
+                  
+                  const optionProps = option.props || {};
+                  const optionValue = optionProps.value?.toString() || "";
+                  const isMonth = propName === "months";
+                  
+                  return (
+                    <SelectItem
+                      key={optionValue}
+                      value={optionValue}
+                      className="text-sm"
+                    >
+                      {isMonth && typeof optionProps.value === "number"
+                        ? format(new Date(0, optionProps.value), 'MMMM')
+                        : optionProps.children}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           );
