@@ -6,8 +6,6 @@ import { Loader2 } from "lucide-react";
 import { lazyLoad } from "@/utils/lazy-loading";
 import { Toaster } from "@/components/ui/toaster";
 import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
-import { AuthProvider } from "@/hooks/useAuth";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load MainLayout
 const MainLayout = lazyLoad(
@@ -43,19 +41,15 @@ const AppLoading = () => (
 
 const App = () => {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AuthProvider>
-            <ConnectionStatusBanner />
-            <Suspense fallback={<AppLoading />}>
-              <MainLayout />
-            </Suspense>
-            <Toaster />
-          </AuthProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ConnectionStatusBanner />
+        <Suspense fallback={<AppLoading />}>
+          <MainLayout />
+        </Suspense>
+        <Toaster />
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 };
 

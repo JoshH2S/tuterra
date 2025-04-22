@@ -9,8 +9,6 @@ import { Layout } from "./Layout";
 import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
-import { AuthStateProvider } from "@/components/auth/AuthStateProvider";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const MainLayout = () => {
   useCustomFont();
@@ -26,18 +24,14 @@ export const MainLayout = () => {
   const hideSidebar = location.pathname === "/" || location.pathname === "/auth";
 
   return (
-    <ErrorBoundary>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <SidebarProvider>
-          <AuthStateProvider>
-            <Layout isLandingPage={hideSidebar}>
-              <AppRoutes />
-            </Layout>
-          </AuthStateProvider>
-        </SidebarProvider>
-      </TooltipProvider>
-    </ErrorBoundary>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <SidebarProvider>
+        <Layout isLandingPage={hideSidebar}>
+          <AppRoutes />
+        </Layout>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

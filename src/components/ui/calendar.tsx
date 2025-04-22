@@ -64,34 +64,26 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-5 w-5" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-5 w-5" />,
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
-          // Define proper type for the option props
-          interface OptionProps {
-            value: string | number;
-            children: React.ReactNode;
-            disabled?: boolean;
-          }
-          
-          // Cast children to any array first and then properly type each child
-          const childrenArray = React.Children.toArray(children);
+          const options = React.Children.toArray(children) as React.ReactElement[];
           
           // Create a proper handler that adapts the string value to match the expected type
           const handleValueChange = (newValue: string) => {
+            // The DayPicker component expects the onChange to be called with the value
+            // directly, not wrapped in an event. We need to check the type of onChange
             if (onChange) {
+              // Here we call onChange with the newValue directly
               onChange(newValue as any);
             }
           };
 
-          // Safely handle props when determining formatted value
-          const propName = props.name as string | undefined;
-          // Ensure value is properly typed for formatting
-          const valueToFormat = typeof value === 'number' || typeof value === 'string' ? value : '';
-          const formattedValue = propName === "months" && typeof valueToFormat === "number" 
-            ? format(new Date(0, valueToFormat), 'MMMM')
-            : String(valueToFormat);
+          // Format the month name correctly when it's a month dropdown
+          const formattedValue = props.name === "months" && typeof value === "number" 
+            ? format(new Date(0, value), 'MMMM')
+            : value;
           
           return (
             <Select
-              value={String(valueToFormat)}
+              value={value?.toString()}
               onValueChange={handleValueChange}
             >
               <SelectTrigger className={cn("h-9 px-3 py-2 text-sm rounded-md", props.className)}>
@@ -100,28 +92,17 @@ function Calendar({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent position="popper" className="z-[60] min-w-[8rem]">
-                {childrenArray.map((option, index) => {
-                  if (!React.isValidElement(option)) return null;
-                  
-                  // Safely extract props from each option
-                  const optionValue = option.props?.value !== undefined ? String(option.props.value) : "";
-                  const optionChildren = option.props?.children;
-                  const optionDisabled = option.props?.disabled;
-                  const isMonth = propName === "months";
-                  
-                  return (
-                    <SelectItem
-                      key={optionValue || index}
-                      value={optionValue}
-                      className="text-sm"
-                      disabled={optionDisabled}
-                    >
-                      {isMonth && typeof option.props?.value === "number"
-                        ? format(new Date(0, option.props.value), 'MMMM')
-                        : optionChildren}
-                    </SelectItem>
-                  );
-                })}
+                {options.map((option) => (
+                  <SelectItem
+                    key={option.props.value}
+                    value={option.props.value.toString()}
+                    className="text-sm"
+                  >
+                    {option.props.name === "months" 
+                      ? format(new Date(0, Number(option.props.value)), 'MMMM')
+                      : option.props.children}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           );

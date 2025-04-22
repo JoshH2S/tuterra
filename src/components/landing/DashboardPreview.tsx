@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { CustomCarousel } from "@/components/ui/custom-carousel";
+import { Carousel } from "@/components/ui/carousel";
 
 export function DashboardPreview() {
   const slideData = [
@@ -86,7 +86,7 @@ export function DashboardPreview() {
             className="w-full"
           >
             <div className="relative overflow-hidden w-full py-10">
-              <CustomCarousel slides={slideData} />
+              <Carousel slides={slideData} />
             </div>
           </motion.div>
         </div>
