@@ -12,13 +12,17 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
   useEffect(() => {
     const sendWelcomeEmail = async () => {
       try {
-        const { data: { user, session } } = await supabase.auth.getSession();
+        // Fix: Get session first, then user from session
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData.session;
         
-        if (!user || !session?.access_token) {
+        if (!session?.user || !session?.access_token) {
           console.error("[WelcomeEmail] No valid session for email sending");
           return;
         }
 
+        const user = session.user;
+        
         const { data, error } = await supabase.functions.invoke("send-welcome-email", {
           body: {
             email: user.email,
