@@ -29,7 +29,7 @@ export function DesktopDashboard({
   openSessionDialog,
   updateSession
 }: DesktopDashboardProps) {
-  // Ensure updateSession is always a function, even if undefined is passed
+  // Always define the handler function
   const handleUpdateSession = updateSession || ((id: string, updates: Partial<StudySession>) => Promise.resolve());
   
   return (
