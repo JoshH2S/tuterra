@@ -12,9 +12,9 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
   useEffect(() => {
     const sendWelcomeEmail = async () => {
       try {
-        // Get session first
+        // Fix: Get session first, then user from session
         const { data: sessionData } = await supabase.auth.getSession();
-        const session = sessionData?.session;
+        const session = sessionData.session;
         
         if (!session?.user || !session?.access_token) {
           console.error("[WelcomeEmail] No valid session for email sending");
@@ -23,18 +23,12 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
 
         const user = session.user;
         
-        // Get user metadata 
-        const userMetadata = user.user_metadata || {};
-        const firstName = userMetadata.first_name || 
-                           userMetadata.firstName || 
-                           user.email?.split('@')[0] || '';
-        
-        console.log("[WelcomeEmail] Attempting to send welcome email to:", user.email);
-        
         const { data, error } = await supabase.functions.invoke("send-welcome-email", {
           body: {
             email: user.email,
-            firstName: firstName
+            firstName: user.user_metadata?.first_name || 
+                      user.user_metadata?.firstName || 
+                      user.email.split('@')[0]
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`
@@ -44,11 +38,12 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
         if (error) throw error;
 
         if (data?.status === 'success') {
-          console.log("[WelcomeEmail] Email sent successfully");
           await supabase
             .from('profiles')
             .update({ welcome_email_sent: true })
             .eq('id', user.id);
+
+          console.log("[WelcomeEmail] Successfully sent for user:", user.id);
         }
       } catch (error: any) {
         console.error("[WelcomeEmail] Error sending welcome email:", error);

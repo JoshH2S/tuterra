@@ -12,7 +12,6 @@ interface ProfileCompletionProps {
 }
 
 export const ProfileCompletion = ({ profile }: ProfileCompletionProps) => {
-  // Use useMemo hook to calculate profile completion
   const { percentage, completedFields, totalFields } = useMemo(() => {
     // Define required profile fields
     const fields = [
@@ -35,7 +34,7 @@ export const ProfileCompletion = ({ profile }: ProfileCompletionProps) => {
     };
   }, [profile]);
   
-  // Determine color based on completion percentage - don't use hooks in this function
+  // Determine color based on completion percentage
   const getColorClass = () => {
     if (percentage < 30) return "bg-red-500";
     if (percentage < 70) return "bg-yellow-500";

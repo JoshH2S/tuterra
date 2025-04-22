@@ -29,7 +29,6 @@ export const EmailVerification = () => {
 
   // Process tokens immediately on component mount
   useEffect(() => {
-    console.log("EmailVerification component mounted, processing auth tokens");
     const processAuthTokens = async () => {
       try {
         // Check for hash fragments for Supabase auth
@@ -69,8 +68,6 @@ export const EmailVerification = () => {
             const errorCode = searchParams.get("error_code");
             const errorDescription = searchParams.get("error_description");
             
-            console.error("URL contains error parameters:", { errorCode, errorDescription });
-            
             if (errorCode === "otp_expired") {
               setError("Your verification link has expired. Please request a new one.");
             } else {
@@ -78,18 +75,14 @@ export const EmailVerification = () => {
             }
           } 
           else {
-            console.log("No hash params or errors, checking for existing session");
             // Check for existing session when no hash params
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-              console.log("User already has active session, redirecting to onboarding");
               setVerificationSuccess(true);
               // Add short delay then redirect
               setTimeout(() => {
                 navigate("/onboarding", { replace: true });
               }, 1500);
-            } else {
-              console.log("No active session found, showing verification pending UI");
             }
           }
         }
@@ -114,8 +107,6 @@ export const EmailVerification = () => {
       if (!email) {
         throw new Error("No email found for verification. Please try signing up again.");
       }
-      
-      console.log("Attempting to resend verification email to:", email);
       
       const { error } = await supabase.auth.resend({
         type: "signup",
