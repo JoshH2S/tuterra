@@ -76,13 +76,15 @@ function Calendar({
 
           // Safely handle props when determining formatted value
           const propName = props.name as string | undefined;
-          const formattedValue = propName === "months" && typeof value === "number" 
-            ? format(new Date(0, value), 'MMMM')
-            : String(value);
+          // Ensure value is properly typed for formatting
+          const valueToFormat = typeof value === 'number' || typeof value === 'string' ? value : '';
+          const formattedValue = propName === "months" && typeof valueToFormat === "number" 
+            ? format(new Date(0, valueToFormat), 'MMMM')
+            : String(valueToFormat);
           
           return (
             <Select
-              value={value?.toString()}
+              value={String(valueToFormat)}
               onValueChange={handleValueChange}
             >
               <SelectTrigger className={cn("h-9 px-3 py-2 text-sm rounded-md", props.className)}>
@@ -95,7 +97,7 @@ function Calendar({
                   if (!React.isValidElement(option)) return null;
                   
                   const optionProps = option.props || {};
-                  const optionValue = optionProps.value?.toString() || "";
+                  const optionValue = optionProps.value !== undefined ? String(optionProps.value) : "";
                   const isMonth = propName === "months";
                   
                   return (
