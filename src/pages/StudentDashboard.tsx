@@ -13,6 +13,7 @@ import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { InsightsSection } from "@/components/dashboard/InsightsSection";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -73,41 +74,43 @@ export default function StudentDashboard() {
         {/* News Feed at the top */}
         <NewsFeed courses={courses} />
 
-        {isMobile ? (
-          <MobileDashboard 
-            performance={performance}
-            insights={insights}
-            sessions={sessions}
-            courses={courses}
-            onCreateSession={handleCreateSession}
-            openSessionDialog={openSessionDialog}
-            onUpdateSession={handleUpdateSession}
-          />
-        ) : (
-          <>
-            {/* Insights Section */}
-            <InsightsSection insights={insights} />
+        <ErrorBoundary>
+          {isMobile ? (
+            <MobileDashboard 
+              performance={performance}
+              insights={insights}
+              sessions={sessions}
+              courses={courses}
+              onCreateSession={handleCreateSession}
+              openSessionDialog={openSessionDialog}
+              onUpdateSession={handleUpdateSession}
+            />
+          ) : (
+            <>
+              {/* Insights Section */}
+              <InsightsSection insights={insights} />
 
-            {/* Main Content Stack */}
-            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
-              <div className="space-y-6">
-                <PerformanceOverview performance={performance} />
-                
-                {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
-                  <StrengthsAndAreas 
-                    strengths={uniqueStrengths} 
-                    areasForImprovement={uniqueAreasForImprovement} 
+              {/* Main Content Stack */}
+              <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
+                <div className="space-y-6">
+                  <PerformanceOverview performance={performance} />
+                  
+                  {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
+                    <StrengthsAndAreas 
+                      strengths={uniqueStrengths} 
+                      areasForImprovement={uniqueAreasForImprovement} 
+                    />
+                  )}
+
+                  <StudyCalendar 
+                    sessions={sessions}
+                    onCreateSession={handleCreateSession}
                   />
-                )}
-
-                <StudyCalendar 
-                  sessions={sessions}
-                  onCreateSession={handleCreateSession}
-                />
+                </div>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </ErrorBoundary>
       </div>
 
       <StudySessionDialog

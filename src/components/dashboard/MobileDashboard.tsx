@@ -27,6 +27,9 @@ export function MobileDashboard({
   openSessionDialog,
   onUpdateSession
 }: MobileDashboardProps) {
+  // Ensure onUpdateSession is always a function, even if undefined is passed
+  const handleUpdateSession = onUpdateSession || ((id: string, updates: Partial<StudySession>) => Promise.resolve());
+  
   return (
     <div className="space-y-6">
       <Tabs defaultValue="overview" className="w-full">
@@ -45,7 +48,7 @@ export function MobileDashboard({
             sessions={sessions} 
             courses={courses} 
             onCreateSession={openSessionDialog}
-            onUpdateSession={onUpdateSession}
+            onUpdateSession={handleUpdateSession}
           />
         </TabsContent>
         
