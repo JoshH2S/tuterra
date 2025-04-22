@@ -1,21 +1,19 @@
 
-import { FormEvent } from "react";
 import { NameFields } from "./NameFields";
 import { EducationField } from "./EducationField";
 import { FormActions } from "./FormActions";
 
-interface FormData {
+interface ProfileFormData {
   firstName: string;
   lastName: string;
   school: string;
-  avatarUrl: string;
 }
 
 interface ProfileFormProps {
-  formData: FormData;
+  formData: ProfileFormData;
   loading: boolean;
-  onFormDataChange: (field: keyof FormData, value: string) => void;
-  onSubmit: (e: FormEvent) => Promise<void>;
+  onFormDataChange: (field: keyof ProfileFormData, value: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }
 
@@ -26,25 +24,27 @@ export const ProfileForm = ({
   onSubmit,
   onCancel,
 }: ProfileFormProps) => {
-  // No hooks should be used here as they're passed as props
+  // Function to handle field changes
+  const handleFieldChange = (field: keyof ProfileFormData) => (value: string) => {
+    onFormDataChange(field, value);
+  };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <NameFields
-          firstName={formData.firstName}
-          lastName={formData.lastName}
-          onFirstNameChange={(value) => onFormDataChange("firstName", value)}
-          onLastNameChange={(value) => onFormDataChange("lastName", value)}
-        />
-        
-        <EducationField
-          school={formData.school}
-          onEducationChange={(value) => onFormDataChange("school", value)}
-        />
-      </div>
-      
-      <FormActions loading={loading} onCancel={onCancel} />
+    <form onSubmit={onSubmit} className="space-y-4">
+      <NameFields 
+        firstName={formData.firstName}
+        lastName={formData.lastName}
+        onFirstNameChange={handleFieldChange('firstName')}
+        onLastNameChange={handleFieldChange('lastName')}
+      />
+      <EducationField 
+        school={formData.school}
+        onEducationChange={handleFieldChange('school')}
+      />
+      <FormActions 
+        loading={loading} 
+        onCancel={onCancel} 
+      />
     </form>
   );
 };

@@ -8,12 +8,13 @@ import { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StudySessionDialog } from "@/components/dashboard/StudySessionDialog";
 import { CreateStudySessionData } from "@/types/study-sessions";
-import { DesktopDashboard } from "@/components/dashboard/DesktopDashboard";
+import { PerformanceOverview } from "@/components/dashboard/PerformanceOverview";
+import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
+import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
+import { InsightsSection } from "@/components/dashboard/InsightsSection";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function StudentDashboard() {
-  // Move all hook calls to the top level
   const { courses, performance, isLoading } = useStudentDashboard();
   const { insights } = useStudentAnalytics(courses, performance);
   const { sessions, createSession, updateSession, isLoading: isLoadingSessions } = useStudySessions();
@@ -37,7 +38,7 @@ export default function StudentDashboard() {
     setSessionDialogOpen(true);
   };
 
-  // Extract unique strengths and areas for improvement - moved outside any conditional return
+  // Extract unique strengths and areas for improvement
   const uniqueStrengths = Array.from(
     new Set(performance.flatMap(p => p.strengths || []))
   );
@@ -46,7 +47,6 @@ export default function StudentDashboard() {
     new Set(performance.flatMap(p => p.areas_for_improvement || []))
   );
 
-  // Loading state - use a separate return for this
   if (isLoading || isLoadingSessions) {
     return (
       <div className="container mx-auto px-4 w-full">
@@ -62,7 +62,6 @@ export default function StudentDashboard() {
     );
   }
 
-  // Main content - after loading check
   return (
     <div className="container mx-auto px-4 w-full max-w-full">
       <DashboardHeader 
@@ -74,29 +73,41 @@ export default function StudentDashboard() {
         {/* News Feed at the top */}
         <NewsFeed courses={courses} />
 
-        <ErrorBoundary>
-          {isMobile ? (
-            <MobileDashboard 
-              performance={performance}
-              insights={insights}
-              sessions={sessions}
-              courses={courses}
-              onCreateSession={handleCreateSession}
-              openSessionDialog={openSessionDialog}
-              onUpdateSession={handleUpdateSession}
-            />
-          ) : (
-            <DesktopDashboard 
-              performance={performance}
-              insights={insights}
-              sessions={sessions}
-              courses={courses}
-              createSession={handleCreateSession}
-              openSessionDialog={openSessionDialog}
-              updateSession={handleUpdateSession}
-            />
-          )}
-        </ErrorBoundary>
+        {isMobile ? (
+          <MobileDashboard 
+            performance={performance}
+            insights={insights}
+            sessions={sessions}
+            courses={courses}
+            onCreateSession={handleCreateSession}
+            openSessionDialog={openSessionDialog}
+            onUpdateSession={handleUpdateSession}
+          />
+        ) : (
+          <>
+            {/* Insights Section */}
+            <InsightsSection insights={insights} />
+
+            {/* Main Content Stack */}
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
+              <div className="space-y-6">
+                <PerformanceOverview performance={performance} />
+                
+                {(uniqueStrengths.length > 0 || uniqueAreasForImprovement.length > 0) && (
+                  <StrengthsAndAreas 
+                    strengths={uniqueStrengths} 
+                    areasForImprovement={uniqueAreasForImprovement} 
+                  />
+                )}
+
+                <StudyCalendar 
+                  sessions={sessions}
+                  onCreateSession={handleCreateSession}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <StudySessionDialog
