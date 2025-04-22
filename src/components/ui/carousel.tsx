@@ -36,7 +36,7 @@ const Slide = ({ slide, index, current, handleSlideClick }: SlideProps) => {
       frameRef.current = requestAnimationFrame(animate);
     };
 
-    frameRef.current = requestAnimationFrame(() => animate());
+    frameRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (frameRef.current) {
