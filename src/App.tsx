@@ -1,11 +1,12 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { lazyLoad } from "@/utils/lazy-loading";
 import { Toaster } from "@/components/ui/toaster";
 import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
+import { supabase } from "@/integrations/supabase/client";
 
 // Lazy load MainLayout
 const MainLayout = lazyLoad(
@@ -39,15 +40,57 @@ const AppLoading = () => (
   </div>
 );
 
+const AppContent = () => {
+  // Add initialization logging
+  useEffect(() => {
+    console.log('App initialization started');
+    
+    // Check localStorage availability
+    try {
+      console.log('localStorage check:', {
+        available: !!window.localStorage,
+        writable: (() => {
+          try {
+            window.localStorage.setItem('test', 'test');
+            window.localStorage.removeItem('test');
+            return true;
+          } catch (e) {
+            console.error('localStorage write error:', e);
+            return false;
+          }
+        })()
+      });
+    } catch (e) {
+      console.error('localStorage access error:', e);
+    }
+    
+    // Listen for auth events at application level
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('App-level auth event:', event, 'Session exists:', !!session);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+      console.log('App cleanup - unsubscribed from auth events');
+    };
+  }, []);
+
+  return (
+    <>
+      <ConnectionStatusBanner />
+      <Suspense fallback={<AppLoading />}>
+        <MainLayout />
+      </Suspense>
+      <Toaster />
+    </>
+  );
+};
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ConnectionStatusBanner />
-        <Suspense fallback={<AppLoading />}>
-          <MainLayout />
-        </Suspense>
-        <Toaster />
+        <AppContent />
       </BrowserRouter>
     </QueryClientProvider>
   );
