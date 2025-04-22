@@ -8,7 +8,7 @@ import './index.css'
 if (import.meta.env.MODE === 'development') {
   // This will be tree-shaken away in production
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require('./utils/hookDebug.ts');
+  import('./utils/hookDebug.ts');
 }
 // -------------------------
 
