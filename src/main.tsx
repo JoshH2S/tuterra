@@ -3,14 +3,18 @@ import React, { Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Loader2 } from 'lucide-react'
 import './index.css'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { setupGlobalErrorHandling } from './utils/errorHandler'
 
 // ----- Hook Debug Import (only in dev) -----
 if (import.meta.env.MODE === 'development') {
   // This will be tree-shaken away in production
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   import('./utils/hookDebug.ts');
 }
 // -------------------------
+
+// Initialize global error handling (captures uncaught errors/rejections)
+setupGlobalErrorHandling();
 
 // Lazy load the App component to avoid triggering API calls immediately
 const App = lazy(() => import('./App.tsx'))
@@ -22,52 +26,10 @@ const AppLoading = () => (
   </div>
 );
 
-// Error boundary to catch any errors during component loading
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-}
-
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("App loading error:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <div className="flex flex-col items-center justify-center h-screen p-4 text-center">
-        <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-        <p className="mb-4">The application failed to load. Please try refreshing the page.</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Refresh Page
-        </button>
-      </div>;
-    }
-
-    return this.props.children;
-  }
-}
-
 createRoot(document.getElementById("root")!).render(
-  <ErrorBoundary>
+  <ErrorBoundary componentName="App">
     <Suspense fallback={<AppLoading />}>
       <App />
     </Suspense>
   </ErrorBoundary>
 );
-

@@ -1,12 +1,13 @@
 
-import React, { Component, ErrorInfo } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface ErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
+  children: ReactNode;
+  fallback?: ReactNode;
+  componentName?: string;
 }
 
 interface ErrorBoundaryState {
@@ -22,18 +23,51 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // This runs first if an error is thrown in a child
     return { hasError: true, error, errorInfo: null };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    this.setState({ error, errorInfo });
-    console.error("Error caught by ErrorBoundary:", error, errorInfo);
-    // Example: Send error to error-tracking service here if wanted.
-  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // --- Production-safe logging: console, window, localStorage ---
+    try {
+      // Group logs (identifiable in console)
+      console.group('🚨 Critical Error in:', this.props.componentName || 'Unknown Component');
+      console.error('Error:', error);
+      console.error('Error Stack:', error.stack);
+      console.error('Component Stack:', errorInfo.componentStack);
+      console.groupEnd();
 
-  handleReset = (): void => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
-  };
+      // Store to window for Lovable error capture
+      if (typeof window !== "undefined") {
+        (window as any).__LOVABLE_ERROR__ = {
+          ...((window as any).__LOVABLE_ERROR__ || {}),
+          error: error.toString(),
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+          componentName: this.props.componentName,
+          timestamp: new Date().toISOString()
+        };
+      }
+
+      // Persist to localStorage
+      try {
+        const errorLog = {
+          error: error.toString(),
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+          componentName: this.props.componentName,
+          timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('lastError', JSON.stringify(errorLog));
+      } catch (storageErr) {
+        console.warn('Failed to log error to localStorage:', storageErr);
+      }
+    } catch (loggingError) {
+      console.error('Failed to log error properly:', loggingError);
+      console.error('Original error:', error);
+    }
+    this.setState({ hasError: true, error, errorInfo });
+  }
 
   render() {
     if (this.state.hasError) {
@@ -46,18 +80,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <AlertTitle>Something went wrong</AlertTitle>
           <AlertDescription className="mt-2">
             <p className="mb-4">
-              There was an error loading this content. Please try again or contact support if the problem persists.
+              {this.state.error?.message || 'An unexpected error occurred'}
             </p>
-            <pre className="bg-muted/50 rounded p-2 mb-2 text-xs text-red-700 overflow-x-auto">
-              {this.state.error?.message}
-              {this.state.errorInfo?.componentStack 
-                ? `\n${this.state.errorInfo.componentStack}` 
-                : ""}
-            </pre>
+            <details className="mt-2 text-sm">
+              <summary className="cursor-pointer text-red-600">Error details</summary>
+              <pre className="mt-2 p-2 bg-red-100 rounded overflow-auto">
+                {this.state.errorInfo?.componentStack}
+              </pre>
+            </details>
             <Button
               variant="outline"
               size="sm"
-              onClick={this.handleReset}
+              onClick={() => window.location.reload()}
               className="flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
@@ -71,7 +105,5 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 }
 
-// For shortcut usage as a function component
-export const CourseErrorBoundary = (props: ErrorBoundaryProps) => {
-  return <ErrorBoundary {...props} />;
-};
+// Shortcut for functional usage
+export const CourseErrorBoundary = (props: ErrorBoundaryProps) => <ErrorBoundary {...props} />;
