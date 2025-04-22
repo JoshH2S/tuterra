@@ -11,6 +11,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export function MobileNavigation() {
+  // Move ALL hooks to the top level
   const [isOpen, setIsOpen] = useState(false);
   const [showToTop, setShowToTop] = useState(false);
   const isMobile = useIsMobile();
@@ -18,9 +19,10 @@ export function MobileNavigation() {
   const navigate = useNavigate();
   const { isLoggedIn, checkingAuth } = useAuthStatus();
   
-  // Don't show navigation on landing page
+  // Compute synchronous values for conditionals
   const isLandingPage = location.pathname === "/";
   
+  // Early return for non-mobile screens or landing page
   if (!isMobile || isLandingPage) return null;
 
   // Check scroll position to show/hide back to top button

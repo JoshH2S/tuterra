@@ -4,19 +4,15 @@ import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  // Move all hooks to the top
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
+    // Set up auth listener first
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -24,7 +20,8 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
       
       // If session is lost during app usage, redirect to auth
-      if (!session && !loading) {
+      // But only after initialization is complete
+      if (!session && !loading && isInitialized) {
         navigate("/auth", { 
           replace: true,
           state: { from: location.pathname } // Save the current path to redirect back after login
@@ -32,16 +29,29 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate, loading, location.pathname]);
+    // Then get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+      setIsInitialized(true);
+    });
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    </div>;
+    return () => subscription.unsubscribe();
+  }, [navigate, loading, location.pathname, isInitialized]);
+
+  // Compute access condition after all hooks are called
+  const isAuthenticated = !!session;
+  const isLoadingComplete = !loading && isInitialized;
+
+  if (!isLoadingComplete) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  if (!session) {
+  if (!isAuthenticated) {
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 

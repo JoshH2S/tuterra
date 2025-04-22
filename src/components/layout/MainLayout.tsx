@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,19 +9,39 @@ import { Layout } from "./Layout";
 import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export const MainLayout = () => {
+  // Move all hooks to the top
   useCustomFont();
   useKeyboardNavigation();
   const location = useLocation();
+  const { user, loading } = useAuth();
+  const [isLayoutReady, setIsLayoutReady] = useState(false);
+  
+  // Determine if sidebar should be hidden (synchronous)
+  const hideSidebar = location.pathname === "/" || location.pathname === "/auth";
+  
+  // Handle auth state transitions
+  useEffect(() => {
+    if (!loading) {
+      setIsLayoutReady(true);
+    }
+  }, [loading]);
 
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Don't show sidebar on landing page and auth pages
-  const hideSidebar = location.pathname === "/" || location.pathname === "/auth";
+  // If we're still initializing auth, show minimal layout
+  if (!isLayoutReady && location.pathname !== "/" && location.pathname !== "/auth") {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -34,4 +54,4 @@ export const MainLayout = () => {
       </SidebarProvider>
     </TooltipProvider>
   );
-}
+};
