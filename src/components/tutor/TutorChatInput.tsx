@@ -77,41 +77,41 @@ export const TutorChatInput = ({
     }
   };
 
-  // Render auth alert if user is not logged in
-  if (showAuthAlert) {
-    return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Authentication Required</AlertTitle>
-        <AlertDescription>
-          Please sign in to chat with the AI tutor.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  // Use a conditional for what to render, but don't use it to control hook execution
+  const authAlertShown = showAuthAlert;
 
   return (
     <>
-      <div className="flex items-end gap-2 bg-background border rounded-md p-2">
-        <Textarea
-          ref={textareaRef}
-          placeholder={placeholder}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled || isProcessing}
-          className="min-h-10 resize-none border-0 focus-visible:ring-0 focus-visible:ring-transparent"
-          rows={1}
-        />
-        <Button
-          onClick={handleSend}
-          disabled={!message.trim() || disabled || isProcessing}
-          size="icon"
-          className="h-8 w-8 shrink-0"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
+      {authAlertShown ? (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Authentication Required</AlertTitle>
+          <AlertDescription>
+            Please sign in to chat with the AI tutor.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="flex items-end gap-2 bg-background border rounded-md p-2">
+          <Textarea
+            ref={textareaRef}
+            placeholder={placeholder}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled || isProcessing}
+            className="min-h-10 resize-none border-0 focus-visible:ring-0 focus-visible:ring-transparent"
+            rows={1}
+          />
+          <Button
+            onClick={handleSend}
+            disabled={!message.trim() || disabled || isProcessing}
+            size="icon"
+            className="h-8 w-8 shrink-0"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       
       <UpgradePrompt
         isOpen={showUpgradePrompt}

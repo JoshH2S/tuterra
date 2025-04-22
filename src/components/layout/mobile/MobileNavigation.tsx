@@ -18,11 +18,9 @@ export function MobileNavigation() {
   const navigate = useNavigate();
   const { isLoggedIn, checkingAuth } = useAuthStatus();
   
-  // Don't show navigation on landing page
+  // Store whether this is the landing page
   const isLandingPage = location.pathname === "/";
   
-  if (!isMobile || isLandingPage) return null;
-
   // Check scroll position to show/hide back to top button
   useEffect(() => {
     const handleScroll = () => {
@@ -49,6 +47,9 @@ export function MobileNavigation() {
   const handleNavItemClick = () => {
     window.scrollTo(0, 0);
   };
+  
+  // Don't render anything on landing page or non-mobile devices, but still call all hooks first
+  if (!isMobile || isLandingPage) return null;
 
   return (
     <>
