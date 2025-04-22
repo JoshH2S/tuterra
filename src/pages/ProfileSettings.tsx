@@ -27,6 +27,7 @@ import { useProfileManagement } from "@/hooks/useProfileManagement";
 import { SubscriptionManager } from "@/components/subscription/SubscriptionManager";
 
 const ProfileSettings = () => {
+  // Define all hooks at the top level
   const navigate = useNavigate();
   const [showTopicsDialog, setShowTopicsDialog] = useState(false);
   const {
@@ -39,10 +40,12 @@ const ProfileSettings = () => {
     updateProfile,
   } = useProfileManagement();
 
+  // Effect hooks
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
 
+  // Handler functions
   const handleFormDataChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -115,6 +118,7 @@ const ProfileSettings = () => {
             value="profile"
             className="space-y-6 mt-0"
           >
+            {/* Profile section content */}
             <Card className="border-0 shadow-sm bg-gradient-to-b from-background to-muted/20">
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
@@ -150,6 +154,7 @@ const ProfileSettings = () => {
             value="news"
             className="space-y-6 mt-0"
           >
+            {/* News section content */}
             <Card className="border-0 shadow-sm bg-gradient-to-b from-background to-muted/20">
               <CardHeader>
                 <CardTitle>News Preferences</CardTitle>
@@ -177,6 +182,7 @@ const ProfileSettings = () => {
             value="subscription"
             className="space-y-6 mt-0"
           >
+            {/* Subscription section content */}
             <SubscriptionManager />
             
             <Card className="border-0 shadow-sm">
@@ -205,6 +211,7 @@ const ProfileSettings = () => {
             value="security"
             className="space-y-6 mt-0"
           >
+            {/* Security section content */}
             <Card className="border-0 shadow-sm bg-gradient-to-b from-background to-muted/20">
               <CardHeader>
                 <CardTitle>Security Settings</CardTitle>
@@ -232,11 +239,13 @@ const ProfileSettings = () => {
             value="notifications"
             className="space-y-6 mt-0"
           >
+            {/* Notifications section content */}
             <NotificationPreferences />
           </TabsContent>
         </Tabs>
       </motion.div>
 
+      {/* Dialog for news topics selection */}
       <NewsTopicsDialog
         open={showTopicsDialog}
         onClose={() => setShowTopicsDialog(false)}
