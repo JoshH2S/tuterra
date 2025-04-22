@@ -27,7 +27,8 @@ export const MainSidebar = () => {
     return null;
   }
 
-  return <div ref={sidebarRef} className="relative flex">
+  return (
+    <div ref={sidebarRef} className="relative flex">
       <Sidebar className={cn(
         "fixed left-0 top-0 h-screen",
         "bg-gradient-to-br from-primary-100/80 to-primary-200/80 dark:bg-slate-800", 
@@ -48,11 +49,13 @@ export const MainSidebar = () => {
             </Link>
           </motion.div>
         </SidebarHeader>
-        
+        {/* Move user profile up here inside Sidebar */}
+        <SidebarUserProfile isCollapsed={false} />
         <SidebarContent className="flex flex-col justify-between h-[calc(100vh-64px)]">
           <SidebarNavigation isCollapsed={false} />
-          <SidebarUserProfile isCollapsed={false} />
+          {/* SidebarUserProfile removed from here, now only at top of sidebar */}
         </SidebarContent>
       </Sidebar>
-    </div>;
+    </div>
+  );
 };

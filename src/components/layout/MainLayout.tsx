@@ -11,7 +11,7 @@ import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { DesktopHeader } from "../layout/desktop/DesktopHeader";
-import { SidebarUserProfile } from "../layout/sidebar/SidebarUserProfile";
+// Removed SidebarUserProfile import, as it is now handled by MainSidebar
 
 export const MainLayout = () => {
   // Debug flags
@@ -58,8 +58,6 @@ export const MainLayout = () => {
         {!DEBUG_DISABLE_HEADER && <DesktopHeader />}
         <Layout isLandingPage={hideSidebar}>
           <AppRoutes />
-          {/* Debug sidebar user profile, if not disabled */}
-          {!DEBUG_DISABLE_SIDEBAR && <SidebarUserProfile />}
         </Layout>
       </SidebarProvider>
     </TooltipProvider>
