@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { CreditsDisplay } from "@/components/credits/CreditsDisplay";
@@ -17,16 +18,13 @@ import { useAuth } from "@/hooks/useAuth";
 
 export function CreditsSummaryPopup() {
   const { subscription } = useSubscription();
-  // Never render for non-free users
-  if (subscription.tier !== "free") {
-    return null;
-  }
   const { fetchUserCredits, loading, error, credits } = useUserCredits();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [showForUser, setShowForUser] = useState(true);
 
+  // Move hook calls before conditional returns
   useEffect(() => {
     // Determine if we should show for this user based on tier
     setShowForUser(subscription.tier === 'free');
@@ -37,6 +35,11 @@ export function CreditsSummaryPopup() {
       fetchUserCredits();
     }
   }, [user, subscription.tier, fetchUserCredits]);
+
+  // Now we can conditionally return after all hooks are called
+  if (subscription.tier !== "free") {
+    return null;
+  }
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
@@ -60,11 +63,6 @@ export function CreditsSummaryPopup() {
       });
     }
   }, [credits]);
-
-  // If we're not showing for this user, return null
-  if (!showForUser) {
-    return null;
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>

@@ -27,7 +27,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     }
   }, [error]);
 
-  // Only show credits badge for free users
+  // Only show credits badge for free users (now after all hooks are called)
   if (subscription.tier !== 'free') {
     return null;
   }

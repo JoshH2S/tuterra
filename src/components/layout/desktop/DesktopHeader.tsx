@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,22 @@ export function DesktopHeader() {
   const navigate = useNavigate();
   const { subscription } = useSubscription();
 
-  // Show header features only for free plan users
-  if (subscription?.tier !== "free") {
-    return null;
-  }
-
   const handleUpgradeClick = () => {
     navigate('/pricing');
   };
+
+  // Return a null or simplified header for non-free users
+  if (subscription?.tier !== "free") {
+    return (
+      <header className="sticky top-0 z-40 hidden lg:block border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-16 items-center justify-between px-6">
+          <div className="flex items-center gap-2">
+            <div className="text-lg font-semibold">EduPortal</div>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-40 hidden lg:block border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
