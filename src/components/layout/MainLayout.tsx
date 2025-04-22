@@ -16,8 +16,8 @@ import { SidebarUserProfile } from "../layout/sidebar/SidebarUserProfile";
 
 export const MainLayout = () => {
   // Debug flags
-  const DEBUG_DISABLE_HEADER = true;
-  const DEBUG_DISABLE_SIDEBAR = true;
+  const DEBUG_DISABLE_HEADER = false;
+  const DEBUG_DISABLE_SIDEBAR = false;
 
   // Move all hooks to the top
   useCustomFont();
