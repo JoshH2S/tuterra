@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -8,8 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { subscription, loading: subscriptionLoading, refetch, syncWithStripe } = useSubscription();
+  const { subscription, loading: subscriptionLoading, refetch } = useSubscription();
   const [syncing, setSyncing] = useState(true);
   const [syncAttempt, setSyncAttempt] = useState(1);
   const [maxAttempts] = useState(5);
@@ -17,7 +17,7 @@ export default function SubscriptionSuccess() {
   
   const handleManualRefresh = async () => {
     setSyncing(true);
-    await refetch(true);
+    await refetch();
     setSyncing(false);
   };
   
@@ -28,6 +28,7 @@ export default function SubscriptionSuccess() {
         setSyncing(true);
         setSyncAttempt(1);
         
+        const searchParams = new URLSearchParams(window.location.search);
         const sessionId = searchParams.get('session_id');
         
         if (sessionId) {
@@ -44,7 +45,7 @@ export default function SubscriptionSuccess() {
     };
     
     syncSubscriptionStatus();
-  }, [searchParams]);
+  }, []);
   
   const attemptSync = async (sessionId: string, attempt: number) => {
     if (attempt > maxAttempts) {
@@ -57,37 +58,36 @@ export default function SubscriptionSuccess() {
       console.log(`Sync attempt ${attempt} of ${maxAttempts}`);
       setSyncAttempt(attempt);
       
-      try {
-        // Use the syncWithStripe function from the useSubscription hook
-        await syncWithStripe(sessionId);
-        
-        // Refetch subscription data to update UI
-        await refetch(true);
-        
-        if (subscription.tier === 'free') {
-          console.warn("Subscription tier still showing as free, will retry");
-          // Wait with exponential backoff before retrying
-          const delay = Math.min(2000 * Math.pow(1.5, attempt), 10000);
-          console.log(`Waiting ${delay}ms before retry ${attempt + 1}`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return attemptSync(sessionId, attempt + 1);
-        } else {
-          console.log(`Subscription verified as ${subscription.tier}`);
-          setSyncing(false);
-        }
-      } catch (error) {
-        console.error(`Sync attempt ${attempt} failed:`, error);
-        if (attempt < maxAttempts) {
-          const delay = Math.min(2000 * Math.pow(1.5, attempt), 10000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return attemptSync(sessionId, attempt + 1);
-        } else {
-          setSyncing(false);
-        }
+      const { data, error } = await supabase.functions.invoke('check-subscription-status', {
+        body: { sessionId }
+      });
+      
+      if (error) throw error;
+      console.log("Subscription check result:", data);
+      
+      // Refetch subscription data to update UI
+      await refetch();
+      
+      if (subscription.tier === 'free') {
+        console.warn("Subscription tier still showing as free, will retry");
+        // Wait with exponential backoff before retrying
+        const delay = Math.min(2000 * Math.pow(1.5, attempt), 10000);
+        console.log(`Waiting ${delay}ms before retry ${attempt + 1}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return attemptSync(sessionId, attempt + 1);
+      } else {
+        console.log(`Subscription verified as ${subscription.tier}`);
+        setSyncing(false);
       }
-    } catch (processingError) {
-      console.error("Error in sync processing:", processingError);
-      setSyncing(false);
+    } catch (error) {
+      console.error(`Sync attempt ${attempt} failed:`, error);
+      if (attempt < maxAttempts) {
+        const delay = Math.min(2000 * Math.pow(1.5, attempt), 10000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return attemptSync(sessionId, attempt + 1);
+      } else {
+        setSyncing(false);
+      }
     }
   };
 

@@ -833,7 +833,6 @@ export type Database = {
           subscription_tier: string
           updated_at: string
           user_type: Database["public"]["Enums"]["user_type"]
-          welcome_email_sent: boolean | null
         }
         Insert: {
           avatar_url?: string | null
@@ -846,7 +845,6 @@ export type Database = {
           subscription_tier?: string
           updated_at?: string
           user_type: Database["public"]["Enums"]["user_type"]
-          welcome_email_sent?: boolean | null
         }
         Update: {
           avatar_url?: string | null
@@ -859,7 +857,6 @@ export type Database = {
           subscription_tier?: string
           updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"]
-          welcome_email_sent?: boolean | null
         }
         Relationships: []
       }

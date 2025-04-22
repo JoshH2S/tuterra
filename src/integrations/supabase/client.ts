@@ -6,122 +6,14 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://nhlsrtubyvggtkyrhkuu.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5obHNydHVieXZnZ3RreXJoa3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2MzM4OTUsImV4cCI6MjA1NDIwOTg5NX0.rD-VfZhrrSRpo1rfuO1JoKYkNELxUUGdulu4-sI-kdU";
 
-// Record diagnostic event
-if (typeof window !== 'undefined' && window.__tuterra_diagnostics) {
-  window.__tuterra_diagnostics.recordEvent('Supabase client initialization started');
-}
-
-// Log client creation attempt with environment details
-if (typeof window !== 'undefined') {
-  console.log('[TUTERRA DIAGNOSTICS] Creating Supabase client with environment:', {
-    hasLocalStorage: typeof localStorage !== 'undefined',
-    hasSessionStorage: typeof sessionStorage !== 'undefined',
-    storageInfo: (() => {
-      try {
-        return {
-          localStorageAvailable: !!localStorage,
-          localStorageWritable: (() => {
-            try {
-              localStorage.setItem('supabase_test', 'test');
-              localStorage.removeItem('supabase_test');
-              return true;
-            } catch (e) {
-              return false;
-            }
-          })(),
-          sessionStorageAvailable: !!sessionStorage,
-          storageEstimate: navigator.storage ? 'available' : 'unavailable'
-        };
-      } catch (e) {
-        return { error: e.message };
-      }
-    })(),
-    cookiesEnabled: navigator.cookieEnabled,
-    indexedDBAvailable: typeof indexedDB !== 'undefined',
-    location: window.location.href,
-  });
-}
-
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Create the client with detailed error handling
-let supabaseClient;
-try {
-  supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    auth: {
-      persistSession: true,
-      // Use a try-catch inside an immediately-invoked function to handle storage errors
-      storage: (() => {
-        try {
-          // Test localStorage before using it
-          localStorage.setItem('supabase_storage_test', 'test');
-          const readTest = localStorage.getItem('supabase_storage_test');
-          localStorage.removeItem('supabase_storage_test');
-          
-          if (readTest !== 'test') {
-            console.warn('[TUTERRA DIAGNOSTICS] localStorage failed read test, falling back to in-memory storage');
-            return undefined; // Will cause Supabase to use in-memory storage
-          }
-          
-          console.log('[TUTERRA DIAGNOSTICS] Using localStorage for auth persistence');
-          return localStorage;
-        } catch (e) {
-          console.error('[TUTERRA DIAGNOSTICS] localStorage access error, falling back to in-memory storage:', e);
-          return undefined; // Will cause Supabase to use in-memory storage
-        }
-      })(),
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-    global: {
-      headers: {
-        'x-client-info': 'tuterra-web-app'
-      },
-    },
-  });
-  
-  if (typeof window !== 'undefined' && window.__tuterra_diagnostics) {
-    window.__tuterra_diagnostics.recordEvent('Supabase client created successfully');
-  }
-  
-  console.log('[TUTERRA DIAGNOSTICS] Supabase client created successfully');
-} catch (e) {
-  console.error('[TUTERRA DIAGNOSTICS] Error creating Supabase client:', e);
-  
-  if (typeof window !== 'undefined' && window.__tuterra_diagnostics) {
-    window.__tuterra_diagnostics.recordEvent(`Supabase client creation error: ${e.message}`);
-  }
-  
-  // Create a fallback client with minimal configuration
-  supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    auth: {
-      persistSession: false, // Don't try to use storage
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    }
-  });
-}
-
-export const supabase = supabaseClient;
-
-// Check client functionality immediately
-if (typeof window !== 'undefined') {
-  // Test the client with a basic call
-  supabase.auth.getSession()
-    .then(response => {
-      console.log('[TUTERRA DIAGNOSTICS] Initial auth session check successful:', 
-        !!response.data.session);
-        
-      if (window.__tuterra_diagnostics) {
-        window.__tuterra_diagnostics.recordEvent('Initial auth session check successful');
-      }
-    })
-    .catch(error => {
-      console.error('[TUTERRA DIAGNOSTICS] Initial auth session check failed:', error);
-      
-      if (window.__tuterra_diagnostics) {
-        window.__tuterra_diagnostics.recordEvent(`Initial auth session check failed: ${error.message}`);
-      }
-    });
-}
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    persistSession: true,
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});

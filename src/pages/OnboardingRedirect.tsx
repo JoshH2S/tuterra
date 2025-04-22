@@ -62,8 +62,7 @@ const OnboardingRedirect = () => {
           await attemptSubscriptionSync(sessionId);
           
           // Even if sync fails, we still navigate to success page
-          // Important: Use the right route path that matches our route configuration
-          navigate(`/subscription-success?session_id=${sessionId}`, { replace: true });
+          navigate('/subscription-success?session_id=' + sessionId, { replace: true });
         } else {
           // Direct access or after free plan selection - navigate to onboarding immediately
           navigate('/onboarding', { replace: true });
