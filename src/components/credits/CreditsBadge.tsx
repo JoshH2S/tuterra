@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
 
 export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
+  // Ensure hooks are always called, regardless of tier
   const { credits, loading, error, isOfflineMode, fetchUserCredits } = useUserCredits();
   const { subscription } = useSubscription();
   
@@ -27,10 +28,9 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     }
   }, [error]);
 
-  // Only show credits badge for free users (now after all hooks are called)
-  if (subscription.tier !== 'free') {
-    return null;
-  }
+  // Determine render condition AFTER all hooks are called
+  const shouldRender = subscription.tier === 'free';
+  if (!shouldRender) return null;
 
   if (loading) {
     return (
@@ -57,7 +57,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
   // Ensure we have fallback values if credits is somehow null
   const safeCredits = credits || {
     quiz_credits: 5,
-    interview_credits: 3, // Updated to 3 to match the new default
+    interview_credits: 3,
     assessment_credits: 2,
     tutor_message_credits: 5
   };
@@ -69,7 +69,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     safeCredits.assessment_credits + 
     safeCredits.tutor_message_credits;
 
-  const maxCredits = 15; // Updated from 14 to 15 (added 1 for interview)
+  const maxCredits = 15;
 
   // Calculate percentage for badge coloring
   const percentage = Math.floor((totalCredits / maxCredits) * 100);
