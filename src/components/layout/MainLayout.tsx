@@ -10,8 +10,13 @@ import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { DesktopHeader } from "../layout/desktop/DesktopHeader";
 
 export const MainLayout = () => {
+  // Debug flags
+  const DEBUG_DISABLE_HEADER = true;
+
+  // Move all hooks to the top
   useCustomFont();
   useKeyboardNavigation();
   const location = useLocation();
@@ -47,6 +52,7 @@ export const MainLayout = () => {
       <Toaster />
       <Sonner />
       <SidebarProvider>
+        {/* No debug header check or SidebarUserProfile here anymore, all handled by Layout */}
         <Layout isLandingPage={hideSidebar}>
           <AppRoutes />
         </Layout>
