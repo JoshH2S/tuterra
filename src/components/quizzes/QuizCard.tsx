@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Clock, FileText, MoreVertical, User, BookMarked, Play } from "lucide-react";
+import { Clock, FileText, MoreVertical, User, BookMarked, Play, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,6 +28,7 @@ interface QuizCardProps {
   onViewResults: (quizId: string) => void;
   onStartQuiz: (quizId: string) => void;
   onRetakeQuiz: (quizId: string) => void;
+  onDeleteQuiz?: (quizId: string) => void;
 }
 
 // Define interface for quiz progress
@@ -40,7 +41,13 @@ interface QuizProgress {
   time_remaining: number | null;
 }
 
-export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: QuizCardProps) {
+export function QuizCard({ 
+  quiz, 
+  onViewResults, 
+  onStartQuiz, 
+  onRetakeQuiz, 
+  onDeleteQuiz 
+}: QuizCardProps) {
   // Only show score if there's a valid attempt
   const hasAttempted = quiz.status === 'completed' && quiz.attemptNumber > 0;
   const [hasSavedProgress, setHasSavedProgress] = useState(false);
@@ -68,6 +75,12 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
     
     checkSavedProgress();
   }, [quiz.id]);
+
+  const handleDeleteClick = () => {
+    if (onDeleteQuiz) {
+      onDeleteQuiz(quiz.id);
+    }
+  };
   
   return (
     <motion.div
@@ -89,14 +102,19 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="cursor-pointer">
                 <MoreVertical className="w-4 h-4" />
+                <span className="sr-only">More options</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Edit Quiz</DropdownMenuItem>
-              <DropdownMenuItem>Share</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem 
+                className="flex items-center py-2 px-3 cursor-pointer touch-manipulation hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 rounded-md transition-colors text-red-600 dark:text-red-400"
+                onClick={handleDeleteClick}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Quiz
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
