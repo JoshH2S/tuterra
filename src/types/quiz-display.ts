@@ -12,9 +12,23 @@ export interface ProcessedQuiz {
   status: 'not_attempted' | 'in_progress' | 'completed';
   allowRetake: boolean;
   type?: string;
+  // Adding these properties to match Quiz interface
+  course_id?: string;
+  duration_minutes?: number;
+  allow_retakes?: boolean;
 }
 
-export interface ProcessedCourse extends Course {
+// Instead of extending Course, we'll make ProcessedCourse a separate interface
+// that includes the Course properties plus the quizzes array
+export interface ProcessedCourse {
+  id: string;
+  title: string;
+  description?: string;
+  code?: string;
+  user_id: string;
+  created_at?: string;
+  updated_at?: string;
+  status?: 'active' | 'archived';
   quizzes: ProcessedQuiz[];
 }
 

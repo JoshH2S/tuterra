@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Course } from "@/types/course";
-import { ProcessedCourse, ProcessedQuiz, QuizzesByCourse } from "@/types/quiz-display";
+import { ProcessedCourse, ProcessedQuiz, QuizzesByCourse, Quiz } from "@/types/quiz-display";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useQuizzesProcessor = (
@@ -62,7 +62,7 @@ export const useQuizzesProcessor = (
     try {
       const completedQuizzes: { quizId: string; courseId: string; score: number; totalQuestions: number }[] = [];
       
-      const processed = courses.map(course => {
+      const processed: ProcessedCourse[] = courses.map(course => {
         const courseQuizzes = quizzesByCourse[course.id] || [];
         
         const processedQuizzes: ProcessedQuiz[] = courseQuizzes.map(quiz => {
@@ -108,7 +108,11 @@ export const useQuizzesProcessor = (
             attemptNumber: latestResponse?.attempt_number || 0,
             totalQuestions: latestResponse?.total_questions || quiz.question_count || 10,
             status,
-            allowRetake: quiz.allow_retakes
+            allowRetake: quiz.allow_retakes,
+            // Add these properties to match Quiz interface requirements
+            course_id: quiz.course_id,
+            duration_minutes: quiz.duration_minutes,
+            allow_retakes: quiz.allow_retakes
           };
         });
         
