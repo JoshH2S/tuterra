@@ -1,8 +1,9 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu } from "lucide-react";
-import { Sidebar, SidebarHeader, SidebarContent } from "@/components/ui/sidebar";
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from "@/components/ui/sidebar";
 import { SidebarNavigation } from "./sidebar/SidebarNavigation";
 import { SidebarUserProfile } from "./sidebar/SidebarUserProfile";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -49,12 +50,14 @@ export const MainSidebar = () => {
           </motion.div>
         </SidebarHeader>
         
-        {/* Keep user profile in the sidebar */}
-        <SidebarUserProfile isCollapsed={false} />
-        
         <SidebarContent className="flex flex-col justify-between h-[calc(100vh-64px)]">
           <SidebarNavigation isCollapsed={false} />
         </SidebarContent>
+
+        {/* Move the user profile to the sidebar footer */}
+        <SidebarFooter className="border-t border-gray-200 dark:border-gray-800 p-2">
+          <SidebarUserProfile isCollapsed={false} />
+        </SidebarFooter>
       </Sidebar>
     </div>
   );
