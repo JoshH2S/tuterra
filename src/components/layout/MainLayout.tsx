@@ -14,7 +14,7 @@ import { DesktopHeader } from "../layout/desktop/DesktopHeader";
 
 export const MainLayout = () => {
   // Debug flags
-  const DEBUG_DISABLE_HEADER = false;
+  const DEBUG_DISABLE_HEADER = true;
 
   // Move all hooks to the top
   useCustomFont();
