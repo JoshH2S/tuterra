@@ -8,6 +8,7 @@ export interface Course {
   created_at?: string;
   updated_at?: string;
   status?: 'active' | 'archived';
+  quizzes?: Quiz[]; // Add this property to fix the type error
 }
 
 export interface CourseMaterial {
