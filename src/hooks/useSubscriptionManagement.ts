@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,11 +31,17 @@ export const useSubscriptionManagement = () => {
       
       console.log('Session verified, invoking checkout function');
       
+      // Modify the success URL to include source parameter for better tracking
+      const enhancedSuccessUrl = `${successUrl}${successUrl.includes('?') ? '&' : '?'}source=checkout`;
+      
+      // Modify the cancel URL to include a canceled flag
+      const enhancedCancelUrl = `${cancelUrl}${cancelUrl.includes('?') ? '&' : '?'}canceled=true`;
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           planId,
-          successUrl,
-          cancelUrl
+          successUrl: enhancedSuccessUrl,
+          cancelUrl: enhancedCancelUrl
         }
       });
 

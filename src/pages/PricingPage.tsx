@@ -1,6 +1,5 @@
-
 import { useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSubscriptionManagement } from "@/hooks/useSubscriptionManagement";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
@@ -8,39 +7,49 @@ import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PremiumContentCard } from "@/components/ui/premium-card";
-import { Mail, Info, Check } from "lucide-react";
+import { Mail, Info, Check, AlertCircle } from "lucide-react";
 import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function PricingPage() {
   const { isLoggedIn } = useAuthStatus();
   const navigate = useNavigate();
+  const location = useLocation();
   const { createCheckoutSession, subscription, subscriptionLoading } = useSubscriptionManagement();
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
   const { toast } = useToast();
   
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('canceled') === 'true') {
+      toast({
+        title: "Checkout Canceled",
+        description: "Your checkout process was canceled. You can try again when you're ready.",
+        duration: 5000,
+      });
+      
+      navigate('/pricing', { replace: true });
+    }
+  }, [location.search, toast, navigate]);
+  
   const handleSelectPlan = async (planId: string) => {
-    // For free plan, redirect to auth page directly
     if (planId === 'free_plan') {
       navigate('/auth?tab=signup&plan=free');
       return;
     }
     
-    // For enterprise plan, redirect to contact page
     if (planId === 'enterprise_plan') {
       navigate('/contact');
       return;
     }
     
-    // For pro plan, check if the user is logged in first
     if (!isLoggedIn) {
-      // Save the selected plan to URL params and redirect to auth
       navigate(`/auth?tab=signup&plan=${planId}`);
       return;
     }
     
-    // If user is already logged in and selected pro plan, proceed to checkout
     setIsRedirecting(true);
     
     try {
@@ -48,8 +57,8 @@ export default function PricingPage() {
       
       const success = await createCheckoutSession({
         planId: planId,
-        successUrl: `${window.location.origin}/subscription-success`,
-        cancelUrl: `${window.location.origin}/subscription-canceled`,
+        successUrl: `${window.location.origin}/onboarding-redirect`,
+        cancelUrl: `${window.location.origin}/pricing`,
       });
 
       if (!success) {
@@ -57,7 +66,6 @@ export default function PricingPage() {
         throw new Error('Failed to create checkout session');
       }
       
-      // Note: redirection happens in createCheckoutSession
     } catch (error: any) {
       console.error('Checkout error:', error);
       setIsRedirecting(false);
@@ -71,7 +79,6 @@ export default function PricingPage() {
     }
   };
 
-  // Handle browser back button during redirect
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isRedirecting) {
@@ -84,7 +91,6 @@ export default function PricingPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isRedirecting]);
 
-  // Calculate annual savings
   const calculateAnnualSavings = useCallback((monthlyPrice: number) => {
     const monthlyTotal = monthlyPrice * 12;
     const yearlyPrice = monthlyTotal * 0.8; // 20% discount
@@ -92,7 +98,6 @@ export default function PricingPage() {
     return Math.round(savings);
   }, []);
 
-  // Feature with tooltip component
   const PlanFeature = ({ feature, tooltip }: { feature: string; tooltip?: string }) => (
     <li className="flex text-sm">
       <Check className="h-5 w-5 flex-shrink-0 text-green-500" />
@@ -113,7 +118,6 @@ export default function PricingPage() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
   };
 
-  // Converting the JSX elements to strings for the features prop
   const tierFeatures = {
     free: [
       "5 AI tutor messages per month",
@@ -137,7 +141,6 @@ export default function PricingPage() {
     ],
   };
 
-  // Function to render features with tooltips
   const renderFeatures = (features: string[], tooltips?: Record<string, string>) => {
     return features.map((feature) => (
       <PlanFeature 
@@ -196,13 +199,22 @@ export default function PricingPage() {
         )}
       </motion.div>
 
+      {location.search.includes('canceled=true') && (
+        <Alert variant="warning" className="max-w-md mx-auto mb-8">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Checkout Canceled</AlertTitle>
+          <AlertDescription>
+            Your subscription process was canceled. You can try again when you're ready.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <motion.div 
         initial="hidden"
         animate="visible"
         variants={containerVariants}
         className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8 max-w-6xl mx-auto"
       >
-        {/* Free Plan */}
         <SubscriptionCard
           title="Free"
           price="$0"
@@ -214,7 +226,6 @@ export default function PricingPage() {
           buttonDisabled={isCurrentPlan('free_plan')}
         />
 
-        {/* Pro Plan */}
         <SubscriptionCard
           title="Pro"
           price={billingInterval === 'monthly' ? "$9.99" : "$95.88"}
@@ -235,7 +246,6 @@ export default function PricingPage() {
           buttonDisabled={isCurrentPlan('pro_plan') || isRedirecting || subscriptionLoading}
         />
 
-        {/* Enterprise Plan */}
         <SubscriptionCard
           title="Enterprise"
           price="Custom pricing"

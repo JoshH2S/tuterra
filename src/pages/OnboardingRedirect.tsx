@@ -29,12 +29,38 @@ const OnboardingRedirect = () => {
       // Use the syncWithStripe function from useSubscription hook
       await syncWithStripe(sessionId);
       
-      // If we reached here without errors, consider it a success
-      return true;
+      // Explicitly check subscription status in database
+      const { data: subStatus, error } = await supabase
+        .from('subscriptions')
+        .select('status, plan_id')
+        .single();
+      
+      if (error) {
+        console.error("Error checking subscription status:", error);
+        throw new Error("Failed to verify subscription");
+      }
+      
+      if (subStatus?.status === 'active') {
+        console.log("Subscription verified as active!");
+        return true;
+      }
+      
+      // If still processing and attempts remain, retry
+      if (attemptNum < maxRetries - 1) {
+        return await attemptSubscriptionSync(sessionId, maxRetries, attemptNum + 1);
+      }
+      
+      console.warn("Subscription not verified after max retries");
+      toast({
+        title: "Still Processing",
+        description: "Your subscription is being processed. You'll be redirected to the success page.",
+        duration: 5000,
+      });
+      return false;
     } catch (err) {
       console.error(`Subscription sync error (attempt ${attemptNum + 1}):`, err);
       
-      // Still retry on error if attempts remain
+      // Still retry if attempts remain
       if (attemptNum < maxRetries - 1) {
         return await attemptSubscriptionSync(sessionId, maxRetries, attemptNum + 1);
       }
@@ -52,26 +78,37 @@ const OnboardingRedirect = () => {
         const sessionId = searchParams.get('session_id');
         
         if (sessionId) {
-          // Stripe checkout was successful - wait briefly to let webhook process if needed
+          // Stripe checkout was successful - show notification
           toast({
-            title: "Success!",
-            description: "Your pro subscription is now active.",
+            title: "Payment Received",
+            description: "Processing your subscription...",
+            duration: 5000,
           });
           
           // Attempt to sync subscription status with retries
           await attemptSubscriptionSync(sessionId);
           
-          // Even if sync fails, we still navigate to success page
-          // Important: Use the right route path that matches our route configuration
-          navigate(`/subscription-success?session_id=${sessionId}`, { replace: true });
+          // Even if sync fails, navigate to success page with the session_id and source parameters
+          navigate(`/subscription-success?session_id=${sessionId}&source=checkout`, { replace: true });
         } else {
           // Direct access or after free plan selection - navigate to onboarding immediately
           navigate('/onboarding', { replace: true });
         }
       } catch (error) {
         console.error('Redirect error:', error);
-        // Even on error, we redirect to onboarding to prevent users getting stuck
-        navigate('/onboarding', { replace: true });
+        toast({
+          title: "Redirect Error",
+          description: "There was a problem processing your subscription. Please try again or contact support.",
+          variant: "destructive",
+          duration: 5000,
+        });
+        // Even on error, redirect to subscription success to allow manual refresh
+        const sessionId = new URLSearchParams(location.search).get('session_id');
+        if (sessionId) {
+          navigate(`/subscription-success?session_id=${sessionId}&source=checkout&error=true`, { replace: true });
+        } else {
+          navigate('/onboarding', { replace: true });
+        }
       } finally {
         setRedirecting(false);
       }

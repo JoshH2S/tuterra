@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,30 +14,71 @@ export default function SubscriptionSuccess() {
   const [syncing, setSyncing] = useState(true);
   const [syncAttempt, setSyncAttempt] = useState(1);
   const [maxAttempts] = useState(5);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
   
   const handleManualRefresh = async () => {
+    if (retryCount >= 3) {
+      toast({
+        title: "Support Required",
+        description: "Please contact support to verify your subscription status.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setSyncing(true);
-    await refetch(true);
-    setSyncing(false);
+    try {
+      const sessionId = searchParams.get('session_id');
+      if (sessionId) {
+        await syncWithStripe(sessionId);
+      }
+      await refetch(true);
+      
+      // Add explicit subscription status check
+      const { data: subStatus } = await supabase
+        .from('subscriptions')
+        .select('status, plan_id')
+        .eq('user_id', subscription?.id || '')
+        .single();
+        
+      if (!subStatus?.status || subStatus.status !== 'active') {
+        toast({
+          title: "Still Processing",
+          description: "Your subscription is still being processed. Please check back in a moment.",
+          variant: "warning"
+        });
+      }
+    } catch (error) {
+      console.error("Manual refresh failed:", error);
+      toast({
+        title: "Refresh Failed",
+        description: "Unable to refresh subscription status. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setSyncing(false);
+      setRetryCount(prev => prev + 1);
+    }
   };
   
   // Force sync subscription status with retries
   useEffect(() => {
+    // Check if we came from a proper checkout flow
+    const source = searchParams.get('source');
+    const sessionId = searchParams.get('session_id');
+    
+    if (!sessionId) {
+      // If no session ID, redirect to dashboard
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    
     const syncSubscriptionStatus = async () => {
       try {
         setSyncing(true);
         setSyncAttempt(1);
-        
-        const sessionId = searchParams.get('session_id');
-        
-        if (sessionId) {
-          await attemptSync(sessionId, 1);
-        } else {
-          // If no session ID, just do a regular refetch
-          await refetch();
-          setSyncing(false);
-        }
+        await attemptSync(sessionId, 1);
       } catch (error) {
         console.error("Error syncing subscription status:", error);
         setSyncing(false);
@@ -50,6 +92,12 @@ export default function SubscriptionSuccess() {
     if (attempt > maxAttempts) {
       console.warn(`Max sync attempts (${maxAttempts}) reached`);
       setSyncing(false);
+      
+      toast({
+        title: "Sync Warning",
+        description: "Your subscription is being processed. Please refresh in a few moments.",
+        variant: "warning"
+      });
       return;
     }
     
@@ -57,50 +105,46 @@ export default function SubscriptionSuccess() {
       console.log(`Sync attempt ${attempt} of ${maxAttempts}`);
       setSyncAttempt(attempt);
       
-      try {
-        // Use the syncWithStripe function from the useSubscription hook
-        await syncWithStripe(sessionId);
-        
-        // Refetch subscription data to update UI
-        await refetch(true);
-        
-        if (subscription.tier === 'free') {
-          console.warn("Subscription tier still showing as free, will retry");
-          // Wait with exponential backoff before retrying
-          const delay = Math.min(2000 * Math.pow(1.5, attempt), 10000);
-          console.log(`Waiting ${delay}ms before retry ${attempt + 1}`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return attemptSync(sessionId, attempt + 1);
-        } else {
-          console.log(`Subscription verified as ${subscription.tier}`);
-          setSyncing(false);
-        }
-      } catch (error) {
-        console.error(`Sync attempt ${attempt} failed:`, error);
-        if (attempt < maxAttempts) {
-          const delay = Math.min(2000 * Math.pow(1.5, attempt), 10000);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return attemptSync(sessionId, attempt + 1);
-        } else {
-          setSyncing(false);
-        }
+      // Use the syncWithStripe function from the useSubscription hook
+      await syncWithStripe(sessionId);
+      
+      // Refetch subscription data to update UI
+      await refetch(true);
+      
+      // Add explicit subscription status check
+      const { data: subStatus } = await supabase
+        .from('subscriptions')
+        .select('status, plan_id')
+        .eq('user_id', subscription?.id || '')
+        .single();
+      
+      if (!subStatus || subStatus.status !== 'active' || !subStatus.plan_id) {
+        console.warn("Subscription not yet active in database, will retry");
+        // Wait with exponential backoff before retrying
+        const delay = Math.min(2000 * Math.pow(1.5, attempt), 10000);
+        console.log(`Waiting ${delay}ms before retry ${attempt + 1}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return attemptSync(sessionId, attempt + 1);
+      } else {
+        console.log(`Subscription verified as active: ${subStatus.plan_id}`);
+        setSyncing(false);
       }
-    } catch (processingError) {
-      console.error("Error in sync processing:", processingError);
-      setSyncing(false);
+    } catch (error) {
+      console.error(`Sync attempt ${attempt} failed:`, error);
+      if (attempt < maxAttempts) {
+        const delay = Math.min(2000 * Math.pow(1.5, attempt), 10000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return attemptSync(sessionId, attempt + 1);
+      } else {
+        setSyncing(false);
+        toast({
+          title: "Sync Failed",
+          description: "We couldn't verify your subscription status. Please try refreshing or contact support.",
+          variant: "destructive"
+        });
+      }
     }
   };
-
-  // Validate that subscription is active
-  useEffect(() => {
-    if (!subscriptionLoading && !syncing && subscription.tier === 'free') {
-      toast({
-        title: "Subscription Issue",
-        description: "Your subscription doesn't appear to be active yet. This might take a few moments to update.",
-        variant: "destructive"
-      });
-    }
-  }, [subscriptionLoading, syncing, subscription, toast]);
 
   return (
     <div className="container mx-auto px-4 py-8 sm:py-12 flex flex-col items-center justify-center min-h-[70vh] w-full max-w-full">
@@ -143,11 +187,18 @@ export default function SubscriptionSuccess() {
                     variant="outline" 
                     size="sm"
                     onClick={handleManualRefresh}
+                    disabled={retryCount >= 3}
                     className="w-full flex items-center justify-center"
                   >
                     <RefreshCw className="h-3.5 w-3.5 mr-2" />
                     Refresh Subscription Status
+                    {retryCount > 0 && ` (${retryCount}/3)`}
                   </Button>
+                  {retryCount >= 3 && (
+                    <p className="text-xs text-red-500 mt-2">
+                      Please contact support for assistance with your subscription.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
