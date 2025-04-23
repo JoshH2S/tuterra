@@ -10,11 +10,11 @@ import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { DesktopHeader } from "../layout/desktop/DesktopHeader";
+// DesktopHeader is still imported, used via Layout
+// import { DesktopHeader } from "../layout/desktop/DesktopHeader"; // not needed directly here
 
 export const MainLayout = () => {
-  // Debug flags
-  const DEBUG_DISABLE_HEADER = true;
+  // Debug flags have been removed
 
   // Move all hooks to the top
   useCustomFont();
@@ -52,7 +52,7 @@ export const MainLayout = () => {
       <Toaster />
       <Sonner />
       <SidebarProvider>
-        {/* No debug header check or SidebarUserProfile here anymore, all handled by Layout */}
+        {/* All header/sidebar render logic is handled in Layout */}
         <Layout isLandingPage={hideSidebar}>
           <AppRoutes />
         </Layout>
