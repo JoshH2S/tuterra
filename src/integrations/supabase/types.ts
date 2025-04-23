@@ -311,6 +311,33 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          email_type: string
+          error_message: string | null
+          id: string
+          success: boolean
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          email_type: string
+          error_message?: string | null
+          id?: string
+          success: boolean
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          success?: boolean
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       forum_posts: {
         Row: {
           author_id: string
@@ -833,7 +860,7 @@ export type Database = {
           subscription_tier: string
           updated_at: string
           user_type: Database["public"]["Enums"]["user_type"]
-          welcome_email_sent: boolean | null
+          welcome_email_sent: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -846,7 +873,7 @@ export type Database = {
           subscription_tier?: string
           updated_at?: string
           user_type: Database["public"]["Enums"]["user_type"]
-          welcome_email_sent?: boolean | null
+          welcome_email_sent?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -859,7 +886,7 @@ export type Database = {
           subscription_tier?: string
           updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"]
-          welcome_email_sent?: boolean | null
+          welcome_email_sent?: boolean
         }
         Relationships: []
       }
