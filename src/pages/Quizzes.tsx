@@ -45,11 +45,6 @@ export default function Quizzes() {
     fetchQuizzes();
   }, [location.key]);
 
-  const handleQuizDeleted = () => {
-    // Refresh quizzes after deletion
-    fetchQuizzes();
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64 w-full">
@@ -88,7 +83,6 @@ export default function Quizzes() {
               onViewResults={(quizId) => handleViewResults(quizId, quizzesByCourse)}
               onStartQuiz={handleStartQuiz}
               onRetakeQuiz={(quizId) => handleRetakeQuiz(quizId, quizzesByCourse)}
-              onQuizDeleted={handleQuizDeleted}
             />
           ))}
         </div>

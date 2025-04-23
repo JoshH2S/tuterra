@@ -1,4 +1,3 @@
-import { Quiz } from "@/types/quiz-display";  // Import Quiz type from quiz-display
 
 export interface Course {
   id: string;
@@ -9,7 +8,6 @@ export interface Course {
   created_at?: string;
   updated_at?: string;
   status?: 'active' | 'archived';
-  quizzes?: Quiz[]; // Keep the existing quizzes property
 }
 
 export interface CourseMaterial {
