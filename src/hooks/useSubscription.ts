@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type SubscriptionTier = "free" | "pro" | "premium";
 
 export interface Subscription {
+  id?: string; // Added id property
   tier: SubscriptionTier;
   features: {
     smartNotes: boolean;
