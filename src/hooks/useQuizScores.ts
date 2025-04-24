@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -45,7 +46,7 @@ export function useQuizScores(courseId: string | undefined) {
             score,
             total_questions,
             completed_at,
-            quiz (
+            quizzes (
               title,
               course_id
             )
@@ -67,7 +68,7 @@ export function useQuizScores(courseId: string | undefined) {
             max_score: 100,
             taken_at: response.completed_at || new Date().toISOString(),
             quiz: {
-              title: response.quiz?.title || 'Unknown Quiz'
+              title: response.quizzes?.title || 'Unknown Quiz'
             }
           }));
 
@@ -78,8 +79,8 @@ export function useQuizScores(courseId: string | undefined) {
           setQuizScores([]);
         }
 
-        if (performanceData) {
-          setPerformance(performanceData);
+        if (performance) {
+          setPerformance(performance);
         } else if (responses && responses.length > 0) {
           const totalScore = responses.reduce((acc, curr) => acc + curr.score, 0);
           const avgScore = responses.length > 0 ? totalScore / responses.length : 0;
