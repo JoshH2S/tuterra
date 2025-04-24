@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -78,7 +77,7 @@ export function useQuizScores(courseId: string | undefined) {
           `)
           .eq('student_id', user.id)
           .not('completed_at', 'is', null)
-          .eq('quiz.course_id', courseId)
+          .eq('quizzes.course_id', courseId)
           .order('completed_at', { ascending: false });
 
         if (responsesError) {
@@ -118,7 +117,7 @@ export function useQuizScores(courseId: string | undefined) {
             max_score: 100,
             taken_at: response.completed_at || new Date().toISOString(),
             quiz: {
-              title: response.quiz?.title || 'Untitled Quiz'
+              title: response.quiz?.title || 'Unknown Quiz'
             }
           }));
           
