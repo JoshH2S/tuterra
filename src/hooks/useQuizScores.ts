@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -77,7 +78,7 @@ export function useQuizScores(courseId: string | undefined) {
           `)
           .eq('student_id', user.id)
           .not('completed_at', 'is', null)
-          .eq('quizzes.course_id', courseId)
+          .eq('quiz.course_id', courseId) // Using alias 'quiz' in filter
           .order('completed_at', { ascending: false });
 
         if (responsesError) {
