@@ -110,23 +110,28 @@ export function useQuizScores(courseId: string | undefined) {
         }
 
         if (responses && responses.length > 0) {
-          console.log('Quiz responses:', responses); // Debug log
-          const formattedScores = responses.map(response => ({
-            id: response.id,
-            quiz_id: response.quiz_id,
-            score: response.score,
-            max_score: 100,
-            taken_at: response.completed_at || new Date().toISOString(),
-            quiz: {
-              title: response.quiz?.title || 'Unknown Quiz'
-            }
-          }));
-          
-          console.log('Formatted scores:', formattedScores); // Debug log
-          setQuizScores(formattedScores);
-        } else {
-          setQuizScores([]);
-        }
+  // ✅ DEBUG: Log each quiz response to inspect the nested quiz object
+  console.log('Raw quiz responses from Supabase:', responses);
+
+  const formattedScores = responses.map(response => ({
+    id: response.id,
+    quiz_id: response.quiz_id,
+    score: response.score,
+    max_score: 100,
+    taken_at: response.completed_at || new Date().toISOString(),
+    quiz: {
+      title: response.quiz?.title || 'Unknown Quiz'
+    }
+  }));
+
+  // ✅ DEBUG: Check final formatted scores passed to the UI
+  console.log('Formatted quiz scores with titles:', formattedScores);
+
+  setQuizScores(formattedScores);
+} else {
+  setQuizScores([]);
+}
+
       } catch (error) {
         console.error('Error fetching grades:', error);
         toast({
