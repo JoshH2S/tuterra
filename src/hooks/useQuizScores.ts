@@ -37,31 +37,6 @@ export function useQuizScores(courseId: string | undefined) {
           setCourseName(courseData.title);
         }
 
-        const { data: performanceData, error: performanceError } = await supabase
-          .from('student_performance')
-          .select(`
-            id,
-            student_id,
-            course_id,
-            total_quizzes,
-            completed_quizzes,
-            average_score,
-            last_activity,
-            strengths,
-            areas_for_improvement,
-            courses(
-              title
-            )
-          `)
-          .eq('student_id', user.id)
-          .eq('course_id', courseId)
-          .single();
-
-        if (performanceError && performanceError.code !== 'PGRST116') {
-          console.error('Error fetching performance:', performanceError);
-          throw performanceError;
-        }
-
         const { data: responses, error: responsesError } = await supabase
           .from('quiz_responses')
           .select(`
@@ -69,7 +44,11 @@ export function useQuizScores(courseId: string | undefined) {
             quiz_id,
             score,
             total_questions,
-            completed_at
+            completed_at,
+            quiz (
+              title,
+              course_id
+            )
           `)
           .eq('student_id', user.id)
           .not('completed_at', 'is', null)
@@ -81,22 +60,6 @@ export function useQuizScores(courseId: string | undefined) {
         }
 
         if (responses && responses.length > 0) {
-          const { data: quizTitles, error: quizTitlesError } = await supabase
-            .from('quizzes')
-            .select('id, title')
-            .in('id', responses.map(r => r.quiz_id))
-            .eq('course_id', courseId);
-
-          if (quizTitlesError) {
-            console.error('Error fetching quiz titles:', quizTitlesError);
-            throw quizTitlesError;
-          }
-
-          const quizMap = (quizTitles || []).reduce((acc, quiz) => ({
-            ...acc,
-            [quiz.id]: quiz
-          }), {} as Record<string, { id: string, title: string }>);
-
           const formattedScores = responses.map(response => ({
             id: response.id,
             quiz_id: response.quiz_id,
@@ -104,7 +67,7 @@ export function useQuizScores(courseId: string | undefined) {
             max_score: 100,
             taken_at: response.completed_at || new Date().toISOString(),
             quiz: {
-              title: quizMap[response.quiz_id]?.title || 'Unknown Quiz'
+              title: response.quiz?.title || 'Unknown Quiz'
             }
           }));
 
