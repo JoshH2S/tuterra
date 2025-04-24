@@ -66,6 +66,7 @@ export function useQuizScores(courseId: string | undefined) {
         }
 
         // Get quiz responses for detailed quiz history
+        // Note: Removed the !inner join modifier to use a regular join
         const { data: responses, error: responsesError } = await supabase
           .from('quiz_responses')
           .select(`
