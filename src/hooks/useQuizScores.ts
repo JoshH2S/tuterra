@@ -76,8 +76,8 @@ export function useQuizScores(courseId: string | undefined) {
             completed_at
           `)
           .eq('student_id', user.id)
-          .not('completed_at', 'is', null)
-          .in('quiz_id', supabase.from('quizzes').select('id').eq('course_id', courseId))
+          .not('completed_at', 'is', null) 
+          .eq('quiz_id', supabase.from('quizzes').select('id').eq('course_id', courseId))
           .order('completed_at', { ascending: false });
 
         if (responsesError) {
