@@ -120,16 +120,21 @@ export function useQuizScores(courseId: string | undefined) {
 
         // Format the quiz scores for display
         if (responses && responses.length > 0) {
-          const formattedScores = responses.map(response => ({
-            id: response.id,
-            quiz_id: response.quiz_id,
-            score: response.score,
-            max_score: 100, // Scores are stored as percentages
-            taken_at: response.completed_at || new Date().toISOString(),
-            quiz: {
-              title: response.quizzes?.title || 'Unknown Quiz'
-            }
-          }));
+          const formattedScores = responses.map(response => {
+            // Handle Supabase's nested response format
+            const quizData = Array.isArray(response.quizzes) ? response.quizzes[0] : response.quizzes;
+            
+            return {
+              id: response.id,
+              quiz_id: response.quiz_id,
+              score: response.score,
+              max_score: 100, // Scores are stored as percentages
+              taken_at: response.completed_at || new Date().toISOString(),
+              quiz: {
+                title: quizData?.title || `Quiz ${response.quiz_id.slice(0, 8)}`
+              }
+            };
+          });
           
           setQuizScores(formattedScores);
         } else {
