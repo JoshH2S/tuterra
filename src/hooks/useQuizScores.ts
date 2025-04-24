@@ -66,7 +66,6 @@ export function useQuizScores(courseId: string | undefined) {
         }
 
         // Get quiz responses for detailed quiz history
-        // Note: Removed the !inner join modifier to use a regular join
         const { data: responses, error: responsesError } = await supabase
           .from('quiz_responses')
           .select(`
@@ -74,15 +73,11 @@ export function useQuizScores(courseId: string | undefined) {
             quiz_id,
             score,
             total_questions,
-            completed_at,
-            quizzes(
-              title,
-              course_id
-            )
+            completed_at
           `)
           .eq('student_id', user.id)
-          .not('completed_at', 'is', null) // Using 'is' operator instead of 'eq' for null checks
-          .eq('quizzes.course_id', courseId)
+          .not('completed_at', 'is', null) 
+          .eq('quiz_id', supabase.from('quizzes').select('id').eq('course_id', courseId))
           .order('completed_at', { ascending: false });
 
         if (responsesError) {
@@ -120,21 +115,35 @@ export function useQuizScores(courseId: string | undefined) {
 
         // Format the quiz scores for display
         if (responses && responses.length > 0) {
-          const formattedScores = responses.map(response => {
-            // Handle Supabase's nested response format
-            const quizData = Array.isArray(response.quizzes) ? response.quizzes[0] : response.quizzes;
-            
-            return {
-              id: response.id,
-              quiz_id: response.quiz_id,
-              score: response.score,
-              max_score: 100, // Scores are stored as percentages
-              taken_at: response.completed_at || new Date().toISOString(),
-              quiz: {
-                title: quizData?.title || `Quiz ${response.quiz_id.slice(0, 8)}`
-              }
-            };
-          });
+          // Extract all quiz_ids from the responses
+          const quizIds = responses.map(r => r.quiz_id).filter(Boolean);
+          
+          // Fetch corresponding quiz titles
+          const { data: quizTitles, error: quizTitlesError } = await supabase
+            .from('quizzes')
+            .select('id, title')
+            .in('id', quizIds);
+          
+          if (quizTitlesError) {
+            console.error('Error fetching quiz titles:', quizTitlesError);
+          }
+          
+          // Map quiz IDs to their titles
+          const quizMap = Object.fromEntries(
+            (quizTitles || []).map(quiz => [quiz.id, quiz.title])
+          );
+          
+          // Format scores and insert actual titles
+          const formattedScores = responses.map(response => ({
+            id: response.id,
+            quiz_id: response.quiz_id,
+            score: response.score,
+            max_score: 100, // Scores are stored as percentages
+            taken_at: response.completed_at || new Date().toISOString(),
+            quiz: {
+              title: quizMap[response.quiz_id] || `Quiz ${response.quiz_id.slice(0, 8)}`
+            }
+          }));
           
           setQuizScores(formattedScores);
         } else {
