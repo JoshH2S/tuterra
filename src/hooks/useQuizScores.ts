@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -70,20 +69,50 @@ export function useQuizScores(courseId: string | undefined) {
             quiz_id,
             score,
             total_questions,
-            completed_at,
-            quiz:quizzes (
-              title,
-              course_id
-            )
+            completed_at
           `)
           .eq('student_id', user.id)
           .not('completed_at', 'is', null)
-          .eq('quiz.course_id', courseId) // Using alias 'quiz' in filter
           .order('completed_at', { ascending: false });
 
         if (responsesError) {
           console.error('Error fetching quiz responses:', responsesError);
           throw responsesError;
+        }
+
+        if (responses && responses.length > 0) {
+          const { data: quizTitles, error: quizTitlesError } = await supabase
+            .from('quizzes')
+            .select('id, title')
+            .in('id', responses.map(r => r.quiz_id))
+            .eq('course_id', courseId);
+
+          if (quizTitlesError) {
+            console.error('Error fetching quiz titles:', quizTitlesError);
+            throw quizTitlesError;
+          }
+
+          const quizMap = (quizTitles || []).reduce((acc, quiz) => ({
+            ...acc,
+            [quiz.id]: quiz
+          }), {} as Record<string, { id: string, title: string }>);
+
+          const formattedScores = responses.map(response => ({
+            id: response.id,
+            quiz_id: response.quiz_id,
+            score: response.score,
+            max_score: 100,
+            taken_at: response.completed_at || new Date().toISOString(),
+            quiz: {
+              title: quizMap[response.quiz_id]?.title || 'Unknown Quiz'
+            }
+          }));
+
+          console.log('Formatted quiz scores with titles:', formattedScores);
+
+          setQuizScores(formattedScores);
+        } else {
+          setQuizScores([]);
         }
 
         if (performanceData) {
@@ -108,29 +137,6 @@ export function useQuizScores(courseId: string | undefined) {
         } else {
           setPerformance(null);
         }
-
-        if (responses && responses.length > 0) {
-  // ✅ DEBUG: Log each quiz response to inspect the nested quiz object
-  console.log('Raw quiz responses from Supabase:', responses);
-
-  const formattedScores = responses.map(response => ({
-    id: response.id,
-    quiz_id: response.quiz_id,
-    score: response.score,
-    max_score: 100,
-    taken_at: response.completed_at || new Date().toISOString(),
-    quiz: {
-      title: response.quiz?.title || 'Unknown Quiz'
-    }
-  }));
-
-  // ✅ DEBUG: Check final formatted scores passed to the UI
-  console.log('Formatted quiz scores with titles:', formattedScores);
-
-  setQuizScores(formattedScores);
-} else {
-  setQuizScores([]);
-}
 
       } catch (error) {
         console.error('Error fetching grades:', error);
