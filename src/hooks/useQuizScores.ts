@@ -70,7 +70,7 @@ export function useQuizScores(courseId: string | undefined) {
             score,
             total_questions,
             completed_at,
-            quiz:quizzes!inner(
+            quiz:quizzes (
               title,
               course_id
             )
@@ -109,6 +109,7 @@ export function useQuizScores(courseId: string | undefined) {
         }
 
         if (responses && responses.length > 0) {
+          console.log('Quiz responses:', responses); // Debug log
           const formattedScores = responses.map(response => ({
             id: response.id,
             quiz_id: response.quiz_id,
@@ -116,10 +117,11 @@ export function useQuizScores(courseId: string | undefined) {
             max_score: 100,
             taken_at: response.completed_at || new Date().toISOString(),
             quiz: {
-              title: response.quiz.title || 'Untitled Quiz'
+              title: response.quiz?.title || 'Untitled Quiz'
             }
           }));
           
+          console.log('Formatted scores:', formattedScores); // Debug log
           setQuizScores(formattedScores);
         } else {
           setQuizScores([]);
