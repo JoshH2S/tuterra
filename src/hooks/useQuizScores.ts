@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -26,7 +25,6 @@ export function useQuizScores(courseId: string | undefined) {
           return;
         }
 
-        // Fetch course name
         const { data: courseData, error: courseError } = await supabase
           .from('courses')
           .select('title')
@@ -39,7 +37,6 @@ export function useQuizScores(courseId: string | undefined) {
           setCourseName(courseData.title);
         }
 
-        // Fetch performance data for this course
         const { data: performanceData, error: performanceError } = await supabase
           .from('student_performance')
           .select(`
@@ -60,13 +57,11 @@ export function useQuizScores(courseId: string | undefined) {
           .eq('course_id', courseId)
           .single();
 
-        if (performanceError && performanceError.code !== 'PGRST116') { // Not found is ok
+        if (performanceError && performanceError.code !== 'PGRST116') {
           console.error('Error fetching performance:', performanceError);
           throw performanceError;
         }
 
-        // Get quiz responses for detailed quiz history
-        // Note: Removed the !inner join modifier to use a regular join
         const { data: responses, error: responsesError } = await supabase
           .from('quiz_responses')
           .select(`
@@ -75,14 +70,14 @@ export function useQuizScores(courseId: string | undefined) {
             score,
             total_questions,
             completed_at,
-            quizzes(
+            quiz:quizzes!inner(
               title,
               course_id
             )
           `)
           .eq('student_id', user.id)
-          .not('completed_at', 'is', null) // Using 'is' operator instead of 'eq' for null checks
-          .eq('quizzes.course_id', courseId)
+          .not('completed_at', 'is', null)
+          .eq('quiz.course_id', courseId)
           .order('completed_at', { ascending: false });
 
         if (responsesError) {
@@ -90,16 +85,12 @@ export function useQuizScores(courseId: string | undefined) {
           throw responsesError;
         }
 
-        // Set performance data
         if (performanceData) {
           setPerformance(performanceData);
         } else if (responses && responses.length > 0) {
-          // If no performance entry but we have responses, create performance data
-          // Calculate average score
           const totalScore = responses.reduce((acc, curr) => acc + curr.score, 0);
           const avgScore = responses.length > 0 ? totalScore / responses.length : 0;
           
-          // Create performance object
           const syntheticPerformance: StudentPerformance = {
             id: 'synthetic',
             student_id: user.id,
@@ -114,27 +105,20 @@ export function useQuizScores(courseId: string | undefined) {
           
           setPerformance(syntheticPerformance);
         } else {
-          // No performance data or quiz responses
           setPerformance(null);
         }
 
-        // Format the quiz scores for display
         if (responses && responses.length > 0) {
-          const formattedScores = responses.map(response => {
-            // Handle Supabase's nested response format
-            const quizData = Array.isArray(response.quizzes) ? response.quizzes[0] : response.quizzes;
-            
-            return {
-              id: response.id,
-              quiz_id: response.quiz_id,
-              score: response.score,
-              max_score: 100, // Scores are stored as percentages
-              taken_at: response.completed_at || new Date().toISOString(),
-              quiz: {
-                title: quizData?.title || `Quiz ${response.quiz_id.slice(0, 8)}`
-              }
-            };
-          });
+          const formattedScores = responses.map(response => ({
+            id: response.id,
+            quiz_id: response.quiz_id,
+            score: response.score,
+            max_score: 100,
+            taken_at: response.completed_at || new Date().toISOString(),
+            quiz: {
+              title: response.quiz.title || 'Untitled Quiz'
+            }
+          }));
           
           setQuizScores(formattedScores);
         } else {
