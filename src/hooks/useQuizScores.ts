@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -66,7 +65,6 @@ export function useQuizScores(courseId: string | undefined) {
         }
 
         // Get quiz responses for detailed quiz history
-        // Note: Removed the !inner join modifier to use a regular join
         const { data: responses, error: responsesError } = await supabase
           .from('quiz_responses')
           .select(`
@@ -81,7 +79,7 @@ export function useQuizScores(courseId: string | undefined) {
             )
           `)
           .eq('student_id', user.id)
-          .not('completed_at', 'is', null) // Using 'is' operator instead of 'eq' for null checks
+          .not('completed_at', 'is', null) 
           .eq('quizzes.course_id', courseId)
           .order('completed_at', { ascending: false });
 
@@ -131,7 +129,7 @@ export function useQuizScores(courseId: string | undefined) {
               max_score: 100, // Scores are stored as percentages
               taken_at: response.completed_at || new Date().toISOString(),
               quiz: {
-                title: quizData?.title || `Quiz ${response.quiz_id.slice(0, 8)}`
+                title: quizData?.title || 'Untitled Quiz'
               }
             };
           });
