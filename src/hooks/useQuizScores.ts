@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -85,70 +84,39 @@ export function useQuizScores(courseId: string | undefined) {
           throw responsesError;
         }
 
-        // Set performance data
-        if (performanceData) {
-          setPerformance(performanceData);
-        } else if (responses && responses.length > 0) {
-          // If no performance entry but we have responses, create performance data
-          // Calculate average score
-          const totalScore = responses.reduce((acc, curr) => acc + curr.score, 0);
-          const avgScore = responses.length > 0 ? totalScore / responses.length : 0;
-          
-          // Create performance object
-          const syntheticPerformance: StudentPerformance = {
-            id: 'synthetic',
-            student_id: user.id,
-            course_id: courseId,
-            total_quizzes: responses.length,
-            completed_quizzes: responses.length,
-            average_score: avgScore,
-            last_activity: responses[0].completed_at,
-            course_title: courseData?.title || 'Unknown Course',
-            courses: courseData ? { title: courseData.title } : undefined
-          };
-          
-          setPerformance(syntheticPerformance);
-        } else {
-          // No performance data or quiz responses
-          setPerformance(null);
+        // Extract quiz IDs, ensuring they are strings
+        const quizIds = responses
+          .map(r => r.quiz_id)
+          .filter((id): id is string => typeof id === 'string');
+        
+        // Fetch corresponding quiz titles
+        const { data: quizTitles, error: quizTitlesError } = await supabase
+          .from('quizzes')
+          .select('id, title')
+          .in('id', quizIds);
+        
+        if (quizTitlesError) {
+          console.error('Error fetching quiz titles:', quizTitlesError);
         }
-
-        // Format the quiz scores for display
-        if (responses && responses.length > 0) {
-          // Extract all quiz_ids from the responses
-          const quizIds = responses.map(r => r.quiz_id).filter(Boolean);
-          
-          // Fetch corresponding quiz titles
-          const { data: quizTitles, error: quizTitlesError } = await supabase
-            .from('quizzes')
-            .select('id, title')
-            .in('id', quizIds);
-          
-          if (quizTitlesError) {
-            console.error('Error fetching quiz titles:', quizTitlesError);
+        
+        // Map quiz IDs to their titles
+        const quizMap = Object.fromEntries(
+          (quizTitles || []).map(quiz => [quiz.id, quiz.title])
+        );
+        
+        // Format scores and insert actual titles
+        const formattedScores = responses.map(response => ({
+          id: response.id,
+          quiz_id: response.quiz_id,
+          score: response.score,
+          max_score: 100, // Scores are stored as percentages
+          taken_at: response.completed_at || new Date().toISOString(),
+          quiz: {
+            title: quizMap[String(response.quiz_id)] || `Quiz ${String(response.quiz_id).slice(0, 8)}`
           }
-          
-          // Map quiz IDs to their titles
-          const quizMap = Object.fromEntries(
-            (quizTitles || []).map(quiz => [quiz.id, quiz.title])
-          );
-          
-          // Format scores and insert actual titles
-          const formattedScores = responses.map(response => ({
-            id: response.id,
-            quiz_id: response.quiz_id,
-            score: response.score,
-            max_score: 100, // Scores are stored as percentages
-            taken_at: response.completed_at || new Date().toISOString(),
-            quiz: {
-              title: quizMap[response.quiz_id] || `Quiz ${response.quiz_id.slice(0, 8)}`
-            }
-          }));
-          
-          setQuizScores(formattedScores);
-        } else {
-          setQuizScores([]);
-        }
+        }));
+        
+        setQuizScores(formattedScores);
       } catch (error) {
         console.error('Error fetching grades:', error);
         toast({
