@@ -33,7 +33,7 @@ export default function CourseGrades() {
       {(hasPerformanceData || hasQuizHistory) && (
         <div className="space-y-4">
           <h2 className="text-lg sm:text-xl font-semibold">Quiz History</h2>
-          <QuizHistoryList quizScores={quizHistory} />
+          <QuizHistoryList quizHistory={quizHistory} />
         </div>
       )}
 
