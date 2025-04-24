@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -64,6 +65,20 @@ export function useQuizScores(courseId: string | undefined) {
           throw performanceError;
         }
 
+        // Get quiz ids associated with this course
+        const { data: courseQuizIds, error: courseQuizError } = await supabase
+          .from('quizzes')
+          .select('id')
+          .eq('course_id', courseId);
+        
+        if (courseQuizError) {
+          console.error('Error fetching course quizzes:', courseQuizError);
+          throw courseQuizError;
+        }
+
+        // Convert the quiz IDs to an array of strings
+        const quizIdArray = courseQuizIds.map(item => item.id);
+
         // Get quiz responses for detailed quiz history
         const { data: responses, error: responsesError } = await supabase
           .from('quiz_responses')
@@ -75,8 +90,8 @@ export function useQuizScores(courseId: string | undefined) {
             completed_at
           `)
           .eq('student_id', user.id)
-          .not('completed_at', 'is', null) 
-          .eq('quiz_id', supabase.from('quizzes').select('id').eq('course_id', courseId))
+          .not('completed_at', 'is', null)
+          .in('quiz_id', quizIdArray.length > 0 ? quizIdArray : ['no-quizzes'])
           .order('completed_at', { ascending: false });
 
         if (responsesError) {
@@ -93,7 +108,7 @@ export function useQuizScores(courseId: string | undefined) {
         const { data: quizTitles, error: quizTitlesError } = await supabase
           .from('quizzes')
           .select('id, title')
-          .in('id', quizIds);
+          .in('id', quizIds.length > 0 ? quizIds : ['no-quizzes']);
         
         if (quizTitlesError) {
           console.error('Error fetching quiz titles:', quizTitlesError);
@@ -117,6 +132,7 @@ export function useQuizScores(courseId: string | undefined) {
         }));
         
         setQuizScores(formattedScores);
+        setPerformance(performanceData);
       } catch (error) {
         console.error('Error fetching grades:', error);
         toast({
