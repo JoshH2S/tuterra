@@ -4,14 +4,15 @@ import { FeatureShowcase } from "./FeatureShowcase";
 export function FeatureShowcaseDemo() {
   const features = [
     {
-      title: "Interactive Dashboard",
-      description: "Our intuitive dashboard provides a comprehensive overview of your learning journey, with real-time progress tracking and personalized recommendations.",
+      title: "News-Powered Dashboard",
+      description: "Stay ahead of the curve with Tuterra's dynamic dashboard, uniquely designed to integrate current, real-world news directly into your learning journey. Our intuitive platform keeps learners engaged by bridging theoretical knowledge with up-to-the-minute developments across industries and topics.
+",
       image: "/lovable-uploads/66e5de1b-be24-4178-944a-09183d99629d.png",
       buttonText: "Explore Dashboard",
     },
     {
-      title: "Case Study Quizzes",
-      description: "Create course and topic specific quizzes that move you beyond knowledge absorption into applying concepts into the world areound you, tailored to recent real-world events! ",
+      title: "Skill Assessments",
+      description: "Evaluate your skills with our comprehensive assessment tools, featuring detailed feedback and personalized improvement suggestions.",
       image: "/lovable-uploads/089c8cb1-63b0-4ed5-ba8c-419af66cdf7e.png",
       buttonText: "Start Assessment",
     },
@@ -22,8 +23,8 @@ export function FeatureShowcaseDemo() {
       buttonText: "Start Interview",
     },
     {
-      title: "Skill Assessments",
-      description: "Evaluate your skills with our comprehensive assessment tools, featuring detailed feedback and personalized improvement suggestions.",
+      title: "Interactive Learning Experience",
+      description: "Engage with interactive learning materials designed to enhance comprehension and retention through practical application.",
       image: "/lovable-uploads/a02bdab0-bfea-438f-9680-b4e948ed841a.png",
       buttonText: "Start Learning",
     },
