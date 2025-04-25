@@ -120,8 +120,7 @@ export default function PricingPage() {
 
   const tierFeatures = {
     free: [
-      "5 AI tutor messages per month",
-      "2 quizzes per month",
+      "5 quizzes per month",
       "2 interview simulations per month",
       "1 skill assessment per month",
       "Basic dashboard and course tracking",
