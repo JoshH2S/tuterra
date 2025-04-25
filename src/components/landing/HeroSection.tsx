@@ -33,7 +33,7 @@ export function HeroSection() {
             <Link to="/auth?tab=signup" className="btn-gold-gradient px-8 py-3 rounded-lg flex items-center justify-center gap-2 bg-amber-400 text-black font-semibold hover:bg-amber-500 transition-colors">
               Get Started <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link to="/pricing-landing" className="px-8 py-3 border border-white text-white rounded-lg font-medium hover:bg-white/10 transition-colors">
+            <Link to="/pricing" className="px-8 py-3 border border-white text-white rounded-lg font-medium hover:bg-white/10 transition-colors">
               See Pricing
             </Link>
           </div>
