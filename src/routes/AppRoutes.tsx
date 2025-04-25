@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import OnboardingPage from "@/pages/OnboardingPage";
@@ -9,6 +10,7 @@ import { assessmentRoutes } from "./AssessmentRoutes";
 import { mediaRoutes } from "./MediaRoutes";
 import { demoRoutes } from "./DemoRoutes";
 import Index from "@/pages/Index";
+import AboutUs from "@/pages/AboutUs";
 import JobInterviewSimulator from "@/pages/JobInterviewSimulator";
 import NotFound from "@/pages/NotFound";
 import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
@@ -31,6 +33,7 @@ export const AppRoutes = () => {
       {authRoutes}
       
       {/* Public Routes */}
+      <Route path="/about" element={<AboutUs />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/pricing" element={<PricingPage />} />
