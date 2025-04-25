@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import OnboardingPage from "@/pages/OnboardingPage";
@@ -17,7 +16,6 @@ import { TermsOfUse } from "@/components/legal/TermsOfUse";
 import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
 import PricingPage from "@/pages/PricingPage";
-import LandingPagePricing from "@/pages/LandingPagePricing";
 import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 import Contact from "@/pages/Contact";
@@ -36,7 +34,6 @@ export const AppRoutes = () => {
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/landing-pricing" element={<LandingPagePricing />} />
       <Route path="/contact" element={<Contact />} />
       
       {/* Protected Routes */}

@@ -1,41 +1,38 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { MoveRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
-export const CtaSection = () => {
+export function CtaSection() {
   return (
-    <section id="cta" className="py-20 px-4">
-      <div className="container mx-auto max-w-6xl">
-        <motion.div
+    <section className="py-20 bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-white shadow-md">
+      <div className="container mx-auto px-4">
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="bg-gradient-to-br from-primary-100/80 to-primary-200/80 rounded-2xl p-8 md:p-12 shadow-lg text-center"
+          className="text-center max-w-3xl mx-auto"
         >
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
-            Ready to transform your learning experience?
+          <h2 className="text-4xl font-bold mb-6 gradient-text">
+            Ready to Transform Your Educational Experience?
           </h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of students and educators who are already using our platform to enhance their learning journey.
+          <p className="text-xl gradient-text mb-8">
+            Join thousands of educators and students already using our platform to enhance learning outcomes.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button className="px-8 bg-primary text-white group" size="lg" asChild>
-              <Link to="/auth?tab=signup">
-                Get Started <MoveRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-            <Button variant="outline" className="bg-white/30" size="lg" asChild>
-              <Link to="/landing-pricing">
-                View Pricing
-              </Link>
-            </Button>
-          </div>
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            className="inline-block"
+          >
+            <Link 
+              to="/auth?tab=signup" 
+              className="px-10 py-4 bg-gradient-to-r from-[#091747] to-blue-400 dark:to-blue-500 text-white rounded-lg font-medium hover:opacity-90 shadow-md transition-colors"
+            >
+              Get Started Today
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
     </section>
   );
-};
+}
