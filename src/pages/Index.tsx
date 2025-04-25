@@ -1,8 +1,8 @@
 
 import { HeroSection } from "@/components/landing/HeroSection";
-import { FloatingCards } from "@/components/landing/FloatingCards";
 import { FeatureShowcaseDemo } from "@/components/landing/FeatureShowcaseDemo";
 import { ComparisonSection } from "@/components/landing/ComparisonSection";
+import { PricingSection } from "@/components/landing/PricingSection";
 import { CtaSection } from "@/components/landing/CtaSection";
 import { useNetworkStatus } from "@/hooks/interview/useNetworkStatus";
 import { EnhancedNavigation } from "@/components/navigation/EnhancedNavigation";
@@ -34,6 +34,10 @@ const Index = () => {
         <section id="comparison">
           <ComparisonSection />
         </section>
+
+        <section id="pricing">
+          <PricingSection />
+        </section>
         
         <section id="cta">
           <CtaSection />
@@ -52,4 +56,3 @@ const Index = () => {
 };
 
 export default Index;
-
