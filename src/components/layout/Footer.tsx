@@ -10,13 +10,12 @@ export const Footer = () => {
 
   return (
     <footer className="border-t py-4 bg-background mt-auto">
-      <div className="container flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="container flex flex-col sm:flex-row justify-between items-center gap-6">
         <div className="text-sm text-muted-foreground">
           © {new Date().getFullYear()} Tuterra. All rights reserved.
         </div>
         
-        {/* New company attribution text */}
-        <div className="absolute left-1/2 transform -translate-x-1/2 text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground">
           A product of Maltech Solutions LLC
         </div>
         
