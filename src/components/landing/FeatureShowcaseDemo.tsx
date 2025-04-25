@@ -4,8 +4,10 @@ import { FeatureShowcase } from "./FeatureShowcase";
 export function FeatureShowcaseDemo() {
   const features = [
     {
-      title: "Interactive Dashboard",
-      description: "Our intuitive dashboard provides a comprehensive overview of your learning journey, with real-time progress tracking and personalized recommendations.",
+      title: "News-Powered Dashboard",
+      description: "Stay ahead of the curve with Tuterra's dynamic dashboard, uniquely designed to integrate current, real-world news directly into your learning journey. Our intuitive platform keeps learners engaged by bridging theoretical knowledge with up-to-the-minute developments across industries and topics.
+
+",
       image: "/lovable-uploads/66e5de1b-be24-4178-944a-09183d99629d.png",
       buttonText: "Explore Dashboard",
     },
