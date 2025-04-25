@@ -14,6 +14,12 @@ export const Footer = () => {
         <div className="text-sm text-muted-foreground">
           © {new Date().getFullYear()} Tuterra. All rights reserved.
         </div>
+        
+        {/* New company attribution text */}
+        <div className="absolute left-1/2 transform -translate-x-1/2 text-sm text-muted-foreground">
+          A product of Maltech Solutions LLC
+        </div>
+        
         <div className="flex gap-4 sm:gap-6">
           <button
             onClick={() => setShowPrivacyPolicy(true)}
