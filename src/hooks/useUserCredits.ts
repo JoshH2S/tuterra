@@ -187,6 +187,12 @@ export const useUserCredits = () => {
       setPendingTransactions(prev => ({ ...prev, [creditType]: false }));
     }
   };
+  
+  // Add the missing retryFetch function
+  const retryFetch = async (): Promise<void> => {
+    setError(null);
+    return fetchUserCredits();
+  };
 
   useEffect(() => {
     // Initialize by fetching credits
@@ -201,6 +207,7 @@ export const useUserCredits = () => {
     checkCredits,
     decrementCredits,
     fetchUserCredits,
-    pendingTransactions
+    pendingTransactions,
+    retryFetch // Add the retryFetch function to the returned object
   };
 };
