@@ -13,7 +13,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Reuse exact same code from PricingPage, but without header/footer since it's a landing page
-export default function LandingPagePricing() {
+export const metadata = {
+  title: "Pricing - Tuterra",
+  description: "Choose the right plan for your learning journey"
+};
+
+const LandingPagePricing = () => {
   const { isLoggedIn } = useAuthStatus();
   const navigate = useNavigate();
   const location = useLocation();
@@ -271,3 +276,5 @@ export default function LandingPagePricing() {
     </div>
   );
 }
+
+export default LandingPagePricing;
