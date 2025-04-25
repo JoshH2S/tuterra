@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import OnboardingPage from "@/pages/OnboardingPage";
@@ -16,12 +17,12 @@ import { TermsOfUse } from "@/components/legal/TermsOfUse";
 import ProfileSettings from "@/pages/ProfileSettings";
 import UpdatePassword from "@/pages/UpdatePassword";
 import PricingPage from "@/pages/PricingPage";
+import LandingPagePricing from "@/pages/LandingPagePricing";
 import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
 import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 import Contact from "@/pages/Contact";
 import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
 import OnboardingRedirect from "@/pages/OnboardingRedirect";
-import LandingPagePricing from "@/pages/LandingPagePricing";
 
 export const AppRoutes = () => {
   return (
