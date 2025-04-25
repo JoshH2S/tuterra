@@ -1,43 +1,88 @@
 
-"use client";
-
-import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import React from "react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { MoveRight } from "lucide-react";
 
-export function HeroSection() {
-  return <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-white dark:from-gray-900 dark:to-gray-800">
-      {/* Background image */}
-      <div className="absolute inset-0 z-0">
-        <img src="/lovable-uploads/dfd38374-fd74-42a1-9010-8c092a4ae7b6.png" alt="Tuterra AI learning environment" className="w-full h-full object-cover" />
-        {/* Overlay to ensure text is readable */}
-        <div className="absolute inset-0 bg-black/30"></div>
+export const HeroSection = () => {
+  return (
+    <section className="relative px-4 py-16 md:py-24 lg:py-32 overflow-hidden bg-white">
+      <div className="container mx-auto max-w-6xl relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col gap-6"
+          >
+            <div>
+              <motion.h1 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.7 }}
+                className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
+              >
+                Learn Faster With <span className="text-gradient-blue">AI-Powered</span> Education
+              </motion.h1>
+              
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.7 }}
+                className="text-lg text-muted-foreground mb-8"
+              >
+                Generate quizzes, get personalized tutoring, and prepare for interviews with our advanced AI learning platform.
+              </motion.p>
+            </div>
+            
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.7 }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <Button className="px-8 btn-gold-gradient group" size="lg" asChild>
+                <Link to="/auth?tab=signup">
+                  Get Started <MoveRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+              
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/landing-pricing">
+                  See Pricing
+                </Link>
+              </Button>
+            </motion.div>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.7 }}
+            className="relative"
+          >
+            <div className="bg-gradient-to-tr from-primary-100 via-primary-200/50 to-transparent p-4 rounded-2xl shadow-lg">
+              <img 
+                src="/lovable-uploads/089c8cb1-63b0-4ed5-ba8c-419af66cdf7e.png" 
+                alt="AI Education Platform" 
+                className="w-full h-auto rounded-xl shadow-md"
+              />
+            </div>
+            
+            <div className="absolute -bottom-6 -right-6 bg-white rounded-xl shadow-xl p-3 max-w-[180px]">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-3 w-3 bg-primary-300 rounded-full"></div>
+                <p className="text-sm font-medium">Daily Progress</p>
+              </div>
+              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full w-3/4 bg-gradient-to-r from-primary-300 to-primary-400"></div>
+              </div>
+              <p className="text-xs text-right mt-1 text-muted-foreground">75% Complete</p>
+            </div>
+          </motion.div>
+        </div>
       </div>
-      
-      <div className="container px-4 mx-auto relative z-10">
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.8
-      }} className="text-center max-w-3xl mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-white">
-            Take your learning into the real world with{" "}
-            <span className="bg-gradient-to-br from-amber-200 to-amber-400 text-transparent bg-clip-text">tuterra</span>
-          </h1>
-          <p className="text-xl text-white mb-8">An intelligent learning platform that goes beyond helping you absorb information, designed to help you bridge the gap between the classroom and the real world</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth?tab=signup" className="btn-gold-gradient px-8 py-3 rounded-lg flex items-center justify-center gap-2 bg-amber-400 text-black font-semibold hover:bg-amber-500 transition-colors">
-              Get Started <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link to="/pricing" className="px-8 py-3 border border-white text-white rounded-lg font-medium hover:bg-white/10 transition-colors">
-              See Pricing
-            </Link>
-          </div>
-        </motion.div>
-      </div>
-    </section>;
-}
+    </section>
+  );
+};
