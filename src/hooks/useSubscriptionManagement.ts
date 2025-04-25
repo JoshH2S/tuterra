@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -97,7 +98,7 @@ export const useSubscriptionManagement = () => {
       });
       
       // Refresh subscription data
-      await refetch(true);
+      await refetch();
       
       return true;
     } catch (error: any) {
@@ -133,7 +134,7 @@ export const useSubscriptionManagement = () => {
       });
       
       // Refresh subscription data
-      await refetch(true);
+      await refetch();
       
       return true;
     } catch (error: any) {

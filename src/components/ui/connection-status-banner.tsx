@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,11 @@ export const ConnectionStatusBanner = () => {
   const [showBanner, setShowBanner] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [dismissedTimestamp, setDismissedTimestamp] = useState<number | null>(null);
+  
+  // Get the number of pending transactions
+  const pendingTransactionsCount = Object.keys(pendingTransactions).filter(
+    key => pendingTransactions[key] === true
+  ).length;
   
   const hasRecentlyDismissed = () => {
     if (!dismissedTimestamp) return false;
@@ -85,8 +91,8 @@ export const ConnectionStatusBanner = () => {
               <div>
                 <AlertTitle className="text-sm font-medium">Connection Issue</AlertTitle>
                 <AlertDescription className="text-xs">
-                  {pendingTransactions > 0 
-                    ? `You're in offline mode with ${pendingTransactions} pending ${pendingTransactions === 1 ? 'change' : 'changes'}.`
+                  {pendingTransactionsCount > 0 
+                    ? `You're in offline mode with ${pendingTransactionsCount} pending ${pendingTransactionsCount === 1 ? 'change' : 'changes'}.`
                     : "You're currently in offline mode. Some features may be limited."}
                 </AlertDescription>
               </div>

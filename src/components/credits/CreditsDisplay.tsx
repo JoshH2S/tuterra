@@ -1,3 +1,4 @@
+
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -54,7 +55,7 @@ export const CreditsDisplay = ({
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription className="space-y-2">
-          <p>{error || "Unable to load your credits information"}</p>
+          <p>{error instanceof Error ? error.message : "Unable to load your credits information"}</p>
           <Button 
             variant="outline" 
             size="sm" 

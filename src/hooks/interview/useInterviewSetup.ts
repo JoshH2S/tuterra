@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserCredits } from "@/hooks/useUserCredits";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -19,14 +19,14 @@ export const useInterviewSetup = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [errorOccurred, setErrorOccurred] = useState(false);
   
-  const { checkCredits, decrementCredits, credits, retryFetch } = useUserCredits();
+  const { checkCredits, decrementCredits, credits, fetchUserCredits } = useUserCredits();
   const { subscription } = useSubscription();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) {
-      toast({
+      useToast().toast({
         title: "Authentication required",
         description: "Please sign in to use the interview simulator",
         variant: "destructive",
@@ -44,7 +44,7 @@ export const useInterviewSetup = () => {
 
     // Validate essential fields
     if (!trimmedJobTitle) {
-      toast({
+      useToast().toast({
         title: "Invalid Job Title",
         description: "Please provide a valid job title",
         variant: "destructive"
@@ -53,7 +53,7 @@ export const useInterviewSetup = () => {
     }
 
     if (!trimmedIndustry) {
-      toast({
+      useToast().toast({
         title: "Required field missing",
         description: "Please select an industry",
         variant: "destructive",
@@ -62,7 +62,7 @@ export const useInterviewSetup = () => {
     }
 
     if (trimmedJobDescription.length < 50) {
-      toast({
+      useToast().toast({
         title: "Job description too short",
         description: "Please provide a more detailed job description (at least 50 characters)",
         variant: "destructive"
@@ -79,14 +79,14 @@ export const useInterviewSetup = () => {
     let hasCredits = true;
     if (subscription.tier === 'free') {
       try {
-        await retryFetch();
+        await fetchUserCredits();
         
         // Check if user has interview credits
         hasCredits = await checkCredits('interview_credits');
         if (!hasCredits) {
           console.log("No interview credits remaining, showing upgrade prompt");
           setShowUpgradePrompt(true);
-          toast({
+          useToast().toast({
             title: "No credits remaining",
             description: "You have used all your free interview simulation credits. Please upgrade to continue.",
             variant: "destructive",
@@ -164,7 +164,7 @@ export const useInterviewSetup = () => {
     } catch (error) {
       setErrorOccurred(true);
       console.error("Failed to create interview session:", error);
-      toast({
+      useToast().toast({
         title: "Failed to start interview",
         description: "There was an error starting your interview simulation. Please try again.",
         variant: "destructive",

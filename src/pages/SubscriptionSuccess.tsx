@@ -29,11 +29,8 @@ export default function SubscriptionSuccess() {
     
     setSyncing(true);
     try {
-      const sessionId = searchParams.get('session_id');
-      if (sessionId) {
-        await syncWithStripe(sessionId);
-      }
-      await refetch(true);
+      await syncWithStripe();
+      await refetch();
       
       // Add explicit subscription status check
       const { data: subStatus } = await supabase
@@ -106,10 +103,10 @@ export default function SubscriptionSuccess() {
       setSyncAttempt(attempt);
       
       // Use the syncWithStripe function from the useSubscription hook
-      await syncWithStripe(sessionId);
+      await syncWithStripe();
       
       // Refetch subscription data to update UI
-      await refetch(true);
+      await refetch();
       
       // Add explicit subscription status check
       const { data: subStatus } = await supabase

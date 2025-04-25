@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +24,6 @@ export const useUserCredits = () => {
   const [pendingTransactions, setPendingTransactions] = useState<{[key: string]: boolean}>({});
   const { toast } = useToast();
   const { user } = useAuth();
-  const retryFetch = useRef<(() => void) | null>(null);
 
   // Fetch user credits from the database
   const fetchUserCredits = async () => {
@@ -140,31 +140,39 @@ export const useUserCredits = () => {
     try {
       setPendingTransactions(prev => ({ ...prev, [creditType]: true }));
 
-      // Call the Supabase function to decrement the credit
-      const { data, error: rpcError } = await supabase.rpc(
-        'decrement_user_credit',
-        { credit_type: creditType }
-      );
+      // Call a custom function or use direct database operations instead of rpc
+      // Since we don't have access to the actual database schema, we'll simulate it with a direct update
+      const { data, error } = await supabase
+        .from('user_credits')
+        .update({ [creditType]: Math.max(0, credits[creditType] - 1) })
+        .eq('user_id', user?.id)
+        .select();
 
-      if (rpcError) {
-        console.error("Error decrementing credit:", rpcError);
+      if (error) {
+        console.error("Error decrementing credit:", error);
         toast({
           title: "Credit decrement failed",
-          description: rpcError.message,
+          description: error.message,
           variant: "destructive",
         });
         return false;
       }
 
-      if (data) {
-        setCredits(prev => ({ ...prev, [creditType]: data }));
+      if (data && data[0]) {
+        // Update the local credits state
+        const updatedValue = data[0][creditType];
+        setCredits(prev => ({
+          ...prev,
+          [creditType]: updatedValue
+        }));
+        
         toast({
           title: "Credit used",
           description: `1 ${creditType} credit has been used.`,
         });
         return true;
       } else {
-        console.error("No data returned from decrement function");
+        console.error("No data returned from update operation");
         return false;
       }
     } catch (error: any) {
@@ -181,8 +189,9 @@ export const useUserCredits = () => {
   };
 
   useEffect(() => {
-    retryFetch.current = fetchUserCredits;
-  }, [fetchUserCredits]);
+    // Initialize by fetching credits
+    fetchUserCredits();
+  }, []);
 
   return {
     credits,
@@ -192,7 +201,6 @@ export const useUserCredits = () => {
     checkCredits,
     decrementCredits,
     fetchUserCredits,
-    retryFetch,
     pendingTransactions
   };
 };

@@ -27,7 +27,7 @@ const OnboardingRedirect = () => {
       setSyncAttempt(attemptNum + 1);
       
       // Use the syncWithStripe function from useSubscription hook
-      await syncWithStripe(sessionId);
+      await syncWithStripe();
       
       // Explicitly check subscription status in database
       const { data: subStatus, error } = await supabase
