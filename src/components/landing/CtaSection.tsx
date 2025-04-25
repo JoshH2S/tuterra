@@ -25,10 +25,10 @@ export function CtaSection() {
             className="inline-block"
           >
             <Link 
-              to="/auth?tab=signup" 
+              to="/pricing-landing" 
               className="px-10 py-4 bg-gradient-to-r from-[#091747] to-blue-400 dark:to-blue-500 text-white rounded-lg font-medium hover:opacity-90 shadow-md transition-colors"
             >
-              Get Started Today
+              View Our Plans
             </Link>
           </motion.div>
         </motion.div>

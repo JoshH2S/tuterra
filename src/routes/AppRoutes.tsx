@@ -21,6 +21,7 @@ import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 import Contact from "@/pages/Contact";
 import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
 import OnboardingRedirect from "@/pages/OnboardingRedirect";
+import LandingPagePricing from "@/pages/LandingPagePricing";
 
 export const AppRoutes = () => {
   return (
@@ -34,6 +35,7 @@ export const AppRoutes = () => {
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/pricing-landing" element={<LandingPagePricing />} />
       <Route path="/contact" element={<Contact />} />
       
       {/* Protected Routes */}
