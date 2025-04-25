@@ -1,7 +1,7 @@
 
 import { Route } from "react-router-dom";
-import CoursesPage from "@/pages/CoursesPage";
-import CourseDetailsPage from "@/pages/CourseDetailsPage";
+import CoursesPage from "@/pages/Courses";
+import CourseDetailsPage from "@/pages/CourseDetail";
 import CourseModulePage from "@/pages/CourseModulePage";
 import CourseCompletionPage from "@/pages/CourseCompletionPage";
 
