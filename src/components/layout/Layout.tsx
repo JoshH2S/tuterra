@@ -25,13 +25,19 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
       <div className="flex flex-1 w-full">
         {!isLandingPage && <MainSidebar />}
         <div 
-          className="flex-1 flex flex-col transition-all duration-300 ease-in-out bg-white w-full"
-          style={{ 
-            marginLeft: isMobile || isLandingPage ? 0 : "200px"  // No margin on landing page
-          }}
+          className={cn(
+            "flex-1 flex flex-col transition-all duration-300 ease-in-out bg-white w-full",
+            !isLandingPage && !isMobile && "ml-[200px]"
+          )}
         >
           {!isLandingPage && (isMobile ? <MobileHeader /> : <DesktopHeader />)}
-          <main id="main-content" className={`flex-1 ${isMobile && !isLandingPage ? 'px-4 py-4 pb-24' : (!isLandingPage ? 'p-6' : 'p-0')} overflow-x-hidden w-full`}>
+          <main 
+            id="main-content" 
+            className={cn(
+              "flex-1 w-full overflow-x-hidden",
+              isMobile && !isLandingPage ? 'px-4 py-4 pb-24' : (!isLandingPage ? 'p-6' : 'p-0')
+            )}
+          >
             {children}
           </main>
           <Footer />

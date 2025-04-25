@@ -32,7 +32,7 @@ export const AppRoutes = () => {
       {/* Auth Routes */}
       {authRoutes}
       
-      {/* Public Routes */}
+      {/* Public Landing-style Routes */}
       <Route path="/about" element={<AboutUs />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-use" element={<TermsOfUse />} />

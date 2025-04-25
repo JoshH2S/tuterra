@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,35 +9,28 @@ import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useAuth } from "@/hooks/useAuth";
-// DesktopHeader is still imported, used via Layout
-// import { DesktopHeader } from "../layout/desktop/DesktopHeader"; // not needed directly here
 
 export const MainLayout = () => {
-  // Debug flags have been removed
-
-  // Move all hooks to the top
   useCustomFont();
   useKeyboardNavigation();
   const location = useLocation();
   const { user, loading } = useAuth();
   const [isLayoutReady, setIsLayoutReady] = useState(false);
 
-  // Determine if sidebar should be hidden (synchronous)
-  const hideSidebar = location.pathname === "/" || location.pathname === "/auth";
+  const hideSidebar = location.pathname === "/" || 
+                     location.pathname === "/auth" ||
+                     location.pathname === "/about";
 
-  // Handle auth state transitions
   useEffect(() => {
     if (!loading) {
       setIsLayoutReady(true);
     }
   }, [loading]);
 
-  // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // If we're still initializing auth, show minimal layout
   if (!isLayoutReady && location.pathname !== "/" && location.pathname !== "/auth") {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -52,7 +44,6 @@ export const MainLayout = () => {
       <Toaster />
       <Sonner />
       <SidebarProvider>
-        {/* All header/sidebar render logic is handled in Layout */}
         <Layout isLandingPage={hideSidebar}>
           <AppRoutes />
         </Layout>
