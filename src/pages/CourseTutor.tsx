@@ -6,8 +6,8 @@ const CourseTutor = () => {
   return (
     <>
       <Toaster />
-      <div className="h-screen w-full overflow-hidden">
-        <div className="relative h-full z-10">
+      <div className="h-screen w-full">
+        <div className="h-full">
           <TutorInterface />
         </div>
       </div>

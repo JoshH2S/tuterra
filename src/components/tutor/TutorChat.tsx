@@ -90,11 +90,13 @@ export const TutorChat = ({
         isPremium={subscription.tier === "premium"}
       />
       
-      <TutorChatMessages 
-        messages={messages} 
-        subscription={subscription}
-        isTyping={isTyping}
-      />
+      <div className="flex-1 overflow-hidden">
+        <TutorChatMessages 
+          messages={messages} 
+          subscription={subscription}
+          isTyping={isTyping}
+        />
+      </div>
       
       <div className={`border-t bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60 p-3 ${isMobile ? 'sticky bottom-0 pb-4 pt-3 safe-area-bottom' : ''}`}>
         <TutorChatInput

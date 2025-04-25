@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { LearningPathPanel } from "./LearningPathPanel";
 import { TutorChat } from "@/components/tutor/TutorChat";
@@ -10,7 +9,7 @@ import { SubscriptionBadge } from "./SubscriptionBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SmartNotesPanel } from "./SmartNotesPanel";
-import { LayoutPanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutPanelLeft, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TutorInterfaceProps {
@@ -123,9 +122,6 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
     fetchConversationData();
   }, [user]);
 
-  // Calculate header height to subtract from the total height
-  const headerHeight = 56; // Typical header height in pixels
-
   return (
     <div className="flex flex-col h-full overflow-hidden border border-border bg-background rounded-lg">
       <TutorHeader 
@@ -138,7 +134,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         <SubscriptionBadge tier={subscription.tier} />
       </TutorHeader>
 
-      <div className="flex flex-col md:flex-row relative h-[calc(100vh-56px)] flex-grow overflow-hidden">
+      <div className="flex flex-1 flex-col md:flex-row relative overflow-hidden">
         {/* Toggle button for the sidebar - visible when sidebar is closed */}
         {!showSidebar && (
           <motion.div
@@ -169,7 +165,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
               exit={{ x: isMobile ? '-100%' : 0, opacity: isMobile ? 0 : 1 }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
             >
-              <div className="flex-grow">
+              <div className="flex-grow overflow-y-auto">
                 <LearningPathPanel 
                   activeStep={activeStep} 
                   setActiveStep={handleStepClick}
@@ -179,7 +175,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
                 />
               </div>
               
-              {/* Desktop-only collapse button - Updated with primary color to match "Upgrade Now" button */}
+              {/* Desktop-only collapse button */}
               {!isMobile && (
                 <Button
                   variant="default"
@@ -207,7 +203,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
         )}
 
         {/* Main content area with responsive layout for subscription tiers */}
-        <div className="flex-grow grid grid-cols-12 gap-0 md:gap-4 h-full overflow-hidden">
+        <div className="flex-1 grid grid-cols-12 gap-0 md:gap-4 h-full overflow-hidden">
           {/* Larger chat area for free tier, smaller for paid tiers */}
           <div className={`${subscription.tier === 'free' ? 'col-span-12' : 'col-span-12 lg:col-span-8'} h-full`}>
             <TutorChat 
@@ -220,7 +216,7 @@ export const TutorInterface = ({ onConversationStart }: TutorInterfaceProps) => 
 
           {/* Smart Notes Panel - only for premium tier */}
           {subscription.tier === 'premium' && (
-            <div className="hidden lg:block lg:col-span-4 h-full">
+            <div className="hidden lg:block lg:col-span-4 h-full overflow-y-auto">
               <SmartNotesPanel notes={smartNotes} />
             </div>
           )}

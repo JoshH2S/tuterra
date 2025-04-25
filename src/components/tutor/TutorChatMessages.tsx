@@ -36,7 +36,10 @@ export const TutorChatMessages = ({
   const isMobile = useIsMobile();
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
+    messagesEndRef.current?.scrollIntoView({ 
+      behavior, 
+      block: "end" 
+    });
   };
 
   useEffect(() => {
@@ -45,44 +48,16 @@ export const TutorChatMessages = ({
     }
   }, [messages]);
 
-  // Mobile-specific touch handling for better scroll experience
   useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (container) {
-      container.classList.add("momentum-scroll");
-      
-      // Add special touch handling for mobile
-      if (isMobile) {
-        // Use type assertion to handle vendor-specific property
-        (container.style as any).WebkitOverflowScrolling = 'touch';
-        
-        // Enable momentum-based scrolling for iOS
-        const handleTouchStart = () => {
-          // This empty handler ensures touch events are properly registered
-        };
-        
-        container.addEventListener('touchstart', handleTouchStart, { passive: true });
-        
-        return () => {
-          container.removeEventListener('touchstart', handleTouchStart);
-        };
-      }
-    }
-    
     // Initialize with scroll to bottom on first load
     scrollToBottom("auto");
-    
-    return () => {
-      if (container) {
-        container.classList.remove("momentum-scroll");
-      }
-    };
-  }, [isMobile]);
+  }, []);
 
   return (
     <ScrollArea 
       className="flex-1 h-full"
       type="always"
+      scrollHideDelay={0}
     >
       <div 
         ref={messagesContainerRef}
