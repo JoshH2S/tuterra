@@ -43,7 +43,7 @@ export const useUserCredits = () => {
           assessment_credits: 2
         });
         setIsOfflineMode(true);
-        return credits;
+        return;
       }
 
       const { data: creditsData, error: creditsError } = await supabase
@@ -77,8 +77,6 @@ export const useUserCredits = () => {
         });
         setIsOfflineMode(true);
       }
-
-      return credits;
       
     } catch (error: any) {
       console.error("Unexpected error fetching user credits:", error);
@@ -191,7 +189,8 @@ export const useUserCredits = () => {
   // Add the missing retryFetch function
   const retryFetch = async (): Promise<void> => {
     setError(null);
-    return fetchUserCredits();
+    await fetchUserCredits();
+    return;
   };
 
   useEffect(() => {
