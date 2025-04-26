@@ -26,14 +26,16 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     }
   }, [error]);
 
-  const shouldRender = subscription.tier === "free";
-  if (!shouldRender) return null;
+  // Early return if not a free user or subscription is not loaded
+  if (!subscription || subscription.tier !== "free") {
+    return null;
+  }
 
   if (loading) {
     return (
       <Badge variant="outline" className="ml-2 gap-1">
         <Loader2 className="h-3 w-3 animate-spin" />
-        <span>Credits</span>
+        <span>Loading credits...</span>
       </Badge>
     );
   }
