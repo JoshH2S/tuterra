@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { User, Sparkles, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,15 +10,17 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 interface SidebarUserProfileProps {
   isCollapsed?: boolean;
 }
 
 export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfileProps) => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { subscription } = useSubscription();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const navigate = useNavigate();
   
   const displayName = user?.user_metadata?.first_name
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ''}`
@@ -59,10 +62,8 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
       authSubscription.unsubscribe();
     };
   }, [user]);
-
-  const navigate = useNavigate();
   
-  const signOut = async () => {
+  const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
       toast({
@@ -116,7 +117,7 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
               variant="ghost" 
               size="sm" 
               className="mt-1.5 h-7 px-2 flex items-center justify-start text-black hover:bg-gray-100" 
-              onClick={signOut}
+              onClick={handleSignOut}
             >
               <LogOut className="h-3.5 w-3.5 mr-1.5" />
               <span className="text-xs">Logout</span>
