@@ -9,9 +9,9 @@ export const PrivacyPolicy = () => {
         <p className="text-sm text-muted-foreground mb-4">Last Updated: June 15, 2024</p>
         
         <p>
-          EduPortal ("we," "our," "us") is committed to protecting the privacy of our users 
+          Tuterra ("we," "our," "us") is committed to protecting the privacy of our users 
           ("you," "your"). This Privacy Policy explains how we collect, use, disclose, 
-          and safeguard your information when you use our application, EduPortal.
+          and safeguard your information when you use our application, Tuterra.
         </p>
         
         <h2 className="text-xl font-semibold mt-6 mb-3">1. Information We Collect</h2>
@@ -33,7 +33,7 @@ export const PrivacyPolicy = () => {
         <h2 className="text-xl font-semibold mt-6 mb-3">2. How We Use Your Information</h2>
         <p>We may use the information we collect to:</p>
         <ul className="list-disc pl-6 space-y-2">
-          <li>Provide, maintain, and improve EduPortal's services.</li>
+          <li>Provide, maintain, and improve Tuterra's services.</li>
           <li>Personalize your experience, including AI-driven learning recommendations.</li>
           <li>Communicate with you about updates, offers, and support.</li>
           <li>Analyze usage and improve our app's functionality.</li>
@@ -68,7 +68,7 @@ export const PrivacyPolicy = () => {
         <h2 className="text-xl font-semibold mt-6 mb-3">7. Contact Us</h2>
         <p>
           If you have any questions about this Privacy Policy, please contact us at 
-          [support@eduportal.com].
+          [support@tuterra.ai].
         </p>
       </div>
     </ScrollArea>
