@@ -5,17 +5,17 @@ export const TermsOfUse = () => {
   return (
     <ScrollArea className="h-[70vh] md:h-[60vh]">
       <div className="prose dark:prose-invert max-w-none p-4 md:p-6">
-        <h1 className="text-2xl font-bold mb-4">EduPortal Terms of Use</h1>
-        <p className="text-sm text-muted-foreground mb-4">Last Updated: June 15, 2024</p>
+        <h1 className="text-2xl font-bold mb-4">Tuterra Terms of Use</h1>
+        <p className="text-sm text-muted-foreground mb-4">Last Updated: April 26, 2025</p>
         
         <p>
-          These Terms of Use ("Terms") govern your access to and use of EduPortal's services. 
-          By using EduPortal, you agree to comply with these Terms.
+          These Terms of Use ("Terms") govern your access to and use of Tuterra's services. 
+          By using Tuterra, you agree to comply with these Terms.
         </p>
         
         <h2 className="text-xl font-semibold mt-6 mb-3">1. Use of the Service</h2>
         <p>
-          EduPortal provides AI-driven educational tools, including quiz generation, skill 
+          Tuterra provides AI-driven educational tools, including quiz generation, skill 
           assessments, and an AI tutor. You must:
         </p>
         <ul className="list-disc pl-6 space-y-2">
@@ -31,7 +31,7 @@ export const TermsOfUse = () => {
         
         <h2 className="text-xl font-semibold mt-6 mb-3">3. Subscription Tiers</h2>
         <p>
-          EduPortal offers free, premium, and enterprise subscription tiers. Premium features 
+          Tuterra offers free, premium, and enterprise subscription tiers. Premium features 
           may include advanced AI functionalities, increased usage limits, and customization options.
         </p>
         
@@ -40,13 +40,13 @@ export const TermsOfUse = () => {
         <ul className="list-disc pl-6 space-y-2">
           <li>Misuse the app by attempting to access unauthorized features or data.</li>
           <li>Distribute harmful or illegal content.</li>
-          <li>Violate the intellectual property rights of EduPortal or others.</li>
+          <li>Violate the intellectual property rights of Tuterra or others.</li>
         </ul>
         
         <h2 className="text-xl font-semibold mt-6 mb-3">5. Limitation of Liability</h2>
         <p>
-          EduPortal is provided on an "as-is" basis. We do not guarantee the accuracy or 
-          reliability of AI-generated content. You use EduPortal at your own risk.
+          Tuterra is provided on an "as-is" basis. We do not guarantee the accuracy or 
+          reliability of AI-generated content. You use Tuterra at your own risk.
         </p>
         
         <h2 className="text-xl font-semibold mt-6 mb-3">6. Termination</h2>
@@ -57,13 +57,13 @@ export const TermsOfUse = () => {
         
         <h2 className="text-xl font-semibold mt-6 mb-3">7. Governing Law</h2>
         <p>
-          These Terms are governed by the laws of [Your Jurisdiction]. Any disputes will be 
+          These Terms are governed by the laws of the state of Maryland. Any disputes will be 
           resolved in accordance with local laws.
         </p>
         
         <h2 className="text-xl font-semibold mt-6 mb-3">8. Contact Us</h2>
         <p>
-          For questions regarding these Terms, please contact us at [support@eduportal.com].
+          For questions regarding these Terms, please contact us at [support@tuterra.ai].
         </p>
       </div>
     </ScrollArea>
