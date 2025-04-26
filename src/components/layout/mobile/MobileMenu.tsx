@@ -15,7 +15,7 @@ export function MobileMenu({ onClose }: MobileMenuProps) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200/30">
         <Link to="/" className="flex items-center" onClick={onClose}>
-          <span className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">EduPortal</span>
+          <span className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">Tuterra</span>
         </Link>
         <Button 
           variant="ghost" 
