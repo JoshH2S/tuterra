@@ -20,21 +20,33 @@ export default function Contact() {
     e.preventDefault();
     setSubmitting(true);
     
-    // This would typically send the data to a backend service
-    // For now, we'll just simulate a submission
-    
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: { name, email, company, message }
+      });
+
+      if (error) throw error;
+
       toast({
-        title: "Message sent!",
+        title: "Message sent successfully!",
         description: "We'll get back to you as soon as possible.",
       });
       
+      // Clear form
       setName("");
       setEmail("");
       setCompany("");
       setMessage("");
+    } catch (error) {
+      console.error("Error sending contact form:", error);
+      toast({
+        title: "Failed to send message",
+        description: "Please try again later or contact us directly at admin@tuterra.ai",
+        variant: "destructive",
+      });
+    } finally {
       setSubmitting(false);
-    }, 1500);
+    }
   };
 
   return (

@@ -18,3 +18,7 @@ verify_jwt = true
 
 [functions.check-subscription-status]
 verify_jwt = true
+
+[functions.send-contact-email]
+verify_jwt = false
+
