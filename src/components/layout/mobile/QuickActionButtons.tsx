@@ -25,7 +25,7 @@ export function QuickActionButtons() {
   const actions = [
     { icon: Brain, label: "Quiz", path: "/quizzes" },
     { icon: Book, label: "Courses", path: "/courses" },
-    { icon: Calculator, label: "Assessments", path: "/skill-assessments" },
+    { icon: Calculator, label: "Assessments", path: "/assessments" },
     { icon: MessageSquare, label: "Interview", path: "/interview-simulator" },
   ];
 
