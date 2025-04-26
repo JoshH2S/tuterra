@@ -81,9 +81,17 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
     }
   };
 
+  const handleProfileClick = () => {
+    navigate("/profile-settings");
+  };
+
   return (
     <div className="flex flex-col w-full">
-      <div className="flex items-center gap-2 px-2 py-1.5">
+      {/* MAKE THE PROFILE AREA CLICKABLE */}
+      <div 
+        className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted rounded-md"
+        onClick={handleProfileClick}
+      >
         <Avatar className="h-9 w-9">
           {avatarUrl && (
             <AvatarImage 
@@ -113,18 +121,22 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
                 </Button>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="mt-1.5 h-7 px-2 flex items-center justify-start text-black hover:bg-gray-100" 
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-3.5 w-3.5 mr-1.5" />
-              <span className="text-xs">Logout</span>
-            </Button>
           </div>
         )}
       </div>
+
+      {/* Keep Logout separate so it doesn't click with profile */}
+      {!isCollapsed && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mt-1.5 h-7 px-2 flex items-center justify-start text-black hover:bg-gray-100" 
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-3.5 w-3.5 mr-1.5" />
+          <span className="text-xs">Logout</span>
+        </Button>
+      )}
     </div>
   );
 };
