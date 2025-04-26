@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Header1 } from "@/components/ui/header";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Building, User, MessageSquare } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function Contact() {
   const [name, setName] = useState("");
