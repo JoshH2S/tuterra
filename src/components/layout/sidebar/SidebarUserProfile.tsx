@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { useNavigate } from "react-router-dom";
 
 interface SidebarUserProfileProps {
   isCollapsed?: boolean;
@@ -58,6 +59,26 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
       authSubscription.unsubscribe();
     };
   }, [user]);
+
+  const navigate = useNavigate();
+  
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Success",
+        description: "You have been logged out successfully.",
+      });
+      navigate("/"); // Redirect to landing page
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col w-full">

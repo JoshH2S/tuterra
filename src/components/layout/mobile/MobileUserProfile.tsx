@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -39,7 +38,6 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
         if (data) {
           setFirstName(data.first_name || "");
           setLastName(data.last_name || "");
-          // If avatarUrl wasn't set from metadata, try from profile
           if (!user.user_metadata?.avatar_url) {
             setAvatarUrl(data.avatar_url || "");
           }
@@ -51,7 +49,6 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
 
     fetchUserProfile();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
         fetchUserProfile();
@@ -70,7 +67,6 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
     };
   }, []);
 
-  // Subscribe to profile changes for real-time avatar updates
   useEffect(() => {
     if (!userId) return;
     
@@ -107,7 +103,7 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
         title: "Success",
         description: "You have been logged out successfully.",
       });
-      navigate("/auth");
+      navigate("/");
     } catch (error) {
       console.error('Error logging out:', error);
       toast({
@@ -118,7 +114,6 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
     }
   };
 
-  // Get user initials for avatar fallback
   const getInitials = () => {
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`;
