@@ -45,38 +45,12 @@ export default function PricingPage() {
       return;
     }
     
-    if (!isLoggedIn) {
-      navigate(`/auth?tab=signup&plan=${planId}`);
+    if (isLoggedIn) {
+      navigate('/profile-settings');
       return;
     }
     
-    setIsRedirecting(true);
-    
-    try {
-      console.log('Starting checkout for plan:', planId);
-      
-      const success = await createCheckoutSession({
-        planId: planId,
-        successUrl: `${window.location.origin}/onboarding-redirect`,
-        cancelUrl: `${window.location.origin}/pricing`,
-      });
-
-      if (!success) {
-        console.error('Checkout session creation failed');
-        throw new Error('Failed to create checkout session');
-      }
-      
-    } catch (error: any) {
-      console.error('Checkout error:', error);
-      setIsRedirecting(false);
-      
-      toast({
-        title: "Checkout Error",
-        description: "There was a problem starting the checkout process. Please try again or contact support.",
-        variant: "destructive",
-        duration: 5000,
-      });
-    }
+    navigate(`/auth?tab=signup&plan=${planId}`);
   };
 
   useEffect(() => {
