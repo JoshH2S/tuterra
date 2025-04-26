@@ -13,7 +13,7 @@ export function FeatureShowcaseDemo() {
       title: "Case Study Quizzes",
       description: "Create course and topic specific quizzes that move you beyond knowledge absorption into applying concepts into the world areound you, tailored to recent real-world events!",
       image: "/lovable-uploads/089c8cb1-63b0-4ed5-ba8c-419af66cdf7e.png",
-      buttonText: "Start Assessment",
+      buttonText: "Create a Quiz",
     },
     {
       title: "Job Interview Simulator",
@@ -25,7 +25,7 @@ export function FeatureShowcaseDemo() {
       title: "Skill Assessments",
       description: "Evaluate your skills with our comprehensive assessment tools, featuring detailed feedback and personalized improvement suggestions.",
       image: "/lovable-uploads/a02bdab0-bfea-438f-9680-b4e948ed841a.png",
-      buttonText: "Start Learning",
+      buttonText: "Create Assessment",
     },
   ];
 
