@@ -1,13 +1,15 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useSwipeable } from "react-swipeable";
+import { useResponsive } from "@/hooks/useResponsive";
+import { ChevronUp } from "lucide-react";
+import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
+import { MobileNavigation } from "./MobileNavigation";
 
 interface Section {
   id: string;
-  title: string;
+  label: string;
 }
 
 interface EnhancedNavigationProps {
@@ -15,32 +17,11 @@ interface EnhancedNavigationProps {
 }
 
 export function EnhancedNavigation({ sections }: EnhancedNavigationProps) {
-  const [activeSection, setActiveSection] = useState<string>('');
-  const isMobile = useIsMobile();
-  
-  // Handle swipe navigation for mobile
-  const swipeHandlers = useSwipeable({
-    onSwipedUp: () => {
-      const currentIndex = sections.findIndex(section => section.id === activeSection);
-      if (currentIndex < sections.length - 1) {
-        const nextSection = sections[currentIndex + 1];
-        document.getElementById(nextSection.id)?.scrollIntoView({ behavior: 'smooth' });
-        setActiveSection(nextSection.id);
-      }
-    },
-    onSwipedDown: () => {
-      const currentIndex = sections.findIndex(section => section.id === activeSection);
-      if (currentIndex > 0) {
-        const prevSection = sections[currentIndex - 1];
-        document.getElementById(prevSection.id)?.scrollIntoView({ behavior: 'smooth' });
-        setActiveSection(prevSection.id);
-      }
-    },
-    trackMouse: false
-  });
+  const [activeSection, setActiveSection] = useState("");
+  const { isDesktop } = useResponsive();
+  const headerHeight = 80;
 
   useEffect(() => {
-    // Intersection Observer for active section detection
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -49,60 +30,89 @@ export function EnhancedNavigation({ sections }: EnhancedNavigationProps) {
           }
         });
       },
-      { threshold: 0.5 }
+      { 
+        threshold: 0.3,
+        rootMargin: `-${headerHeight}px 0px 0px 0px`
+      }
     );
 
-    // Observe all sections
-    document.querySelectorAll('section[id]').forEach((section) => {
+    document.querySelectorAll("section[id]").forEach((section) => {
       observer.observe(section);
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [headerHeight]);
 
-  // Different UI for mobile vs desktop
-  if (isMobile) {
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, sectionId: string) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      scrollToSection(sectionId);
+    }
+  };
+
+  if (isDesktop) {
     return (
-      <div {...swipeHandlers} className="fixed bottom-4 left-0 right-0 z-40 flex justify-center">
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg flex gap-2">
-          {sections.map((section) => (
-            <motion.a
-              key={section.id}
-              href={`#${section.id}`}
-              whileTap={{ scale: 0.9 }}
-              className={cn(
-                "w-2.5 h-2.5 rounded-full touch-manipulation",
-                activeSection === section.id
-                  ? "bg-brand-accent"
-                  : "bg-gray-300 dark:bg-gray-600"
-              )}
-              aria-label={`Navigate to ${section.title}`}
-            />
-          ))}
-        </div>
-      </div>
+      <nav 
+        className="fixed top-1/2 right-8 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-3"
+        aria-label="Page navigation"
+      >
+        {sections.map((section) => (
+          <InteractiveTooltip
+            key={section.id}
+            content={<span className="font-medium">{section.label}</span>}
+            trigger={
+              <motion.a
+                href={`#${section.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection(section.id);
+                }}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+                className={cn(
+                  "w-3 h-3 rounded-full transition-colors block focus:outline-none focus:ring-2 focus:ring-primary",
+                  activeSection === section.id
+                    ? "bg-primary"
+                    : "bg-gray-300 dark:bg-gray-600"
+                )}
+                aria-label={`Navigate to ${section.label} section`}
+                onKeyDown={(e) => handleKeyDown(e, section.id)}
+                tabIndex={0}
+              />
+            }
+          />
+        ))}
+        
+        <motion.button
+          onClick={scrollToTop}
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.9 }}
+          className="mt-4 bg-white dark:bg-gray-800 w-8 h-8 rounded-full shadow-md flex items-center justify-center text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+          aria-label="Back to top"
+          tabIndex={0}
+        >
+          <ChevronUp className="h-5 w-5" />
+        </motion.button>
+      </nav>
     );
   }
 
-  return (
-    <nav className="fixed top-1/2 right-8 -translate-y-1/2 z-40 hidden lg:block">
-      <motion.div className="flex flex-col gap-4 p-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-full shadow-lg">
-        {sections.map((section) => (
-          <motion.a
-            key={section.id}
-            href={`#${section.id}`}
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.9 }}
-            className={cn(
-              "w-3 h-3 rounded-full transition-colors",
-              activeSection === section.id
-                ? "bg-brand-accent"
-                : "bg-gray-300 dark:bg-gray-600"
-            )}
-            aria-label={`Navigate to ${section.title}`}
-          />
-        ))}
-      </motion.div>
-    </nav>
-  );
+  return <MobileNavigation sections={sections} />;
 }
