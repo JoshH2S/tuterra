@@ -59,7 +59,6 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     quiz_credits: 5,
     interview_credits: 2,
     assessment_credits: 2,
-    tutor_message_credits: 5
   };
 
   // Calculate total remaining credits
@@ -67,9 +66,8 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
     safeCredits.quiz_credits + 
     safeCredits.interview_credits + 
     safeCredits.assessment_credits + 
-    safeCredits.tutor_message_credits;
 
-  const maxCredits = 15;
+  const maxCredits = 9;
 
   // Calculate percentage for badge coloring
   const percentage = Math.floor((totalCredits / maxCredits) * 100);
