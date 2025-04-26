@@ -1,7 +1,6 @@
-
 import React from "react"
 import { motion } from "framer-motion"
-import { Mail, Phone, Building, Users, Award, Heart } from "lucide-react"
+import { Mail, Phone, Building, Users, Award, Heart, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -186,10 +185,13 @@ export default function AboutUs() {
                 +1 (202)-827-5194
               </Button>
             </div>
+            <div className="mt-6 text-muted-foreground flex items-center justify-center gap-2">
+              <MapPin className="w-4 h-4" />
+              <span>Address: 5000 Thayer Center STE C, Oakland, MD, 21550</span>
+            </div>
           </motion.div>
         </div>
       </section>
     </div>
   );
 }
-
