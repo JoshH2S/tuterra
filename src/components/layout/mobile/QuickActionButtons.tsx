@@ -23,7 +23,7 @@ export function QuickActionButtons() {
   };
 
   const actions = [
-    { icon: Brain, label: "AI Tutor", path: "/tutor" },
+    { icon: Brain, label: "Case Study Quiz", path: "/tutor" },
     { icon: Book, label: "Courses", path: "/courses" },
     { icon: Calculator, label: "Assessments", path: "/skill-assessments" },
     { icon: MessageSquare, label: "Interview", path: "/job-interview-simulator" },
