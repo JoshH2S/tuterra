@@ -26,7 +26,7 @@ export function QuickActionButtons() {
     { icon: Brain, label: "Case Study Quiz", path: "/case-study-quiz-generation" },
     { icon: Book, label: "Courses", path: "/courses" },
     { icon: Calculator, label: "Assessments", path: "/skill-assessments" },
-    { icon: MessageSquare, label: "Interview", path: "/job-interview-simulator" },
+    { icon: MessageSquare, label: "Interview", path: "/interview-simulator" },
   ];
 
   return (
