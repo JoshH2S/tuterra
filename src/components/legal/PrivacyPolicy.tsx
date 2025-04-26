@@ -5,7 +5,7 @@ export const PrivacyPolicy = () => {
   return (
     <ScrollArea className="h-[70vh] md:h-[60vh]">
       <div className="prose dark:prose-invert max-w-none p-4 md:p-6">
-        <h1 className="text-2xl font-bold mb-4">EduPortal Privacy Policy</h1>
+        <h1 className="text-2xl font-bold mb-4">Tuterra Privacy Policy</h1>
         <p className="text-sm text-muted-foreground mb-4">Last Updated: June 15, 2024</p>
         
         <p>
