@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Database } from "@/integrations/supabase/types";
+import { useNavigate } from "react-router-dom";
 
 type NewsTopic = Database["public"]["Enums"]["news_topic"];
 

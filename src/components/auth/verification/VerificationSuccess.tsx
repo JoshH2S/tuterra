@@ -1,28 +1,32 @@
 
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 interface VerificationSuccessProps {
   onContinue: () => void;
 }
 
 export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
     const sendWelcomeEmail = async () => {
+      if (!user) return;
+
       try {
-        // Fix: Get session first, then user from session
-        const { data: sessionData } = await supabase.auth.getSession();
-        const session = sessionData.session;
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (!session?.user || !session?.access_token) {
+        if (!session?.access_token) {
           console.error("[WelcomeEmail] No valid session for email sending");
           return;
         }
 
-        const user = session.user;
-        
         const { data, error } = await supabase.functions.invoke("send-welcome-email", {
           body: {
             email: user.email,
@@ -44,14 +48,23 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
             .eq('id', user.id);
 
           console.log("[WelcomeEmail] Successfully sent for user:", user.id);
+          toast({
+            title: "Welcome Email",
+            description: "A welcome email has been sent to your inbox.",
+          });
         }
       } catch (error: any) {
         console.error("[WelcomeEmail] Error sending welcome email:", error);
+        toast({
+          title: "Welcome Email",
+          description: "We couldn't send the welcome email. We'll try again later.",
+          variant: "destructive",
+        });
       }
     };
 
     sendWelcomeEmail();
-  }, []);
+  }, [user]);
 
   return (
     <div className="space-y-6 text-center">
