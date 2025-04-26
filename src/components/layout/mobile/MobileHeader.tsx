@@ -44,7 +44,7 @@ export function MobileHeader() {
         </Sheet>
 
         <div className="flex flex-1 items-center justify-between space-x-2">
-          <div className="font-semibold text-lg">tuterra.ai</div>
+          <div className="font-semibold text-lg">tuterra</div>
           
           <div className="flex items-center space-x-2">
             {subscription?.tier === 'free' && (
