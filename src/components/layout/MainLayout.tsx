@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,9 +18,7 @@ export const MainLayout = () => {
   const { user, loading } = useAuth();
   const [isLayoutReady, setIsLayoutReady] = useState(false);
 
-  const hideSidebar = location.pathname === "/" || 
-                     location.pathname === "/auth" ||
-                     location.pathname === "/about";
+  const isLandingPage = location.pathname === "/";
 
   useEffect(() => {
     if (!loading) {
@@ -44,7 +43,7 @@ export const MainLayout = () => {
       <Toaster />
       <Sonner />
       <SidebarProvider>
-        <Layout isLandingPage={hideSidebar}>
+        <Layout isLandingPage={isLandingPage}>
           <AppRoutes />
         </Layout>
       </SidebarProvider>
