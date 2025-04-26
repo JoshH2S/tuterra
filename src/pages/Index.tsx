@@ -1,4 +1,5 @@
 
+import React from "react";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { FeatureShowcaseDemo } from "@/components/landing/FeatureShowcaseDemo";
 import { ComparisonSection } from "@/components/landing/ComparisonSection";
@@ -11,11 +12,12 @@ import { Header1 } from "@/components/ui/header";
 const Index = () => {
   const { isOnline } = useNetworkStatus();
   
-  // Define sections for the navigation
   const sections = [
-    { id: "hero", title: "Home" },
-    { id: "comparison", title: "Why Choose Us" },
-    { id: "cta", title: "Get Started" }
+    { id: "hero", label: "Home" },
+    { id: "features", label: "Features" },
+    { id: "comparison", label: "Why Choose Us" },
+    { id: "pricing", label: "Pricing" },
+    { id: "cta", label: "Get Started" }
   ];
 
   return (
@@ -23,23 +25,23 @@ const Index = () => {
       <Header1 />
       
       <div className="pt-20">
-        <section id="hero">
+        <section id="hero" className="min-h-screen">
           <HeroSection />
         </section>
         
-        <section id="features">
+        <section id="features" className="min-h-screen">
           <FeatureShowcaseDemo />
         </section>
         
-        <section id="comparison">
+        <section id="comparison" className="min-h-screen">
           <ComparisonSection />
         </section>
 
-        <section id="pricing">
+        <section id="pricing" className="min-h-screen">
           <PricingSection />
         </section>
         
-        <section id="cta">
+        <section id="cta" className="min-h-screen">
           <CtaSection />
         </section>
       </div>
