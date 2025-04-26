@@ -6,29 +6,21 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { ChevronUp } from "lucide-react";
 import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
 
-// Section data - these should match your page's actual sections
-const sections = [
-  { id: "hero", label: "Home" },
-  { id: "features", label: "Features" },
-  { id: "testimonials", label: "Testimonials" },
-  { id: "pricing", label: "Pricing" },
-  { id: "contact", label: "Contact" }
-];
+interface Section {
+  id: string;
+  label: string;
+}
 
-/**
- * SectionDots component for navigation
- * - Shows interactive dots for each section
- * - Highlights active section
- * - Uses tooltips for labels
- */
-export function SectionDots() {
+interface EnhancedNavigationProps {
+  sections: Section[];
+}
+
+export function EnhancedNavigation({ sections }: EnhancedNavigationProps) {
   const [activeSection, setActiveSection] = useState("");
   const { isDesktop } = useResponsive();
+  const headerHeight = 80; // Height of the fixed header
 
   useEffect(() => {
-    if (!isDesktop) return;
-
-    // Intersection Observer for active section detection
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -37,76 +29,118 @@ export function SectionDots() {
           }
         });
       },
-      { threshold: 0.5 }
+      { 
+        threshold: 0.3,
+        rootMargin: `-${headerHeight}px 0px 0px 0px`
+      }
     );
 
-    // Observe all sections
     document.querySelectorAll("section[id]").forEach((section) => {
       observer.observe(section);
     });
 
     return () => observer.disconnect();
-  }, [isDesktop]);
+  }, [headerHeight]);
 
-  // Back to top function
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }
+  };
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (!isDesktop) return null;
+  const handleKeyDown = (e: React.KeyboardEvent, sectionId: string) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      scrollToSection(sectionId);
+    }
+  };
+
+  if (isDesktop) {
+    return (
+      <nav 
+        className="fixed top-1/2 right-8 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-3"
+        aria-label="Page navigation"
+      >
+        {sections.map((section) => (
+          <InteractiveTooltip
+            key={section.id}
+            content={<span className="font-medium">{section.label}</span>}
+            trigger={
+              <motion.a
+                href={`#${section.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection(section.id);
+                }}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+                className={cn(
+                  "w-3 h-3 rounded-full transition-colors block focus:outline-none focus:ring-2 focus:ring-primary",
+                  activeSection === section.id
+                    ? "bg-primary"
+                    : "bg-gray-300 dark:bg-gray-600"
+                )}
+                aria-label={`Navigate to ${section.label} section`}
+                onKeyDown={(e) => handleKeyDown(e, section.id)}
+                tabIndex={0}
+              />
+            }
+          />
+        ))}
+        
+        <motion.button
+          onClick={scrollToTop}
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.9 }}
+          className="mt-4 bg-white dark:bg-gray-800 w-8 h-8 rounded-full shadow-md flex items-center justify-center text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+          aria-label="Back to top"
+          tabIndex={0}
+        >
+          <ChevronUp className="h-5 w-5" />
+        </motion.button>
+      </nav>
+    );
+  }
 
   return (
-    <nav className="fixed top-1/2 right-8 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-3">
-      {sections.map((section) => (
-        <InteractiveTooltip
-          key={section.id}
-          content={<span className="font-medium">{section.label}</span>}
-          trigger={
-            <motion.a
-              href={`#${section.id}`}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.9 }}
-              className={cn(
-                "w-3 h-3 rounded-full transition-colors block",
-                activeSection === section.id
-                  ? "bg-primary"
-                  : "bg-gray-300 dark:bg-gray-600"
-              )}
-              aria-label={`Navigate to ${section.label} section`}
-            />
-          }
-        />
-      ))}
-      
-      {/* Back to top button */}
-      <motion.button
-        onClick={scrollToTop}
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        className="mt-4 bg-white dark:bg-gray-800 w-8 h-8 rounded-full shadow-md flex items-center justify-center text-primary"
-        aria-label="Back to top"
-      >
-        <ChevronUp className="h-5 w-5" />
-      </motion.button>
+    <nav 
+      className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 lg:hidden z-40"
+      aria-label="Mobile navigation"
+    >
+      <div className="flex justify-around items-center h-16">
+        {sections.map((section) => (
+          <a
+            key={section.id}
+            href={`#${section.id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection(section.id);
+            }}
+            className={cn(
+              "flex flex-col items-center justify-center px-4 py-2 text-sm font-medium transition-colors",
+              activeSection === section.id
+                ? "text-primary"
+                : "text-gray-500 dark:text-gray-400"
+            )}
+            aria-label={`Navigate to ${section.label} section`}
+            onKeyDown={(e) => handleKeyDown(e, section.id)}
+            tabIndex={0}
+          >
+            <span>{section.label}</span>
+          </a>
+        ))}
+      </div>
     </nav>
   );
 }
-
-/**
- * Desktop Navigation with section tracking
- * - Only renders on desktop screens
- * - Provides enhanced navigation experience
- */
-export function DesktopNavigation() {
-  const { isDesktop } = useResponsive();
-
-  if (!isDesktop) return null;
-
-  return (
-    <div className="hidden lg:block">
-      <SectionDots />
-    </div>
-  );
-}
-
-export default DesktopNavigation;
