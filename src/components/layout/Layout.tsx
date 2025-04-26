@@ -25,7 +25,7 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
   // Hide sidebar on specific routes
   const hideSidebar = isLandingPage || 
                       location.pathname === "/about" || 
-                      location.pathname === "/pricing" || 
+                      location.pathname === "/auth" ||
                       location.pathname === "/contact";
 
   // Show Header1 on specific routes where the sidebar is hidden but we need navigation
