@@ -50,11 +50,6 @@ export const navigationItems: NavigationItem[] = [
     path: "/assessments" 
   },
   { 
-    icon: MessageCircleQuestion, 
-    label: "AI Tutor", 
-    path: "/courses/tutor" 
-  },
-  { 
     icon: BrainCircuit, 
     label: "Interview Simulator", 
     path: "/interview-simulator" 
@@ -72,18 +67,10 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
   const { user } = useAuth();
   const { subscription } = useSubscription();
   
-  // Fix: Improved active path detection
   const isActive = (path: string) => {
-    // Exact match
     if (location.pathname === path) return true;
-    
-    // For dashboard, it's active on the root path too
     if (path === '/dashboard' && location.pathname === '/') return true;
-    
-    // For other paths, check if it's a sub-path but not an exact match
-    // This prevents multiple items being active
     if (path !== '/' && path !== '/dashboard' && location.pathname.startsWith(path)) {
-      // Make sure we're not activating a parent path when a more specific child path should be active
       const morePreciseMatch = navigationItems.some(item => 
         item.path !== path && 
         item.path.startsWith(path) && 
@@ -91,7 +78,6 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
       );
       return !morePreciseMatch;
     }
-    
     return false;
   };
 
@@ -99,11 +85,6 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
     navigate(path);
   };
 
-  // Admin or teacher-only items
-  if (user?.user_metadata?.user_type === "teacher") {
-    // Add teacher-specific items if needed
-  }
-  
   return (
     <nav className="flex-1 py-2">
       <ul className="space-y-1 px-2 list-none">
@@ -124,3 +105,4 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
     </nav>
   );
 };
+
