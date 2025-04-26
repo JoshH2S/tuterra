@@ -57,7 +57,7 @@ export const CreditsBadge = ({ showFull = false }: { showFull?: boolean }) => {
   // Ensure we have fallback values if credits is somehow null
   const safeCredits = credits || {
     quiz_credits: 5,
-    interview_credits: 3,
+    interview_credits: 2,
     assessment_credits: 2,
     tutor_message_credits: 5
   };
