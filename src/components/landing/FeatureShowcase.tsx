@@ -7,12 +7,14 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useResponsive } from "@/hooks/useResponsive";
+import { Link } from "react-router-dom"; // <-- Add this import
 
 export interface Feature {
   title: string;
   description: string;
   image: string;
   buttonText: string;
+  buttonLink?: string; // <-- Add this property
 }
 
 interface FeatureShowcaseProps {
@@ -198,8 +200,10 @@ function FeatureCard({ feature, isActive }: FeatureCardProps) {
             {feature.description}
           </p>
           <div className={`${isMobile ? 'flex justify-center' : ''} pt-4`}>
-            <Button size="lg" className="rounded-full font-medium">
-              {feature.buttonText}
+            <Button asChild size="lg" className="rounded-full font-medium">
+              <Link to={feature.buttonLink || "/auth"}>
+                {feature.buttonText}
+              </Link>
             </Button>
           </div>
         </div>
