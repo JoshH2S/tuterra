@@ -60,10 +60,7 @@ const NAVIGATION_ITEMS = [
     label: "Vision",
     icon: <Heart className="h-5 w-5" />,
   },
-  {
-    label: "Team",
-    icon: <Users className="h-5 w-5" />,
-  },
+ 
 ];
 
 export default function AboutUs() {
