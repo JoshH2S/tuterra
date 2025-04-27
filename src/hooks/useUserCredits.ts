@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +7,7 @@ export interface UserCredits {
   quiz_credits: number;
   interview_credits: number;
   assessment_credits: number;
+  tutor_message_credits: number;
   [key: string]: number;
 }
 
@@ -16,6 +16,7 @@ export const useUserCredits = () => {
     quiz_credits: 5,
     interview_credits: 2,
     assessment_credits: 2,
+    tutor_message_credits: 10,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -25,9 +26,7 @@ export const useUserCredits = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch user credits from the database with improved error handling and race condition prevention
   const fetchUserCredits = useCallback(async () => {
-    // Don't fetch if already fetching
     if (fetchingCredits.current) return;
     
     try {
@@ -36,12 +35,12 @@ export const useUserCredits = () => {
       
       const { data: { session } } = await supabase.auth.getSession();
 
-      // If there's no user session, use default credits
       if (!session || !session.user) {
         setCredits({
           quiz_credits: 5,
           interview_credits: 2,
-          assessment_credits: 2
+          assessment_credits: 2,
+          tutor_message_credits: 10
         });
         setIsOfflineMode(true);
         return;
@@ -59,13 +58,12 @@ export const useUserCredits = () => {
         setIsOfflineMode(true);
       }
       
-      // Set credits and clear errors
       if (creditsData) {
-        // Convert DB data to our UserCredits type
         setCredits({
           quiz_credits: creditsData.quiz_credits,
           interview_credits: creditsData.interview_credits,
-          assessment_credits: creditsData.assessment_credits
+          assessment_credits: creditsData.assessment_credits,
+          tutor_message_credits: creditsData.tutor_message_credits || 10
         });
         setError(null);
         setIsOfflineMode(false);
@@ -74,7 +72,8 @@ export const useUserCredits = () => {
         setCredits({
           quiz_credits: 5,
           interview_credits: 2,
-          assessment_credits: 2
+          assessment_credits: 2,
+          tutor_message_credits: 10
         });
         setIsOfflineMode(true);
       }
@@ -90,13 +89,10 @@ export const useUserCredits = () => {
       });
     } finally {
       setLoading(false);
-      // Always reset the fetchingCredits flag, even if an error occurred
-      // This prevents the user from being stuck with stale credits
       fetchingCredits.current = false;
     }
   }, [toast]);
 
-  // Check if user has enough credits with improved validation
   const checkCredits = async (creditType: string): Promise<boolean> => {
     if (!creditType) {
       console.error("Credit type is required");
@@ -110,7 +106,7 @@ export const useUserCredits = () => {
 
     if (!credits) {
       console.warn("Credits not loaded, please try again");
-      await fetchUserCredits(); // Try to fetch credits again
+      await fetchUserCredits();
       return false;
     }
 
@@ -122,14 +118,12 @@ export const useUserCredits = () => {
     return credits[creditType] > 0;
   };
 
-  // Decrement credits function with improved state synchronization
   const decrementCredits = async (creditType: string): Promise<boolean> => {
     if (!creditType) {
       console.error("Credit type is required");
       return false;
     }
 
-    // Don't decrement credits in offline mode or for premium users
     if (isOfflineMode) {
       console.log("Offline mode: Skipping credit decrement");
       toast({
@@ -142,8 +136,6 @@ export const useUserCredits = () => {
     try {
       setPendingTransactions(prev => ({ ...prev, [creditType]: true }));
 
-      // Optimistic UI update - update local state immediately
-      // This will be reset if the server update fails
       const previousCredits = { ...credits };
       setCredits(prev => ({
         ...prev,
@@ -157,7 +149,6 @@ export const useUserCredits = () => {
         .select();
 
       if (error) {
-        // Revert to previous state if update fails
         setCredits(previousCredits);
         console.error("Error decrementing credit:", error);
         toast({
@@ -169,23 +160,17 @@ export const useUserCredits = () => {
       }
 
       if (data && data[0]) {
-        // Update the local credits state with server response
-        // This ensures UI matches backend state
         const updatedValue = data[0][creditType];
-        
-        // Only update the specific credit that changed
         setCredits(prev => ({
           ...prev,
           [creditType]: updatedValue
         }));
-        
         toast({
           title: "Credit used",
           description: `1 ${creditType.replace('_credits', '')} credit has been used.`,
         });
         return true;
       } else {
-        // If no data was returned, revert to previous state
         setCredits(previousCredits);
         console.error("No data returned from update operation");
         return false;
@@ -202,8 +187,7 @@ export const useUserCredits = () => {
       setPendingTransactions(prev => ({ ...prev, [creditType]: false }));
     }
   };
-  
-  // Retry fetching credits
+
   const retryFetch = async (): Promise<void> => {
     setError(null);
     await fetchUserCredits();
@@ -211,7 +195,6 @@ export const useUserCredits = () => {
   };
 
   useEffect(() => {
-    // Initialize by fetching credits
     fetchUserCredits();
   }, [fetchUserCredits]);
 

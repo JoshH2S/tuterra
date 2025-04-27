@@ -13,14 +13,15 @@ import { CreditsDisplay } from "./CreditsDisplay";
 interface UpgradePromptProps {
   isOpen: boolean;
   onClose: () => void;
-  featureType: "quiz" | "interview" | "assessment";
+  featureType: "quiz" | "interview" | "assessment" | "tutor";
 }
 
 export const UpgradePrompt = ({ isOpen, onClose, featureType }: UpgradePromptProps) => {
   const featureLabels = {
     quiz: "quizzes",
     interview: "job interview simulations",
-    assessment: "skill assessments"
+    assessment: "skill assessments",
+    tutor: "AI tutor messages"
   };
 
   const handleUpgradeClick = () => {
