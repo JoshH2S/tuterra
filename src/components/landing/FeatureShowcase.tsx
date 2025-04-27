@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -7,14 +6,14 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useResponsive } from "@/hooks/useResponsive";
-import { Link } from "react-router-dom"; // <-- Add this import
+import { Link } from "react-router-dom";
 
 export interface Feature {
   title: string;
   description: string;
   image: string;
   buttonText: string;
-  buttonLink?: string; // <-- Add this property
+  buttonLink?: string;
 }
 
 interface FeatureShowcaseProps {
@@ -44,7 +43,6 @@ export function FeatureShowcase({ features }: FeatureShowcaseProps) {
     }
   };
 
-  // Handle drag events for mobile swipe
   const handleDragStart = () => setDragging(true);
   
   const handleDragEnd = (e: any, { offset }: { offset: { x: number } }) => {
@@ -78,14 +76,12 @@ export function FeatureShowcase({ features }: FeatureShowcaseProps) {
         </motion.div>
 
         <div className="relative">
-          {/* Feature carousel */}
           <div
             ref={containerRef}
             className="w-full overflow-hidden relative"
           >
             <motion.div
               drag={isMobile ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.1}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
@@ -104,7 +100,6 @@ export function FeatureShowcase({ features }: FeatureShowcaseProps) {
             </motion.div>
           </div>
 
-          {/* Navigation controls */}
           <div className="flex justify-center items-center mt-8 space-x-4">
             <Button
               onClick={handlePrev}
@@ -163,7 +158,6 @@ function FeatureCard({ feature, isActive }: FeatureCardProps) {
       animate={{ opacity: isActive ? 1 : 0.3 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Feature image */}
       <motion.div 
         className="w-full md:w-1/2 relative overflow-hidden rounded-xl shadow-xl"
         initial={{ scale: 0.95 }}
@@ -180,12 +174,10 @@ function FeatureCard({ feature, isActive }: FeatureCardProps) {
           style={{ aspectRatio: "16/9" }}
         />
         
-        {/* Decorative elements */}
         <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-primary/10 rounded-full blur-xl" />
         <div className="absolute -top-6 -left-6 w-24 h-24 bg-blue-400/10 rounded-full blur-xl" />
       </motion.div>
       
-      {/* Feature content */}
       <motion.div 
         className="w-full md:w-1/2 text-left p-4"
         initial={{ x: 20 }}
