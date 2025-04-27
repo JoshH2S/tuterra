@@ -53,8 +53,7 @@ export function CreditsSummaryPopup() {
       console.log("Current credits state:", {
         quiz_credits: credits.quiz_credits,
         interview_credits: credits.interview_credits,
-        assessment_credits: credits.assessment_credits,
-        tutor_message_credits: credits.tutor_message_credits
+        assessment_credits: credits.assessment_credits
       });
     }
   }, [credits]);
