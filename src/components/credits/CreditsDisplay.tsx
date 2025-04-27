@@ -74,9 +74,8 @@ export const CreditsDisplay = ({
     id: 'fallback',
     user_id: 'unknown',
     quiz_credits: 5,
-    interview_credits: 3, 
+    interview_credits: 2, 
     assessment_credits: 2,
-    tutor_message_credits: 5,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
