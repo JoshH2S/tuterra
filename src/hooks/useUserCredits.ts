@@ -25,12 +25,13 @@ export const useUserCredits = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch user credits from the database
-  const fetchUserCredits = async () => {
+  // Fetch user credits from the database with improved error handling and race condition prevention
+  const fetchUserCredits = useCallback(async () => {
+    // Don't fetch if already fetching
     if (fetchingCredits.current) return;
-    fetchingCredits.current = true;
-
+    
     try {
+      fetchingCredits.current = true;
       setLoading(true);
       
       const { data: { session } } = await supabase.auth.getSession();
@@ -89,11 +90,13 @@ export const useUserCredits = () => {
       });
     } finally {
       setLoading(false);
+      // Always reset the fetchingCredits flag, even if an error occurred
+      // This prevents the user from being stuck with stale credits
       fetchingCredits.current = false;
     }
-  };
+  }, [toast]);
 
-  // Check if user has enough credits
+  // Check if user has enough credits with improved validation
   const checkCredits = async (creditType: string): Promise<boolean> => {
     if (!creditType) {
       console.error("Credit type is required");
@@ -107,6 +110,7 @@ export const useUserCredits = () => {
 
     if (!credits) {
       console.warn("Credits not loaded, please try again");
+      await fetchUserCredits(); // Try to fetch credits again
       return false;
     }
 
@@ -118,7 +122,7 @@ export const useUserCredits = () => {
     return credits[creditType] > 0;
   };
 
-  // Decrement credits function
+  // Decrement credits function with improved state synchronization
   const decrementCredits = async (creditType: string): Promise<boolean> => {
     if (!creditType) {
       console.error("Credit type is required");
@@ -138,8 +142,14 @@ export const useUserCredits = () => {
     try {
       setPendingTransactions(prev => ({ ...prev, [creditType]: true }));
 
-      // Call a custom function or use direct database operations instead of rpc
-      // Since we don't have access to the actual database schema, we'll simulate it with a direct update
+      // Optimistic UI update - update local state immediately
+      // This will be reset if the server update fails
+      const previousCredits = { ...credits };
+      setCredits(prev => ({
+        ...prev,
+        [creditType]: Math.max(0, prev[creditType] - 1)
+      }));
+
       const { data, error } = await supabase
         .from('user_credits')
         .update({ [creditType]: Math.max(0, credits[creditType] - 1) })
@@ -147,6 +157,8 @@ export const useUserCredits = () => {
         .select();
 
       if (error) {
+        // Revert to previous state if update fails
+        setCredits(previousCredits);
         console.error("Error decrementing credit:", error);
         toast({
           title: "Credit decrement failed",
@@ -157,8 +169,11 @@ export const useUserCredits = () => {
       }
 
       if (data && data[0]) {
-        // Update the local credits state
+        // Update the local credits state with server response
+        // This ensures UI matches backend state
         const updatedValue = data[0][creditType];
+        
+        // Only update the specific credit that changed
         setCredits(prev => ({
           ...prev,
           [creditType]: updatedValue
@@ -166,10 +181,12 @@ export const useUserCredits = () => {
         
         toast({
           title: "Credit used",
-          description: `1 ${creditType} credit has been used.`,
+          description: `1 ${creditType.replace('_credits', '')} credit has been used.`,
         });
         return true;
       } else {
+        // If no data was returned, revert to previous state
+        setCredits(previousCredits);
         console.error("No data returned from update operation");
         return false;
       }
@@ -186,7 +203,7 @@ export const useUserCredits = () => {
     }
   };
   
-  // Add the missing retryFetch function
+  // Retry fetching credits
   const retryFetch = async (): Promise<void> => {
     setError(null);
     await fetchUserCredits();
@@ -196,7 +213,7 @@ export const useUserCredits = () => {
   useEffect(() => {
     // Initialize by fetching credits
     fetchUserCredits();
-  }, []);
+  }, [fetchUserCredits]);
 
   return {
     credits,
@@ -207,6 +224,6 @@ export const useUserCredits = () => {
     decrementCredits,
     fetchUserCredits,
     pendingTransactions,
-    retryFetch // Add the retryFetch function to the returned object
+    retryFetch
   };
 };
