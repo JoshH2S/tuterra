@@ -32,7 +32,7 @@ export function DesktopHeader() {
               className="gap-2"
             >
               <CreditCard className="h-4 w-4" />
-              Upgrade to Premium
+              Upgrade to Pro Plan
             </Button>
           )}
         </div>
