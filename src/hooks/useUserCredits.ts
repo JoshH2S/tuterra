@@ -14,7 +14,7 @@ export interface UserCredits {
 export const useUserCredits = () => {
   const [credits, setCredits] = useState<UserCredits>({
     quiz_credits: 5,
-    interview_credits: 3,
+    interview_credits: 2,
     assessment_credits: 2,
   });
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ export const useUserCredits = () => {
       if (!session || !session.user) {
         setCredits({
           quiz_credits: 5,
-          interview_credits: 3,
+          interview_credits: 2,
           assessment_credits: 2
         });
         setIsOfflineMode(true);
@@ -72,7 +72,7 @@ export const useUserCredits = () => {
         console.warn("No credits found for user, using defaults");
         setCredits({
           quiz_credits: 5,
-          interview_credits: 3,
+          interview_credits: 2,
           assessment_credits: 2
         });
         setIsOfflineMode(true);
