@@ -4,14 +4,21 @@ import { PremiumContentCard } from "@/components/ui/premium-card";
 import { InterviewTranscript } from "@/types/interview";
 import { motion } from "framer-motion";
 import { CheckCircle, AlertCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // Add this import
+import { useNavigate } from "react-router-dom";
+
+// Add the missing interface definition
+interface InterviewCompletionProps {
+  transcript: InterviewTranscript[];
+  onDownloadTranscript: (format: 'txt' | 'pdf') => void;
+  onStartNew: () => void;
+}
 
 export const InterviewCompletion = ({
   transcript,
   onDownloadTranscript,
   onStartNew
 }: InterviewCompletionProps) => {
-  const navigate = useNavigate(); // Add useNavigate hook
+  const navigate = useNavigate();
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
