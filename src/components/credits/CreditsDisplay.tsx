@@ -82,9 +82,8 @@ export const CreditsDisplay = ({
 
   const creditsItems = [
     { label: "Quizzes", value: safeCredits.quiz_credits, total: 5 },
-    { label: "Interview Simulations", value: safeCredits.interview_credits, total: 3 },
+    { label: "Interview Simulations", value: safeCredits.interview_credits, total: 2 },
     { label: "Skill Assessments", value: safeCredits.assessment_credits, total: 2 },
-    { label: "AI Tutor Messages", value: safeCredits.tutor_message_credits, total: 5 },
   ];
 
   const allCreditsUsed = creditsItems.every(item => item.value === 0);
