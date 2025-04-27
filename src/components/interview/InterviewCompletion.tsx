@@ -4,18 +4,15 @@ import { PremiumContentCard } from "@/components/ui/premium-card";
 import { InterviewTranscript } from "@/types/interview";
 import { motion } from "framer-motion";
 import { CheckCircle, AlertCircle } from "lucide-react";
-
-interface InterviewCompletionProps {
-  transcript: InterviewTranscript[];
-  onDownloadTranscript: (format: 'txt' | 'pdf') => void;
-  onStartNew: () => void;
-}
+import { useNavigate } from "react-router-dom"; // Add this import
 
 export const InterviewCompletion = ({
   transcript,
   onDownloadTranscript,
   onStartNew
 }: InterviewCompletionProps) => {
+  const navigate = useNavigate(); // Add useNavigate hook
+
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
@@ -23,6 +20,11 @@ export const InterviewCompletion = ({
 
   // Check if transcript is empty or has empty answers
   const hasEmptyAnswers = transcript.some(item => !item.answer || item.answer.trim() === '');
+
+  const handleStartNewInterview = () => {
+    onStartNew(); // Call the existing start new method to reset state
+    navigate("/interview-simulator"); // Navigate to the original interview simulator page
+  };
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -60,7 +62,7 @@ export const InterviewCompletion = ({
                 Download as Text
               </Button>
               <Button 
-                onClick={onStartNew} 
+                onClick={handleStartNewInterview} 
                 className="w-full sm:w-auto ml-auto"
               >
                 Start New Interview
