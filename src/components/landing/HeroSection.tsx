@@ -39,7 +39,7 @@ export function HeroSection() {
             <span className="bg-gradient-to-br from-amber-200 to-amber-400 text-transparent bg-clip-text">tuterra</span>
           </h1>
           <p className="text-xl text-white mb-8">
-            An intelligent learning platform that goes beyond helping you absorb information, designed to help you bridge the gap between the classroom and the real world
+            An intelligent learning platform that goes beyond helping you absorb information; designed to help you bridge the gap between the classroom and the real world
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
