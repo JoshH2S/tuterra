@@ -53,6 +53,27 @@ export default function PricingPage() {
     navigate(`/auth?tab=signup&plan=${planId}`);
   };
 
+  const handlePlanDowngrade = async () => {
+    if (!confirm("Are you sure you want to downgrade to the free plan? You'll lose access to premium features at the end of your billing period.")) {
+      return;
+    }
+    
+    setIsRedirecting(true);
+    const success = await cancelSubscription();
+    setIsRedirecting(false);
+    
+    if (success) {
+      toast({
+        title: "Plan Downgraded",
+        description: "Your subscription will be downgraded to the free plan at the end of your billing period.",
+        duration: 5000,
+      });
+      navigate('/profile-settings');
+    }
+  };
+
+  const isCurrentPlanPro = subscription?.planId === 'pro_plan' && subscription.status === 'active';
+
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isRedirecting) {
@@ -205,7 +226,7 @@ export default function PricingPage() {
           planId="free_plan"
           onSelect={handleSelectPlan}
           buttonText="Start Free"
-          buttonDisabled={isCurrentPlan('free_plan')}
+          buttonDisabled={subscription?.planId === 'free_plan'}
         />
 
         <SubscriptionCard
@@ -217,15 +238,15 @@ export default function PricingPage() {
           isPopular={true}
           onSelect={handleSelectPlan}
           buttonText={
-            isCurrentPlan('pro_plan') 
-              ? "Current Plan" 
-              : subscriptionLoading
-                ? "Loading..."
-                : isRedirecting 
-                  ? "Redirecting..." 
-                  : "Choose Pro"
+            subscriptionLoading
+              ? "Loading..."
+              : isRedirecting 
+                ? "Redirecting..." 
+                : "Choose Pro"
           }
-          buttonDisabled={isCurrentPlan('pro_plan') || isRedirecting || subscriptionLoading}
+          buttonDisabled={isRedirecting || subscriptionLoading}
+          showDowngradeButton={isCurrentPlanPro}
+          onDowngrade={handlePlanDowngrade}
         />
 
         <SubscriptionCard

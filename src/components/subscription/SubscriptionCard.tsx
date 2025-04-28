@@ -17,6 +17,8 @@ interface SubscriptionCardProps {
   buttonDisabled?: boolean;
   buttonIcon?: React.ReactNode;
   customButtonVariant?: ButtonProps["variant"];
+  showDowngradeButton?: boolean;
+  onDowngrade?: () => void;
 }
 
 export function SubscriptionCard({
@@ -31,6 +33,8 @@ export function SubscriptionCard({
   buttonDisabled,
   buttonIcon,
   customButtonVariant,
+  showDowngradeButton,
+  onDowngrade,
 }: SubscriptionCardProps) {
   return (
     <Card className={cn(
@@ -64,15 +68,25 @@ export function SubscriptionCard({
         </ul>
       </div>
 
-      <Button
-        onClick={() => onSelect(planId)}
-        disabled={buttonDisabled}
-        className="mt-8"
-        variant={customButtonVariant || "default"}
-      >
-        {buttonIcon && <span className="mr-2">{buttonIcon}</span>}
-        {buttonText}
-      </Button>
+      {showDowngradeButton ? (
+        <Button
+          onClick={onDowngrade}
+          className="mt-8"
+          variant="destructive"
+        >
+          Downgrade to Free
+        </Button>
+      ) : (
+        <Button
+          onClick={() => onSelect(planId)}
+          disabled={buttonDisabled}
+          className="mt-8"
+          variant={customButtonVariant || "default"}
+        >
+          {buttonIcon && <span className="mr-2">{buttonIcon}</span>}
+          {buttonText}
+        </Button>
+      )}
     </Card>
   );
 }
