@@ -14,7 +14,7 @@ interface SidebarNavItemProps {
   isCollapsed?: boolean;
   onClick: () => void;
   path?: string;
-  id?: string; // Add this new prop
+  id?: string;
 }
 
 export const SidebarNavItem = ({ 
@@ -24,7 +24,7 @@ export const SidebarNavItem = ({
   isCollapsed = false,
   onClick,
   path,
-  id // Add this new prop
+  id
 }: SidebarNavItemProps) => {
   // Animation variants for each menu item
   const itemVariants = {
@@ -34,12 +34,12 @@ export const SidebarNavItem = ({
   
   const itemContent = (
     <button 
-      id={id} // Add the id here
+      id={id}
       onClick={onClick}
       className={cn(
         "flex items-center relative w-full py-2.5 px-3 rounded-lg transition-all duration-200 touch-manipulation group",
         isActive && "text-primary font-medium",
-        id === "sidebar-courses" && "course-highlight" // Add highlight class for courses
+        id === "sidebar-courses" && "course-highlight"
       )}
     >
       <motion.div
@@ -90,27 +90,7 @@ export const SidebarNavItem = ({
         </SidebarMenuButton>
       </motion.div>
       
-      {/* Add course highlight animation styles */}
-      <style jsx global>{`
-        .course-highlight {
-          position: relative;
-        }
-        
-        .course-highlight::after {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 8px;
-          background: linear-gradient(45deg, rgba(59, 130, 246, 0.5), rgba(147, 51, 234, 0.5));
-          opacity: 0;
-          transition: opacity 0.3s ease;
-          z-index: -1;
-        }
-        
-        .course-highlight:hover::after {
-          opacity: 0.7;
-        }
-      `}</style>
+      {/* Add course highlight CSS to index.html */}
     </SidebarMenuItem>
   );
 };
