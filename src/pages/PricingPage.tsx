@@ -16,7 +16,7 @@ export default function PricingPage() {
   const { isLoggedIn } = useAuthStatus();
   const navigate = useNavigate();
   const location = useLocation();
-  const { createCheckoutSession, subscription, subscriptionLoading } = useSubscriptionManagement();
+  const { createCheckoutSession, subscription, subscriptionLoading, cancelSubscription } = useSubscriptionManagement();
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
   const { toast } = useToast();
