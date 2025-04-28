@@ -22,3 +22,6 @@ verify_jwt = true
 [functions.send-contact-email]
 verify_jwt = false
 
+[functions.send-session-reminder]
+verify_jwt = false
+
