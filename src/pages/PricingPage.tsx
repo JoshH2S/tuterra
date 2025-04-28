@@ -269,9 +269,12 @@ export default function PricingPage() {
         className="mt-12 max-w-3xl mx-auto text-center"
       >
         <div className="flex justify-center">
-          <Button variant="outline" onClick={() => navigate('/contact')}>
-            Contact Support
-          </Button>
+          <span className="text-base text-muted-foreground">
+            Email us at{" "}
+            <a href="mailto:support@tuterra.ai" className="text-primary underline">
+              support@tuterra.ai
+            </a>
+          </span>
         </div>
       </PremiumContentCard>
     </div>
