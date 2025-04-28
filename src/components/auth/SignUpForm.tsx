@@ -80,6 +80,9 @@ export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return; // Prevent multiple rapid submits
+
     await handleSignUp(e);
     if (verificationSent) {
       onSignUpSuccess?.();
