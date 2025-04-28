@@ -7,7 +7,7 @@ import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PremiumContentCard } from "@/components/ui/premium-card";
-import { Mail, Info, Check, AlertCircle } from "lucide-react";
+import { Mail, Info, Check, AlertCircle, ArrowLeft } from "lucide-react";
 import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -140,7 +140,16 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-7xl">
+    <div className="container mx-auto px-4 py-12 max-w-7xl relative">
+      <Button 
+        variant="ghost" 
+        onClick={() => navigate('/profile-settings')}
+        className="absolute left-4 top-4 md:left-8 md:top-8"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Settings
+      </Button>
+
       <motion.div
         initial="hidden"
         animate="visible"

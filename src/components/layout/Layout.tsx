@@ -22,15 +22,15 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
   const isMobile = useIsMobile();
   const location = useLocation();
 
-  // Hide sidebar on specific routes
+  // Hide sidebar and header on specific routes
   const hideSidebar = isLandingPage || 
                       location.pathname === "/about" || 
                       location.pathname === "/auth" ||
-                      location.pathname === "/contact";
+                      location.pathname === "/contact" ||
+                      location.pathname === "/pricing";
 
   // Show Header1 on specific routes where the sidebar is hidden but we need navigation
   const showPublicHeader = location.pathname === "/about" || 
-                          location.pathname === "/pricing" || 
                           location.pathname === "/contact";
 
   return (
