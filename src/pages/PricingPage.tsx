@@ -20,7 +20,7 @@ export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
   const { toast } = useToast();
-  
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('canceled') === 'true') {
@@ -29,27 +29,23 @@ export default function PricingPage() {
         description: "Your checkout process was canceled. You can try again when you're ready.",
         duration: 5000,
       });
-      
       navigate('/pricing', { replace: true });
     }
   }, [location.search, toast, navigate]);
-  
+
   const handleSelectPlan = async (planId: string) => {
     if (planId === 'free_plan') {
       navigate('/auth?tab=signup&plan=free');
       return;
     }
-    
     if (planId === 'enterprise_plan') {
       navigate('/contact');
       return;
     }
-    
     if (isLoggedIn) {
       navigate('/profile-settings');
       return;
     }
-    
     navigate(`/auth?tab=signup&plan=${planId}`);
   };
 
@@ -57,11 +53,10 @@ export default function PricingPage() {
     if (!confirm("Are you sure you want to downgrade to the free plan? You'll lose access to premium features at the end of your billing period.")) {
       return;
     }
-    
     setIsRedirecting(true);
     const success = await cancelSubscription();
     setIsRedirecting(false);
-    
+
     if (success) {
       toast({
         title: "Plan Downgraded",
@@ -81,7 +76,6 @@ export default function PricingPage() {
         e.returnValue = '';
       }
     };
-    
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isRedirecting]);
@@ -160,6 +154,9 @@ export default function PricingPage() {
     return subscription?.planId === planId && subscription.status === 'active';
   };
 
+  const proMainPrice = billingInterval === 'monthly' ? "$9.99/mo" : "$7.99/mo";
+  const proSubLabel = billingInterval === 'yearly' ? "(billed annually)" : "";
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl relative">
       <Button 
@@ -182,24 +179,22 @@ export default function PricingPage() {
           Find the perfect plan for your learning journey
         </p>
         
-        {billingInterval === 'monthly' && (
-          <PremiumContentCard 
-            title="Billing Options"
-            variant="glass" 
-            className="max-w-xs mx-auto p-2"
-          >
-            <Tabs defaultValue="monthly" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
-                  Monthly
-                </TabsTrigger>
-                <TabsTrigger value="yearly" onClick={() => setBillingInterval('yearly')}>
-                  Yearly <span className="ml-1 text-xs text-emerald-600">-20%</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </PremiumContentCard>
-        )}
+        <PremiumContentCard 
+          title="Billing Options"
+          variant="glass" 
+          className="max-w-xs mx-auto p-2"
+        >
+          <Tabs defaultValue={billingInterval} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
+                Monthly
+              </TabsTrigger>
+              <TabsTrigger value="yearly" onClick={() => setBillingInterval('yearly')}>
+                Yearly <span className="ml-1 text-xs text-emerald-600">-20%</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </PremiumContentCard>
       </motion.div>
 
       {location.search.includes('canceled=true') && (
@@ -231,7 +226,14 @@ export default function PricingPage() {
 
         <SubscriptionCard
           title="Pro"
-          price={billingInterval === 'monthly' ? "$9.99" : "$95.88"}
+          price={
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-bold">{proMainPrice}</span>
+              {proSubLabel && (
+                <span className="text-xs text-gray-500">{proSubLabel}</span>
+              )}
+            </div>
+          }
           description="Everything you need for serious learning"
           features={tierFeatures.pro}
           planId="pro_plan"
