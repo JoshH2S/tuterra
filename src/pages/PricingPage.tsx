@@ -29,43 +29,37 @@ export default function PricingPage() {
         description: "Your checkout process was canceled. You can try again when you're ready.",
         duration: 5000,
       });
-      
       navigate('/pricing', { replace: true });
     }
   }, [location.search, toast, navigate]);
-  
+
   const handleSelectPlan = async (planId: string) => {
     if (planId === 'free_plan') {
       navigate('/auth?tab=signup&plan=free');
       return;
     }
-    
     if (planId === 'enterprise_plan') {
       navigate('/contact');
       return;
     }
-    
     if (isLoggedIn) {
       navigate('/profile-settings');
       return;
     }
-    
     navigate(`/auth?tab=signup&plan=${planId}`);
   };
 
   const handlePlanDowngrade = async () => {
-    if (!confirm("Are you sure you want to downgrade to the free plan? You'll lose access to premium features at the end of your billing period.")) {
+    if (!confirm("Are you sure you want to downgrade to the free plan?")) {
       return;
     }
-    
     setIsRedirecting(true);
     const success = await cancelSubscription();
     setIsRedirecting(false);
-    
     if (success) {
       toast({
         title: "Plan Downgraded",
-        description: "Your subscription will be downgraded to the free plan at the end of your billing period.",
+        description: "Your subscription will be downgraded at the end of your billing period.",
         duration: 5000,
       });
       navigate('/profile-settings');
@@ -81,14 +75,13 @@ export default function PricingPage() {
         e.returnValue = '';
       }
     };
-    
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isRedirecting]);
 
   const calculateAnnualSavings = useCallback((monthlyPrice: number) => {
     const monthlyTotal = monthlyPrice * 12;
-    const yearlyPrice = monthlyTotal * 0.8; // 20% discount
+    const yearlyPrice = monthlyTotal * 0.8;
     const savings = ((monthlyTotal - yearlyPrice) / monthlyTotal) * 100;
     return Math.round(savings);
   }, []);
@@ -160,6 +153,14 @@ export default function PricingPage() {
     return subscription?.planId === planId && subscription.status === 'active';
   };
 
+  // Pricing setup
+  const annualPrice = 95.88;
+  const monthlyPrice = (annualPrice / 12).toFixed(2);
+
+  const displayPrice = billingInterval === 'monthly'
+    ? `$${monthlyPrice}/mo (billed annually)`
+    : `$${annualPrice}/yr`;
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl relative">
       <Button 
@@ -181,25 +182,23 @@ export default function PricingPage() {
         <p className="text-lg text-muted-foreground mb-8">
           Find the perfect plan for your learning journey
         </p>
-        
-        {billingInterval === 'monthly' && (
-          <PremiumContentCard 
-            title="Billing Options"
-            variant="glass" 
-            className="max-w-xs mx-auto p-2"
-          >
-            <Tabs defaultValue="monthly" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
-                  Monthly
-                </TabsTrigger>
-                <TabsTrigger value="yearly" onClick={() => setBillingInterval('yearly')}>
-                  Yearly <span className="ml-1 text-xs text-emerald-600">-20%</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </PremiumContentCard>
-        )}
+
+        <PremiumContentCard 
+          title="Billing Options"
+          variant="glass" 
+          className="max-w-xs mx-auto p-2"
+        >
+          <Tabs defaultValue="monthly" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="monthly" onClick={() => setBillingInterval('monthly')}>
+                Monthly
+              </TabsTrigger>
+              <TabsTrigger value="yearly" onClick={() => setBillingInterval('yearly')}>
+                Yearly <span className="ml-1 text-xs text-emerald-600">-20%</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </PremiumContentCard>
       </motion.div>
 
       {location.search.includes('canceled=true') && (
@@ -231,7 +230,7 @@ export default function PricingPage() {
 
         <SubscriptionCard
           title="Pro"
-          price={billingInterval === 'monthly' ? "$9.99" : "$95.88"}
+          price={displayPrice}
           description="Everything you need for serious learning"
           features={tierFeatures.pro}
           planId="pro_plan"
