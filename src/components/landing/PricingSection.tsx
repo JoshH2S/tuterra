@@ -21,7 +21,7 @@ const tuteeraPricing = [
   {
     name: "Pro",
     price: "$9.99",
-    yearlyPrice: "$95.88",
+    yearlyPrice: "$7.99",
     period: "per month",
     features: [
       "Unlimited quizzes, assessments, and interview simulations",
