@@ -1,5 +1,5 @@
 
-project_id = "your-project-id"
+project_id = "nhlsrtubyvggtkyrhkuu"
 
 [functions.create-checkout]
 verify_jwt = true
@@ -24,4 +24,3 @@ verify_jwt = false
 
 [functions.send-session-reminder]
 verify_jwt = false
-
