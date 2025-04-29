@@ -116,7 +116,7 @@ export default function AboutUs() {
         }} viewport={{
           once: true
         }} className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Who We Serve</h2>
+            <h2 className="text-3xl text-center mb-12 font-bold text-[#ac9571]">Who We Serve</h2>
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <h3 className="text-xl font-semibold mb-4">Students & Job Seekers</h3>
