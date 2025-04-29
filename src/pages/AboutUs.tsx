@@ -1,41 +1,32 @@
-import React from "react"
-import { motion } from "framer-motion"
-import { Mail, Phone, Building, Users, Award, Heart, MapPin } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { cn } from "@/lib/utils"
-
-const tabs = [
-  {
-    title: "Our Story",
-    value: "story",
-    content: (
-      <div className="w-full overflow-hidden relative h-full rounded-2xl p-10">
+import React from "react";
+import { motion } from "framer-motion";
+import { Mail, Phone, Building, Users, Award, Heart, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+const tabs = [{
+  title: "Our Story",
+  value: "story",
+  content: <div className="w-full overflow-hidden relative h-full rounded-2xl p-10">
         <h3 className="text-2xl font-bold mb-4">Our Story</h3>
         <p className="text-muted-foreground leading-relaxed">
           Born from a vision to empower learners from all backgrounds, Tuterra is an AI-powered learning platform designed to equip students with the skills, context, and confidence needed to thrive in a fast-evolving job market. From real-world case study quizzes and job interview simulations to dynamic skill assessments, Tuterra transforms passive study into active preparation for life.
         </p>
       </div>
-    ),
-  },
-  {
-    title: "Our Mission",
-    value: "mission",
-    content: (
-      <div className="w-full overflow-hidden relative h-full rounded-2xl p-10">
+}, {
+  title: "Our Mission",
+  value: "mission",
+  content: <div className="w-full overflow-hidden relative h-full rounded-2xl p-10">
         <h3 className="text-2xl font-bold mb-4">Our Mission</h3>
         <p className="text-muted-foreground leading-relaxed">
           Our mission is to restore purpose and relevance to education. We exist to empower a generation of learners with tools that don't just help them pass exams, but prepare them to lead, innovate, and solve real problems. We believe that access to quality, contextual learning should not be a privilege for students at top schools, it's a right that fuels economic freedom and national transformation.
         </p>
       </div>
-    ),
-  },
-  {
-    title: "Our Vision",
-    value: "vision",
-    content: (
-      <div className="w-full overflow-hidden relative h-full rounded-2xl p-10">
+}, {
+  title: "Our Vision",
+  value: "vision",
+  content: <div className="w-full overflow-hidden relative h-full rounded-2xl p-10">
         <h3 className="text-2xl font-bold mb-4">Our Vision</h3>
         <p className="text-muted-foreground leading-relaxed">
           We envision a world where education becomes an even more powerful lever for transformation. Where institutional education does not exist for its own sake. A world where students are adequately prepared and equipped to go out and solve problems in this world we have been entrusted to nurture.
@@ -43,40 +34,33 @@ const tabs = [
           For us, learning is not just about acquiring knowledge, it's about unleashing destiny.
         </p>
       </div>
-    ),
-  },
-];
-
-const NAVIGATION_ITEMS = [
-  {
-    label: "Story",
-    icon: <Building className="h-5 w-5" />,
-  },
-  {
-    label: "Mission",
-    icon: <Award className="h-5 w-5" />,
-  },
-  {
-    label: "Vision",
-    icon: <Heart className="h-5 w-5" />,
-  },
- 
-];
-
+}];
+const NAVIGATION_ITEMS = [{
+  label: "Story",
+  icon: <Building className="h-5 w-5" />
+}, {
+  label: "Mission",
+  icon: <Award className="h-5 w-5" />
+}, {
+  label: "Vision",
+  icon: <Heart className="h-5 w-5" />
+}];
 export default function AboutUs() {
-  return (
-    <div className="min-h-screen bg-background pt-20">
+  return <div className="min-h-screen bg-background pt-20">
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-primary/5 z-0"></div>
         <div className="container mx-auto px-4 relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl mx-auto text-center"
-          >
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.6
+        }} className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-[#ac9571]">
               About Tuterra
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
@@ -91,16 +75,10 @@ export default function AboutUs() {
         <div className="container mx-auto px-4">
           <div className="flex justify-center">
             <div className="flex space-x-2 rounded-xl bg-background p-2 border">
-              {NAVIGATION_ITEMS.map((item) => (
-                <Button
-                  key={item.label}
-                  variant="ghost"
-                  className="gap-2"
-                >
+              {NAVIGATION_ITEMS.map(item => <Button key={item.label} variant="ghost" className="gap-2">
                   {item.icon}
                   <span>{item.label}</span>
-                </Button>
-              ))}
+                </Button>)}
             </div>
           </div>
         </div>
@@ -115,13 +93,11 @@ export default function AboutUs() {
               <TabsTrigger value="mission">Our Mission</TabsTrigger>
               <TabsTrigger value="vision">Our Vision</TabsTrigger>
             </TabsList>
-            {tabs.map((tab) => (
-              <TabsContent key={tab.value} value={tab.value}>
+            {tabs.map(tab => <TabsContent key={tab.value} value={tab.value}>
                 <Card className="mt-6 border-2 hover:border-primary/20 transition-all duration-300">
                   {tab.content}
                 </Card>
-              </TabsContent>
-            ))}
+              </TabsContent>)}
           </Tabs>
         </div>
       </section>
@@ -129,13 +105,17 @@ export default function AboutUs() {
       {/* Who We Serve */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="max-w-4xl mx-auto"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.5
+        }} viewport={{
+          once: true
+        }} className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12">Who We Serve</h2>
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -164,13 +144,17 @@ export default function AboutUs() {
       {/* Contact Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="max-w-4xl mx-auto text-center"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} whileInView={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.5
+        }} viewport={{
+          once: true
+        }} className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-8">Contact Us</h2>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button variant="outline" size="lg" className="gap-2">
@@ -189,6 +173,5 @@ export default function AboutUs() {
           </motion.div>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 }
