@@ -125,7 +125,7 @@ export default function AboutUs() {
                 </p>
               </Card>
               <Card className="p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <h3 className="text-xl font-semibold mb-4">Educators & Institutions</h3>
+                <h3 className="text-xl font-semibold mb-4 text-[#ac9571]">Educators & Institutions</h3>
                 <p className="text-muted-foreground">
                   Forward-thinking schools, educators, and ministries looking to integrate AI tools that reinforce classroom teaching, track performance, and make learning measurable and impactful.
                 </p>
