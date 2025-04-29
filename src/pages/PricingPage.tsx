@@ -154,7 +154,7 @@ export default function PricingPage() {
     return subscription?.planId === planId && subscription.status === 'active';
   };
 
-  const proMainPrice = billingInterval === 'monthly' ? "$9.99/mo" : "$7.99/mo";
+  const proMainPrice = billingInterval === 'monthly' ? "$9.99" : "$7.99";
   const proSubLabel = billingInterval === 'yearly' ? "(billed annually)" : "";
 
   return (
