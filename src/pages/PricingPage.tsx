@@ -228,7 +228,7 @@ export default function PricingPage() {
           title="Pro"
           price={
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold">{proMainPrice}</span>
+              <span className="text-3xl font-bold">{proMainPrice}</span>
               {proSubLabel && (
                 <span className="text-xs text-gray-500">{proSubLabel}</span>
               )}
