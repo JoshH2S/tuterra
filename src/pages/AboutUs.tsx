@@ -119,7 +119,7 @@ export default function AboutUs() {
             <h2 className="text-3xl text-center mb-12 font-bold text-[#ac9571]">Who We Serve</h2>
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <h3 className="text-xl font-semibold mb-4">Students & Job Seekers</h3>
+                <h3 className="text-xl font-semibold mb-4 text-[#ac9571]">Students & Job Seekers</h3>
                 <p className="text-muted-foreground">
                   Students and working professionals eager to close the gap between what they've learned and what the world demands. Whether they're preparing for a job interview, building confidence in core subjects, or discovering their talents, Tuterra meets them where they are.
                 </p>
