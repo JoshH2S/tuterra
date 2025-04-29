@@ -9,7 +9,7 @@ const tabs = [{
   title: "Our Story",
   value: "story",
   content: <div className="w-full overflow-hidden relative h-full rounded-2xl p-10">
-        <h3 className="text-2xl font-bold mb-4">Our Story</h3>
+        <h3 className="text-2xl font-bold mb-4 text-[#ac9571]">Our Story</h3>
         <p className="text-muted-foreground leading-relaxed">
           Born from a vision to empower learners from all backgrounds, Tuterra is an AI-powered learning platform designed to equip students with the skills, context, and confidence needed to thrive in a fast-evolving job market. From real-world case study quizzes and job interview simulations to dynamic skill assessments, Tuterra transforms passive study into active preparation for life.
         </p>
