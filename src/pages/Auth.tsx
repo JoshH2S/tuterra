@@ -8,11 +8,9 @@ import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
 interface AuthProps {
   mode?: "emailVerification" | "resetPassword";
 }
-
 const Auth = ({
   mode: propMode
 }: AuthProps = {}) => {
@@ -20,12 +18,15 @@ const Auth = ({
   const queryParams = new URLSearchParams(location.search);
   const queryMode = queryParams.get("mode") as "emailVerification" | "resetPassword" | null;
   const mode = propMode || queryMode || undefined;
-  
+
   // Save email for potential resend verification
   useEffect(() => {
     const saveEmailForVerification = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
       if (!session && location.pathname.includes("auth") && !mode) {
         // Check if there's an email in the URL (from a redirection)
         const email = queryParams.get("email");
@@ -34,22 +35,17 @@ const Auth = ({
         }
       }
     };
-    
     saveEmailForVerification();
   }, [location, mode, queryParams]);
-  
+
   // Display correct component based on mode or URL path
   if (mode === "emailVerification" || location.pathname.includes("verify-email")) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <EmailVerification />
-      </div>
-    );
+      </div>;
   }
-  
   if (mode === "resetPassword") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center">Reset Password</CardTitle>
@@ -58,20 +54,18 @@ const Auth = ({
             <ResetPasswordForm />
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-  
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ duration: 0.5 }} 
-      className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
-    >
+  return <motion.div initial={{
+    opacity: 0
+  }} animate={{
+    opacity: 1
+  }} transition={{
+    duration: 0.5
+  }} className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md shadow-lg border-0 mb-8">
         <CardHeader>
-          <CardTitle className="text-center">Welcome to Tuterra</CardTitle>
+          <CardTitle className="text-center text-[#ac9571]">Welcome to Tuterra</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
@@ -90,19 +84,17 @@ const Auth = ({
       </Card>
       
       <motion.div initial={{
-        y: 20,
-        opacity: 0
-      }} animate={{
-        y: 0,
-        opacity: 1
-      }} transition={{
-        delay: 0.2,
-        duration: 0.5
-      }} className="w-[200px]">
+      y: 20,
+      opacity: 0
+    }} animate={{
+      y: 0,
+      opacity: 1
+    }} transition={{
+      delay: 0.2,
+      duration: 0.5
+    }} className="w-[200px]">
         <img alt="EduPortal Logo" className="w-full h-auto" src="/lovable-uploads/7ab2ba58-1918-4a73-85e1-7793751f29b4.png" />
       </motion.div>
-    </motion.div>
-  );
+    </motion.div>;
 };
-
 export default Auth;
