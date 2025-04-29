@@ -155,7 +155,7 @@ export default function AboutUs() {
         }} viewport={{
           once: true
         }} className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-8">Contact Us</h2>
+            <h2 className="text-3xl font-bold mb-8 text-[#ac9571]">Contact Us</h2>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button variant="outline" size="lg" className="gap-2">
                 <Mail className="w-4 h-4" />
