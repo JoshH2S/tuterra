@@ -131,7 +131,7 @@ export default function AboutUs() {
                 </p>
               </Card>
               <Card className="p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <h3 className="text-xl font-semibold mb-4">Governments & Foundations</h3>
+                <h3 className="text-xl font-semibold mb-4 text-[#ac9571]">Governments & Foundations</h3>
                 <p className="text-muted-foreground">
                   Stakeholders committed to scalable educational reform and youth employment. Tuterra provides data-driven insight and adaptable tools that support national development goals.
                 </p>
