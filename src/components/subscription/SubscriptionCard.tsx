@@ -1,9 +1,9 @@
 
-import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ButtonProps } from "@/components/ui/button";
 
 interface SubscriptionCardProps {
   title: string;
@@ -12,14 +12,13 @@ interface SubscriptionCardProps {
   features: string[];
   planId: string;
   isPopular?: boolean;
-  buttonText: string;
   onSelect: (planId: string) => void;
+  buttonText: string;
   buttonDisabled?: boolean;
-  buttonIcon?: ReactNode;
-  customButtonVariant?: string;
+  buttonIcon?: React.ReactNode;
+  customButtonVariant?: ButtonProps["variant"];
   showDowngradeButton?: boolean;
   onDowngrade?: () => void;
-  subLabel?: string; // Added to support price sublabel display
 }
 
 export function SubscriptionCard({
@@ -28,79 +27,66 @@ export function SubscriptionCard({
   description,
   features,
   planId,
-  isPopular = false,
-  buttonText,
+  isPopular,
   onSelect,
-  buttonDisabled = false,
+  buttonText,
+  buttonDisabled,
   buttonIcon,
   customButtonVariant,
-  showDowngradeButton = false,
+  showDowngradeButton,
   onDowngrade,
-  subLabel, // New prop
 }: SubscriptionCardProps) {
-  const handleSelectClick = () => {
-    onSelect(planId);
-  };
-
   return (
-    <Card 
-      className={cn(
-        "flex flex-col overflow-hidden border transition-all",
-        isPopular 
-          ? "border-primary shadow-md relative" 
-          : "border-border"
-      )}
-    >
-      {isPopular && (
-        <div className="bg-primary px-3 py-1 text-primary-foreground text-sm absolute right-0 top-0 rounded-bl-lg font-medium">
-          Popular
+    <Card className={cn(
+      "flex flex-col p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg border",
+      isPopular && "border-primary ring-2 ring-primary ring-opacity-60"
+    )}>
+      <div className="flex-1">
+        {isPopular && (
+          <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary mb-4">
+            Popular
+          </span>
+        )}
+        
+        <h3 className="text-2xl font-bold">{title}</h3>
+        <p className="mt-4 text-sm text-muted-foreground">{description}</p>
+        
+        <div className="mt-4 flex items-baseline text-gray-900 dark:text-gray-100">
+          <span className="text-4xl font-bold tracking-tight">{price}</span>
+          {price !== "Custom pricing" && price !== "$0" && (
+            <span className="ml-1 text-sm font-semibold text-muted-foreground">/month</span>
+          )}
         </div>
-      )}
-      
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <div className="mt-2 flex flex-col">
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold">{price}</span>
-          </div>
-          {/* Display the sublabel if provided */}
-          {subLabel && <span className="text-xs text-muted-foreground">{subLabel}</span>}
-        </div>
-        <CardDescription className="mt-1">{description}</CardDescription>
-      </CardHeader>
-      
-      <CardContent className="flex-1">
-        <ul className="space-y-2">
-          {features.map((feature, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <Check className="h-4 w-4 text-primary mt-1" />
-              <span className="text-sm">{feature}</span>
+
+        <ul className="mt-6 space-y-3">
+          {features.map((feature, index) => (
+            <li key={index} className="flex text-sm">
+              <Check className="h-5 w-5 flex-shrink-0 text-green-500" />
+              <span className="ml-3">{feature}</span>
             </li>
           ))}
         </ul>
-      </CardContent>
-      
-      <CardFooter className="flex flex-col gap-2">
+      </div>
+
+      {showDowngradeButton ? (
         <Button
-          className="w-full"
-          variant={customButtonVariant ? customButtonVariant as any : isPopular ? "default" : "outline"}
-          disabled={buttonDisabled}
-          onClick={handleSelectClick}
+          onClick={onDowngrade}
+          className="mt-8"
+          variant="destructive"
         >
-          {buttonIcon}
+          Downgrade to Free
+        </Button>
+      ) : (
+        <Button
+          onClick={() => onSelect(planId)}
+          disabled={buttonDisabled}
+          className="mt-8"
+          variant={customButtonVariant || "default"}
+        >
+          {buttonIcon && <span className="mr-2">{buttonIcon}</span>}
           {buttonText}
         </Button>
-        
-        {showDowngradeButton && onDowngrade && (
-          <Button 
-            variant="ghost" 
-            className="w-full" 
-            onClick={onDowngrade}
-          >
-            Downgrade to Free
-          </Button>
-        )}
-      </CardFooter>
+      )}
     </Card>
   );
 }

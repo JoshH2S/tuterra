@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -155,7 +154,6 @@ export default function PricingPage() {
     return subscription?.planId === planId && subscription.status === 'active';
   };
 
-  // Fix: Convert React element to string representation for the price prop
   const proMainPrice = billingInterval === 'monthly' ? "$9.99" : "$7.99";
   const proSubLabel = billingInterval === 'yearly' ? "(billed annually)" : "";
 
@@ -228,8 +226,14 @@ export default function PricingPage() {
 
         <SubscriptionCard
           title="Pro"
-          // Fix: Pass a string instead of a React Element
-          price={proMainPrice}
+          price={
+            <div className="flex flex-col items-center">
+              <span className="text-3xl font-bold">{proMainPrice}</span>
+              {proSubLabel && (
+                <span className="text-xs text-gray-500">{proSubLabel}</span>
+              )}
+            </div>
+          }
           description="Everything you need for serious learning"
           features={tierFeatures.pro}
           planId="pro_plan"
@@ -245,7 +249,6 @@ export default function PricingPage() {
           buttonDisabled={isRedirecting || subscriptionLoading}
           showDowngradeButton={isCurrentPlanPro}
           onDowngrade={handlePlanDowngrade}
-          subLabel={proSubLabel}
         />
 
         <SubscriptionCard
