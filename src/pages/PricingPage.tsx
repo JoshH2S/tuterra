@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -154,6 +155,7 @@ export default function PricingPage() {
     return subscription?.planId === planId && subscription.status === 'active';
   };
 
+  // Fixed pricing strings instead of React elements
   const proMainPrice = billingInterval === 'monthly' ? "$9.99" : "$7.99";
   const proSubLabel = billingInterval === 'yearly' ? "(billed annually)" : "";
 
@@ -226,14 +228,7 @@ export default function PricingPage() {
 
         <SubscriptionCard
           title="Pro"
-          price={
-            <div className="flex flex-col items-center">
-              <span className="text-3xl font-bold">{proMainPrice}</span>
-              {proSubLabel && (
-                <span className="text-xs text-gray-500">{proSubLabel}</span>
-              )}
-            </div>
-          }
+          price={proMainPrice}
           description="Everything you need for serious learning"
           features={tierFeatures.pro}
           planId="pro_plan"

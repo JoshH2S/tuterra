@@ -4,10 +4,11 @@ import { Card } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ButtonProps } from "@/components/ui/button";
+import { ReactNode } from "react";
 
 interface SubscriptionCardProps {
   title: string;
-  price: string;
+  price: string | ReactNode; // Allow price to be either string or ReactNode
   description: string;
   features: string[];
   planId: string;
@@ -52,9 +53,15 @@ export function SubscriptionCard({
         <p className="mt-4 text-sm text-muted-foreground">{description}</p>
         
         <div className="mt-4 flex items-baseline text-gray-900 dark:text-gray-100">
-          <span className="text-4xl font-bold tracking-tight">{price}</span>
-          {price !== "Custom pricing" && price !== "$0" && (
-            <span className="ml-1 text-sm font-semibold text-muted-foreground">/month</span>
+          {typeof price === 'string' ? (
+            <>
+              <span className="text-4xl font-bold tracking-tight">{price}</span>
+              {price !== "Custom pricing" && price !== "$0" && (
+                <span className="ml-1 text-sm font-semibold text-muted-foreground">/month</span>
+              )}
+            </>
+          ) : (
+            price // If it's a ReactNode, render it directly
           )}
         </div>
 
