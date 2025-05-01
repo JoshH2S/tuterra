@@ -64,12 +64,12 @@ export const SignInForm = () => {
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input type="password" placeholder="Password" className="pl-10" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
-        </div>
 
-        <div className="flex justify-end">
-          <Link to="/auth?mode=resetPassword" className="text-sm text-primary hover:underline">
-            Forgot password?
-          </Link>
+          <div className="flex justify-end">
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         <Button type="submit" className="w-full" disabled={loading} size="lg">

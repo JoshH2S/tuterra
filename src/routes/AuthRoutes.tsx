@@ -1,6 +1,8 @@
 
 import { Route, Navigate } from "react-router-dom";
 import Auth from "@/pages/Auth";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import { useAuth } from "@/hooks/useAuth";
 
 // Create a component to handle protected routing with auth check
@@ -16,5 +18,6 @@ export const authRoutes = [
   <Route key="auth-signin" path="/signin" element={<Navigate to="/auth" replace />} />,
   <Route key="auth-signup" path="/signup" element={<Navigate to="/auth?tab=signup" replace />} />,
   <Route key="auth-verify-email" path="/verify-email" element={<Auth mode="emailVerification" />} />,
-  <Route key="auth-reset-password" path="/reset-password" element={<Auth mode="resetPassword" />} />
+  <Route key="auth-forgot-password" path="/forgot-password" element={<ForgotPasswordPage />} />,
+  <Route key="auth-reset-password" path="/reset-password" element={<ResetPasswordPage />} />
 ];

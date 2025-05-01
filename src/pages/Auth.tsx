@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
@@ -8,9 +9,11 @@ import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+
 interface AuthProps {
   mode?: "emailVerification" | "resetPassword";
 }
+
 const Auth = ({
   mode: propMode
 }: AuthProps = {}) => {
@@ -44,7 +47,8 @@ const Auth = ({
         <EmailVerification />
       </div>;
   }
-  if (mode === "resetPassword") {
+  
+  if (mode === "resetPassword" || location.pathname.includes("reset-password")) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -56,6 +60,7 @@ const Auth = ({
         </Card>
       </div>;
   }
+  
   return <motion.div initial={{
     opacity: 0
   }} animate={{
@@ -97,4 +102,5 @@ const Auth = ({
       </motion.div>
     </motion.div>;
 };
+
 export default Auth;

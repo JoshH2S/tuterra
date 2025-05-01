@@ -3,63 +3,64 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AtSign, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const ResetPasswordForm = () => {
-  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [isSettingNewPassword, setIsSettingNewPassword] = useState(false);
-  const { search } = useLocation();
+  const [processingToken, setProcessingToken] = useState(true);
+  const [tokenError, setTokenError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Process the token from the URL
   useEffect(() => {
-    // Check if there's a #access_token in the URL, which indicates the user clicked the reset link
-    const accessToken = window.location.hash?.split("&")?.find(part => part.startsWith("#access_token="))?.split("=")[1];
-    if (accessToken) {
-      setIsSettingNewPassword(true);
-    }
-  }, []);
-
-  const handleRequestReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-    setError("");
+    const processToken = async () => {
+      try {
+        // Check for hash fragments which indicate a token is present
+        if (window.location.hash) {
+          const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+          
+          if (error) {
+            setTokenError("Invalid or expired reset link. Please request a new one.");
+            toast({
+              title: "Error",
+              description: "Invalid or expired reset link. Please request a new one.",
+              variant: "destructive",
+            });
+          }
+        } else {
+          // No token in URL, user may have navigated here directly
+          setTokenError("No reset token found. Please request a password reset from the login page.");
+        }
+      } catch (err: any) {
+        setTokenError(err.message || "Failed to process reset link");
+      } finally {
+        setProcessingToken(false);
+      }
+    };
     
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?mode=resetPassword`,
-      });
-      
-      if (error) throw error;
-      
-      setMessage("Check your email for the password reset link");
-    } catch (error: any) {
-      setError(error.message);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    processToken();
+  }, [toast]);
 
-  const handleSetNewPassword = async (e: React.FormEvent) => {
+  const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate passwords
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters");
       return;
     }
     
@@ -80,7 +81,7 @@ export const ResetPasswordForm = () => {
         description: "Your password has been updated successfully",
       });
       
-      // Navigate to sign in page after a short delay
+      // Redirect to login after a delay
       setTimeout(() => {
         navigate("/auth");
       }, 2000);
@@ -96,6 +97,36 @@ export const ResetPasswordForm = () => {
     }
   };
 
+  // Show loading state while processing token
+  if (processingToken) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-center text-sm text-muted-foreground">
+          Processing your reset link...
+        </p>
+      </div>
+    );
+  }
+
+  // Show error if token processing failed
+  if (tokenError) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{tokenError}</AlertDescription>
+        </Alert>
+        <Button 
+          onClick={() => navigate("/auth")}
+          className="w-full"
+        >
+          Back to Sign In
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -105,13 +136,10 @@ export const ResetPasswordForm = () => {
     >
       <div className="text-center">
         <h2 className="text-2xl font-bold tracking-tight">
-          {isSettingNewPassword ? "Set New Password" : "Reset Password"}
+          Set New Password
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {isSettingNewPassword 
-            ? "Enter your new password below" 
-            : "Enter your email and we'll send you a reset link"
-          }
+          Enter your new password below
         </p>
       </div>
 
@@ -128,99 +156,58 @@ export const ResetPasswordForm = () => {
         </Alert>
       )}
 
-      {isSettingNewPassword ? (
-        <form onSubmit={handleSetNewPassword} className="space-y-4">
-          <div className="space-y-4">
-            <div>
-              <Input
-                type="password"
-                placeholder="New Password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Password must be at least 6 characters
-              </p>
-            </div>
-            <div>
-              <Input
-                type="password"
-                placeholder="Confirm New Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-          </div>
-
-          <div className="flex space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => navigate("/auth")}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="flex-1" 
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Updating...</span>
-                </span>
-              ) : (
-                "Update Password"
-              )}
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={handleRequestReset} className="space-y-4">
-          <div className="relative">
-            <AtSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <form onSubmit={handlePasswordReset} className="space-y-4">
+        <div className="space-y-4">
+          <div>
             <Input
-              type="email"
-              placeholder="Email address"
-              className="pl-10"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
               required
+              minLength={6}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Password must be at least 6 characters
+            </p>
+          </div>
+          <div>
+            <Input
+              type="password"
+              placeholder="Confirm New Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
             />
           </div>
+        </div>
 
-          <div className="flex space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => navigate("/auth")}
-              className="flex-1"
-            >
-              Back to Sign In
-            </Button>
-            <Button 
-              type="submit" 
-              className="flex-1" 
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Sending...</span>
-                </span>
-              ) : (
-                "Send Reset Link"
-              )}
-            </Button>
-          </div>
-        </form>
-      )}
+        <div className="flex space-x-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => navigate("/auth")}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            className="flex-1" 
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Updating...</span>
+              </span>
+            ) : (
+              "Update Password"
+            )}
+          </Button>
+        </div>
+      </form>
     </motion.div>
   );
 };
