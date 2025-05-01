@@ -145,6 +145,7 @@ export function MobileUserProfile({ onClose }: MobileUserProfileProps) {
         </Avatar>
         <div className="text-left">
           <p className="font-medium">{firstName && lastName ? `${firstName} ${lastName}` : "User"}</p>
+          <p className="text-xs text-muted-foreground">Manage your account</p>
         </div>
       </Button>
       <Button 

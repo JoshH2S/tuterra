@@ -44,5 +44,50 @@ export const useAuth = () => {
     }
   };
 
-  return { user, loading, signOut };
+  // Add a function to update password with security checks
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      // First verify current password
+      if (!user || !user.email) {
+        throw new Error("User not authenticated");
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword
+      });
+
+      if (signInError) {
+        throw new Error("Current password is incorrect");
+      }
+
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      // Send confirmation email
+      await supabase.functions.invoke("send-password-change-email", {
+        body: { email: user.email },
+      });
+
+      toast({
+        title: "Success",
+        description: "Your password has been updated successfully. A confirmation email has been sent to your inbox.",
+      });
+
+      return true;
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to update password",
+      });
+      return false;
+    }
+  };
+
+  return { user, loading, signOut, updatePassword };
 };

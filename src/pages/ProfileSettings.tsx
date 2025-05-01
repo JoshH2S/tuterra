@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -212,18 +211,32 @@ const ProfileSettings = () => {
                   Manage your password and account security
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Update your password to maintain the security of your account.
-                </p>
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate("/update-password")}
-                  className="flex items-center gap-2"
-                >
-                  <Lock className="h-4 w-4" />
-                  Change Password
-                </Button>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Password Management</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Keep your account secure by updating your password regularly. For security reasons, you'll need to enter your current password.
+                  </p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate("/update-password")}
+                    className="flex items-center gap-2"
+                  >
+                    <Lock className="h-4 w-4" />
+                    Change Password
+                  </Button>
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <h3 className="text-lg font-semibold mb-2">Account Activity</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Monitor your account activity and set up additional security measures.
+                  </p>
+                  <div className="mt-4 bg-muted/30 p-4 rounded-md">
+                    <p className="text-sm font-medium">Last password change</p>
+                    <p className="text-xs text-muted-foreground">Not available</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
