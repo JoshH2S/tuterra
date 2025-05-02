@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,9 +24,12 @@ export const ForgotPassword = () => {
     setError("");
     
     try {
-      // Use the Supabase auth reset password API
+      // Get the current origin to use for the redirectTo URL
+      const origin = window.location.origin;
+      
+      // Use the Supabase auth reset password API with the correct redirect
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${origin}/reset-password`,
       });
       
       if (error) throw error;
