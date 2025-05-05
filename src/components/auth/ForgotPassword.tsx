@@ -29,7 +29,7 @@ export const ForgotPassword = () => {
       
       // Use the Supabase auth reset password API with the correct redirect
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/reset-password`,
+        emailRedirectTo: `${origin}/reset-password`,
       });
       
       if (error) throw error;
