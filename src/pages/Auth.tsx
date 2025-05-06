@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
@@ -23,6 +22,13 @@ const Auth = () => {
   const queryParams = new URLSearchParams(location.search);
   const defaultTab = queryParams.get("tab") || "signin";
 
+  // For debugging - helps us see exactly what's in the URL and localStorage
+  useEffect(() => {
+    console.log("Current URL:", window.location.href);
+    console.log("Hash present:", !!window.location.hash);
+    console.log("pendingPasswordReset flag:", localStorage.getItem("pendingPasswordReset"));
+  }, []);
+
   // Handle auth actions from URL (verification, password reset, magic link)
   useEffect(() => {
     const handleAuthRedirect = async () => {
@@ -40,6 +46,7 @@ const Auth = () => {
           const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
           
           if (error) {
+            console.error("Exchange code error:", error);
             throw error;
           }
           
@@ -49,21 +56,28 @@ const Auth = () => {
           // Determine auth flow based on URL, session state, and localStorage flags
           if (session) {
             // Check if this is a password reset flow by checking for the pendingPasswordReset flag
-            if (localStorage.getItem("pendingPasswordReset") === "true") {
+            const isPendingReset = localStorage.getItem("pendingPasswordReset") === "true";
+            console.log("Is pending reset:", isPendingReset);
+            
+            if (isPendingReset) {
               localStorage.removeItem("pendingPasswordReset"); // Clear the flag
               setMode("resetPassword");
+              console.log("Setting mode to resetPassword");
             } 
             // If email was just verified (emailVerified is true in URL)
             else if (window.location.href.includes("email_confirmed=true") || window.location.hash.includes("type=signup")) {
               setMode("emailVerification");
+              console.log("Setting mode to emailVerification");
             }
             // Otherwise, it's a successful sign-in
             else {
               // If user is fully set up, redirect to dashboard
+              console.log("Redirecting to dashboard - successful auth");
               navigate("/dashboard", { replace: true });
             }
           } else {
             // If no session, likely an error occurred
+            console.error("No session after code exchange");
             setError("Authentication failed. Please try again.");
             setMode("error");
           }

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
+import { PasswordStrengthMeter } from "./PasswordStrengthMeter";
+import { calculatePasswordStrength } from "@/lib/password";
 
 export const ResetPasswordForm = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -16,8 +18,14 @@ export const ResetPasswordForm = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Calculate password strength when password changes
+    setPasswordStrength(calculatePasswordStrength(newPassword));
+  }, [newPassword]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +46,7 @@ export const ResetPasswordForm = () => {
     setError("");
     
     try {
+      console.log("Updating user password");
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -50,11 +59,14 @@ export const ResetPasswordForm = () => {
         description: "Your password has been updated successfully",
       });
       
+      console.log("Password updated successfully, redirecting to dashboard");
+      
       // Redirect to dashboard after a delay
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
       }, 2000);
     } catch (error: any) {
+      console.error("Password update error:", error);
       setError(error.message);
       toast({
         title: "Error",
@@ -121,6 +133,13 @@ export const ResetPasswordForm = () => {
             <p className="text-xs text-muted-foreground mt-1">
               Password must be at least 6 characters
             </p>
+            
+            {/* Show password strength meter */}
+            {newPassword.length > 0 && (
+              <div className="mt-2">
+                <PasswordStrengthMeter strength={passwordStrength} />
+              </div>
+            )}
           </div>
           <div className="relative">
             <Input

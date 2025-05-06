@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AtSign, AlertCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -25,6 +24,7 @@ export const ForgotPassword = () => {
     setError("");
     
     try {
+      console.log("Setting pendingPasswordReset flag in localStorage");
       // Set a flag in localStorage to indicate a pending password reset
       localStorage.setItem("pendingPasswordReset", "true");
       
@@ -38,8 +38,14 @@ export const ForgotPassword = () => {
         title: "Reset link sent",
         description: "Check your email for the password reset link",
       });
+      
+      console.log("Password reset email sent successfully");
     } catch (error: any) {
+      console.error("Password reset error:", error);
       setError(error.message);
+      // Clear the flag if there was an error
+      localStorage.removeItem("pendingPasswordReset");
+      
       toast({
         title: "Error",
         description: error.message,
