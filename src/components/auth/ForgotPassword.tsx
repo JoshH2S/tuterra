@@ -25,6 +25,9 @@ export const ForgotPassword = () => {
     setError("");
     
     try {
+      // Set a flag in localStorage to indicate a pending password reset
+      localStorage.setItem("pendingPasswordReset", "true");
+      
       // No need to specify emailRedirectTo - Supabase will use the Site URL configured in the dashboard
       const { error } = await supabase.auth.resetPasswordForEmail(email);
       

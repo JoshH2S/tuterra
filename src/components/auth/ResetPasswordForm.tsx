@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const ResetPasswordForm = () => {
@@ -15,6 +15,7 @@ export const ResetPasswordForm = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -49,7 +50,7 @@ export const ResetPasswordForm = () => {
         description: "Your password has been updated successfully",
       });
       
-      // Redirect to dashboard or login after a delay
+      // Redirect to dashboard after a delay
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
       }, 2000);
@@ -63,6 +64,10 @@ export const ResetPasswordForm = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -96,28 +101,44 @@ export const ResetPasswordForm = () => {
 
       <form onSubmit={handlePasswordReset} className="space-y-4">
         <div className="space-y-4">
-          <div>
+          <div className="relative">
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="New Password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
               minLength={6}
+              className="pr-10"
             />
+            <button 
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+              onClick={togglePasswordVisibility}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
             <p className="text-xs text-muted-foreground mt-1">
               Password must be at least 6 characters
             </p>
           </div>
-          <div>
+          <div className="relative">
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Confirm New Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={6}
+              className="pr-10"
             />
+            <button 
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+              onClick={togglePasswordVisibility}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
         </div>
 
@@ -125,6 +146,7 @@ export const ResetPasswordForm = () => {
           type="submit" 
           className="w-full" 
           disabled={loading}
+          size="lg"
         >
           {loading ? (
             <span className="flex items-center gap-2">

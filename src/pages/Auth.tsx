@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
@@ -45,14 +46,15 @@ const Auth = () => {
           // Get current session
           const { data: { session } } = await supabase.auth.getSession();
           
-          // Determine auth flow based on URL and session state
+          // Determine auth flow based on URL, session state, and localStorage flags
           if (session) {
-            // Check if this is a password reset flow by looking for type=recovery in URL
-            if (window.location.href.includes("type=recovery")) {
+            // Check if this is a password reset flow by checking for the pendingPasswordReset flag
+            if (localStorage.getItem("pendingPasswordReset") === "true") {
+              localStorage.removeItem("pendingPasswordReset"); // Clear the flag
               setMode("resetPassword");
             } 
             // If email was just verified (emailVerified is true in URL)
-            else if (window.location.href.includes("email_confirmed=true")) {
+            else if (window.location.href.includes("email_confirmed=true") || window.location.hash.includes("type=signup")) {
               setMode("emailVerification");
             }
             // Otherwise, it's a successful sign-in
