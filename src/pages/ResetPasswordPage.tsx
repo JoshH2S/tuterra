@@ -1,9 +1,78 @@
 
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const ResetPasswordPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [authenticated, setAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const processAuth = async () => {
+      console.log("ResetPasswordPage: Processing authentication");
+      
+      try {
+        // Check for hash in URL
+        const hasHashParams = window.location.hash && window.location.hash.length > 1;
+        
+        if (hasHashParams) {
+          console.log("ResetPasswordPage: Hash params detected, exchanging code for session");
+          
+          // Exchange code for session
+          const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+          
+          if (error) {
+            console.error("ResetPasswordPage: Exchange code error:", error);
+            throw error;
+          }
+          
+          // Get current session to confirm we have a valid session
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session) {
+            console.log("ResetPasswordPage: Valid session obtained");
+            setAuthenticated(true);
+            
+            // Clear the URL hash to prevent issues on refresh
+            window.history.replaceState(null, "", window.location.pathname);
+          } else {
+            console.error("ResetPasswordPage: No session after code exchange");
+            setError("Authentication failed. Please try again.");
+            setTimeout(() => navigate("/auth"), 3000);
+          }
+        } else {
+          // No hash in URL, check if we have a session already
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session) {
+            console.log("ResetPasswordPage: Existing session found");
+            setAuthenticated(true);
+          } else {
+            console.log("ResetPasswordPage: No session and no hash params");
+            setError("Invalid password reset link. Please request a new one.");
+            setTimeout(() => navigate("/forgot-password"), 3000);
+          }
+        }
+      } catch (e: any) {
+        console.error("ResetPasswordPage: Auth processing error:", e);
+        setError(e.message || "Failed to process authentication. Please try again.");
+        setTimeout(() => navigate("/forgot-password"), 3000);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    processAuth();
+  }, [navigate]);
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -32,7 +101,28 @@ const ResetPasswordPage = () => {
           <CardTitle className="text-center">Set New Password</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResetPasswordForm />
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-center text-muted-foreground">
+                Processing your password reset request...
+              </p>
+            </div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : authenticated ? (
+            <ResetPasswordForm />
+          ) : (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Authentication failed. Redirecting to login page...
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
     </motion.div>

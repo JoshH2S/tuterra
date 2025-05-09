@@ -111,7 +111,7 @@ export const ResetPasswordForm = () => {
         </Alert>
       )}
 
-      <form onSubmit={handlePasswordReset} className="space-y-4">
+      <form onSubmit={handlePasswordReset} className="space-y-6">
         <div className="space-y-4">
           <div className="relative">
             <Input
@@ -127,6 +127,7 @@ export const ResetPasswordForm = () => {
               type="button"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
               onClick={togglePasswordVisibility}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -155,6 +156,7 @@ export const ResetPasswordForm = () => {
               type="button"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
               onClick={togglePasswordVisibility}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>

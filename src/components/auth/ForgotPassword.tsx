@@ -28,8 +28,10 @@ export const ForgotPassword = () => {
       // Set a flag in localStorage to indicate a pending password reset
       localStorage.setItem("pendingPasswordReset", "true");
       
-      // No need to specify emailRedirectTo - Supabase will use the Site URL configured in the dashboard
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      // Specify a redirectTo URL to ensure the user lands on the reset password page
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
       
       if (error) throw error;
       
@@ -97,18 +99,18 @@ export const ForgotPassword = () => {
             />
           </div>
 
-          <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => navigate("/auth")}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               Back to Sign In
             </Button>
             <Button 
               type="submit" 
-              className="flex-1" 
+              className="w-full sm:flex-1" 
               disabled={loading}
             >
               {loading ? (

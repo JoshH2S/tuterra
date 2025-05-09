@@ -24,9 +24,9 @@ const Auth = () => {
 
   // For debugging - helps us see exactly what's in the URL and localStorage
   useEffect(() => {
-    console.log("Current URL:", window.location.href);
-    console.log("Hash present:", !!window.location.hash);
-    console.log("pendingPasswordReset flag:", localStorage.getItem("pendingPasswordReset"));
+    console.log("Auth page: Current URL:", window.location.href);
+    console.log("Auth page: Hash present:", !!window.location.hash);
+    console.log("Auth page: pendingPasswordReset flag:", localStorage.getItem("pendingPasswordReset"));
   }, []);
 
   // Handle auth actions from URL (verification, password reset, magic link)
@@ -60,9 +60,17 @@ const Auth = () => {
             console.log("Is pending reset:", isPendingReset);
             
             if (isPendingReset) {
+              // For compatibility with old links, handle reset here too
               localStorage.removeItem("pendingPasswordReset"); // Clear the flag
-              setMode("resetPassword");
-              console.log("Setting mode to resetPassword");
+              if (window.location.pathname === "/auth") {
+                // If we're on /auth page, show the reset form
+                setMode("resetPassword");
+                console.log("Setting mode to resetPassword on /auth");
+              } else {
+                // If the link was supposed to go to /reset-password but landed here,
+                // redirect to the proper page
+                navigate("/reset-password", { replace: true });
+              }
             } 
             // If email was just verified (emailVerified is true in URL)
             else if (window.location.href.includes("email_confirmed=true") || window.location.hash.includes("type=signup")) {
