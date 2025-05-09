@@ -1,5 +1,5 @@
 
-import { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { explanationCache } from "@/services/quiz/explanationCache";
 
 interface ShowOneChildProps {
@@ -43,12 +43,18 @@ export const readRenderPromptFromStorage = (key: string) => {
       return null;
     }
     
+    // Create a proper ExplanationCacheKey object from the string key
+    const cacheKey = { 
+      questionId: key, 
+      userAnswer: '' // Providing a default empty string as we don't have this info
+    };
+    
     // Now safely call the getWithTTL method if it exists
     if (typeof explanationCache.getWithTTL === 'function') {
-      return explanationCache.getWithTTL(key);
+      return explanationCache.getWithTTL(cacheKey);
     } else {
       // Fall back to regular get if getWithTTL doesn't exist
-      return explanationCache.get(key);
+      return explanationCache.get(cacheKey);
     }
   } catch (error) {
     console.error('Error reading from cache storage:', error);
