@@ -4,20 +4,61 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export function CourseGuide() {
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Check if onboarding is complete but course guide isn't
-    const isOnboardingComplete = localStorage.getItem("onboardingComplete") === "true";
-    const isCourseGuideComplete = localStorage.getItem("courseGuideCompleted") === "true";
-    
-    if (isOnboardingComplete && !isCourseGuideComplete) {
-      setVisible(true);
-    }
-  }, []);
+    // Only proceed if we have a logged-in user
+    if (!user) return;
+
+    const checkOnboardingStatus = async () => {
+      try {
+        // First check local storage as a quick way to avoid unnecessary API calls
+        const isLocallyComplete = localStorage.getItem("onboardingComplete") === "true";
+        
+        if (!isLocallyComplete) {
+          // If not found in localStorage, check the database
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('onboarding_complete')
+            .eq('id', user.id)
+            .single();
+            
+          if (error) throw error;
+          
+          // If complete in the database, set the local storage flag
+          if (profile?.onboarding_complete) {
+            localStorage.setItem("onboardingComplete", "true");
+          }
+          
+          // Check if guide has been shown
+          const isCourseGuideComplete = localStorage.getItem("courseGuideCompleted") === "true";
+          
+          // Show guide if onboarding is complete but guide hasn't been shown yet
+          if (profile?.onboarding_complete && !isCourseGuideComplete) {
+            setVisible(true);
+          }
+        } else {
+          // Onboarding is complete locally, check if guide has been shown
+          const isCourseGuideComplete = localStorage.getItem("courseGuideCompleted") === "true";
+          
+          // Show guide if onboarding is complete but guide hasn't been shown yet
+          if (!isCourseGuideComplete) {
+            setVisible(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user]);
 
   const handleComplete = () => {
     localStorage.setItem("courseGuideCompleted", "true");

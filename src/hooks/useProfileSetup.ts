@@ -153,6 +153,7 @@ export const useProfileSetup = (onComplete: () => void) => {
           .from('profiles')
           .update({
             school: educationLevel,
+            onboarding_complete: true // Updated to set the onboarding_complete flag
           })
           .eq('id', user.id);
 
@@ -188,7 +189,7 @@ export const useProfileSetup = (onComplete: () => void) => {
           await sendWelcomeEmail(user, session);
         }
 
-        // Set onboarding completion flag in localStorage
+        // Set onboarding completion flag in localStorage as a backup
         localStorage.setItem("onboardingComplete", "true");
 
         toast({

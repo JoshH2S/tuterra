@@ -856,6 +856,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          onboarding_complete: boolean
           school: string
           subscription_tier: string
           updated_at: string
@@ -869,6 +870,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          onboarding_complete?: boolean
           school: string
           subscription_tier?: string
           updated_at?: string
@@ -882,6 +884,7 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          onboarding_complete?: boolean
           school?: string
           subscription_tier?: string
           updated_at?: string

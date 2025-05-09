@@ -15,9 +15,28 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     // Set up auth listener first
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setLoading(false);
+      
+      // If session is established, check onboarding status
+      if (session?.user) {
+        try {
+          // Check if onboarding is complete in database
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('onboarding_complete')
+            .eq('id', session.user.id)
+            .single();
+            
+          // Update localStorage with the database value
+          if (profile) {
+            localStorage.setItem("onboardingComplete", profile.onboarding_complete ? "true" : "false");
+          }
+        } catch (error) {
+          console.error("Error checking onboarding status:", error);
+        }
+      }
       
       // If session is lost during app usage, redirect to auth
       // But only after initialization is complete
