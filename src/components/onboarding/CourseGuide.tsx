@@ -33,6 +33,9 @@ export function CourseGuide() {
 
   if (!visible) return null;
 
+  // Position tooltip in a mobile-friendly way when the sidebar might be hidden
+  const isSidebarVisible = document.querySelector('[data-sidebar="sidebar"]');
+
   return (
     <AnimatePresence>
       <motion.div
@@ -47,7 +50,7 @@ export function CourseGuide() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
-        className="fixed left-[220px] top-[100px] z-[61] max-w-[280px]"
+        className={`fixed ${isSidebarVisible ? 'left-[220px]' : 'left-8'} top-[100px] z-[61] max-w-[280px]`}
       >
         <div className="relative bg-white dark:bg-gray-900 shadow-lg rounded-lg p-4 border border-primary">
           <button 

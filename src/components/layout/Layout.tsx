@@ -1,3 +1,4 @@
+
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -27,8 +28,10 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
     location.pathname === "/auth" ||
     location.pathname === "/contact" ||
     location.pathname === "/pricing" ||
-    location.pathname === "/forgot-password" || // Added
-    location.pathname === "/reset-password";    // Added
+    location.pathname === "/forgot-password" ||
+    location.pathname === "/reset-password" ||
+    location.pathname === "/onboarding" ||
+    location.pathname === "/onboarding-redirect";    // Added onboarding-redirect path
 
   // Show Header1 on specific routes where the sidebar is hidden but we need navigation
   const showPublicHeader = location.pathname === "/about" || 
