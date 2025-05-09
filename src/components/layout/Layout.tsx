@@ -1,4 +1,3 @@
-
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -24,14 +23,16 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
 
   // Hide sidebar and header on specific routes
   const hideSidebar = isLandingPage || 
-                      location.pathname === "/about" || 
-                      location.pathname === "/auth" ||
-                      location.pathname === "/contact" ||
-                      location.pathname === "/pricing";
+    location.pathname === "/about" || 
+    location.pathname === "/auth" ||
+    location.pathname === "/contact" ||
+    location.pathname === "/pricing" ||
+    location.pathname === "/forgot-password" || // Added
+    location.pathname === "/reset-password";    // Added
 
   // Show Header1 on specific routes where the sidebar is hidden but we need navigation
   const showPublicHeader = location.pathname === "/about" || 
-                          location.pathname === "/contact";
+    location.pathname === "/contact";
 
   return (
     <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
