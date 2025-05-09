@@ -45,7 +45,7 @@ export const SignInForm = () => {
       className="space-y-6"
     >
       <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-[#ac9571] text-center">Welcome back</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-[#ac9571] text-center">It's good to see you again!</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Enter your credentials to access your account
         </p>
