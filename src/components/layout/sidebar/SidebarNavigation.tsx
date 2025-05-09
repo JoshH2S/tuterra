@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -98,6 +99,7 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
               onClick={() => handleNavigation(item.path)}
               isCollapsed={isCollapsed}
               path={item.path}
+              id={item.path === "/courses" ? "sidebar-courses" : undefined}
             />
           </li>
         ))}

@@ -10,6 +10,7 @@ import { AppRoutes } from "@/routes/AppRoutes";
 import { useCustomFont } from "@/hooks/useCustomFont";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { CourseGuide } from "@/components/onboarding/CourseGuide";
 
 export const MainLayout = () => {
   useCustomFont();
@@ -46,6 +47,7 @@ export const MainLayout = () => {
         <Layout isLandingPage={isLandingPage}>
           <AppRoutes />
         </Layout>
+        <CourseGuide />
       </SidebarProvider>
     </TooltipProvider>
   );
