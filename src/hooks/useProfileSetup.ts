@@ -188,6 +188,9 @@ export const useProfileSetup = (onComplete: () => void) => {
           await sendWelcomeEmail(user, session);
         }
 
+        // Set onboarding completion flag in localStorage
+        localStorage.setItem("onboardingComplete", "true");
+
         toast({
           title: "Profile setup complete!",
           description: "Your preferences have been saved.",
