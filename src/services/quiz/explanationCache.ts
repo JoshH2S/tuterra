@@ -34,6 +34,28 @@ class ExplanationCache {
   }
 
   /**
+   * Get value from cache with TTL information
+   */
+  getWithTTL(key: ExplanationCacheKey): { value: string | null; ttl: number } | null {
+    const cacheKey = this.generateCacheKey(key);
+    const item = this.cache.get(cacheKey);
+    
+    // Return null if item doesn't exist
+    if (!item) return null;
+    
+    const now = Date.now();
+    const ttl = Math.max(0, item.expiry - now);
+    
+    // If expired, delete and return null
+    if (ttl <= 0) {
+      this.cache.delete(cacheKey);
+      return null;
+    }
+    
+    return { value: item.value, ttl };
+  }
+
+  /**
    * Set value in cache with optional TTL
    */
   set(key: ExplanationCacheKey, value: string, ttl: number = this.defaultTTL): void {
