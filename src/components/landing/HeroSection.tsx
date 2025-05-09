@@ -11,7 +11,7 @@ export function HeroSection() {
       {/* Mobile Background image */}
       <div className="absolute inset-0 z-0 block sm:hidden">
         <img
-          src="https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters//Businesswoman%20Presenting%20in%20Conference%20Room.png"
+          src="https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters//Businesswoman%20Presenting%20in%20Conference%20Room.jpg"
           alt="Businesswoman Presenting in Conference Room"
           className="w-full h-full object-cover"
         />
@@ -20,8 +20,8 @@ export function HeroSection() {
       {/* Desktop/Tablet Background image */}
       <div className="absolute inset-0 z-0 hidden sm:block">
         <img
-          src="/lovable-uploads/dfd38374-fd74-42a1-9010-8c092a4ae7b6.png"
-          alt="Tuterra AI learning environment"
+          src="https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters//Animated%20Quiz%20Character%20in%20Office.jpg"
+          alt="Animated Quiz Character in Office"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black/30"></div>
