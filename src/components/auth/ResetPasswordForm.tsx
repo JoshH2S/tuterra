@@ -134,10 +134,10 @@ export const ResetPasswordForm = () => {
               Password must be at least 6 characters
             </p>
             
-            {/* Show password strength meter */}
+            {/* Show password strength meter with both required props */}
             {newPassword.length > 0 && (
               <div className="mt-2">
-                <PasswordStrengthMeter strength={passwordStrength} />
+                <PasswordStrengthMeter password={newPassword} strength={passwordStrength} />
               </div>
             )}
           </div>
