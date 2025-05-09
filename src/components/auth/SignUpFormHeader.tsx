@@ -1,11 +1,8 @@
-
 export const SignUpFormHeader = () => {
-  return (
-    <div className="text-center">
-      <h2 className="text-2xl font-bold tracking-tight">Create an account</h2>
+  return <div className="text-center">
+      <h2 className="text-2xl font-bold tracking-tight text-[#ac9571]">Create an account</h2>
       <p className="text-sm text-muted-foreground mt-1">
         Enter your details to get started
       </p>
-    </div>
-  );
+    </div>;
 };
