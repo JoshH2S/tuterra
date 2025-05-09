@@ -1,7 +1,7 @@
 
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -67,7 +67,7 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
   }, [user]);
 
   return (
-    <div className="space-y-6 text-center">
+    <div className="flex flex-col items-center justify-center h-full w-full max-w-md mx-auto space-y-6 text-center px-4">
       <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
         <Check className="h-8 w-8 text-green-600" />
       </div>

@@ -148,56 +148,58 @@ export const EmailVerification = () => {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-md"
-    >
-      <div className="flex justify-center mb-8">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="w-[180px]"
-        >
-          <img 
-            src="/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png"
-            alt="Tuterra Logo" 
-            className="w-full h-auto"
-          />
-        </motion.div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center w-full px-4 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        <div className="flex justify-center mb-8">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="w-[180px]"
+          >
+            <img 
+              src="/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png"
+              alt="Tuterra Logo" 
+              className="w-full h-auto"
+            />
+          </motion.div>
+        </div>
 
-      <Card className="shadow-lg border-0 overflow-hidden">
-        <div className="h-2 bg-gradient-to-r from-primary-100 to-primary-400" />
-        
-        <CardContent className="p-8">
-          {verifying ? (
-            <VerificationProgress verifying={verifying} />
-          ) : (
-            <>
-              {error ? (
-                <VerificationError 
-                  error={error}
-                  onResend={handleResendVerification}
-                />
-              ) : verificationSuccess ? (
-                <VerificationSuccess onContinue={handleContinue} />
-              ) : (
-                <PendingVerification
-                  onResend={handleResendVerification}
-                  verifying={verifying}
-                />
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+        <Card className="shadow-lg border-0 overflow-hidden">
+          <div className="h-2 bg-gradient-to-r from-primary-100 to-primary-400" />
+          
+          <CardContent className="p-8">
+            {verifying ? (
+              <VerificationProgress verifying={verifying} />
+            ) : (
+              <>
+                {error ? (
+                  <VerificationError 
+                    error={error}
+                    onResend={handleResendVerification}
+                  />
+                ) : verificationSuccess ? (
+                  <VerificationSuccess onContinue={handleContinue} />
+                ) : (
+                  <PendingVerification
+                    onResend={handleResendVerification}
+                    verifying={verifying}
+                  />
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-      <div className="mt-6 text-center text-xs text-gray-500 px-4">
-        <p>Having trouble viewing this page? Please try on a larger screen or contact support.</p>
-      </div>
-    </motion.div>
+        <div className="mt-6 text-center text-xs text-gray-500 px-4">
+          <p>Having trouble viewing this page? Please try on a larger screen or contact support.</p>
+        </div>
+      </motion.div>
+    </div>
   );
 };

@@ -31,7 +31,8 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
     location.pathname === "/forgot-password" ||
     location.pathname === "/reset-password" ||
     location.pathname === "/onboarding" ||
-    location.pathname === "/onboarding-redirect";    // Added onboarding-redirect path
+    location.pathname === "/onboarding-redirect" ||
+    location.pathname === "/verify-email";    // Added verify-email path to hide sidebar
 
   // Show Header1 on specific routes where the sidebar is hidden but we need navigation
   const showPublicHeader = location.pathname === "/about" || 
