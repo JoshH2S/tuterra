@@ -17,16 +17,7 @@ export const useOnboardingStatus = () => {
       }
 
       try {
-        // First check localStorage for a quick response
-        const localStatus = localStorage.getItem("onboardingComplete") === "true";
-        
-        if (localStatus) {
-          setIsOnboardingComplete(true);
-          setLoading(false);
-          return;
-        }
-
-        // If not in localStorage, check from database
+        // Check from database instead of localStorage
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('onboarding_complete')
@@ -37,13 +28,7 @@ export const useOnboardingStatus = () => {
           console.error("Error fetching onboarding status:", error);
           setIsOnboardingComplete(false);
         } else {
-          // Update local state based on database value
           setIsOnboardingComplete(profile?.onboarding_complete || false);
-          
-          // Sync localStorage with database value
-          if (profile?.onboarding_complete) {
-            localStorage.setItem("onboardingComplete", "true");
-          }
         }
       } catch (error) {
         console.error("Error checking onboarding status:", error);
@@ -68,9 +53,8 @@ export const useOnboardingStatus = () => {
 
       if (error) throw error;
 
-      // Update local state and localStorage
+      // Update local state
       setIsOnboardingComplete(completed);
-      localStorage.setItem("onboardingComplete", completed ? "true" : "false");
       return true;
     } catch (error) {
       console.error("Error updating onboarding status:", error);

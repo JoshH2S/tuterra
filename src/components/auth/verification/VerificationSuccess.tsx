@@ -67,7 +67,7 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
   }, [user]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full max-w-md mx-auto space-y-6 text-center px-4">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full max-w-md mx-auto space-y-6 text-center px-4">
       <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
         <Check className="h-8 w-8 text-green-600" />
       </div>

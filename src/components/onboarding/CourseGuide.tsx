@@ -1,78 +1,87 @@
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 export function CourseGuide() {
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
-
+  
+  // Only show the guide on the dashboard page
+  const isDashboardPage = location.pathname === "/dashboard";
+  
   useEffect(() => {
-    // Only proceed if we have a logged-in user
-    if (!user) return;
+    // Only proceed if we have a logged-in user and we're on the dashboard
+    if (!user || !isDashboardPage) return;
 
-    const checkOnboardingStatus = async () => {
+    const checkGuideStatus = async () => {
       try {
-        // First check local storage as a quick way to avoid unnecessary API calls
-        const isLocallyComplete = localStorage.getItem("onboardingComplete") === "true";
-        
-        if (!isLocallyComplete) {
-          // If not found in localStorage, check the database
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('onboarding_complete')
-            .eq('id', user.id)
-            .single();
+        // Check if onboarding is complete and guide hasn't been shown
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('onboarding_complete, course_guide_completed')
+          .eq('id', user.id)
+          .single();
             
-          if (error) throw error;
-          
-          // If complete in the database, set the local storage flag
-          if (profile?.onboarding_complete) {
-            localStorage.setItem("onboardingComplete", "true");
-          }
-          
-          // Check if guide has been shown
-          const isCourseGuideComplete = localStorage.getItem("courseGuideCompleted") === "true";
-          
-          // Show guide if onboarding is complete but guide hasn't been shown yet
-          if (profile?.onboarding_complete && !isCourseGuideComplete) {
-            setVisible(true);
-          }
-        } else {
-          // Onboarding is complete locally, check if guide has been shown
-          const isCourseGuideComplete = localStorage.getItem("courseGuideCompleted") === "true";
-          
-          // Show guide if onboarding is complete but guide hasn't been shown yet
-          if (!isCourseGuideComplete) {
-            setVisible(true);
-          }
+        if (error) throw error;
+        
+        // Show guide if onboarding is complete but guide hasn't been shown yet
+        if (profile?.onboarding_complete && !profile?.course_guide_completed) {
+          setVisible(true);
         }
       } catch (error) {
-        console.error("Error checking onboarding status:", error);
+        console.error("Error checking guide status:", error);
       }
     };
 
-    checkOnboardingStatus();
-  }, [user]);
+    checkGuideStatus();
+  }, [user, isDashboardPage]);
 
   const handleComplete = () => {
-    localStorage.setItem("courseGuideCompleted", "true");
+    if (!user) return;
+    
+    // Update the database to mark the guide as completed
+    updateGuideCompletionStatus();
     setVisible(false);
     navigate("/courses");
   };
 
-  const handleDismiss = (e: React.MouseEvent) => {
+  const handleDismiss = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    localStorage.setItem("courseGuideCompleted", "true");
+    if (!user) return;
+    
+    // Update the database to mark the guide as completed
+    updateGuideCompletionStatus();
     setVisible(false);
   };
+  
+  const updateGuideCompletionStatus = async () => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ course_guide_completed: true })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+    } catch (error) {
+      console.error("Failed to update guide completion status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save your preferences. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
-  if (!visible) return null;
+  if (!visible || !isDashboardPage) return null;
 
   // Position tooltip in a mobile-friendly way when the sidebar might be hidden
   const isSidebarVisible = document.querySelector('[data-sidebar="sidebar"]');

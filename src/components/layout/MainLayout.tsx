@@ -20,6 +20,7 @@ export const MainLayout = () => {
   const [isLayoutReady, setIsLayoutReady] = useState(false);
 
   const isLandingPage = location.pathname === "/";
+  const isDashboardPage = location.pathname === "/dashboard";
 
   useEffect(() => {
     if (!loading) {
@@ -47,7 +48,7 @@ export const MainLayout = () => {
         <Layout isLandingPage={isLandingPage}>
           <AppRoutes />
         </Layout>
-        <CourseGuide />
+        {isDashboardPage && <CourseGuide />}
       </SidebarProvider>
     </TooltipProvider>
   );
