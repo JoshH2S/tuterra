@@ -1,99 +1,98 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { InterviewFeedback, InterviewTranscript } from "@/types/interview";
+import { InterviewTranscript } from "@/types/interview";
 
-export const useInterviewFeedback = (
-  sessionId: string | null
-) => {
-  const { toast } = useToast();
+export const useInterviewFeedback = () => {
   const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
-  const [hasError, setHasError] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const generateFeedback = async (transcript: InterviewTranscript[]) => {
-    if (!sessionId || transcript.length === 0 || hasError) return;
-    
+  const generateFeedback = async (
+    sessionId: string,
+    jobTitle: string,
+    industry: string,
+    transcript: InterviewTranscript[]
+  ) => {
+    if (!sessionId || !transcript || transcript.length === 0) {
+      setFeedbackError("Missing required information to generate feedback");
+      return null;
+    }
+
     setLoading(true);
+    setFeedbackError(null);
+    
     try {
+      // Format transcript into Q&A pairs
+      const formattedResponses = transcript.map(item => ({
+        question: item.question,
+        response: item.answer
+      }));
+      
+      // Call the edge function to generate feedback
       const { data, error } = await supabase.functions.invoke('generate-interview-feedback', {
-        body: { sessionId, transcript }
+        body: {
+          sessionId,
+          jobTitle,
+          industry,
+          responses: formattedResponses
+        }
       });
 
-      if (error) throw error;
-      
-      if (data && data.feedback) {
-        // Process the feedback data carefully
-        const feedbackData = data.feedback;
-        
-        // Create a properly typed feedback object with safe fallbacks
-        const processedFeedback: InterviewFeedback = {
-          id: feedbackData.id || '',
-          session_id: feedbackData.session_id || '',
-          feedback: typeof feedbackData.feedback === 'string' ? feedbackData.feedback : '',
-          strengths: Array.isArray(feedbackData.strengths) ? feedbackData.strengths : [],
-          areas_for_improvement: Array.isArray(feedbackData.areas_for_improvement) ? feedbackData.areas_for_improvement : [],
-          overall_score: typeof feedbackData.overall_score === 'number' ? feedbackData.overall_score : 0,
-          created_at: feedbackData.created_at || '',
-          updated_at: feedbackData.updated_at || feedbackData.created_at || ''
-        };
-        
-        setFeedback(processedFeedback);
-        setHasError(false);
-        toast({
-          title: "Feedback generated",
-          description: "Your interview feedback is ready!",
-        });
+      if (error) {
+        console.error("Error generating feedback:", error);
+        throw new Error(error.message || "Failed to generate feedback");
       }
+
+      if (!data || !data.feedback) {
+        throw new Error("Received invalid response from feedback service");
+      }
+
+      setFeedback(data.feedback);
+      return data.feedback;
     } catch (error) {
-      console.error("Error generating feedback:", error);
-      setHasError(true);
+      console.error("Error in generateFeedback:", error);
+      setFeedbackError(error instanceof Error ? error.message : "An unexpected error occurred");
+      
       toast({
-        title: "Error",
-        description: "Failed to generate feedback. Please try manually generating feedback.",
         variant: "destructive",
+        title: "Feedback Generation Failed",
+        description: "We couldn't generate feedback for your interview. Please try again later."
       });
+      
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchFeedback = async () => {
-    if (!sessionId) return;
-    
+  const progressToPhase2 = async (sessionId: string) => {
     setLoading(true);
+    
     try {
-      // Use functions.invoke instead of direct query since the table might not be in the types
-      const { data, error } = await supabase.functions.invoke('get-interview-feedback', {
-        body: { sessionId }
-      });
+      // Update the session to progress to phase 2
+      const { error } = await supabase
+        .from('internship_sessions')
+        .update({ current_phase: 2 })
+        .eq('id', sessionId);
 
-      if (error) throw error;
-      
-      if (data && data.feedback) {
-        const feedbackData = data.feedback;
-        
-        // Construct a properly typed feedback object with safe defaults
-        const processedFeedback: InterviewFeedback = {
-          id: feedbackData.id || '',
-          session_id: feedbackData.session_id || '',
-          feedback: typeof feedbackData.feedback === 'string' ? feedbackData.feedback : '',
-          strengths: Array.isArray(feedbackData.strengths) ? feedbackData.strengths : [],
-          areas_for_improvement: Array.isArray(feedbackData.areas_for_improvement) ? feedbackData.areas_for_improvement : [],
-          overall_score: typeof feedbackData.overall_score === 'number' ? feedbackData.overall_score : 0,
-          created_at: feedbackData.created_at || '',
-          updated_at: feedbackData.updated_at || feedbackData.created_at || ''
-        };
-        
-        setFeedback(processedFeedback);
+      if (error) {
+        throw new Error(`Failed to progress to Phase 2: ${error.message}`);
       }
+
+      // Navigate to Phase 2
+      navigate(`/internship/phase-2/${sessionId}`);
     } catch (error) {
-      console.error("Error fetching feedback:", error);
+      console.error("Error progressing to Phase 2:", error);
+      
       toast({
-        title: "Error",
-        description: "Failed to fetch interview feedback. Please try again.",
         variant: "destructive",
+        title: "Navigation Error",
+        description: "We couldn't proceed to the next phase. Please try again."
       });
     } finally {
       setLoading(false);
@@ -102,10 +101,9 @@ export const useInterviewFeedback = (
 
   return {
     generateFeedback,
-    fetchFeedback,
+    progressToPhase2,
     feedback,
-    loading,
-    hasError,
-    retry: () => setHasError(false)
+    feedbackError,
+    loading
   };
 };

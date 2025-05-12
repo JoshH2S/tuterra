@@ -136,7 +136,11 @@ function dispatch(action: Action) {
   })
 }
 
-interface Toast extends Omit<ToasterToast, "id"> {}
+type ToastVariant = "default" | "destructive" | "warning";
+
+interface Toast extends Omit<ToasterToast, "id"> {
+  variant?: ToastVariant;
+}
 
 function toast({ ...props }: Toast) {
   const id = genId()

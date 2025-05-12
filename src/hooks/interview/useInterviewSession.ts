@@ -38,8 +38,8 @@ export const useInterviewSession = () => {
   } = useInterviewState();
 
   const { toast } = useToast();
-  const { saveResponse } = useInterviewResponses(setResponses);
-  const { downloadTranscript } = useInterviewPersistence();
+  const { saveResponse, fetchResponses } = useInterviewResponses(setResponses);
+  const { downloadTranscript, createSession } = useInterviewPersistence();
   const { subscription } = useSubscription();
 
   // When typing effect finishes
@@ -101,6 +101,34 @@ export const useInterviewSession = () => {
     nextQuestion();
   };
 
+  const handleCreateSession = async () => {
+    if (!industry || !jobTitle) {
+      toast({
+        title: "Missing information",
+        description: "Please provide both industry and job title.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    try {
+      const sessionId = await createSession(industry, jobTitle, jobDescription);
+      if (sessionId) {
+        setCurrentSessionId(sessionId);
+        return sessionId;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error creating session:", error);
+      toast({
+        title: "Session Creation Failed",
+        description: "Unable to create interview session. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
   const handleDownloadTranscript = (format: 'txt' | 'pdf') => {
     console.log(`Downloading transcript in ${format} format`);
     downloadTranscript(transcript, jobTitle, format);
@@ -136,6 +164,7 @@ export const useInterviewSession = () => {
     handleStartChat,
     handleSubmitResponse,
     handleDownloadTranscript,
-    handleStartNew
+    handleStartNew,
+    handleCreateSession
   };
 };
