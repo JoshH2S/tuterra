@@ -1,10 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { PremiumContentCard } from "@/components/ui/premium-card";
 import { InterviewTranscript } from "@/types/interview";
 import { motion } from "framer-motion";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 // Add the missing interface definition
 interface InterviewCompletionProps {

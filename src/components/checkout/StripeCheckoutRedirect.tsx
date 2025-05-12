@@ -36,7 +36,6 @@ const StripeCheckoutRedirect = () => {
           title: "Checkout Error",
           description: "Unable to start checkout process. Returning to pricing page.",
           variant: "destructive",
-          duration: 5000,
         });
         
         // Redirect back to pricing page on error

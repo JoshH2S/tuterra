@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -28,7 +27,7 @@ export default function PricingPage() {
       toast({
         title: "Checkout Canceled",
         description: "Your checkout process was canceled. You can try again when you're ready.",
-        duration: 5000,
+        variant: "default",
       });
       navigate('/pricing', { replace: true });
     }
@@ -62,7 +61,7 @@ export default function PricingPage() {
       toast({
         title: "Plan Downgraded",
         description: "Your subscription will be downgraded to the free plan at the end of your billing period.",
-        duration: 5000,
+        variant: "default",
       });
       navigate('/profile-settings');
     }
