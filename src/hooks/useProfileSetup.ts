@@ -20,6 +20,7 @@ export const useProfileSetup = (onComplete: () => void) => {
   const [educationLevel, setEducationLevel] = useState<string>(initialState.educationLevel || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const setWelcomeEmailSent = (userId: string) => {
     localStorage.setItem(`welcome_email_sent_${userId}`, "1");
@@ -107,6 +108,7 @@ export const useProfileSetup = (onComplete: () => void) => {
       });
 
       if (error) {
+        console.error("[WelcomeEmail] Error invoking function:", error);
         throw new Error(error.message);
       }
 
@@ -133,6 +135,8 @@ export const useProfileSetup = (onComplete: () => void) => {
   };
 
   const handleComplete = async () => {
+    console.log("handleComplete started with education level:", educationLevel);
+    
     if (!educationLevel) {
       toast({
         title: "Please select an education level",
@@ -144,22 +148,32 @@ export const useProfileSetup = (onComplete: () => void) => {
     setIsSubmitting(true);
 
     try {
+      console.log("Getting current user...");
       const { data: { user } } = await supabase.auth.getUser();
+      console.log("User retrieved:", user?.id);
       
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("Session retrieved:", session?.access_token ? "Valid session" : "No valid session");
 
       if (user) {
-        const { error: profileError } = await supabase
+        console.log("Updating profile with education level:", educationLevel);
+        const { error: profileError, data: profileData } = await supabase
           .from('profiles')
           .update({
             school: educationLevel,
-            onboarding_complete: true // Updated to set the onboarding_complete flag
+            onboarding_complete: true
           })
-          .eq('id', user.id);
+          .eq('id', user.id)
+          .select();
 
-        if (profileError) throw profileError;
+        console.log("Profile update result:", profileError ? "Error" : "Success", profileData);
+        if (profileError) {
+          console.error("Profile update error:", profileError);
+          throw profileError;
+        }
 
         if (selectedTopics.length > 0) {
+          console.log("Saving selected topics:", selectedTopics);
           const typedTopics = selectedTopics.filter(topic => 
             [
               'business_economics',
@@ -182,23 +196,36 @@ export const useProfileSetup = (onComplete: () => void) => {
               topics: typedTopics,
             });
 
-          if (topicsError) throw topicsError;
+          if (topicsError) {
+            console.error("Topics update error:", topicsError);
+            throw topicsError;
+          }
+          console.log("Topics saved successfully");
         }
 
         if (session?.access_token) {
+          console.log("Attempting to send welcome email");
           await sendWelcomeEmail(user, session);
         }
 
         // Set onboarding completion flag in localStorage as a backup
+        console.log("Setting localStorage backup flag");
         localStorage.setItem("onboardingComplete", "true");
 
+        console.log("Onboarding complete! Showing success toast");
         toast({
           title: "Profile setup complete!",
           description: "Your preferences have been saved.",
         });
 
+        console.log("Clearing temporary onboarding progress");
         localStorage.removeItem('onboarding_progress');
+        
+        console.log("Calling onComplete callback");
         onComplete();
+      } else {
+        console.error("No user found during profile setup completion");
+        throw new Error("User not authenticated");
       }
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -207,7 +234,7 @@ export const useProfileSetup = (onComplete: () => void) => {
         description: "Please try again later.",
         variant: "destructive",
       });
-    } finally {
+      // Reset submission state so user can try again
       setIsSubmitting(false);
     }
   };

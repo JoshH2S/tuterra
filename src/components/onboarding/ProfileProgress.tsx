@@ -1,7 +1,7 @@
 
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 
 interface ProfileProgressProps {
   progressPercentage: number;
@@ -69,9 +69,14 @@ export const ProfileProgress = ({
             disabled={isSubmitting || !isCurrentStepValid}
           >
             {isSubmitting ? (
-              <>Saving...</>
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </span>
             ) : (
-              <>Complete <Check className="h-4 w-4" /></>
+              <span className="flex items-center gap-2">
+                Complete <Check className="h-4 w-4" />
+              </span>
             )}
           </Button>
         )}
