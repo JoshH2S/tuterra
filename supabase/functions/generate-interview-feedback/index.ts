@@ -5,12 +5,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 // Get environment variables
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const openaiApiKey = Deno.env.get("OPENAI_API_KEY")!;
 
 // Initialize Supabase client with admin rights
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-// CORS headers for browser requests
+// CORS headers
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -26,157 +25,137 @@ serve(async (req) => {
   }
 
   try {
+    // Get OpenAI API key from environment
+    const openAiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAiKey) {
+      throw new Error("OPENAI_API_KEY is not set");
+    }
+
     const { sessionId, transcript } = await req.json();
     
     if (!sessionId) {
       return new Response(
-        JSON.stringify({ error: "Session ID is required" }),
+        JSON.stringify({ error: "Missing session ID" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
-
-    // Get the interview session details
-    const { data: session, error: sessionError } = await supabase
-      .from("interview_sessions")
-      .select("id, job_title, industry, job_description")
-      .eq("id", sessionId)
-      .single();
-
-    if (sessionError || !session) {
+    
+    if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
       return new Response(
-        JSON.stringify({ error: "Interview session not found", details: sessionError }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+        JSON.stringify({
+          error: "Invalid transcript data",
+          details: "Transcript must be a non-empty array"
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400
+        }
       );
     }
-
-    // Format transcript for OpenAI
-    const formattedTranscript = transcript.map((item: any) => 
-      `Question: ${item.question}\nAnswer: ${item.answer}`
-    ).join("\n\n");
-
-    // Create the prompt for OpenAI
-    const prompt = `You are an HR specialist evaluating a candidate's job interview responses for a ${session.job_title} in the ${session.industry} sector. Based on their answers, provide constructive feedback. Mention 1-2 strengths and 1 area for improvement. Be concise and helpful.
-
-Interview Transcript:
-${formattedTranscript}
-
-Job Description:
-${session.job_description || "No job description provided"}`;
-
-    // Call OpenAI API
-    const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openaiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are an HR specialist providing constructive feedback on job interview responses."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      }),
-    });
-
-    if (!openAiResponse.ok) {
-      const errorData = await openAiResponse.json();
-      console.error("OpenAI API error:", errorData);
-      throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
-    }
-
-    const openAiData = await openAiResponse.json();
-    const feedback = openAiData.choices[0].message.content.trim();
-
-    // Get the user ID from the session (for the internship_progress table)
-    const { data: userSession, error: userError } = await supabase
-      .from("interview_sessions")
-      .select("user_id")
-      .eq("id", sessionId)
-      .single();
-
-    if (userError || !userSession) {
-      console.error("Error getting user ID:", userError);
-      throw new Error("Could not determine user ID");
-    }
-
-    // Check if an internship session already exists for this interview
-    const { data: existingInternship } = await supabase
-      .from("internship_sessions")
-      .select("id")
-      .eq("user_id", userSession.user_id)
-      .eq("job_title", session.job_title)
-      .eq("industry", session.industry)
-      .maybeSingle();
-
-    let internshipSessionId;
     
-    if (existingInternship) {
-      // Update existing internship session
-      internshipSessionId = existingInternship.id;
-      await supabase
-        .from("internship_sessions")
-        .update({ current_phase: 1 })
-        .eq("id", internshipSessionId);
-    } else {
-      // Create new internship session
-      const { data: newInternship, error: internshipError } = await supabase
-        .from("internship_sessions")
+    console.log(`Generating feedback for interview session ${sessionId}`);
+    
+    // Format the transcript for the prompt
+    const formattedTranscript = transcript
+      .map((item, index) => `Question ${index + 1}: ${item.question}\nAnswer: ${item.answer}`)
+      .join("\n\n");
+    
+    // Create the system prompt for the AI
+    const systemPrompt = `
+    You are an expert interview coach. Review the following job interview transcript and provide constructive feedback:
+    
+    Provide an analysis in JSON format with the following structure:
+    {
+      "feedback": "Overall feedback and analysis",
+      "strengths": ["Strength 1", "Strength 2", "Strength 3"],
+      "areas_for_improvement": ["Area 1", "Area 2", "Area 3"],
+      "overall_score": A number from 1-10 rating the overall interview performance
+    }
+    `;
+    
+    try {
+      // Make direct API call to OpenAI using fetch
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openAiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { 
+              role: "system", 
+              content: systemPrompt 
+            },
+            { 
+              role: "user", 
+              content: formattedTranscript 
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenAI API error:", errorText);
+        throw new Error(`OpenAI API request failed: ${response.status} - ${errorText}`);
+      }
+      
+      const completion = await response.json();
+      const responseText = completion.choices[0]?.message?.content || "{}";
+      
+      // Parse the response to extract the feedback
+      let feedbackData;
+      try {
+        // Clean the response text to ensure it's valid JSON
+        const cleaned = responseText.replace(/```json|```/g, "").trim();
+        feedbackData = JSON.parse(cleaned);
+      } catch (error) {
+        console.error("Error parsing feedback:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to parse feedback from AI response" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
+      }
+      
+      // Save feedback to the database
+      const { data, error } = await supabase
+        .from('interview_feedback')
         .insert({
-          user_id: userSession.user_id,
-          job_title: session.job_title,
-          industry: session.industry,
-          job_description: session.job_description,
-          current_phase: 1
+          session_id: sessionId,
+          feedback: feedbackData.feedback,
+          strengths: feedbackData.strengths,
+          areas_for_improvement: feedbackData.areas_for_improvement,
+          overall_score: feedbackData.overall_score
         })
         .select()
         .single();
-
-      if (internshipError || !newInternship) {
-        console.error("Error creating internship session:", internshipError);
-        throw new Error("Failed to create internship session");
+      
+      if (error) {
+        console.error("Error saving feedback:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to save feedback to the database" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
       }
       
-      internshipSessionId = newInternship.id;
+      return new Response(
+        JSON.stringify({ feedback: data }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    } catch (openAiError) {
+      console.error("OpenAI API error:", openAiError);
+      return new Response(
+        JSON.stringify({ error: `OpenAI API error: ${openAiError.message}` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
     }
-
-    // Store responses and feedback in internship_progress
-    const { data: progress, error: progressError } = await supabase
-      .from("internship_progress")
-      .insert({
-        user_id: userSession.user_id,
-        session_id: sessionId,
-        phase_number: 1,
-        user_responses: JSON.stringify(transcript),
-        ai_feedback: feedback
-      })
-      .select()
-      .single();
-
-    if (progressError) {
-      console.error("Error storing internship progress:", progressError);
-      throw new Error("Failed to store internship progress");
-    }
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        feedback,
-        internshipSessionId,
-        progressId: progress.id
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-    );
   } catch (error) {
-    console.error("Error generating feedback:", error);
+    console.error("Error processing request:", error);
+    
     return new Response(
       JSON.stringify({ error: error.message || "An unexpected error occurred" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }

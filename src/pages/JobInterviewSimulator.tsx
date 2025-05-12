@@ -311,7 +311,6 @@ const JobInterviewSimulator = () => {
             transcript={transcript}
             onDownloadTranscript={handleDownloadTranscript}
             onStartNew={handleStartNewInterview}
-            sessionId={currentSessionId}
           />
         )}
       </div>

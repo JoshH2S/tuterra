@@ -2,12 +2,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const { toast } = useToast();
 
   // Clear any existing onboarding progress when first loading the page
   useEffect(() => {

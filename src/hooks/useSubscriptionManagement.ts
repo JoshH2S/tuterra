@@ -69,7 +69,8 @@ export const useSubscriptionManagement = () => {
       toast({
         title: "Checkout Error",
         description: error.message || "Failed to create checkout session. Please try again or contact support.",
-        variant: "destructive"
+        variant: "destructive",
+        duration: 5000,
       });
       return false;
     } finally {

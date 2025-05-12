@@ -54,6 +54,7 @@ const OnboardingRedirect = () => {
       toast({
         title: "Still Processing",
         description: "Your subscription is being processed. You'll be redirected to the success page.",
+        duration: 5000,
       });
       return false;
     } catch (err) {
@@ -81,6 +82,7 @@ const OnboardingRedirect = () => {
           toast({
             title: "Payment Received",
             description: "Processing your subscription...",
+            duration: 5000,
           });
           
           // Attempt to sync subscription status with retries
@@ -97,7 +99,8 @@ const OnboardingRedirect = () => {
         toast({
           title: "Redirect Error",
           description: "There was a problem processing your subscription. Please try again or contact support.",
-          variant: "destructive"
+          variant: "destructive",
+          duration: 5000,
         });
         // Even on error, redirect to subscription success to allow manual refresh
         const sessionId = new URLSearchParams(location.search).get('session_id');
