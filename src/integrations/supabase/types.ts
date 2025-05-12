@@ -410,6 +410,74 @@ export type Database = {
         }
         Relationships: []
       }
+      internship_progress: {
+        Row: {
+          ai_feedback: string | null
+          created_at: string
+          id: string
+          phase_number: number
+          session_id: string
+          user_id: string
+          user_responses: Json
+        }
+        Insert: {
+          ai_feedback?: string | null
+          created_at?: string
+          id?: string
+          phase_number?: number
+          session_id: string
+          user_id: string
+          user_responses?: Json
+        }
+        Update: {
+          ai_feedback?: string | null
+          created_at?: string
+          id?: string
+          phase_number?: number
+          session_id?: string
+          user_id?: string
+          user_responses?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_progress_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internship_sessions: {
+        Row: {
+          created_at: string
+          current_phase: number
+          id: string
+          industry: string
+          job_description: string | null
+          job_title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_phase?: number
+          id?: string
+          industry: string
+          job_description?: string | null
+          job_title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_phase?: number
+          id?: string
+          industry?: string
+          job_description?: string | null
+          job_title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       interview_feedback: {
         Row: {
           created_at: string
