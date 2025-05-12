@@ -20,6 +20,18 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
       if (!user) return;
 
       try {
+        // Check if welcome email was already sent (from DB)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('welcome_email_sent')
+          .eq('id', user.id)
+          .single();
+          
+        if (profile?.welcome_email_sent) {
+          console.log("[WelcomeEmail] Already sent for user:", user.id);
+          return;
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.access_token) {
@@ -42,10 +54,14 @@ export const VerificationSuccess = ({ onContinue }: VerificationSuccessProps) =>
         if (error) throw error;
 
         if (data?.status === 'success') {
+          // Mark email as sent in database
           await supabase
             .from('profiles')
             .update({ welcome_email_sent: true })
             .eq('id', user.id);
+
+          // Also set a flag in localStorage as backup
+          localStorage.setItem(`welcome_email_sent_${user.id}`, "true");
 
           console.log("[WelcomeEmail] Successfully sent for user:", user.id);
           toast({
