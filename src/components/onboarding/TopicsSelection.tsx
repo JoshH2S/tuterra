@@ -95,6 +95,11 @@ export const TopicsSelection = ({ selectedTopics, setSelectedTopics }: TopicsSel
     }
   };
 
+  const handleCardClick = (topicValue: string) => {
+    const isSelected = selectedTopics.includes(topicValue);
+    handleTopicChange(topicValue, !isSelected);
+  };
+
   return (
     <div className="space-y-4 pb-4">
       <div className="grid grid-cols-1 gap-y-3 gap-x-4 sm:grid-cols-2">
@@ -103,17 +108,24 @@ export const TopicsSelection = ({ selectedTopics, setSelectedTopics }: TopicsSel
             key={topic.value} 
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className={`flex flex-col p-4 rounded-lg border ${
+            onClick={() => handleCardClick(topic.value)}
+            className={`flex flex-col p-4 rounded-lg border cursor-pointer ${
               selectedTopics.includes(topic.value) 
                 ? 'border-primary bg-primary/5 shadow-sm' 
                 : 'border-gray-200 hover:border-gray-300 bg-white'
             } transition-all touch-manipulation`}
+            role="button"
+            aria-pressed={selectedTopics.includes(topic.value)}
           >
             <div className="flex items-start space-x-3">
               <Checkbox
                 id={`topic-${topic.value}`}
                 checked={selectedTopics.includes(topic.value)}
-                onCheckedChange={(checked) => handleTopicChange(topic.value, checked === true)}
+                onCheckedChange={(checked) => {
+                  // Stop propagation to prevent double toggle when clicking directly on checkbox
+                  handleTopicChange(topic.value, checked === true);
+                }}
+                onClick={(e) => e.stopPropagation()}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -121,6 +133,7 @@ export const TopicsSelection = ({ selectedTopics, setSelectedTopics }: TopicsSel
                   <Label 
                     htmlFor={`topic-${topic.value}`}
                     className="text-sm font-medium cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {topic.label}
                   </Label>
