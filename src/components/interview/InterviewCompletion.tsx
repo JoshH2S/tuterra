@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInternshipFeedback } from "@/hooks/useInternshipFeedback";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 interface InterviewCompletionProps {
   transcript: InterviewTranscript[];
@@ -41,7 +42,7 @@ export const InterviewCompletion = ({
     };
     
     checkExistingFeedback();
-  }, [sessionId]);
+  }, [sessionId, fetchExistingFeedback]);
 
   const handleGenerateFeedback = async () => {
     await generateFeedback(transcript);
@@ -54,7 +55,7 @@ export const InterviewCompletion = ({
       toast({
         title: "Error",
         description: "Could not find internship session. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };

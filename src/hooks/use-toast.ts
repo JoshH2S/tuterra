@@ -1,13 +1,23 @@
 
-import { toast as toastPrimitive } from "@/components/ui/use-toast";
+import { toast as sonnerToast, type ToasterToast } from "sonner";
 
-// Helper to get types from component props
-type ToastProps = Parameters<typeof toastPrimitive>[0];
+type ToastProps = {
+  title?: string;
+  description?: string;
+  variant?: "default" | "destructive" | "warning";
+  action?: React.ReactNode;
+};
 
-// Export the toast function
-export const toast = toastPrimitive;
+export const toast = ({ title, description, variant, action }: ToastProps) => {
+  return sonnerToast[variant === "destructive" ? "error" : variant === "warning" ? "warning" : "success"]({
+    title,
+    description,
+    action
+  });
+};
 
-// Export the hook (if needed)
 export const useToast = () => {
-  return { toast };
+  return {
+    toast
+  };
 };
