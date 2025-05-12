@@ -36,7 +36,7 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     <ErrorBoundary>
       <div className="h-full flex flex-col">
         {step === 0 ? (
-          <WelcomeStep onStart={() => handleNext()} />
+          <WelcomeStep onStart={handleNext} />
         ) : (
           <>
             <div className="px-4 py-5 sm:px-6 border-b">

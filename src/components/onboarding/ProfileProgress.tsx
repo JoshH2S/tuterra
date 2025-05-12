@@ -27,7 +27,7 @@ export const ProfileProgress = ({
   onComplete
 }: ProfileProgressProps) => {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-wrap items-center justify-between gap-4 w-full">
       <div className="flex items-center gap-3">
         <CircularProgress 
           percentage={progressPercentage} 
@@ -40,8 +40,8 @@ export const ProfileProgress = ({
         </div>
       </div>
       
-      <div className="flex gap-3">
-        {step > 1 ? (
+      <div className="flex gap-3 ml-auto">
+        {step > 1 && (
           <Button 
             variant="outline" 
             onClick={onBack}
@@ -50,8 +50,6 @@ export const ProfileProgress = ({
           >
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
-        ) : (
-          <div></div> // Empty div to maintain layout
         )}
         
         {step < totalSteps ? (

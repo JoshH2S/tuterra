@@ -8,13 +8,15 @@ import { useNavigate } from "react-router-dom";
 type NewsTopic = Database["public"]["Enums"]["news_topic"];
 
 export const useProfileSetup = (onComplete: () => void) => {
+  // Always start from step 0 (welcome screen) for new sessions
+  // Only load from localStorage if there's saved progress
   const savedProgress = typeof window !== 'undefined' 
     ? localStorage.getItem('onboarding_progress') 
     : null;
   
   const initialState = savedProgress ? JSON.parse(savedProgress) : {};
   
-  const [step, setStep] = useState(initialState.step || 0);
+  const [step, setStep] = useState(initialState.step !== undefined ? initialState.step : 0);
   const totalSteps = 2;
   const [selectedTopics, setSelectedTopics] = useState<string[]>(initialState.selectedTopics || []);
   const [educationLevel, setEducationLevel] = useState<string>(initialState.educationLevel || "");
@@ -40,12 +42,24 @@ export const useProfileSetup = (onComplete: () => void) => {
   const handleNext = () => {
     if (step < totalSteps) {
       setStep(step + 1);
+      // Save current progress to localStorage after advancing
+      localStorage.setItem('onboarding_progress', JSON.stringify({
+        step: step + 1,
+        selectedTopics,
+        educationLevel
+      }));
     }
   };
 
   const handleBack = () => {
     if (step > 0) {
       setStep(step - 1);
+      // Save current progress to localStorage after going back
+      localStorage.setItem('onboarding_progress', JSON.stringify({
+        step: step - 1,
+        selectedTopics,
+        educationLevel
+      }));
     }
   };
 

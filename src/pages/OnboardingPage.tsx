@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
 import { toast } from "@/hooks/use-toast";
@@ -8,6 +8,15 @@ const OnboardingPage = () => {
   const navigate = useNavigate();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
+  // Clear any existing onboarding progress when first loading the page
+  useEffect(() => {
+    // Only clear if we're on step 0 (first load)
+    const savedProgress = localStorage.getItem('onboarding_progress');
+    if (!savedProgress) {
+      localStorage.removeItem('onboarding_progress');
+    }
+  }, []);
+  
   const handleComplete = () => {
     try {
       setIsRedirecting(true);
