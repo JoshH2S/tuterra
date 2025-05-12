@@ -1,5 +1,5 @@
 
-import { toast as sonnerToast, type ToasterToast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 
 type ToastProps = {
   title?: string;

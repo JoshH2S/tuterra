@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InterviewTranscript } from "@/types/interview";
@@ -8,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInternshipFeedback } from "@/hooks/useInternshipFeedback";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface InterviewCompletionProps {
   transcript: InterviewTranscript[];
@@ -26,6 +25,7 @@ export const InterviewCompletion = ({
   const [view, setView] = useState<'transcript' | 'feedback'>('transcript');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const {
     generateFeedback,
