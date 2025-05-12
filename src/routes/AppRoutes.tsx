@@ -1,115 +1,146 @@
 
-import { Routes, Route } from "react-router-dom";
-import { lazy, Suspense } from "react";
-import { Loader2 } from "lucide-react";
-import { RequireAuth } from "@/components/auth/RequireAuth";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-
-// Lazy load pages to improve initial load time
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const CourseExplorer = lazy(() => import("@/pages/CourseExplorer"));
-const CourseDetail = lazy(() => import("@/pages/CourseDetail"));
-const CourseGrades = lazy(() => import("@/pages/CourseGrades"));
-const AuthPage = lazy(() => import("@/pages/Auth"));
-const ResetPasswordPage = lazy(() => import("@/pages/ResetPassword"));
-const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmail"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
-const LandingPage = lazy(() => import("@/pages/LandingPage"));
-const AiTutor = lazy(() => import("@/pages/AiTutor"));
-const JobInterviewSimulator = lazy(() => import("@/pages/JobInterviewSimulator"));
-const QuizCreatorPage = lazy(() => import("@/pages/QuizCreator"));
-const QuizDetail = lazy(() => import("@/pages/QuizDetail"));
-const QuizTakingPage = lazy(() => import("@/pages/QuizTaking"));
-const QuizResultsPage = lazy(() => import("@/pages/QuizResults"));
-const SkillAssessment = lazy(() => import("@/pages/SkillAssessment"));
-const AssessmentTaking = lazy(() => import("@/pages/AssessmentTaking"));
-const AssessmentResults = lazy(() => import("@/pages/AssessmentResults"));
-const SettingsPage = lazy(() => import("@/pages/Settings"));
-const SubscriptionSuccess = lazy(() => import("@/pages/SubscriptionSuccess"));
-
-// Add our new internship phase 2 page
-const InternshipPhase2 = lazy(() => import("@/pages/InternshipPhase2"));
+import { Routes, Route, Navigate } from "react-router-dom";
+import { ProtectedRoute } from "./ProtectedRoute";
+import OnboardingPage from "@/pages/OnboardingPage";
+import { authRoutes } from "./AuthRoutes";
+import { dashboardRoutes } from "./DashboardRoutes";
+import { quizRoutes } from "./QuizRoutes";
+import { courseRoutes } from "./CourseRoutes";
+import { assessmentRoutes } from "./AssessmentRoutes";
+import { mediaRoutes } from "./MediaRoutes";
+import { demoRoutes } from "./DemoRoutes";
+import Index from "@/pages/Index";
+import AboutUs from "@/pages/AboutUs";
+import JobInterviewSimulator from "@/pages/JobInterviewSimulator";
+import NotFound from "@/pages/NotFound";
+import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
+import { TermsOfUse } from "@/components/legal/TermsOfUse";
+import ProfileSettings from "@/pages/ProfileSettings";
+import UpdatePassword from "@/pages/UpdatePassword";
+import PricingPage from "@/pages/PricingPage";
+import SubscriptionSuccess from "@/pages/SubscriptionSuccess";
+import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
+import Contact from "@/pages/Contact";
+import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
+import OnboardingRedirect from "@/pages/OnboardingRedirect";
 
 export const AppRoutes = () => {
   return (
-    <Suspense fallback={<LoadingIndicator />}>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/auth/verify" element={<VerifyEmailPage />} />
-        <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-
-        <Route
-          path="/dashboard"
-          element={
-            <RequireAuth>
-              <Dashboard />
-            </RequireAuth>
-          }
-        />
-        <Route path="/courses" element={<CourseExplorer />} />
-        <Route path="/courses/:id" element={<CourseDetail />} />
-        <Route
-          path="/courses/:id/grades"
-          element={
-            <RequireAuth>
-              <CourseGrades />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/tutor"
-          element={
-            <RequireAuth>
-              <AiTutor />
-            </RequireAuth>
-          }
-        />
-        <Route path="/interview-simulator" element={<JobInterviewSimulator />} />
-        <Route path="/interview/:id" element={<JobInterviewSimulator />} />
-        
-        {/* New route for internship phase 2 */}
-        <Route
-          path="/internship/phase-2"
-          element={
-            <RequireAuth>
-              <InternshipPhase2 />
-            </RequireAuth>
-          }
-        />
-        
-        <Route
-          path="/quiz-creator"
-          element={
-            <RequireAuth>
-              <QuizCreatorPage />
-            </RequireAuth>
-          }
-        />
-        <Route path="/quiz/:id" element={<QuizDetail />} />
-        <Route path="/quiz/:id/take" element={<QuizTakingPage />} />
-        <Route path="/quiz/:id/results" element={<QuizResultsPage />} />
-        <Route path="/skill-assessment" element={<SkillAssessment />} />
-        <Route path="/assessment/:id/take" element={<AssessmentTaking />} />
-        <Route path="/assessment/:id/results" element={<AssessmentResults />} />
-        <Route
-          path="/settings"
-          element={
-            <RequireAuth>
-              <SettingsPage />
-            </RequireAuth>
-          }
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
+    <Routes>
+      <Route path="/" element={<Index />} />
+      
+      {/* Auth Routes */}
+      {authRoutes}
+      
+      {/* Public Landing-style Routes */}
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-use" element={<TermsOfUse />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/contact" element={<Contact />} />
+      
+      {/* Protected Routes */}
+      <Route path="/dashboard/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {dashboardRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/quizzes/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {quizRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/courses/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {courseRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/assessments/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {assessmentRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/media/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {mediaRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      {/* Interview simulator routes */}
+      <Route path="/interview-simulator" element={
+        <ProtectedRoute>
+          <JobInterviewSimulator />
+        </ProtectedRoute>
+      } />
+      
+      {/* Interview session route with ID parameter */}
+      <Route path="/interview/:id" element={
+        <ProtectedRoute>
+          <JobInterviewSimulator />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile-settings" element={
+        <ProtectedRoute>
+          <ProfileSettings />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/update-password" element={
+        <ProtectedRoute>
+          <UpdatePassword />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/subscription-success" element={
+        <ProtectedRoute>
+          <SubscriptionSuccess />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/subscription-canceled" element={
+        <ProtectedRoute>
+          <SubscriptionCanceled />
+        </ProtectedRoute>
+      } />
+      
+      {/* Unprotected Routes */}
+      
+      <Route path="/demos/*" element={
+        <Routes>
+          {demoRoutes}
+        </Routes>
+      } />
+      
+      <Route path="/onboarding" element={
+        <ProtectedRoute>
+          <OnboardingPage />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/onboarding-redirect" element={
+        <ProtectedRoute>
+          <OnboardingRedirect />
+        </ProtectedRoute>
+      } />
+      
+      {/* Fallback routes */}
+      <Route path="/404" element={<NotFound />} />
+      <Route path="*" element={<Navigate to="/404" replace />} />
+    </Routes>
   );
 };
-
-// Simple loading spinner for route transitions
-const LoadingIndicator = () => (
-  <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
-);
