@@ -79,8 +79,8 @@ const InternshipStart = () => {
         description: "Your virtual internship session has been created!",
       });
 
-      // Redirect to interview page with session ID
-      navigate(`/interview/${sessionData.id}`);
+      // Redirect to the interview invitation page with session ID
+      navigate(`/internship/interview/invite/${sessionData.id}`);
     } catch (error) {
       console.error("Unexpected error:", error);
       toast({
