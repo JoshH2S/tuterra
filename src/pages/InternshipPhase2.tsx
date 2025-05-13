@@ -8,7 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-interface SessionData {
+// Define a more explicit interface to avoid deep type instantiation
+interface InternshipSessionData {
   job_title?: string;
   industry?: string;
   current_phase?: number;
@@ -20,7 +21,7 @@ const InternshipPhase2 = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [sessionData, setSessionData] = useState<InternshipSessionData | null>(null);
   
   // Get session ID from URL query parameters
   const params = new URLSearchParams(location.search);
