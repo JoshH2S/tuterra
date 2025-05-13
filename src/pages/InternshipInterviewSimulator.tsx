@@ -33,6 +33,8 @@ const InternshipInterviewSimulator = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Import interview state management from the shared hook
+  const interviewState = useInterviewState();
+  
   const {
     questions,
     setQuestions,
@@ -43,12 +45,11 @@ const InternshipInterviewSimulator = () => {
     isInterviewComplete,
     typingEffect,
     transcript,
-    currentQuestion,
-    isLastQuestion,
-    handleStartChat,
-    handleSubmitResponse,
     updateTranscript,
-  } = useInterviewState();
+    startInterview,
+    getCurrentQuestion,
+    nextQuestion
+  } = interviewState;
 
   // Use existing question generation hooks
   const { generateQuestions, fetchQuestions, loading: loadingQuestions } = 
@@ -187,6 +188,28 @@ const InternshipInterviewSimulator = () => {
       saveProgressAndAdvance();
     }
   }, [isInterviewComplete]);
+
+  // Create custom handlers for this specific implementation
+  const handleStartChat = () => {
+    startInterview();
+  };
+
+  const handleSubmitResponse = async (response: string) => {
+    const currentQuestion = getCurrentQuestion();
+    if (!currentQuestion) return;
+    
+    // Update responses
+    setResponses(prev => ({
+      ...prev,
+      [currentQuestion.id]: response
+    }));
+    
+    // Move to next question
+    nextQuestion();
+  };
+
+  const currentQuestion = getCurrentQuestion();
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
   // Show loading state
   if (isLoading || loadingQuestions) {
