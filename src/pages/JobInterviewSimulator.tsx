@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
@@ -312,9 +311,6 @@ const JobInterviewSimulator = () => {
             transcript={transcript}
             onDownloadTranscript={handleDownloadTranscript}
             onStartNew={handleStartNewInterview}
-            sessionId={currentSessionId}
-            jobTitle={jobTitle}
-            industry={industry}
           />
         )}
       </div>

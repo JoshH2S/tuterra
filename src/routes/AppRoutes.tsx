@@ -23,7 +23,6 @@ import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 import Contact from "@/pages/Contact";
 import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
 import OnboardingRedirect from "@/pages/OnboardingRedirect";
-import InternshipPhase2 from "@/pages/InternshipPhase2";
 
 export const AppRoutes = () => {
   return (
@@ -92,13 +91,6 @@ export const AppRoutes = () => {
       <Route path="/interview/:id" element={
         <ProtectedRoute>
           <JobInterviewSimulator />
-        </ProtectedRoute>
-      } />
-      
-      {/* Internship routes */}
-      <Route path="/internship/phase-2" element={
-        <ProtectedRoute>
-          <InternshipPhase2 />
         </ProtectedRoute>
       } />
       
