@@ -12,6 +12,8 @@ import { demoRoutes } from "./DemoRoutes";
 import Index from "@/pages/Index";
 import AboutUs from "@/pages/AboutUs";
 import JobInterviewSimulator from "@/pages/JobInterviewSimulator";
+import InternshipStart from "@/pages/InternshipStart";
+import InternshipPhase2 from "@/pages/InternshipPhase2";
 import NotFound from "@/pages/NotFound";
 import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
 import { TermsOfUse } from "@/components/legal/TermsOfUse";
@@ -91,6 +93,19 @@ export const AppRoutes = () => {
       <Route path="/interview/:id" element={
         <ProtectedRoute>
           <JobInterviewSimulator />
+        </ProtectedRoute>
+      } />
+      
+      {/* Internship routes */}
+      <Route path="/internship/start" element={
+        <ProtectedRoute>
+          <InternshipStart />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/phase-2/:sessionId" element={
+        <ProtectedRoute>
+          <InternshipPhase2 />
         </ProtectedRoute>
       } />
       
