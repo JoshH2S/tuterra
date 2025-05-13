@@ -8,13 +8,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
+interface SessionData {
+  job_title?: string;
+  industry?: string;
+  current_phase?: number;
+}
+
 const InternshipPhase2 = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [sessionData, setSessionData] = useState<any>(null);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
   
   // Get session ID from URL query parameters
   const params = new URLSearchParams(location.search);

@@ -1,108 +1,113 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Get environment variables
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const openAiKey = Deno.env.get("OPENAI_API_KEY")!;
+interface InterviewTranscript {
+  question: string;
+  answer: string;
+}
 
-// Initialize Supabase client with admin rights
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+interface RequestPayload {
+  sessionId: string;
+  transcript: InterviewTranscript[];
+  jobTitle: string;
+  industry: string;
+}
 
-// CORS headers
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS
   if (req.method === "OPTIONS") {
     return new Response(null, {
-      headers: corsHeaders,
-      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
     });
   }
-
+  
   try {
-    const { sessionId, transcript, jobTitle, industry } = await req.json();
+    // Parse request body
+    const { sessionId, transcript, jobTitle, industry } = await req.json() as RequestPayload;
     
-    if (!sessionId || !transcript || !jobTitle || !industry) {
+    if (!openAIApiKey) {
       return new Response(
-        JSON.stringify({ 
-          error: "Missing required parameters",
-          details: "sessionId, transcript, jobTitle, and industry are required" 
-        }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-          status: 400 
-        }
+        JSON.stringify({ error: "OpenAI API key not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (!transcript || transcript.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No transcript data provided" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // Format the transcript for the prompt
-    const formattedTranscript = transcript.map((item: any, index: number) => {
-      return `Q: ${item.question}\nA: ${item.answer}`;
-    }).join("\n\n");
-    
-    // Create the system prompt for GPT
-    const systemPrompt = `
-    You are an HR manager evaluating a candidate for a ${jobTitle} role in the ${industry} sector. 
-    Based on the following job interview responses, provide a short review of the candidate's performance. 
-    Highlight 1–2 strengths and 1 area for improvement. Be encouraging and helpful.
+    const formattedTranscript = transcript.map((item, index) => 
+      `Q${index+1}: ${item.question}\nA${index+1}: ${item.answer}`
+    ).join("\n\n");
 
-    ${formattedTranscript}
-    `;
-    
+    // Create the prompt
+    const prompt = `You are an HR manager evaluating a candidate for a ${jobTitle} role in the ${industry} sector. Based on the following job interview responses, provide a short review of the candidate's performance. Highlight 1–2 strengths and 1 area for improvement. Be encouraging and helpful.
+
+${formattedTranscript}`;
+
     // Call OpenAI API
     const openAIResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${openAiKey}`
+        "Authorization": `Bearer ${openAIApiKey}`,
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "user", content: systemPrompt }
+          { role: "system", content: "You are an HR professional providing feedback on job interviews." },
+          { role: "user", content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 500
-      })
+        max_tokens: 500,
+      }),
     });
+
+    const openAIData = await openAIResponse.json();
     
     if (!openAIResponse.ok) {
-      const errorText = await openAIResponse.text();
-      throw new Error(`OpenAI API error: ${openAIResponse.status} - ${errorText}`);
-    }
-    
-    const completion = await openAIResponse.json();
-    const feedback = completion.choices[0]?.message?.content || "";
-    
-    if (!feedback) {
-      throw new Error("Failed to generate feedback");
+      console.error("OpenAI API error:", openAIData);
+      return new Response(
+        JSON.stringify({ error: "Failed to generate feedback" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // Return the feedback
+    // Extract the feedback from OpenAI's response
+    const feedback = openAIData.choices[0].message.content;
+
+    // Return the generated feedback
     return new Response(
-      JSON.stringify({ feedback }),
+      JSON.stringify({ 
+        feedback,
+        session_id: sessionId,
+        user_responses: transcript
+      }),
       { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
+        headers: { 
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*" 
+        } 
       }
     );
   } catch (error) {
-    console.error("Error in generate-internship-feedback:", error);
-    
+    console.error("Error:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error occurred" 
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
-        status: 500 
-      }
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 });

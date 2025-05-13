@@ -81,6 +81,9 @@ export const useInternshipProgress = (sessionId: string | null) => {
     }
 
     try {
+      // Convert transcript to a JSON-compatible format
+      const jsonTranscript = JSON.parse(JSON.stringify(transcript));
+      
       // Insert into internship_progress table
       const { error } = await supabase
         .from('internship_progress')
@@ -88,7 +91,7 @@ export const useInternshipProgress = (sessionId: string | null) => {
           user_id: user.id,
           session_id: sessionId,
           phase_number: 1,
-          user_responses: transcript,
+          user_responses: jsonTranscript,
           ai_feedback: feedbackText,
         });
 
@@ -131,7 +134,7 @@ export const useInternshipProgress = (sessionId: string | null) => {
       if (!sessionData) throw new Error("Session not found");
 
       // Update or insert into internship_sessions
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('internship_sessions')
         .upsert({
           user_id: user.id,
@@ -140,8 +143,7 @@ export const useInternshipProgress = (sessionId: string | null) => {
           industry: sessionData.industry,
           job_description: sessionData.job_description || "",
           current_phase: 2
-        })
-        .select();
+        });
 
       if (error) throw error;
 
