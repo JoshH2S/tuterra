@@ -1,10 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, addMonths, parseISO, isAfter, isBefore, isEqual } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar } from '@/components/ui/calendar-new';
-import { Loader2, Calendar as CalendarIcon, CheckCircle, Clock, AlertCircle, Send, X } from 'lucide-react';
+import { 
+  Loader2, Calendar as CalendarIcon, CheckCircle, Clock, 
+  AlertCircle, Send, X, Paperclip, FileText, Download 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TaskFileUpload } from '@/components/file-upload/TaskFileUpload';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 // Task type definition
 type Task = {
@@ -42,6 +46,8 @@ type Deliverable = {
   task_id: string;
   content: string;
   submitted_at: string;
+  attachment_url: string | null;
+  attachment_name: string | null;
 };
 
 // Feedback type definition
@@ -70,6 +76,9 @@ const InternshipPhase3 = () => {
   const [deliverables, setDeliverables] = useState<Record<string, Deliverable>>({});
   const [feedbacks, setFeedbacks] = useState<Record<string, Feedback>>({});
   const [calendarDates, setCalendarDates] = useState<{ start: Date, end: Date } | null>(null);
+  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
+  const [attachmentName, setAttachmentName] = useState<string | null>(null);
+  const [viewingCompletedTask, setViewingCompletedTask] = useState(false);
 
   // Load session data
   useEffect(() => {
@@ -222,14 +231,31 @@ const InternshipPhase3 = () => {
   const handleTaskSelect = (task: Task) => {
     setSelectedTask(task);
     setSubmissionText('');
+    setAttachmentUrl(null);
+    setAttachmentName(null);
+    setViewingCompletedTask(task.status === 'feedback_given');
     
     // If task has already been submitted, populate with previous submission
     const deliverable = deliverables[task.id];
     if (deliverable) {
       setSubmissionText(deliverable.content);
+      if (deliverable.attachment_url) {
+        setAttachmentUrl(deliverable.attachment_url);
+        setAttachmentName(deliverable.attachment_name || 'Attachment');
+      }
     }
     
     setTaskDialogOpen(true);
+  };
+
+  // Handle file upload
+  const handleFileUpload = (fileUrl: string, fileName: string) => {
+    setAttachmentUrl(fileUrl);
+    setAttachmentName(fileName);
+    toast({
+      title: "File Attached",
+      description: "Your file has been successfully attached to this submission.",
+    });
   };
 
   // Handle task submission
@@ -245,7 +271,9 @@ const InternshipPhase3 = () => {
         .insert({
           task_id: selectedTask.id,
           user_id: session.user_id,
-          content: submissionText
+          content: submissionText,
+          attachment_url: attachmentUrl,
+          attachment_name: attachmentName
         })
         .select()
         .single();
@@ -633,9 +661,83 @@ const InternshipPhase3 = () => {
                 onChange={(e) => setSubmissionText(e.target.value)}
                 placeholder="Enter your work submission here..."
                 className="min-h-[200px]"
-                disabled={selectedTask?.status === 'submitted' || selectedTask?.status === 'feedback_given'}
+                disabled={viewingCompletedTask}
               />
             </div>
+            
+            {!viewingCompletedTask && (
+              <div>
+                <h3 className="font-medium mb-2">
+                  <div className="flex items-center">
+                    <Paperclip className="h-4 w-4 mr-2" />
+                    Attach Files (Optional):
+                  </div>
+                </h3>
+                {!attachmentUrl ? (
+                  <TaskFileUpload 
+                    taskId={selectedTask?.id || ''} 
+                    onFileUpload={handleFileUpload}
+                  />
+                ) : (
+                  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md border">
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 text-blue-500 mr-2" />
+                      <span className="text-sm">{attachmentName}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => window.open(attachmentUrl, '_blank')}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                      {!viewingCompletedTask && (
+                        <Button
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => {
+                            setAttachmentUrl(null);
+                            setAttachmentName(null);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {viewingCompletedTask && attachmentUrl && (
+              <div>
+                <h3 className="font-medium mb-2">
+                  <div className="flex items-center">
+                    <Paperclip className="h-4 w-4 mr-2" />
+                    Attached File:
+                  </div>
+                </h3>
+                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md border">
+                  <div className="flex items-center">
+                    <FileText className="h-5 w-5 text-blue-500 mr-2" />
+                    <span className="text-sm">{attachmentName}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-800"
+                    onClick={() => window.open(attachmentUrl, '_blank')}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           
           <DialogFooter>
@@ -643,7 +745,17 @@ const InternshipPhase3 = () => {
               <X className="h-4 w-4 mr-2" />
               Close
             </Button>
-            {selectedTask?.status === 'not_started' && (
+            {selectedTask?.status === 'feedback_given' ? (
+              <Button 
+                onClick={() => {
+                  setTaskDialogOpen(false);
+                  handleViewFeedback(selectedTask);
+                }}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                View Feedback
+              </Button>
+            ) : selectedTask?.status === 'not_started' && (
               <Button 
                 onClick={handleSubmitTask} 
                 disabled={!submissionText.trim() || submitting}

@@ -14,6 +14,9 @@ import AboutUs from "@/pages/AboutUs";
 import JobInterviewSimulator from "@/pages/JobInterviewSimulator";
 import InternshipStart from "@/pages/InternshipStart";
 import InternshipPhase2 from "@/pages/InternshipPhase2";
+import InternshipPhase3 from "@/pages/InternshipPhase3";
+import InternshipCompletion from "@/pages/InternshipCompletion";
+import InternshipDashboard from "@/pages/InternshipDashboard";
 import InterviewInvite from "@/pages/InterviewInvite";
 import InternshipInterviewSimulator from "@/pages/InternshipInterviewSimulator";
 import NotFound from "@/pages/NotFound";
@@ -120,6 +123,24 @@ export const AppRoutes = () => {
       <Route path="/internship/phase-2/:sessionId" element={
         <ProtectedRoute>
           <InternshipPhase2 />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/phase-3/:sessionId" element={
+        <ProtectedRoute>
+          <InternshipPhase3 />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/completion/:sessionId" element={
+        <ProtectedRoute>
+          <InternshipCompletion />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/dashboard" element={
+        <ProtectedRoute>
+          <InternshipDashboard />
         </ProtectedRoute>
       } />
       

@@ -2,12 +2,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Clock, GraduationCap, ChevronRight, AlertTriangle } from "lucide-react";
-import { StudySession } from "@/hooks/useStudySessions";
-import { StudentCourse } from "@/types/student";
+import { Clock, GraduationCap, ChevronRight, AlertTriangle, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useSwipeable } from "react-swipeable";
+import { Badge } from "@/components/ui/badge";
 
 export interface Task {
   id: string;
@@ -18,17 +17,27 @@ export interface Task {
   courseId?: string;
   sessionId?: string;
   missed?: boolean;
+  status?: string;
+  hasFeedback?: boolean;
 }
 
 interface TaskItemProps {
   task: Task;
-  courses: StudentCourse[];
+  courses: any[];
   isExpanded: boolean;
   onToggle: () => void;
   onComplete: (checked: boolean | string) => void;
+  onViewFeedback?: (task: Task) => void;
 }
 
-export function TaskItem({ task, courses, isExpanded, onToggle, onComplete }: TaskItemProps) {
+export function TaskItem({ 
+  task, 
+  courses, 
+  isExpanded, 
+  onToggle, 
+  onComplete,
+  onViewFeedback
+}: TaskItemProps) {
   const course = task.courseId 
     ? courses.find(c => c.course_id === task.courseId)
     : undefined;
@@ -38,6 +47,9 @@ export function TaskItem({ task, courses, isExpanded, onToggle, onComplete }: Ta
     onSwipedRight: () => onToggle(),
     trackMouse: false
   });
+
+  // Determine if the task has feedback available
+  const showFeedbackButton = task.status === 'feedback_given' || task.hasFeedback;
 
   return (
     <motion.div
@@ -73,6 +85,11 @@ export function TaskItem({ task, courses, isExpanded, onToggle, onComplete }: Ta
             )}>
               {task.title}
             </p>
+            {showFeedbackButton && (
+              <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
+                Feedback Available
+              </Badge>
+            )}
           </div>
           <ChevronRight 
             className={cn(
@@ -94,6 +111,18 @@ export function TaskItem({ task, courses, isExpanded, onToggle, onComplete }: Ta
             )}>
               {task.description}
             </p>
+          )}
+
+          {isExpanded && showFeedbackButton && onViewFeedback && (
+            <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => onViewFeedback(task)}
+                className="text-sm flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+              >
+                <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                View Feedback
+              </button>
+            </div>
           )}
         </motion.div>
         
