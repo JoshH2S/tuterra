@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { FullPageLoader } from '@/components/ui/loading-states';
 
 // Types
 export type InternshipSession = {
@@ -20,7 +22,7 @@ export type Task = {
   title: string;
   description: string;
   due_date: string;
-  status: 'not_started' | 'submitted' | 'feedback_given';
+  status: 'not_started' | 'in_progress' | 'submitted' | 'feedback_given';
   task_type: string;
   task_order: number;
   instructions: string;
@@ -45,6 +47,13 @@ export type Feedback = {
   created_at: string;
 };
 
+export type ErrorState = {
+  message: string;
+  code?: string;
+  details?: string;
+  retryFn?: () => Promise<void>;
+};
+
 // Context Type
 type InternshipContextType = {
   session: InternshipSession | null;
@@ -52,13 +61,17 @@ type InternshipContextType = {
   deliverables: Record<string, Deliverable>;
   feedbacks: Record<string, Feedback>;
   loading: boolean;
-  error: string | null;
+  loadingPhase: boolean;
+  error: ErrorState | null;
   fetchSession: (sessionId: string) => Promise<InternshipSession | null>; // Updated return type here
   fetchTasks: (sessionId: string) => Promise<void>;
   fetchDeliverables: (taskIds: string[]) => Promise<void>;
   createInternshipSession: (jobTitle: string, industry: string, jobDescription: string) => Promise<string | null>;
   submitTask: (task: Task, content: string, attachmentUrl: string | null, attachmentName: string | null) => Promise<boolean>;
   completePhase: (sessionId: string, phaseNumber: number) => Promise<boolean>;
+  resumeTask: (taskId: string) => Promise<boolean>;
+  clearError: () => void;
+  validateSessionAccess: (sessionId: string) => Promise<boolean>;
 };
 
 // Default values
@@ -68,6 +81,7 @@ const defaultContextValue: InternshipContextType = {
   deliverables: {},
   feedbacks: {},
   loading: false,
+  loadingPhase: false,
   error: null,
   fetchSession: async () => null, // Updated return value here to match the type
   fetchTasks: async () => {},
@@ -75,6 +89,9 @@ const defaultContextValue: InternshipContextType = {
   createInternshipSession: async () => null,
   submitTask: async () => false,
   completePhase: async () => false,
+  resumeTask: async () => false,
+  clearError: () => {},
+  validateSessionAccess: async () => false,
 };
 
 // Create context
@@ -88,13 +105,56 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
   const [deliverables, setDeliverables] = useState<Record<string, Deliverable>>({});
   const [feedbacks, setFeedbacks] = useState<Record<string, Feedback>>({});
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingPhase, setLoadingPhase] = useState<boolean>(false);
+  const [error, setError] = useState<ErrorState | null>(null);
+  
+  // Clear error helper
+  const clearError = () => setError(null);
 
-  // Fetch session data from Supabase
+  // Security: Validate session belongs to current user
+  const validateSessionAccess = async (sessionId: string): Promise<boolean> => {
+    try {
+      // Get user's auth status
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
+        throw new Error('You must be logged in to access internship sessions');
+      }
+      
+      // Check if session belongs to current user
+      const { data, error: sessionError } = await supabase
+        .from('internship_sessions')
+        .select('user_id')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+      
+      if (data?.user_id !== authSession.user.id) {
+        throw new Error('You do not have permission to access this internship session');
+      }
+      
+      return true;
+    } catch (err: any) {
+      console.error('Access validation error:', err);
+      setError({
+        message: 'Access denied',
+        details: err.message || 'You do not have permission to access this session',
+        code: 'FORBIDDEN'
+      });
+      navigate('/internship-start');
+      return false;
+    }
+  };
+
+  // Fetch session data from Supabase with validation
   const fetchSession = async (sessionId: string): Promise<InternshipSession | null> => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Validate access first
+      const hasAccess = await validateSessionAccess(sessionId);
+      if (!hasAccess) return null;
       
       const { data, error: sessionError } = await supabase
         .from('internship_sessions')
@@ -109,7 +169,12 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       return data;
     } catch (err: any) {
       console.error('Error fetching session:', err);
-      setError(err.message);
+      setError({
+        message: 'Failed to load session data',
+        details: err.message,
+        code: err.code || 'FETCH_ERROR',
+        retryFn: () => fetchSession(sessionId)
+      });
       toast({
         title: 'Error',
         description: 'Failed to load session data',
@@ -121,11 +186,15 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   };
 
-  // Fetch tasks for a session
+  // Fetch tasks for a session with improved error handling
   const fetchTasks = async (sessionId: string) => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Validate access first
+      const hasAccess = await validateSessionAccess(sessionId);
+      if (!hasAccess) return;
       
       const { data: tasksData, error: tasksError } = await supabase
         .from('internship_tasks')
@@ -142,7 +211,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         // Type-safe conversion for task status
         const typedTasks = tasksData.map(task => ({
           ...task,
-          status: task.status as 'not_started' | 'submitted' | 'feedback_given'
+          status: task.status as 'not_started' | 'in_progress' | 'submitted' | 'feedback_given'
         }));
         
         setTasks(typedTasks);
@@ -154,7 +223,12 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       }
     } catch (err: any) {
       console.error('Error fetching tasks:', err);
-      setError(err.message);
+      setError({
+        message: 'Failed to load internship tasks',
+        details: err.message,
+        code: err.code || 'FETCH_ERROR',
+        retryFn: () => fetchTasks(sessionId)
+      });
       toast({
         title: 'Error',
         description: 'Failed to load internship tasks',
@@ -173,11 +247,19 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       setLoading(true);
       setError(null);
       
+      // Rate limiting check (simple timestamp-based approach)
+      const lastRequestTime = localStorage.getItem('lastTaskGeneration');
+      const now = Date.now();
+      if (lastRequestTime && (now - parseInt(lastRequestTime)) < 5000) { // 5 second cooldown
+        throw new Error('Please wait before requesting again');
+      }
+      localStorage.setItem('lastTaskGeneration', now.toString());
+      
       const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/generate-internship-tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
           job_title: session.job_title,
@@ -185,6 +267,11 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
           session_id: sessionId
         })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      }
 
       const result = await response.json();
       
@@ -195,13 +282,18 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       // Ensure tasks have the correct status type
       const typedTasks = result.tasks.map((task: any) => ({
         ...task,
-        status: task.status as 'not_started' | 'submitted' | 'feedback_given'
+        status: task.status as 'not_started' | 'in_progress' | 'submitted' | 'feedback_given'
       }));
       
       setTasks(typedTasks);
     } catch (err: any) {
       console.error('Error generating tasks:', err);
-      setError(err.message);
+      setError({
+        message: 'Failed to generate internship tasks',
+        details: err.message,
+        code: 'GENERATION_ERROR',
+        retryFn: () => generateTasks(sessionId)
+      });
       toast({
         title: 'Error',
         description: 'Failed to generate internship tasks',
@@ -212,7 +304,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   };
 
-  // Fetch deliverables and feedback
+  // Fetch deliverables and feedback with batch processing
   const fetchDeliverables = async (taskIds: string[]) => {
     if (!taskIds.length) return;
 
@@ -220,59 +312,76 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       setLoading(true);
       setError(null);
       
-      // Fetch deliverables
-      const { data: deliverablesData, error: deliverablesError } = await supabase
-        .from('internship_deliverables')
-        .select('*')
-        .in('task_id', taskIds);
-
-      if (deliverablesError) throw deliverablesError;
-
-      // Create a map of task_id to deliverable
+      // Process in batches of 20 for large datasets
+      const BATCH_SIZE = 20;
       const deliverablesMap: Record<string, Deliverable> = {};
       const deliverableIds: string[] = [];
-
-      if (deliverablesData) {
-        deliverablesData.forEach(deliverable => {
-          // Ensure it matches the Deliverable type with attachment fields
-          const typedDeliverable: Deliverable = {
-            ...deliverable,
-            attachment_url: deliverable.attachment_url || null,
-            attachment_name: deliverable.attachment_name || null
-          };
-          deliverablesMap[deliverable.task_id] = typedDeliverable;
-          deliverableIds.push(deliverable.id);
-        });
-        setDeliverables(deliverablesMap);
-      }
-
-      // If we have deliverables, fetch feedback
-      if (deliverableIds.length) {
-        const { data: feedbackData, error: feedbackError } = await supabase
-          .from('internship_feedback')
+      
+      // Process tasks in batches
+      for (let i = 0; i < taskIds.length; i += BATCH_SIZE) {
+        const batchTaskIds = taskIds.slice(i, i + BATCH_SIZE);
+        
+        // Fetch deliverables for current batch
+        const { data: deliverablesData, error: deliverablesError } = await supabase
+          .from('internship_deliverables')
           .select('*')
-          .in('deliverable_id', deliverableIds);
+          .in('task_id', batchTaskIds);
 
-        if (feedbackError) throw feedbackError;
+        if (deliverablesError) throw deliverablesError;
 
-        // Create a map of deliverable_id to feedback
-        const feedbackMap: Record<string, Feedback> = {};
-        if (feedbackData) {
-          feedbackData.forEach(feedback => {
-            feedbackMap[feedback.deliverable_id] = feedback;
+        if (deliverablesData) {
+          deliverablesData.forEach(deliverable => {
+            // Ensure it matches the Deliverable type with attachment fields
+            const typedDeliverable: Deliverable = {
+              ...deliverable,
+              attachment_url: deliverable.attachment_url || null,
+              attachment_name: deliverable.attachment_name || null
+            };
+            deliverablesMap[deliverable.task_id] = typedDeliverable;
+            deliverableIds.push(deliverable.id);
           });
-          setFeedbacks(feedbackMap);
         }
+      }
+      
+      setDeliverables(deliverablesMap);
+
+      // If we have deliverables, fetch feedback in batches
+      if (deliverableIds.length) {
+        const feedbackMap: Record<string, Feedback> = {};
+        
+        for (let i = 0; i < deliverableIds.length; i += BATCH_SIZE) {
+          const batchDeliverableIds = deliverableIds.slice(i, i + BATCH_SIZE);
+          
+          const { data: feedbackData, error: feedbackError } = await supabase
+            .from('internship_feedback')
+            .select('*')
+            .in('deliverable_id', batchDeliverableIds);
+
+          if (feedbackError) throw feedbackError;
+
+          if (feedbackData) {
+            feedbackData.forEach(feedback => {
+              feedbackMap[feedback.deliverable_id] = feedback;
+            });
+          }
+        }
+        
+        setFeedbacks(feedbackMap);
       }
     } catch (err: any) {
       console.error('Error fetching deliverables and feedback:', err);
-      setError(err.message);
+      setError({
+        message: 'Failed to load task data',
+        details: err.message,
+        code: err.code || 'FETCH_ERROR',
+        retryFn: () => fetchDeliverables(taskIds)
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Create a new internship session using the edge function
+  // Create a new internship session using the edge function with improved validation
   const createInternshipSession = async (
     jobTitle: string, 
     industry: string, 
@@ -281,13 +390,25 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
     try {
       setLoading(true);
       setError(null);
+      
+      // Client-side validation
+      if (!jobTitle.trim()) throw new Error('Job title is required');
+      if (!industry.trim()) throw new Error('Industry is required');
+      
+      // Rate limiting check
+      const lastRequestTime = localStorage.getItem('lastSessionCreation');
+      const now = Date.now();
+      if (lastRequestTime && (now - parseInt(lastRequestTime)) < 10000) { // 10 second cooldown
+        throw new Error('Please wait before creating another session');
+      }
+      localStorage.setItem('lastSessionCreation', now.toString());
 
-      // Call edge function to create session (we'll implement this next)
+      // Call edge function to create session (with authorization)
       const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/create-internship-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
           job_title: jobTitle,
@@ -295,6 +416,11 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
           job_description: jobDescription
         })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      }
 
       const result = await response.json();
       
@@ -310,7 +436,12 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       return result.sessionId;
     } catch (err: any) {
       console.error('Error creating internship session:', err);
-      setError(err.message);
+      setError({
+        message: 'Failed to create internship session',
+        details: err.message,
+        code: err.code || 'CREATION_ERROR',
+        retryFn: () => createInternshipSession(jobTitle, industry, jobDescription)
+      });
       toast({
         title: 'Error',
         description: err.message || 'Failed to create internship session',
@@ -319,6 +450,48 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       return null;
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Resume a task that was started but not completed
+  const resumeTask = async (taskId: string): Promise<boolean> => {
+    if (!tasks.length) return false;
+    
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) {
+        throw new Error('Task not found');
+      }
+      
+      // If task already has a deliverable, it can be resumed
+      if (deliverables[taskId]) {
+        return true;
+      }
+      
+      // Update the task status to in-progress
+      const { error: updateError } = await supabase
+        .from('internship_tasks')
+        .update({ status: 'in_progress' })
+        .eq('id', taskId);
+      
+      if (updateError) throw updateError;
+      
+      // Update local state
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.id === taskId ? { ...t, status: 'in_progress' as const } : t
+        )
+      );
+      
+      return true;
+    } catch (err: any) {
+      console.error('Error resuming task:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to resume task',
+        variant: 'destructive',
+      });
+      return false;
     }
   };
 
@@ -334,13 +507,24 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
     try {
       setLoading(true);
       setError(null);
+      
+      // Validate access
+      await validateSessionAccess(session.id);
+      
+      // Rate limiting check
+      const lastRequestTime = localStorage.getItem('lastTaskSubmission');
+      const now = Date.now();
+      if (lastRequestTime && (now - parseInt(lastRequestTime)) < 5000) { // 5 second cooldown
+        throw new Error('Please wait before submitting again');
+      }
+      localStorage.setItem('lastTaskSubmission', now.toString());
 
       // Use the edge function to handle the submission and feedback generation
       const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/submit-internship-task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
           task_id: task.id,
@@ -352,6 +536,11 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
           industry: session.industry
         })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      }
 
       const result = await response.json();
       
@@ -384,7 +573,12 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       return true;
     } catch (err: any) {
       console.error('Error submitting task:', err);
-      setError(err.message);
+      setError({
+        message: 'Failed to submit task',
+        details: err.message,
+        code: err.code || 'SUBMISSION_ERROR',
+        retryFn: () => submitTask(task, content, attachmentUrl, attachmentName)
+      });
       toast({
         title: 'Error',
         description: err.message || 'Failed to submit task',
@@ -396,11 +590,14 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   };
 
-  // Complete the current phase and move to the next
+  // Complete the current phase and move to the next - with enforced progression
   const completePhase = async (sessionId: string, phaseNumber: number): Promise<boolean> => {
     try {
-      setLoading(true);
+      setLoadingPhase(true);
       setError(null);
+      
+      // Validate access
+      await validateSessionAccess(sessionId);
 
       // Check if all tasks have feedback in this phase
       const allTasksComplete = tasks.every(task => task.status === 'feedback_given');
@@ -414,24 +611,30 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         return false;
       }
 
-      // Update session phase
-      const { error: updateError } = await supabase
-        .from('internship_sessions')
-        .update({ current_phase: phaseNumber + 1 })
-        .eq('id', sessionId);
-
-      if (updateError) throw updateError;
-
-      // Insert progress entry
-      const { error: progressError } = await supabase
-        .from('internship_progress')
-        .insert({
-          user_id: session?.user_id,
+      // Run this in a transaction using the edge function for safety
+      const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/enforce-phase-progression', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
           session_id: sessionId,
-          phase_number: phaseNumber
-        });
+          current_phase: phaseNumber,
+          next_phase: phaseNumber + 1
+        })
+      });
 
-      if (progressError) throw progressError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to complete this phase');
+      }
 
       // Update local state
       if (session) {
@@ -449,7 +652,12 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       return true;
     } catch (err: any) {
       console.error('Error completing phase:', err);
-      setError(err.message);
+      setError({
+        message: 'Failed to complete this phase',
+        details: err.message,
+        code: err.code || 'PHASE_ERROR',
+        retryFn: () => completePhase(sessionId, phaseNumber)
+      });
       toast({
         title: 'Error',
         description: err.message || 'Failed to complete this phase',
@@ -457,7 +665,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       return false;
     } finally {
-      setLoading(false);
+      setLoadingPhase(false);
     }
   };
 
@@ -467,6 +675,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
     deliverables,
     feedbacks,
     loading,
+    loadingPhase,
     error,
     fetchSession,
     fetchTasks,
@@ -474,6 +683,9 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
     createInternshipSession,
     submitTask,
     completePhase,
+    resumeTask,
+    clearError,
+    validateSessionAccess
   };
 
   return (
