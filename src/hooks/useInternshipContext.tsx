@@ -53,7 +53,7 @@ type InternshipContextType = {
   feedbacks: Record<string, Feedback>;
   loading: boolean;
   error: string | null;
-  fetchSession: (sessionId: string) => Promise<void>;
+  fetchSession: (sessionId: string) => Promise<InternshipSession | null>; // Updated return type here
   fetchTasks: (sessionId: string) => Promise<void>;
   fetchDeliverables: (taskIds: string[]) => Promise<void>;
   createInternshipSession: (jobTitle: string, industry: string, jobDescription: string) => Promise<string | null>;
@@ -69,7 +69,7 @@ const defaultContextValue: InternshipContextType = {
   feedbacks: {},
   loading: false,
   error: null,
-  fetchSession: async () => {},
+  fetchSession: async () => null, // Updated return value here to match the type
   fetchTasks: async () => {},
   fetchDeliverables: async () => {},
   createInternshipSession: async () => null,
@@ -91,7 +91,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
 
   // Fetch session data from Supabase
-  const fetchSession = async (sessionId: string) => {
+  const fetchSession = async (sessionId: string): Promise<InternshipSession | null> => {
     try {
       setLoading(true);
       setError(null);
