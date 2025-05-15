@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, addMonths, parseISO, isAfter, isBefore, isEqual } from 'date-fns';
@@ -48,6 +49,7 @@ type Deliverable = {
   submitted_at: string;
   attachment_url: string | null;
   attachment_name: string | null;
+  user_id?: string;
 };
 
 // Feedback type definition

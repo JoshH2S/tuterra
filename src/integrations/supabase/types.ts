@@ -412,6 +412,8 @@ export type Database = {
       }
       internship_deliverables: {
         Row: {
+          attachment_name: string | null
+          attachment_url: string | null
           content: string
           id: string
           submitted_at: string
@@ -419,6 +421,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachment_name?: string | null
+          attachment_url?: string | null
           content: string
           id?: string
           submitted_at?: string
@@ -426,6 +430,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachment_name?: string | null
+          attachment_url?: string | null
           content?: string
           id?: string
           submitted_at?: string
