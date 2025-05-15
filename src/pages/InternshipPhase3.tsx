@@ -107,7 +107,13 @@ const InternshipPhase3 = () => {
         if (!tasksData || tasksData.length === 0) {
           await generateTasks(sessionData);
         } else {
-          setTasks(tasksData);
+          // Convert the status string to the appropriate type
+          const typedTasks = tasksData.map(task => ({
+            ...task,
+            status: task.status as 'not_started' | 'submitted' | 'feedback_given'
+          }));
+          
+          setTasks(typedTasks);
           await fetchDeliverables(tasksData.map(t => t.id));
         }
       } catch (error) {
@@ -147,7 +153,13 @@ const InternshipPhase3 = () => {
         throw new Error(result.error || 'Failed to generate tasks');
       }
 
-      setTasks(result.tasks);
+      // Ensure tasks have the correct status type
+      const typedTasks = result.tasks.map((task: any) => ({
+        ...task,
+        status: task.status as 'not_started' | 'submitted' | 'feedback_given'
+      }));
+      
+      setTasks(typedTasks);
     } catch (error) {
       console.error('Error generating tasks:', error);
       toast({
@@ -283,7 +295,7 @@ const InternshipPhase3 = () => {
 
       // 5. Update the tasks list with new status
       setTasks(tasks.map(task => 
-        task.id === selectedTask.id ? { ...task, status: 'feedback_given' } : task
+        task.id === selectedTask.id ? { ...task, status: 'feedback_given' as const } : task
       ));
 
       // 6. Show success message and close dialog
