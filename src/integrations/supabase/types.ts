@@ -410,6 +410,73 @@ export type Database = {
         }
         Relationships: []
       }
+      internship_deliverables: {
+        Row: {
+          content: string
+          id: string
+          submitted_at: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          submitted_at?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          submitted_at?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_deliverables_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "internship_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internship_feedback: {
+        Row: {
+          created_at: string
+          deliverable_id: string
+          feedback: string
+          id: string
+          improvements: string[] | null
+          strengths: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          deliverable_id: string
+          feedback: string
+          id?: string
+          improvements?: string[] | null
+          strengths?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          deliverable_id?: string
+          feedback?: string
+          id?: string
+          improvements?: string[] | null
+          strengths?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_feedback_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "internship_deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internship_progress: {
         Row: {
           ai_feedback: string | null
@@ -477,6 +544,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      internship_tasks: {
+        Row: {
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          instructions: string | null
+          session_id: string
+          status: string
+          task_order: number
+          task_type: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          due_date: string
+          id?: string
+          instructions?: string | null
+          session_id: string
+          status?: string
+          task_order: number
+          task_type?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          due_date?: string
+          id?: string
+          instructions?: string | null
+          session_id?: string
+          status?: string
+          task_order?: number
+          task_type?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_tasks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interview_feedback: {
         Row: {
