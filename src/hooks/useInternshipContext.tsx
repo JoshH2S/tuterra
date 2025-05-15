@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,13 +62,13 @@ type InternshipContextType = {
   loading: boolean;
   loadingPhase: boolean;
   error: ErrorState | null;
-  fetchSession: (sessionId: string) => Promise<InternshipSession | null>; // Updated return type here
+  fetchSession: (sessionId: string) => Promise<InternshipSession | null>; // Fix: correct return type
   fetchTasks: (sessionId: string) => Promise<void>;
   fetchDeliverables: (taskIds: string[]) => Promise<void>;
-  createInternshipSession: (jobTitle: string, industry: string, jobDescription: string) => Promise<string | null>;
-  submitTask: (task: Task, content: string, attachmentUrl: string | null, attachmentName: string | null) => Promise<boolean>;
-  completePhase: (sessionId: string, phaseNumber: number) => Promise<boolean>;
-  resumeTask: (taskId: string) => Promise<boolean>;
+  createInternshipSession: (jobTitle: string, industry: string, jobDescription: string) => Promise<string | null>; // Fix: correct return type
+  submitTask: (task: Task, content: string, attachmentUrl: string | null, attachmentName: string | null) => Promise<boolean>; // Fix: correct return type
+  completePhase: (sessionId: string, phaseNumber: number) => Promise<boolean>; // Fix: correct return type
+  resumeTask: (taskId: string) => Promise<boolean>; // Fix: correct return type
   clearError: () => void;
   validateSessionAccess: (sessionId: string) => Promise<boolean>;
 };
@@ -83,13 +82,13 @@ const defaultContextValue: InternshipContextType = {
   loading: false,
   loadingPhase: false,
   error: null,
-  fetchSession: async () => null, // Updated return value here to match the type
+  fetchSession: async () => null, // Fix: use correct return type
   fetchTasks: async () => {},
   fetchDeliverables: async () => {},
-  createInternshipSession: async () => null,
-  submitTask: async () => false,
-  completePhase: async () => false,
-  resumeTask: async () => false,
+  createInternshipSession: async () => null, // Fix: use correct return type
+  submitTask: async () => false, // Fix: use correct return type
+  completePhase: async () => false, // Fix: use correct return type
+  resumeTask: async () => false, // Fix: use correct return type
   clearError: () => {},
   validateSessionAccess: async () => false,
 };

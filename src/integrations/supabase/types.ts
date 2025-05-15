@@ -2140,6 +2140,15 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      handle_phase_progression: {
+        Args: {
+          p_session_id: string
+          p_user_id: string
+          p_current_phase: number
+          p_next_phase: number
+        }
+        Returns: Json
+      }
       handle_user_subscription: {
         Args: {
           p_user_id: string
