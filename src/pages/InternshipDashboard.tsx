@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Play, Clock, CheckCircle2, Briefcase, 
-  Building, Award, ArrowRight, Calendar, 
+  Building2, Award, ArrowRight, Calendar, 
   FileText, MessageSquare
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -110,7 +110,7 @@ const InternshipDashboard = () => {
       }
     };
 
-    fetchInternshipData();
+    void fetchInternshipData();
   }, []);
 
   const fetchSessionDetails = async (session: InternshipSession) => {

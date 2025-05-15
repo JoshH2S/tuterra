@@ -89,7 +89,8 @@ const InternshipInterviewSimulator = () => {
           
           // Generate new questions based on job details
           if (sessionData.job_title && sessionData.industry) {
-            await generateQuestions(
+            // Handle the return value properly but we don't need to use it
+            void generateQuestions(
               sessionData.industry,
               sessionData.job_title,
               sessionData.job_description || "",
@@ -185,7 +186,7 @@ const InternshipInterviewSimulator = () => {
   // Handle interview completion
   useEffect(() => {
     if (isInterviewComplete) {
-      saveProgressAndAdvance();
+      void saveProgressAndAdvance();
     }
   }, [isInterviewComplete]);
 

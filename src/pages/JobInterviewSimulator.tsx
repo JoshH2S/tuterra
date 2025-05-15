@@ -104,7 +104,8 @@ const JobInterviewSimulator = () => {
           if (locationState.jobTitle && locationState.industry) {
             try {
               await new Promise(resolve => setTimeout(resolve, 500));
-              await generateQuestions(
+              // Handle the return value properly but we don't need to use it
+              void generateQuestions(
                 locationState.industry, 
                 locationState.jobTitle, 
                 locationState.jobDescription || "",
@@ -124,7 +125,7 @@ const JobInterviewSimulator = () => {
       }
     };
     
-    setupInterview();
+    void setupInterview();
   }, [interviewId, setCurrentSessionId, setJobTitle, setIndustry, setJobDescription]);
 
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
@@ -187,7 +188,8 @@ const JobInterviewSimulator = () => {
       
       if (jobTitle && industry) {
         try {
-          await generateQuestions(
+          // Handle the return value properly but we don't need to use it
+          void generateQuestions(
             industry,
             jobTitle,
             jobDescription,

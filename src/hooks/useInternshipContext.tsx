@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -205,7 +206,11 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
 
       if (!tasksData || tasksData.length === 0) {
         // No tasks found - we'll try to generate them through the edge function
-        await generateTasks(sessionId);
+        const generatedTasks = await generateTasks(sessionId);
+        if (generatedTasks) {
+          // We successfully generated tasks
+          return;
+        }
       } else {
         // Type-safe conversion for task status
         const typedTasks = tasksData.map(task => ({
@@ -239,8 +244,8 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   // Generate tasks using the edge function
-  const generateTasks = async (sessionId: string) => {
-    if (!session) return;
+  const generateTasks = async (sessionId: string): Promise<boolean> => {
+    if (!session) return false;
     
     try {
       setLoading(true);
@@ -285,19 +290,21 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       }));
       
       setTasks(typedTasks);
+      return true;
     } catch (err: any) {
       console.error('Error generating tasks:', err);
       setError({
         message: 'Failed to generate internship tasks',
         details: err.message,
         code: 'GENERATION_ERROR',
-        retryFn: () => generateTasks(sessionId)
+        retryFn: () => { void generateTasks(sessionId); }
       });
       toast({
         title: 'Error',
         description: 'Failed to generate internship tasks',
         variant: 'destructive',
       });
+      return false;
     } finally {
       setLoading(false);
     }

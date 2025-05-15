@@ -35,7 +35,7 @@ const InternshipStart = () => {
     e.preventDefault();
 
     try {
-      // Use the createInternshipSession function from our context
+      // Use the createInternshipSession function from our context and properly handle the return value
       const sessionId = await createInternshipSession(
         formData.jobTitle,
         formData.industry,
