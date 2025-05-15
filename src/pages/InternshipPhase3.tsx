@@ -198,7 +198,13 @@ const InternshipPhase3 = () => {
 
       if (deliverablesData) {
         deliverablesData.forEach(deliverable => {
-          deliverablesMap[deliverable.task_id] = deliverable;
+          // Ensure it matches the Deliverable type with attachment fields
+          const typedDeliverable: Deliverable = {
+            ...deliverable,
+            attachment_url: deliverable.attachment_url || null,
+            attachment_name: deliverable.attachment_name || null
+          };
+          deliverablesMap[deliverable.task_id] = typedDeliverable;
           deliverableIds.push(deliverable.id);
         });
         setDeliverables(deliverablesMap);
@@ -310,11 +316,17 @@ const InternshipPhase3 = () => {
         throw new Error(result.error || 'Failed to generate feedback');
       }
 
-      // 4. Update local state
-      setDeliverables({
-        ...deliverables,
-        [selectedTask.id]: deliverableData
-      });
+      // 4. Update local state - make sure the deliverable is correctly typed
+      const typedDeliverable: Deliverable = {
+        ...deliverableData,
+        attachment_url: deliverableData.attachment_url || null,
+        attachment_name: deliverableData.attachment_name || null
+      };
+      
+      setDeliverables(prevDeliverables => ({
+        ...prevDeliverables,
+        [selectedTask.id]: typedDeliverable
+      }));
 
       setFeedbacks({
         ...feedbacks,

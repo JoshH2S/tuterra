@@ -83,31 +83,37 @@ const InternshipCompletion = () => {
         if (tasksError) throw tasksError;
         
         // For each task, get the feedback (strengths and improvements)
-        const tasksWithFeedback = await Promise.all(tasksData.map(async (task) => {
-          // Get the deliverable for this task
-          const { data: deliverableData } = await supabase
-            .from('internship_deliverables')
-            .select('id')
-            .eq('task_id', task.id)
-            .single();
-          
-          if (deliverableData) {
-            // Get the feedback for this deliverable
-            const { data: feedbackData } = await supabase
-              .from('internship_feedback')
-              .select('strengths, improvements')
-              .eq('deliverable_id', deliverableData.id)
+        const tasksWithFeedback: CompletedTask[] = await Promise.all(
+          tasksData.map(async (task) => {
+            // Get the deliverable for this task
+            const { data: deliverableData } = await supabase
+              .from('internship_deliverables')
+              .select('id')
+              .eq('task_id', task.id)
               .single();
+            
+            if (deliverableData) {
+              // Get the feedback for this deliverable
+              const { data: feedbackData } = await supabase
+                .from('internship_feedback')
+                .select('strengths, improvements')
+                .eq('deliverable_id', deliverableData.id)
+                .single();
+              
+              return {
+                ...task,
+                status: 'feedback_given' as const,
+                strengths: feedbackData?.strengths || [],
+                improvements: feedbackData?.improvements || [],
+              };
+            }
             
             return {
               ...task,
-              strengths: feedbackData?.strengths || [],
-              improvements: feedbackData?.improvements || [],
+              status: 'feedback_given' as const
             };
-          }
-          
-          return task;
-        }));
+          })
+        );
         
         setTasks(tasksWithFeedback);
       } catch (error) {

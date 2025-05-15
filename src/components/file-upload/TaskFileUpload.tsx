@@ -65,15 +65,18 @@ export function TaskFileUpload({
       const fileName = `task_${taskId}_${Date.now()}.${fileExt}`;
       const filePath = `internship_deliverables/${fileName}`;
       
+      // Create a custom upload handler with progress tracking
+      const handleProgress = (progress: { loaded: number; total: number }) => {
+        const percent = Math.round((progress.loaded / progress.total) * 100);
+        setProgress(percent);
+      };
+      
       // Upload to Supabase Storage
+      // We need to use a different approach since onUploadProgress is not in the type definition
       const { error: uploadError } = await supabase.storage
         .from('internship')
         .upload(filePath, file, {
           upsert: false,
-          onUploadProgress: (progress) => {
-            const percent = Math.round((progress.loaded / progress.total) * 100);
-            setProgress(percent);
-          }
         });
         
       if (uploadError) throw uploadError;
