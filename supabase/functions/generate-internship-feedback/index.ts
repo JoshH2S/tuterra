@@ -7,6 +7,12 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY') ?? '';
 
+interface FeedbackResponse {
+  manager_feedback: string;
+  strengths: string[];
+  improvements: string[];
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -17,6 +23,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { task_id, deliverable_id, submission, job_title, industry } = await req.json();
 
+    // Input validation
     if (!task_id || !deliverable_id || !submission) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
@@ -24,7 +31,7 @@ serve(async (req) => {
       );
     }
 
-    // Check if feedback already exists for this deliverable (idempotency check)
+    // Idempotency check - see if feedback already exists for this deliverable
     const { data: existingFeedback, error: checkError } = await supabase
       .from('internship_feedback')
       .select('*')
@@ -43,95 +50,171 @@ serve(async (req) => {
     if (existingFeedback) {
       console.log(`Feedback already exists for deliverable ${deliverable_id}, returning existing feedback`);
       return new Response(
-        JSON.stringify({ success: true, feedback: existingFeedback }),
+        JSON.stringify({ 
+          success: true, 
+          feedback: {
+            manager_feedback: existingFeedback.feedback,
+            strengths: existingFeedback.strengths,
+            improvements: existingFeedback.improvements
+          }
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get task details
-    const { data: taskData, error: taskError } = await supabase
+    // Step 1: Fetch task details
+    const { data: task, error: taskError } = await supabase
       .from('internship_tasks')
       .select('title, description, instructions')
       .eq('id', task_id)
       .single();
 
-    if (taskError || !taskData) {
+    if (taskError || !task) {
       return new Response(
         JSON.stringify({ error: 'Task not found', details: taskError }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get the deliverable to verify it exists and contains valid content
-    const { data: deliverableData, error: deliverableError } = await supabase
-      .from('internship_deliverables')
-      .select('content, user_id')
-      .eq('id', deliverable_id)
-      .single();
-
-    if (deliverableError || !deliverableData) {
+    // Step 2: Call GPT-4o with OpenAI API
+    if (!openAIApiKey) {
       return new Response(
-        JSON.stringify({ error: 'Deliverable not found', details: deliverableError }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Generate feedback based on submission and task details
-    const feedback = generateFeedback(submission, taskData, job_title, industry);
-
-    // Validate feedback
-    if (!feedback || typeof feedback.feedback !== 'string' || !feedback.feedback.trim()) {
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate valid feedback' }),
+        JSON.stringify({ error: 'OpenAI API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Insert feedback into internship_feedback table
+    const messages = [
+      {
+        role: "system",
+        content: `
+You are a professional internship manager at a mid-sized company. Your job is to review submitted work from interns and provide helpful, personalized, and encouraging feedback.
+
+The feedback should include:
+- A short message from the manager (1 paragraph)
+- 1–2 specific strengths
+- 1 area for improvement
+
+Be specific and base your analysis on the actual submission. Do not use generic praise.
+
+Always return the response in JSON format with the following keys:
+{
+  "manager_feedback": string,
+  "strengths": string[],
+  "improvements": string[]
+}
+`.trim()
+      },
+      {
+        role: "user",
+        content: `
+Job Title: ${job_title}
+Industry: ${industry}
+
+Task Title: ${task.title}
+Task Description: ${task.description}
+Task Instructions: ${task.instructions}
+
+Submission:
+${submission}
+`.trim()
+      }
+    ];
+
+    console.log('Sending request to OpenAI...');
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openAIApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages,
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    });
+
+    if (!openAIResponse.ok) {
+      const errorData = await openAIResponse.json();
+      console.error('OpenAI API error:', errorData);
+      return new Response(
+        JSON.stringify({ error: 'Failed to generate feedback from OpenAI', details: errorData }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Step 3: Parse GPT response
+    const openAIData = await openAIResponse.json();
+    let feedbackJson: FeedbackResponse;
+    
+    try {
+      const content = openAIData.choices[0].message.content;
+      // Try to extract JSON if it's wrapped in markdown code blocks
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || content.match(/{[\s\S]*}/);
+      const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : content;
+      
+      feedbackJson = JSON.parse(jsonString);
+      
+      // Validate the JSON structure
+      if (!feedbackJson.manager_feedback || !Array.isArray(feedbackJson.strengths) || !Array.isArray(feedbackJson.improvements)) {
+        throw new Error('Invalid JSON structure returned from OpenAI');
+      }
+    } catch (error) {
+      console.error('Error parsing OpenAI response:', error);
+      console.error('OpenAI raw response:', openAIData?.choices?.[0]?.message?.content);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to parse feedback from OpenAI', 
+          details: error.message,
+          raw_content: openAIData?.choices?.[0]?.message?.content 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Step 4: Store in internship_feedback
     const { data: insertedFeedback, error: insertError } = await supabase
       .from('internship_feedback')
       .insert({
         deliverable_id,
-        feedback: feedback.feedback,
-        strengths: feedback.strengths,
-        improvements: feedback.improvements
+        feedback: feedbackJson.manager_feedback,
+        strengths: feedbackJson.strengths,
+        improvements: feedbackJson.improvements
       })
-      .select();
+      .select()
+      .single();
 
     if (insertError) {
       return new Response(
-        JSON.stringify({ error: 'Failed to insert feedback', details: insertError }),
+        JSON.stringify({ error: 'Failed to store feedback', details: insertError }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Update task status in a transaction-like manner
-    const { data: taskBefore, error: getTaskError } = await supabase
+    // Update task status to 'feedback_given'
+    const { error: updateError } = await supabase
       .from('internship_tasks')
-      .select('status')
-      .eq('id', task_id)
-      .single();
+      .update({ status: 'feedback_given' })
+      .eq('id', task_id);
       
-    if (getTaskError) {
-      console.error('Error getting task status:', getTaskError);
+    if (updateError) {
+      console.error('Error updating task status:', updateError);
       // Continue with the process but log the error
-    } else {
-      // Only update if the status is not already 'feedback_given'
-      if (!taskBefore || taskBefore.status !== 'feedback_given') {
-        const { error: updateError } = await supabase
-          .from('internship_tasks')
-          .update({ status: 'feedback_given' })
-          .eq('id', task_id);
-          
-        if (updateError) {
-          console.error('Error updating task status:', updateError);
-          // Continue with the process but log the error
-        }
-      }
     }
 
+    // Step 5: Return to frontend
     return new Response(
-      JSON.stringify({ success: true, feedback: insertedFeedback }),
+      JSON.stringify({ 
+        success: true, 
+        feedback: {
+          manager_feedback: feedbackJson.manager_feedback,
+          strengths: feedbackJson.strengths,
+          improvements: feedbackJson.improvements
+        }
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -143,43 +226,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Helper function to generate feedback
-function generateFeedback(submission: string, task: any, jobTitle: string, industry: string) {
-  // For this demo, we'll use pre-defined feedback templates
-  // In a production environment, this would call an LLM API like OpenAI
-  
-  const strengths = [
-    "Clear and concise communication",
-    "Good understanding of core concepts",
-    "Thoughtful analysis"
-  ];
-  
-  const improvements = [
-    "Consider adding more specific examples",
-    "Expand on the implementation details",
-    "Include more industry-specific context"
-  ];
-  
-  const feedbackTemplate = `
-Great work on this submission! Here's my feedback as your virtual manager:
-
-Your work on the ${task.title} task shows good understanding of the requirements and solid effort.
-
-Your approach to ${task.description.toLowerCase()} demonstrates professional thinking appropriate for a ${jobTitle} role.
-
-I particularly appreciate how you've addressed the main objectives of this task and shown initiative.
-
-For future tasks, consider incorporating more specific ${industry}-related examples and metrics to strengthen your analysis.
-
-Overall, this is solid work that would contribute value to our team in a real-world setting.
-
-Keep up the good work!
-`;
-
-  return {
-    feedback: feedbackTemplate.trim(),
-    strengths,
-    improvements
-  };
-}
