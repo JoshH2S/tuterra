@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -250,7 +249,7 @@ const InternshipDashboard = () => {
                             <div>
                               <h3 className="font-semibold">{session.job_title}</h3>
                               <div className="flex items-center text-sm text-muted-foreground">
-                                <Building className="h-3.5 w-3.5 mr-1" />
+                                <Building2 className="h-3.5 w-3.5 mr-1" />
                                 {session.industry}
                               </div>
                               <div className="flex items-center mt-1 text-sm text-muted-foreground">
@@ -314,7 +313,7 @@ const InternshipDashboard = () => {
                                 <CheckCircle2 className="h-4 w-4 ml-2 text-green-500" />
                               </div>
                               <div className="flex items-center text-sm text-muted-foreground">
-                                <Building className="h-3.5 w-3.5 mr-1" />
+                                <Building2 className="h-3.5 w-3.5 mr-1" />
                                 {session.industry}
                               </div>
                               <div className="flex items-center mt-1 text-sm text-muted-foreground">

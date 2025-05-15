@@ -54,7 +54,7 @@ export type ErrorState = {
   retryFn?: () => Promise<void>;
 };
 
-// Context Type
+// Context Type - Updated return types to match implementations
 type InternshipContextType = {
   session: InternshipSession | null;
   tasks: Task[];
@@ -74,7 +74,7 @@ type InternshipContextType = {
   validateSessionAccess: (sessionId: string) => Promise<boolean>;
 };
 
-// Default values
+// Default values - Updated to match the new return types
 const defaultContextValue: InternshipContextType = {
   session: null,
   tasks: [],
@@ -173,7 +173,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         message: 'Failed to load session data',
         details: err.message,
         code: err.code || 'FETCH_ERROR',
-        retryFn: () => fetchSession(sessionId)
+        retryFn: async () => { await fetchSession(sessionId); }
       });
       toast({
         title: 'Error',
@@ -231,7 +231,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         message: 'Failed to load internship tasks',
         details: err.message,
         code: err.code || 'FETCH_ERROR',
-        retryFn: () => fetchTasks(sessionId)
+        retryFn: async () => { await fetchTasks(sessionId); }
       });
       toast({
         title: 'Error',
@@ -297,7 +297,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         message: 'Failed to generate internship tasks',
         details: err.message,
         code: 'GENERATION_ERROR',
-        retryFn: () => { void generateTasks(sessionId); }
+        retryFn: async () => { await generateTasks(sessionId); }
       });
       toast({
         title: 'Error',
@@ -380,7 +380,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         message: 'Failed to load task data',
         details: err.message,
         code: err.code || 'FETCH_ERROR',
-        retryFn: () => fetchDeliverables(taskIds)
+        retryFn: async () => { await fetchDeliverables(taskIds); }
       });
     } finally {
       setLoading(false);
@@ -446,7 +446,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         message: 'Failed to create internship session',
         details: err.message,
         code: err.code || 'CREATION_ERROR',
-        retryFn: () => createInternshipSession(jobTitle, industry, jobDescription)
+        retryFn: async () => { return await createInternshipSession(jobTitle, industry, jobDescription); }
       });
       toast({
         title: 'Error',
@@ -583,7 +583,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         message: 'Failed to submit task',
         details: err.message,
         code: err.code || 'SUBMISSION_ERROR',
-        retryFn: () => submitTask(task, content, attachmentUrl, attachmentName)
+        retryFn: async () => { return await submitTask(task, content, attachmentUrl, attachmentName); }
       });
       toast({
         title: 'Error',
@@ -662,7 +662,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
         message: 'Failed to complete this phase',
         details: err.message,
         code: err.code || 'PHASE_ERROR',
-        retryFn: () => completePhase(sessionId, phaseNumber)
+        retryFn: async () => { return await completePhase(sessionId, phaseNumber); }
       });
       toast({
         title: 'Error',
