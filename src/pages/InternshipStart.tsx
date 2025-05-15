@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,15 +10,16 @@ import { Select } from "@/components/ui/select-simple";
 import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/shared/LoadingStates";
 import { industryOptions } from "@/data/industry-options";
+import { useInternship } from "@/hooks/useInternshipContext";
 
 const InternshipStart = () => {
   const navigate = useNavigate();
+  const { createInternshipSession, loading } = useInternship();
   const [formData, setFormData] = useState({
     jobTitle: "",
     industry: "",
     jobDescription: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -33,54 +33,19 @@ const InternshipStart = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      // Use the createInternshipSession function from our context
+      const sessionId = await createInternshipSession(
+        formData.jobTitle,
+        formData.industry,
+        formData.jobDescription
+      );
 
-      if (userError || !user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in to start the internship process.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
+      if (sessionId) {
+        // Redirect to the interview invitation page with session ID
+        navigate(`/internship/interview/invite/${sessionId}`);
       }
-
-      // Insert new internship session
-      const { data: sessionData, error: insertError } = await supabase
-        .from("internship_sessions")
-        .insert({
-          user_id: user.id,
-          job_title: formData.jobTitle,
-          industry: formData.industry,
-          job_description: formData.jobDescription,
-          created_at: new Date().toISOString(),
-          current_phase: 1,
-        })
-        .select("id")
-        .single();
-
-      if (insertError) {
-        console.error("Error creating internship session:", insertError);
-        toast({
-          title: "Error",
-          description: "Failed to create internship session. Please try again.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: "Your virtual internship session has been created!",
-      });
-
-      // Redirect to the interview invitation page with session ID
-      navigate(`/internship/interview/invite/${sessionData.id}`);
     } catch (error) {
       console.error("Unexpected error:", error);
       toast({
@@ -88,7 +53,6 @@ const InternshipStart = () => {
         description: "An unexpected error occurred. Please try again later.",
         variant: "destructive",
       });
-      setIsSubmitting(false);
     }
   };
 
@@ -155,9 +119,9 @@ const InternshipStart = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting}
+              disabled={loading}
             >
-              {isSubmitting ? (
+              {loading ? (
                 <div className="flex items-center space-x-2">
                   <LoadingSpinner size="small" />
                   <span>Creating Your Internship...</span>
