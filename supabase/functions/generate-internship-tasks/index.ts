@@ -24,6 +24,43 @@ serve(async (req) => {
       );
     }
 
+    // Check if tasks already exist for this session (idempotency check)
+    const { data: existingTasks, error: checkError } = await supabase
+      .from('internship_tasks')
+      .select('id')
+      .eq('session_id', session_id)
+      .limit(1);
+
+    if (checkError) {
+      console.error('Error checking existing tasks:', checkError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to check existing tasks', details: checkError }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // If tasks already exist, return them instead of creating new ones
+    if (existingTasks && existingTasks.length > 0) {
+      console.log(`Tasks already exist for session ${session_id}, retrieving existing tasks`);
+      const { data: tasks, error: fetchError } = await supabase
+        .from('internship_tasks')
+        .select('*')
+        .eq('session_id', session_id)
+        .order('task_order', { ascending: true });
+      
+      if (fetchError) {
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch existing tasks', details: fetchError }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, tasks: tasks }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get session info to determine start date
     const { data: sessionData, error: sessionError } = await supabase
       .from('internship_sessions')
@@ -41,10 +78,34 @@ serve(async (req) => {
     // Generate tasks based on job_title and industry
     const tasks = await generateTasks(job_title, industry, sessionData.created_at, session_id);
 
+    // Validate generated tasks
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to generate valid tasks' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Additional validation for required fields
+    const validTasks = tasks.filter(task => 
+      task.title && 
+      task.description && 
+      task.due_date && 
+      task.session_id &&
+      task.task_order
+    );
+
+    if (validTasks.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'All generated tasks failed validation' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Insert tasks into internship_tasks table
     const { data: insertedTasks, error: insertError } = await supabase
       .from('internship_tasks')
-      .insert(tasks)
+      .insert(validTasks)
       .select();
 
     if (insertError) {

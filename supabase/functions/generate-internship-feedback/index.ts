@@ -24,6 +24,30 @@ serve(async (req) => {
       );
     }
 
+    // Check if feedback already exists for this deliverable (idempotency check)
+    const { data: existingFeedback, error: checkError } = await supabase
+      .from('internship_feedback')
+      .select('*')
+      .eq('deliverable_id', deliverable_id)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking for existing feedback:', checkError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to check existing feedback', details: checkError }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // If feedback already exists, return it instead of generating new feedback
+    if (existingFeedback) {
+      console.log(`Feedback already exists for deliverable ${deliverable_id}, returning existing feedback`);
+      return new Response(
+        JSON.stringify({ success: true, feedback: existingFeedback }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get task details
     const { data: taskData, error: taskError } = await supabase
       .from('internship_tasks')
@@ -38,8 +62,30 @@ serve(async (req) => {
       );
     }
 
+    // Get the deliverable to verify it exists and contains valid content
+    const { data: deliverableData, error: deliverableError } = await supabase
+      .from('internship_deliverables')
+      .select('content, user_id')
+      .eq('id', deliverable_id)
+      .single();
+
+    if (deliverableError || !deliverableData) {
+      return new Response(
+        JSON.stringify({ error: 'Deliverable not found', details: deliverableError }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Generate feedback based on submission and task details
     const feedback = generateFeedback(submission, taskData, job_title, industry);
+
+    // Validate feedback
+    if (!feedback || typeof feedback.feedback !== 'string' || !feedback.feedback.trim()) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to generate valid feedback' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Insert feedback into internship_feedback table
     const { data: insertedFeedback, error: insertError } = await supabase
@@ -59,11 +105,30 @@ serve(async (req) => {
       );
     }
 
-    // Update task status
-    await supabase
+    // Update task status in a transaction-like manner
+    const { data: taskBefore, error: getTaskError } = await supabase
       .from('internship_tasks')
-      .update({ status: 'feedback_given' })
-      .eq('id', task_id);
+      .select('status')
+      .eq('id', task_id)
+      .single();
+      
+    if (getTaskError) {
+      console.error('Error getting task status:', getTaskError);
+      // Continue with the process but log the error
+    } else {
+      // Only update if the status is not already 'feedback_given'
+      if (!taskBefore || taskBefore.status !== 'feedback_given') {
+        const { error: updateError } = await supabase
+          .from('internship_tasks')
+          .update({ status: 'feedback_given' })
+          .eq('id', task_id);
+          
+        if (updateError) {
+          console.error('Error updating task status:', updateError);
+          // Continue with the process but log the error
+        }
+      }
+    }
 
     return new Response(
       JSON.stringify({ success: true, feedback: insertedFeedback }),
