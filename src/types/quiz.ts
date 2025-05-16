@@ -71,6 +71,7 @@ export interface QuizMetadata {
   modelUsed?: string;
 }
 
+// Add the missing DIFFICULTY_COLORS constant
 export const DIFFICULTY_COLORS = {
   middle_school: 'bg-green-100 text-green-800',
   high_school: 'bg-blue-100 text-blue-800',

@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { QuestionDifficulty } from "@/types/quiz";
-import { Topic, Question } from "@/types/quiz-generation";
+import { QuestionDifficulty, Topic, Question } from "@/types/quiz";
 import { useQuizAPI } from "./useQuizAPI";
 import { useQuizSave } from "./useQuizSave";
 
@@ -48,7 +47,7 @@ export const useQuizSubmission = () => {
           title: "Success",
           description: "Quiz generated and saved successfully!",
         });
-        return { success: true };
+        return { success: true, quizId };
       } else {
         throw new Error("Failed to save quiz to database");
       }
