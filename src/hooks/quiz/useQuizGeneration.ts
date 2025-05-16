@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -6,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { shuffleQuestionsOptions } from "@/utils/quiz-helpers";
 import { FILE_LIMITS } from "@/utils/file-limits";
 import { useQuizFileUpload } from "./useQuizFileUpload";
+import { QuestionDifficulty } from "@/types/quiz";
 
 export interface Topic {
   description: string;
@@ -34,7 +34,7 @@ export const useQuizGeneration = () => {
   const [duration, setDuration] = useState<number>(0);
   const [title, setTitle] = useState<string>("");
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courseId || "");
-  const [difficulty, setDifficulty] = useState<string>("high_school");
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("high_school");
   const [quizId, setQuizId] = useState<string | null>(null);
   const [generationProgress, setGenerationProgress] = useState<{
     stage: 'preparing' | 'analyzing' | 'generating' | 'saving' | 'complete' | 'error';
