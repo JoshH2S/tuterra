@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -57,11 +56,6 @@ export const navigationItems: NavigationItem[] = [
     path: "/interview-simulator" 
   },
   { 
-    icon: Briefcase, 
-    label: "Virtual Internship", 
-    path: "/internship/start" 
-  },
-  { 
     icon: UserRoundCog, 
     label: "Settings", 
     path: "/profile-settings" 
@@ -113,4 +107,3 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
     </nav>
   );
 };
-
