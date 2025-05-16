@@ -6,9 +6,9 @@ import { useParams } from "react-router-dom";
 export const useQuizSettings = () => {
   const { id: courseId } = useParams();
   const [title, setTitle] = useState<string>("");
-  const [duration, setDuration] = useState<number>(15);
+  const [duration, setDuration] = useState<number>(0);
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courseId || "");
-  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("university");
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>("high_school");
 
   return {
     title,

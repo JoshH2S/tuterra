@@ -29,6 +29,7 @@ export const useQuizTopicsManagement = () => {
 
   return {
     topics,
+    setTopics,
     addTopic,
     updateTopic,
     removeTopic,
