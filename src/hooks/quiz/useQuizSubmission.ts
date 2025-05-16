@@ -2,9 +2,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { QuestionDifficulty, Topic, Question } from "@/types/quiz";
+import { QuestionDifficulty, Question } from "@/types/quiz";
 import { useQuizAPI } from "./useQuizAPI";
 import { useQuizSave } from "./useQuizSave";
+import { Question as GenerationQuestion } from "@/types/quiz-generation";
 
 export const useQuizSubmission = () => {
   const navigate = useNavigate();
@@ -16,9 +17,17 @@ export const useQuizSubmission = () => {
   const { generateQuiz } = useQuizAPI();
   const { saveQuizToDatabase } = useQuizSave();
 
+  // Helper function to convert Question types
+  const convertToQuizQuestion = (questions: GenerationQuestion[]): Question[] => {
+    return questions.map(q => ({
+      ...q,
+      difficulty: q.difficulty || 'university' as QuestionDifficulty, // Ensure difficulty is always set
+    })) as Question[];
+  };
+
   const handleSubmit = async (
     fileContent: string,
-    topics: Topic[],
+    topics: { description: string; numQuestions: number }[],
     difficulty: QuestionDifficulty,
     title: string,
     duration: number,
@@ -30,12 +39,14 @@ export const useQuizSubmission = () => {
     
     try {
       // Generate quiz questions
-      const questions = await generateQuiz(fileContent, topics, difficulty);
-      setQuizQuestions(questions);
+      const generatedQuestions = await generateQuiz(fileContent, topics, difficulty);
+      // Convert to the correct Question type
+      const convertedQuestions = convertToQuizQuestion(generatedQuestions);
+      setQuizQuestions(convertedQuestions);
       
       // Save quiz to database
       const { success, quizId } = await saveQuizToDatabase(
-        questions,
+        convertedQuestions,
         title || `Quiz for ${topics.map(t => t.description).join(", ")}`,
         duration || 15,
         courseId
@@ -67,7 +78,7 @@ export const useQuizSubmission = () => {
   
   const retrySubmission = async (
     fileContent: string,
-    topics: Topic[],
+    topics: { description: string; numQuestions: number }[],
     difficulty: QuestionDifficulty,
     title: string,
     duration: number,

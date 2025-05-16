@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Question } from "@/types/quiz";
+import { Question, QuestionDifficulty } from "@/types/quiz";
 import { toast } from "@/hooks/use-toast";
 
 export const useQuizTaking = () => {
   const { id: quizId } = useParams();
   const navigate = useNavigate();
-  const [quiz, setQuiz] = useState<{ id: string; title: string; duration_minutes: number } | null>(null);
+  const [quiz, setQuiz] = useState<{ id: string; title: string; duration_minutes: number; difficulty?: QuestionDifficulty } | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +56,8 @@ export const useQuizTaking = () => {
           topic: q.topic,
           points: q.points,
           explanation: q.explanation,
-          difficulty: quizData.difficulty
+          // Use the difficulty from the question or default to 'university'
+          difficulty: q.difficulty as QuestionDifficulty || 'university'
         }));
 
         setQuiz(quizData);
@@ -166,20 +168,21 @@ export const useQuizTaking = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        // Save quiz attempt
+        // Save quiz attempt - using quiz_responses instead of quiz_attempts
         const { error } = await supabase
-          .from('quiz_attempts')
+          .from('quiz_responses')
           .insert({
             quiz_id: quizId,
-            user_id: session.user.id,
+            student_id: session.user.id,
             score: calculatedScore.percentage,
-            answers: selectedAnswers,
-            completed: true,
-            topic_performance: calculatedTopicPerformance
+            correct_answers: calculatedScore.correct,
+            total_questions: calculatedScore.total,
+            topic_performance: calculatedTopicPerformance,
+            completed_at: new Date().toISOString()
           });
 
         if (error) {
-          console.error('Error saving quiz attempt:', error);
+          console.error('Error saving quiz response:', error);
         }
       }
     } catch (err) {
