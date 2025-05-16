@@ -51,7 +51,7 @@ export type ErrorState = {
   message: string;
   code?: string;
   details?: string;
-  retryFn?: () => Promise<void>;
+  retryFn?: () => Promise<any>; // Modified this line to accept any Promise return type
 };
 
 // Context Type - Updated return types to match implementations
