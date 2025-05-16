@@ -1,21 +1,23 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { UploadCloud, File, X, AlertCircle, AlertTriangle } from "lucide-react";
+import { UploadCloud, File, X, AlertCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { CONTENT_LIMITS } from "@/types/quiz-generation";
+import { FILE_LIMITS } from "@/utils/file-limits";
+import { UploadStatus } from "@/components/file-upload/UploadStatus";
 
 interface MaterialUploadStepProps {
   selectedFile: File | null;
-  handleFileSelect: (file: File) => void;
+  handleFileSelect: (file: File | null) => void;
   contentLength: number;
   isProcessing?: boolean;
   processingProgress?: number;
   processingError?: string | null;
   fileError?: string | null;
+  isValidating?: boolean;
 }
 
 export const MaterialUploadStep = ({ 
@@ -25,7 +27,8 @@ export const MaterialUploadStep = ({
   isProcessing = false,
   processingProgress = 0,
   processingError = null,
-  fileError = null
+  fileError = null,
+  isValidating = false
 }: MaterialUploadStepProps) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -53,19 +56,18 @@ export const MaterialUploadStep = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    // Create a null setter for selectedFile
-    handleFileSelect(null as unknown as File);
+    handleFileSelect(null);
   };
 
-  const isContentWarning = contentLength > CONTENT_LIMITS.WARNING_THRESHOLD && contentLength <= CONTENT_LIMITS.MAX_CHARACTERS;
-  const contentPercentage = Math.min(Math.round((contentLength / CONTENT_LIMITS.MAX_CHARACTERS) * 100), 100);
+  const isContentWarning = contentLength > FILE_LIMITS.WARNING_THRESHOLD && contentLength <= FILE_LIMITS.MAX_CHARACTERS;
+  const contentPercentage = Math.min(Math.round((contentLength / FILE_LIMITS.MAX_CHARACTERS) * 100), 100);
 
   return (
     <div className="space-y-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2">Course Material</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Upload your course material to generate questions from (max {(CONTENT_LIMITS.MAX_CHARACTERS).toLocaleString()} characters, approximately {Math.round(CONTENT_LIMITS.MAX_CHARACTERS / 6).toLocaleString()} words)
+          Upload your course material to generate questions from (max {(FILE_LIMITS.MAX_CHARACTERS).toLocaleString()} characters, approximately {FILE_LIMITS.estimateWords(FILE_LIMITS.MAX_CHARACTERS).toLocaleString()} words)
         </p>
       </div>
 
@@ -84,11 +86,12 @@ export const MaterialUploadStep = ({
           className={cn(
             "border-2 border-dashed rounded-xl p-6 md:p-8 transition-colors cursor-pointer",
             "hover:border-primary hover:bg-primary/5",
-            "flex flex-col items-center justify-center text-center"
+            "flex flex-col items-center justify-center text-center",
+            isValidating ? "opacity-70 pointer-events-none" : ""
           )}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !isValidating && fileInputRef.current?.click()}
         >
           <input
             type="file"
@@ -96,18 +99,34 @@ export const MaterialUploadStep = ({
             onChange={onFileChange}
             className="hidden"
             accept=".pdf,.docx,.txt,.md"
+            disabled={isValidating}
           />
-          <UploadCloud className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium mb-2">
-            Drop your file here or tap to browse
-          </h3>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">
-            Upload your lecture notes, textbook chapters, or any course material to generate relevant quiz questions
-          </p>
-          <p className="text-xs text-gray-500 mt-2">
-            Maximum file size: {(CONTENT_LIMITS.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)}MB
-          </p>
-          <Button className="mt-4 md:hidden">Browse Files</Button>
+          
+          {isValidating ? (
+            <>
+              <Loader2 className="h-10 w-10 md:h-12 md:w-12 text-primary animate-spin mb-4" />
+              <h3 className="text-lg font-medium mb-2">
+                Validating file...
+              </h3>
+              <p className="text-sm text-gray-500 max-w-md mx-auto">
+                Please wait while we check your file
+              </p>
+            </>
+          ) : (
+            <>
+              <UploadCloud className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium mb-2">
+                Drop your file here or tap to browse
+              </h3>
+              <p className="text-sm text-gray-500 max-w-md mx-auto">
+                Upload your lecture notes, textbook chapters, or any course material to generate relevant quiz questions
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Maximum file size: {FILE_LIMITS.MAX_FILE_SIZE_MB}MB
+              </p>
+              <Button className="mt-4 md:hidden">Browse Files</Button>
+            </>
+          )}
         </motion.div>
       ) : (
         <Card className="overflow-hidden">
@@ -119,7 +138,7 @@ export const MaterialUploadStep = ({
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-lg truncate">{selectedFile.name}</h3>
                 <p className="text-sm text-gray-500">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB · {selectedFile.type || 'Unknown type'}
+                  {FILE_LIMITS.formatFileSize(selectedFile.size)} · {selectedFile.type || 'Unknown type'}
                 </p>
                 {contentLength > 0 && (
                   <div className="mt-2 space-y-1">
@@ -167,6 +186,7 @@ export const MaterialUploadStep = ({
                 size="icon"
                 onClick={handleRemoveFile}
                 className="text-gray-500 hover:text-gray-700"
+                disabled={isProcessing}
               >
                 <X className="h-5 w-5" />
               </Button>
