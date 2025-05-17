@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,8 @@ const InterviewInvite = () => {
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [maxRetries, setMaxRetries] = useState(0);
   const [startingInterview, setStartingInterview] = useState(false);
+  const [lastGenerationTime, setLastGenerationTime] = useState<number | null>(null);
+  const isPolling = useRef(false);
 
   useEffect(() => {
     async function fetchSessionData() {
@@ -71,7 +73,7 @@ const InterviewInvite = () => {
     fetchSessionData();
   }, [sessionId]);
   
-  // Check if interview questions are already generated
+  // Function to check if questions exist with verification
   const checkQuestionsExist = async () => {
     if (!sessionId) return;
     
@@ -86,28 +88,127 @@ const InterviewInvite = () => {
         console.error("Error checking questions:", error);
         setQuestionsLoaded(false);
         setLoading(false);
-        return;
+        return false;
       }
       
       // If we have questions, mark them as loaded
       // The questions could be in data.questions or directly in the data array
-      const hasQuestions = 
-        (data?.questions && Array.isArray(data.questions) && data.questions.length > 0) || 
-        (Array.isArray(data) && data.length > 0);
+      const hasQuestions = validateQuestionsData(data);
         
-      console.log(`Questions ${hasQuestions ? 'found' : 'not found'} for session ${sessionId}`, data);
+      console.log(`Questions ${hasQuestions ? 'found' : 'not found'} for session ${sessionId}`, 
+        hasQuestions ? `(${getQuestionCount(data)} questions available)` : "");
+      
       setQuestionsLoaded(hasQuestions);
       setLoading(false);
+      return hasQuestions;
     } catch (err) {
       console.error("Error checking interview questions:", err);
       setQuestionsLoaded(false);
       setLoading(false);
+      return false;
     }
   };
+  
+  // Helper to validate question data and count questions
+  const validateQuestionsData = (data: any): boolean => {
+    if (!data) return false;
+    
+    if (data?.questions && Array.isArray(data.questions)) {
+      return data.questions.length > 0;
+    }
+    
+    if (Array.isArray(data)) {
+      return data.length > 0;
+    }
+    
+    // If data is an object, check if any of its properties is an array with questions
+    if (typeof data === 'object') {
+      return Object.values(data).some(val => 
+        Array.isArray(val) && val.length > 0 && 
+        val.some((item: any) => item.question || item.text)
+      );
+    }
+    
+    return false;
+  };
+  
+  // Helper to get question count from various data formats
+  const getQuestionCount = (data: any): number => {
+    if (data?.questions && Array.isArray(data.questions)) {
+      return data.questions.length;
+    }
+    
+    if (Array.isArray(data)) {
+      return data.length;
+    }
+    
+    if (typeof data === 'object') {
+      const questionArrays = Object.values(data).filter(val => 
+        Array.isArray(val) && val.length > 0 &&
+        val.some((item: any) => item.question || item.text)
+      );
+      
+      if (questionArrays.length > 0) {
+        return questionArrays[0].length;
+      }
+    }
+    
+    return 0;
+  };
+  
+  // Poll for questions after generation
+  useEffect(() => {
+    if (!lastGenerationTime || isPolling.current) return;
+    
+    console.log("Starting polling for questions after generation");
+    isPolling.current = true;
+    
+    // Poll for questions every 2 seconds for up to 30 seconds
+    const maxPolls = 15; // 15 polls * 2 seconds = 30 seconds total
+    let pollCount = 0;
+    
+    const pollInterval = setInterval(async () => {
+      pollCount++;
+      console.log(`Polling for questions (${pollCount}/${maxPolls})...`);
+      
+      const hasQuestions = await checkQuestionsExist();
+      if (hasQuestions) {
+        console.log("Questions found during polling!");
+        clearInterval(pollInterval);
+        isPolling.current = false;
+        
+        // Show success message if questions were found
+        toast({
+          title: "Success",
+          description: "Your interview questions are ready!",
+        });
+      } else if (pollCount >= maxPolls) {
+        console.log("Reached max polls, stopping");
+        clearInterval(pollInterval);
+        isPolling.current = false;
+        
+        // If we've polled for 30 seconds and still no questions
+        toast({
+          title: "Warning",
+          description: "We've been waiting for your questions but they're taking longer than expected. You may need to regenerate them.",
+          variant: "warning",
+        });
+      }
+    }, 2000);
+    
+    // Clean up interval on unmount
+    return () => {
+      clearInterval(pollInterval);
+      isPolling.current = false;
+    };
+  }, [lastGenerationTime]);
   
   // Generate interview questions if they don't exist yet
   const generateInterviewQuestions = async () => {
     if (!sessionId || !sessionData) return;
+    
+    // Prevent multiple simultaneous generation attempts
+    if (generatingQuestions) return;
     
     setGeneratingQuestions(true);
     
@@ -139,15 +240,13 @@ const InterviewInvite = () => {
         throw new Error("Failed to generate interview questions");
       }
       
-      // If successful, mark questions as loaded and recheck to verify
-      console.log("Questions generated successfully:", data);
-      
-      // Fetch questions again to verify they're loaded properly
-      await checkQuestionsExist();
+      // If successful, set generation time to trigger polling
+      console.log("Questions generation initiated successfully:", data);
+      setLastGenerationTime(Date.now());
       
       toast({
-        title: "Success",
-        description: "Your interview questions are ready!",
+        title: "Processing",
+        description: "Your interview questions are being generated. This might take a moment...",
       });
     } catch (err) {
       console.error("Error generating questions:", err);
@@ -171,13 +270,20 @@ const InterviewInvite = () => {
       // Try to generate questions if not loaded
       try {
         await generateInterviewQuestions();
+        // Give a small delay to show the generation is happening
+        await new Promise(resolve => setTimeout(resolve, 1500));
       } catch (err) {
         console.error("Failed to generate questions before starting interview:", err);
+        // Don't block proceeding - the simulator will use fallback questions
       }
     }
     
-    // Navigate directly to the interview simulator
-    navigate(`/internship/interview/${sessionId}?start=true`);
+    // Final check if questions are available before navigation
+    const finalCheck = await checkQuestionsExist();
+    
+    // Navigate directly to the interview simulator with a start parameter
+    // The parameter will trigger auto-start in the simulator
+    navigate(`/internship/interview/${sessionId}?start=true&questionsVerified=${finalCheck ? 'true' : 'false'}`);
   };
 
   if (loading) {
@@ -299,15 +405,15 @@ const InterviewInvite = () => {
                       variant="outline"
                       className="mt-3"
                       onClick={generateInterviewQuestions}
-                      disabled={generatingQuestions}
+                      disabled={generatingQuestions || isPolling.current}
                     >
-                      {generatingQuestions ? (
+                      {generatingQuestions || isPolling.current ? (
                         <div className="flex items-center space-x-2">
                           <LoadingSpinner size="small" />
-                          <span>Preparing Questions...</span>
+                          <span>{isPolling.current ? "Checking for Questions..." : "Preparing Questions..."}</span>
                         </div>
                       ) : (
-                        "Regenerate Interview Questions"
+                        "Generate Interview Questions"
                       )}
                     </Button>
                   </div>
@@ -320,14 +426,14 @@ const InterviewInvite = () => {
               onClick={handleBeginInterview}
               className="w-full max-w-md py-6 text-base md:text-lg font-medium"
               size="lg"
-              disabled={!questionsLoaded || startingInterview}
+              disabled={!questionsLoaded && !lastGenerationTime && maxRetries === 0 || startingInterview}
             >
               {startingInterview ? (
                 <div className="flex items-center space-x-2">
                   <LoadingSpinner size="small" />
                   <span>Starting Interview...</span>
                 </div>
-              ) : !questionsLoaded ? (
+              ) : !questionsLoaded && !lastGenerationTime && maxRetries === 0 ? (
                 "Please Generate Questions First"
               ) : (
                 "Begin Interview"

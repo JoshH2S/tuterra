@@ -27,8 +27,12 @@ const InternshipInterviewSimulator = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const shouldAutoStart = searchParams.get('start') === 'true';
-  const autoStartAttempted = useRef(false);
-  const initialLoadComplete = useRef(false);
+  const questionsVerified = searchParams.get('questionsVerified') === 'true';
+  
+  // Use state instead of refs for better component lifecycle handling
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [autoStartAttempted, setAutoStartAttempted] = useState(false);
+  const [autoStartTimer, setAutoStartTimer] = useState<number | null>(null);
   
   const [session, setSession] = useState<InternshipSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +41,12 @@ const InternshipInterviewSimulator = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
   const [questionsLoaded, setQuestionsLoaded] = useState(false);
+  const [questionsFetched, setQuestionsFetched] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const [defaultQuestionsState, setDefaultQuestionsState] = useState<{
+    used: boolean;
+    reason: string | null;
+  }>({ used: false, reason: null });
   
   // Import interview state management from the shared hook
   const interviewState = useInterviewState();
@@ -67,7 +77,7 @@ const InternshipInterviewSimulator = () => {
 
   useEffect(() => {
     const fetchSessionData = async () => {
-      if (initialLoadComplete.current) {
+      if (initialLoadComplete) {
         console.log("Initial load already completed, skipping");
         return;
       }
@@ -76,7 +86,7 @@ const InternshipInterviewSimulator = () => {
         if (!sessionId) {
           setErrorMessage("No session ID provided");
           setIsLoading(false);
-          initialLoadComplete.current = true;
+          setInitialLoadComplete(true);
           return;
         }
         
@@ -102,93 +112,105 @@ const InternshipInterviewSimulator = () => {
         console.log("InternshipInterviewSimulator: Session data retrieved:", sessionData);
         setSession(sessionData);
         
-        // Try to fetch existing questions for this session - questions should already be generated at this point
+        // Try to fetch existing questions for this session
         try {
-          console.log("InternshipInterviewSimulator: Fetching questions for session", sessionId);
-          const questionsList = await fetchQuestions();
-          
-          // Check if questionsList exists and has items
-          if (!questionsList || questionsList.length === 0) {
-            console.warn("No questions found for this session, will use default questions");
-            // Don't redirect immediately - we'll use default questions instead
-            setQuestionsError("No questions found. Using default questions instead.");
-            
-            // Create simple default questions
-            const defaultQuestions: InterviewQuestion[] = [
-              {
-                id: `default-q-1-${sessionId}`,
-                session_id: sessionId,
-                question: `Tell me about your experience and skills relevant to this ${sessionData.job_title} position.`,
-                question_order: 0,
-                created_at: new Date().toISOString()
-              },
-              {
-                id: `default-q-2-${sessionId}`,
-                session_id: sessionId,
-                question: `What interests you about working in the ${sessionData.industry} industry?`,
-                question_order: 1,
-                created_at: new Date().toISOString()
-              },
-              {
-                id: `default-q-3-${sessionId}`,
-                session_id: sessionId,
-                question: "Describe a challenging situation you've faced professionally and how you handled it.",
-                question_order: 2,
-                created_at: new Date().toISOString()
-              }
-            ];
-            
-            // Set these default questions
-            setQuestions(defaultQuestions);
-            setQuestionsLoaded(true);
-          } else {
-            console.log("Questions loaded successfully:", questionsList.length);
-            setQuestions(questionsList);
-            setQuestionsLoaded(true);
-          }
+          await loadQuestions(questionsVerified);
         } catch (error) {
-          console.error("Error fetching questions:", error);
+          console.error("Error in initial question loading:", error);
           setQuestionsError("We couldn't load your interview questions. Using default questions instead.");
-          
-          // Still provide default questions
-          const defaultQuestions: InterviewQuestion[] = [
-            {
-              id: `default-q-1-${sessionId}`,
-              session_id: sessionId,
-              question: `Tell me about your experience and skills relevant to this ${sessionData.job_title} position.`,
-              question_order: 0,
-              created_at: new Date().toISOString()
-            },
-            {
-              id: `default-q-2-${sessionId}`,
-              session_id: sessionId,
-              question: `What interests you about working in the ${sessionData.industry} industry?`,
-              question_order: 1,
-              created_at: new Date().toISOString()
-            },
-            {
-              id: `default-q-3-${sessionId}`,
-              session_id: sessionId,
-              question: "Describe a challenging situation you've faced professionally and how you handled it.",
-              question_order: 2,
-              created_at: new Date().toISOString()
-            }
-          ];
-          
-          setQuestions(defaultQuestions);
-          setQuestionsLoaded(true);
+          createAndUseDefaultQuestions(sessionData);
         }
       } catch (error) {
         console.error("Error loading session:", error);
         setErrorMessage("Failed to load internship session. Please try again.");
       } finally {
         setIsLoading(false);
-        initialLoadComplete.current = true;
+        setInitialLoadComplete(true);
       }
     };
     
     fetchSessionData();
-  }, [sessionId, fetchQuestions, setQuestions]);
+  }, [sessionId, questionsVerified]);
+
+  // Function to load questions with retry logic
+  const loadQuestions = async (skipRetries = false) => {
+    if (!sessionId || !fetchQuestions) return;
+    
+    console.log("InternshipInterviewSimulator: Fetching questions for session", sessionId);
+    
+    try {
+      setQuestionsFetched(true);
+      const questionsList = await fetchQuestions();
+      
+      // Check if questionsList exists and has items
+      if (!questionsList || questionsList.length === 0) {
+        console.warn("No questions found for this session");
+        
+        if (session && !skipRetries && retryAttempt < 2) {
+          console.log(`Retry attempt ${retryAttempt + 1}/2 for fetching questions`);
+          setRetryAttempt(prev => prev + 1);
+          
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          return loadQuestions(skipRetries);
+        }
+        
+        // If retries exhausted or skipped, use default questions
+        setQuestionsError("No questions found. Using default questions instead.");
+        if (session) {
+          createAndUseDefaultQuestions(session);
+        }
+      } else {
+        console.log(`Successfully loaded ${questionsList.length} questions:`, 
+          questionsList.map(q => ({ id: q.id.slice(0, 8) + '...', question: q.question.substring(0, 30) + '...' })));
+        setQuestions(questionsList);
+        setQuestionsLoaded(true);
+      }
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      setQuestionsError("We couldn't load your interview questions. Using default questions instead.");
+      
+      if (session) {
+        createAndUseDefaultQuestions(session);
+      }
+    }
+  };
+  
+  // Create default questions if none were loaded
+  const createAndUseDefaultQuestions = (sessionData: InternshipSession) => {
+    console.log("Using default questions for session", sessionId);
+    
+    const defaultQuestions: InterviewQuestion[] = [
+      {
+        id: `default-q-1-${sessionId}-${Date.now()}`,
+        session_id: sessionId || '',
+        question: `Tell me about your experience and skills relevant to this ${sessionData.job_title} position.`,
+        question_order: 0,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: `default-q-2-${sessionId}-${Date.now()}`,
+        session_id: sessionId || '',
+        question: `What interests you about working in the ${sessionData.industry} industry?`,
+        question_order: 1,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: `default-q-3-${sessionId}-${Date.now()}`,
+        session_id: sessionId || '',
+        question: "Describe a challenging situation you've faced professionally and how you handled it.",
+        question_order: 2,
+        created_at: new Date().toISOString()
+      }
+    ];
+    
+    setQuestions(defaultQuestions);
+    setQuestionsLoaded(true);
+    setDefaultQuestionsState({ 
+      used: true, 
+      reason: "Could not find or load generated questions" 
+    });
+  };
   
   // Effect for typing effect timer - use our clearTypingTimer to avoid duplicated logic
   useEffect(() => {
@@ -212,47 +234,59 @@ const InternshipInterviewSimulator = () => {
     }
   }, [typingEffect, isInterviewInProgress, setTypingEffect, clearTypingTimer]);
   
-  // Effect to auto-start the interview once questions are loaded
-  // Using a separate effect with correct dependencies to prevent loop
+  // Auto-start effect with better dependency handling
   useEffect(() => {
-    // Only attempt to auto-start if:
-    // 1. Auto-start flag is true
-    // 2. Questions are loaded
-    // 3. Not already in progress or complete
-    // 4. Not currently loading
-    // 5. We haven't attempted to auto-start already
-    // 6. Initial load is complete
+    // Clear any existing auto-start timer to prevent multiple timers
+    if (autoStartTimer !== null) {
+      clearTimeout(autoStartTimer);
+    }
+    
+    // Only attempt to auto-start if conditions are right
     if (
       shouldAutoStart &&
-      questionsLoaded &&
+      initialLoadComplete &&
+      !isLoading &&
+      !loadingQuestions &&
       questions.length > 0 &&
       !isInterviewInProgress &&
       !isInterviewComplete &&
-      !isLoading &&
-      !loadingQuestions &&
-      !autoStartAttempted.current &&
-      initialLoadComplete.current
+      !autoStartAttempted
     ) {
-      console.log("Auto-starting interview with", questions.length, "questions");
-      autoStartAttempted.current = true; // Mark that we've attempted to auto-start
+      console.log("Setting up auto-start timer with", questions.length, "questions available");
       
-      // Small timeout to ensure UI is ready
-      const timer = setTimeout(() => {
+      // Use a timer for auto-start to ensure UI is ready
+      const timer = window.setTimeout(() => {
+        console.log("Auto-starting interview");
+        setAutoStartAttempted(true);
         startInterview();
-      }, 300);
+      }, 800); // Slightly longer delay to ensure everything is rendered
       
-      return () => clearTimeout(timer);
+      setAutoStartTimer(timer);
+      
+      return () => {
+        if (timer) clearTimeout(timer);
+      };
     }
   }, [
     shouldAutoStart,
-    questionsLoaded,
-    questions.length,
-    isInterviewInProgress,
-    isInterviewComplete,
+    initialLoadComplete,
     isLoading,
     loadingQuestions,
+    questions,
+    isInterviewInProgress,
+    isInterviewComplete,
+    autoStartAttempted,
     startInterview
   ]);
+
+  // Clean up auto-start timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoStartTimer !== null) {
+        clearTimeout(autoStartTimer);
+      }
+    };
+  }, [autoStartTimer]);
 
   // Function to generate feedback using AI
   const generateFeedback = async (transcript: InterviewTranscript[]): Promise<string> => {
@@ -373,6 +407,30 @@ const InternshipInterviewSimulator = () => {
     setTypingEffect(false);
   };
 
+  // Handle retry loading questions
+  const handleRetryLoadQuestions = async () => {
+    setQuestionsError(null);
+    setQuestionsLoaded(false);
+    setDefaultQuestionsState({ used: false, reason: null });
+    setRetryAttempt(0);
+    
+    try {
+      await loadQuestions(false);
+      
+      toast({
+        title: "Success",
+        description: "Questions loaded successfully",
+      });
+    } catch (error) {
+      console.error("Error retrying question load:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load questions. Using default questions instead.",
+        variant: "warning",
+      });
+    }
+  };
+
   const currentQuestion = getCurrentQuestion();
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
@@ -430,8 +488,35 @@ const InternshipInterviewSimulator = () => {
             <div className="text-center">
               <h1 className="text-3xl font-bold">{session.job_title} Interview</h1>
               <p className="text-muted-foreground">{session.industry} Industry</p>
-              {questionsError && (
-                <p className="mt-2 text-sm text-amber-500">{questionsError}</p>
+              
+              {defaultQuestionsState.used && (
+                <div className="mt-3 flex flex-col sm:flex-row items-center justify-center gap-2">
+                  <p className="text-sm text-amber-500">
+                    Using default questions. {defaultQuestionsState.reason}
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={handleRetryLoadQuestions}
+                  >
+                    Retry Loading Questions
+                  </Button>
+                </div>
+              )}
+              
+              {questionsError && !defaultQuestionsState.used && (
+                <div className="mt-2">
+                  <p className="text-sm text-amber-500">{questionsError}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-1 text-xs"
+                    onClick={handleRetryLoadQuestions}
+                  >
+                    Retry Loading Questions
+                  </Button>
+                </div>
               )}
             </div>
             
@@ -439,7 +524,7 @@ const InternshipInterviewSimulator = () => {
               <InterviewReadyPrompt
                 jobTitle={session.job_title}
                 onStartChat={handleStartChat}
-                usedFallbackQuestions={!!questionsError}
+                usedFallbackQuestions={defaultQuestionsState.used}
               />
             )}
             
@@ -451,6 +536,7 @@ const InternshipInterviewSimulator = () => {
                 onTypingComplete={handleTypingComplete}
                 isLastQuestion={isLastQuestion}
                 jobTitle={session.job_title}
+                inputRef={textareaRef}
               />
             )}
           </>

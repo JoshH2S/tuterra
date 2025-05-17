@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { TextShimmer } from "@/components/ui/text-shimmer";
 import { InterviewQuestion } from "@/types/interview";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface QuestionDisplayProps {
   currentQuestion: InterviewQuestion | null;
@@ -16,10 +16,19 @@ export const QuestionDisplay = ({
   onTypingComplete
 }: QuestionDisplayProps) => {
   const typingCompleteRef = useRef(false);
+  const [safetyTimeoutTriggered, setSafetyTimeoutTriggered] = useState(false);
+  const safetyTimerId = useRef<number | null>(null);
   
-  // Reset the completion ref when question or typing effect changes
+  // Reset the completion ref and safety state when question or typing effect changes
   useEffect(() => {
     typingCompleteRef.current = false;
+    setSafetyTimeoutTriggered(false);
+    
+    // Clear any existing safety timeout
+    if (safetyTimerId.current !== null) {
+      clearTimeout(safetyTimerId.current);
+      safetyTimerId.current = null;
+    }
   }, [currentQuestion?.id, typingEffect]);
   
   // Ensure typing complete is called when no longer in typing effect mode
@@ -34,17 +43,38 @@ export const QuestionDisplay = ({
   // Safety timeout to ensure typing complete is called even if animations fail
   useEffect(() => {
     if (typingEffect && onTypingComplete) {
-      const safetyTimer = setTimeout(() => {
-        if (typingEffect && !typingCompleteRef.current) {
+      // Clear any existing timeout first
+      if (safetyTimerId.current !== null) {
+        clearTimeout(safetyTimerId.current);
+      }
+      
+      // Set a new safety timeout
+      safetyTimerId.current = window.setTimeout(() => {
+        if (!typingCompleteRef.current) {
           console.log("QuestionDisplay: Safety timeout triggered, forcing typing complete");
+          setSafetyTimeoutTriggered(true);
           onTypingComplete();
           typingCompleteRef.current = true;
         }
-      }, 5000); // 5 second safety timeout
+      }, 3000); // 3 second safety timeout
       
-      return () => clearTimeout(safetyTimer);
+      return () => {
+        if (safetyTimerId.current !== null) {
+          clearTimeout(safetyTimerId.current);
+          safetyTimerId.current = null;
+        }
+      };
     }
-  }, [typingEffect, onTypingComplete]);
+  }, [typingEffect, onTypingComplete, currentQuestion?.id]);
+  
+  // Used for shimmer effect completion
+  const handleShimmerComplete = () => {
+    if (onTypingComplete && !typingCompleteRef.current) {
+      console.log("QuestionDisplay: Shimmer animation completed, calling onTypingComplete");
+      onTypingComplete();
+      typingCompleteRef.current = true;
+    }
+  };
   
   if (!currentQuestion) return null;
   
@@ -62,8 +92,10 @@ export const QuestionDisplay = ({
           typingEffect ? (
             // Show with shimmer during typing effect
             <TextShimmer 
-              className="text-lg font-medium"
+              key="question-shimmer"
+              className="text-lg font-medium md:text-xl"
               duration={2}
+              onAnimationComplete={handleShimmerComplete}
             >
               {currentQuestion.question}
             </TextShimmer>
@@ -73,11 +105,18 @@ export const QuestionDisplay = ({
               key="question-static"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-xl font-semibold"
+              className="text-xl md:text-2xl font-semibold"
             >
               {currentQuestion.question}
             </motion.h2>
           )
+        )}
+        
+        {/* Safety indicator - only shown in development */}
+        {process.env.NODE_ENV === 'development' && safetyTimeoutTriggered && (
+          <div className="absolute top-0 right-0 text-xs text-amber-500 bg-amber-50 px-1 rounded">
+            Safety timeout triggered
+          </div>
         )}
       </AnimatePresence>
     </motion.div>
