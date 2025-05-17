@@ -51,10 +51,26 @@ serve(async (req) => {
         .single();
       
       if (sessionQuery.error) {
-        return new Response(
-          JSON.stringify({ error: "Failed to retrieve questions" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-        );
+        // If not found in interview_sessions, try internship_sessions
+        const internshipQuery = await supabase
+          .from('internship_sessions')
+          .select('questions')
+          .eq('id', sessionId)
+          .single();
+          
+        if (internshipQuery.error) {
+          return new Response(
+            JSON.stringify({ error: "Failed to retrieve questions" }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+          );
+        }
+        
+        if (internshipQuery.data && Array.isArray(internshipQuery.data.questions)) {
+          return new Response(
+            JSON.stringify({ questions: internshipQuery.data.questions }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+          );
+        }
       }
       
       if (sessionQuery.data && Array.isArray(sessionQuery.data.questions)) {
