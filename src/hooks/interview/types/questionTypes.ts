@@ -18,6 +18,6 @@ export interface EdgeFunctionResponse {
 export interface QuestionHookReturn {
   generateQuestions: (industry: string, jobRole: string, jobDescription: string, sessionId: string) => Promise<InterviewQuestion[]>;
   generateFallbackQuestions: (jobRole: string, industry: string) => Promise<InterviewQuestion[]>;
-  fetchQuestions: () => Promise<void>;
+  fetchQuestions: () => Promise<InterviewQuestion[]>; // Changed from Promise<void> to Promise<InterviewQuestion[]>
   loading: boolean;
 }

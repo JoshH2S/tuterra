@@ -1,3 +1,4 @@
+
 export interface InterviewSession {
   id: string;
   user_id: string;
@@ -22,7 +23,7 @@ export interface InterviewQuestion {
 // Edge function question format
 export interface EdgeFunctionQuestion {
   id: string;
-  text: string;
+  text: string;  // This is the question text
   category: string;
   difficulty: string;
   estimatedTimeSeconds: number;

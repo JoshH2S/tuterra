@@ -10,7 +10,7 @@ import { FullPageLoader } from "@/components/ui/loading-states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { InterviewTranscript } from "@/types/interview";
+import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
 
 interface InternshipSession {
   id: string;
@@ -91,6 +91,7 @@ const InternshipInterviewSimulator = () => {
           console.log("InternshipInterviewSimulator: Fetching questions for session", sessionId);
           const questionsList = await fetchQuestions();
           
+          // Check if questionsList exists and has items
           if (!questionsList || questionsList.length === 0) {
             console.warn("No questions found for this session, redirecting to invitation page");
             setQuestionsError("We couldn't load your interview questions. Redirecting to preparation page...");
@@ -260,7 +261,7 @@ const InternshipInterviewSimulator = () => {
   }
   
   // Show error if questions couldn't be loaded
-  if (questionsError && !questions.length) {
+  if (questionsError && questions.length === 0) {
     return (
       <div className="container py-8 max-w-4xl mx-auto">
         <Card className="shadow-md">

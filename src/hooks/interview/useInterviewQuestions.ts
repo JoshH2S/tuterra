@@ -106,7 +106,7 @@ export const useInterviewQuestions = (
     }
   };
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (): Promise<InterviewQuestion[]> => {
     if (!sessionId) {
       console.error("Cannot fetch questions: No session ID provided");
       return [];
