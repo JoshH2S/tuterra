@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InternshipSession, Task, Deliverable, Feedback } from './types';
@@ -155,49 +154,88 @@ export async function createSession(
   industry: string,
   jobDescription: string
 ): Promise<string | null> {
+  console.log("🔄 internshipService: createSession called with:", {
+    jobTitle,
+    industry,
+    jobDescriptionLength: jobDescription?.length || 0
+  });
+  
   // Client-side validation
-  if (!jobTitle.trim()) throw new Error('Job title is required');
-  if (!industry.trim()) throw new Error('Industry is required');
+  if (!jobTitle.trim()) {
+    console.error("❌ internshipService: Empty job title");
+    throw new Error('Job title is required');
+  }
+  if (!industry.trim()) {
+    console.error("❌ internshipService: Empty industry");
+    throw new Error('Industry is required');
+  }
   
   // Rate limiting check
   const lastRequestTime = localStorage.getItem('lastSessionCreation');
   const now = Date.now();
   if (lastRequestTime && (now - parseInt(lastRequestTime)) < 10000) { // 10 second cooldown
+    console.warn("⚠️ internshipService: Rate limiting - too many requests");
     throw new Error('Please wait before creating another session');
   }
   localStorage.setItem('lastSessionCreation', now.toString());
 
+  console.log("🔐 internshipService: Getting auth session");
+  const authSession = await supabase.auth.getSession();
+  console.log("🔐 internshipService: Auth session retrieved", {
+    hasSession: !!authSession.data.session,
+    hasError: !!authSession.error
+  });
+
+  if (!authSession.data.session) {
+    console.error("❌ internshipService: No auth session found");
+    throw new Error('You must be logged in to create an internship session');
+  }
+
   // Call edge function to create session (with authorization)
-  const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/create-internship-session', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-    },
-    body: JSON.stringify({
-      job_title: jobTitle,
-      industry: industry,
-      job_description: jobDescription
-    })
-  });
+  console.log("📡 internshipService: Calling edge function to create session");
+  try {
+    const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/create-internship-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authSession.data.session.access_token}`
+      },
+      body: JSON.stringify({
+        job_title: jobTitle,
+        industry: industry,
+        job_description: jobDescription
+      })
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || `HTTP error ${response.status}`);
-  }
+    console.log("📡 internshipService: Edge function response received", {
+      status: response.status,
+      ok: response.ok
+    });
 
-  const result = await response.json();
-  
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to create internship session');
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("❌ internshipService: Error response from edge function", errorData);
+      throw new Error(errorData.error || `HTTP error ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("✅ internshipService: Edge function result", result);
+    
+    if (!result.success) {
+      console.error("❌ internshipService: Edge function returned success: false", result);
+      throw new Error(result.error || 'Failed to create internship session');
+    }
+    
+    toast({
+      title: 'Success',
+      description: 'Your virtual internship session has been created!',
+    });
+    
+    return result.sessionId;
+  } catch (error) {
+    console.error("❌ internshipService: Exception when calling edge function", error);
+    throw error;
   }
-  
-  toast({
-    title: 'Success',
-    description: 'Your virtual internship session has been created!',
-  });
-  
-  return result.sessionId;
 }
 
 /**

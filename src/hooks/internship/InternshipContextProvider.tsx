@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -180,14 +179,23 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
     industry: string, 
     jobDescription: string
   ): Promise<string | null> => {
+    console.log("🔄 InternshipContextProvider: createInternshipSession called with:", {
+      jobTitle,
+      industry,
+      jobDescriptionLength: jobDescription?.length || 0
+    });
+    
     try {
+      console.log("⏳ InternshipContextProvider: Setting loading state to true");
       setLoading(true);
       setError(null);
       
+      console.log("📡 InternshipContextProvider: About to call internshipService.createSession");
       const sessionId = await internshipService.createSession(jobTitle, industry, jobDescription);
+      console.log("✅ InternshipContextProvider: createSession returned:", { sessionId });
       return sessionId;
     } catch (err: any) {
-      console.error('Error creating internship session:', err);
+      console.error("❌ InternshipContextProvider: Error creating internship session:", err);
       setError({
         message: 'Failed to create internship session',
         details: err.message,
@@ -201,6 +209,7 @@ export const InternshipProvider: React.FC<{ children: ReactNode }> = ({ children
       });
       return null;
     } finally {
+      console.log("⏳ InternshipContextProvider: Setting loading state to false");
       setLoading(false);
     }
   };
