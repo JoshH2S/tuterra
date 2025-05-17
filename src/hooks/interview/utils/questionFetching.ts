@@ -55,39 +55,40 @@ export const fetchQuestionsFromSessionData = async (sessionId: string): Promise<
   try {
     console.log(`Attempting to fetch questions from session data for session ${sessionId}`);
     
-    // Try fetching with ID column first (primary key)
+    // Try fetching from internship_sessions first (new approach)
     let { data, error } = await supabase
-      .from('interview_sessions')
+      .from('internship_sessions')
       .select('questions, job_title, industry')
       .eq('id', sessionId)
       .maybeSingle();
     
-    // If not found via ID column, try with session_id column as fallback
-    if (error || !data) {
-      console.log(`No session found with id=${sessionId}, trying session_id column as fallback`);
-      const response = await supabase
-        .from('interview_sessions')
-        .select('questions, job_title, industry')
-        .eq('session_id', sessionId)
-        .maybeSingle();
-      
-      data = response.data;
-      error = response.error;
-    }
-    
-    // If not found in interview_sessions, try internship_sessions
+    // If not found in internship_sessions, then try interview_sessions
     if (error || !data || !data.questions || 
         !Array.isArray(data.questions) || (Array.isArray(data.questions) && data.questions.length === 0)) {
-      console.log(`No questions found in interview_sessions for ${sessionId}, trying internship_sessions`);
+      console.log(`No questions found in internship_sessions for ${sessionId}, trying interview_sessions`);
       
-      const internshipResponse = await supabase
-        .from('internship_sessions')
+      // Try fetching with ID column first (primary key)
+      const sessionResponse = await supabase
+        .from('interview_sessions')
         .select('questions, job_title, industry')
         .eq('id', sessionId)
         .maybeSingle();
+      
+      // If not found via ID column, try with session_id column as fallback
+      if (sessionResponse.error || !sessionResponse.data) {
+        console.log(`No session found with id=${sessionId}, trying session_id column as fallback`);
+        const sessionIdResponse = await supabase
+          .from('interview_sessions')
+          .select('questions, job_title, industry')
+          .eq('session_id', sessionId)
+          .maybeSingle();
         
-      data = internshipResponse.data;
-      error = internshipResponse.error;
+        data = sessionIdResponse.data;
+        error = sessionIdResponse.error;
+      } else {
+        data = sessionResponse.data;
+        error = sessionResponse.error;
+      }
     }
     
     if (error) {

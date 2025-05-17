@@ -63,25 +63,27 @@ export const generateQuestionsFromApi = async (
       
       // Check if we have enhanced questions with the new format
       const hasEnhancedFormat = response_data.questions.length > 0 && 
-                              'text' in response_data.questions[0] && 
-                              'category' in response_data.questions[0];
+                              ('text' in response_data.questions[0] || 
+                              'category' in response_data.questions[0]);
+                              
+      console.log("Question format detected:", hasEnhancedFormat ? "enhanced" : "standard");
 
       if (hasEnhancedFormat) {
         // Process enhanced question format
-        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EnhancedInterviewQuestion, index: number) => ({
+        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: any, index: number) => ({
           id: q.id || `q-${crypto.randomUUID()}`,
           session_id: params.sessionId,
-          question: q.text || '', // Text field contains the question
+          question: q.text || q.question || '', // Support both text and question fields
           question_order: q.question_order !== undefined ? q.question_order : index,
           created_at: q.created_at || new Date().toISOString()
         }));
         return formattedQuestions;
       } else {
         // Process legacy question format
-        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EdgeFunctionQuestion, index: number) => ({
+        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: any, index: number) => ({
           id: q.id || `q-${crypto.randomUUID()}`,
           session_id: params.sessionId,
-          question: q.text || q.question || '', // Use either text or question field, depending on what's available
+          question: q.question || q.text || '', // Support both formats
           question_order: q.question_order !== undefined ? q.question_order : index,
           created_at: q.created_at || new Date().toISOString()
         }));

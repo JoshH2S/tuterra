@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,8 +89,12 @@ const InterviewInvite = () => {
       }
       
       // If we have questions, mark them as loaded
-      const hasQuestions = data?.questions && data.questions.length > 0;
-      console.log(`Questions ${hasQuestions ? 'found' : 'not found'} for session ${sessionId}`);
+      // The questions could be in data.questions or directly in the data array
+      const hasQuestions = 
+        (data?.questions && Array.isArray(data.questions) && data.questions.length > 0) || 
+        (Array.isArray(data) && data.length > 0);
+        
+      console.log(`Questions ${hasQuestions ? 'found' : 'not found'} for session ${sessionId}`, data);
       setQuestionsLoaded(hasQuestions);
       setLoading(false);
     } catch (err) {
@@ -133,9 +138,12 @@ const InterviewInvite = () => {
         throw new Error("Failed to generate interview questions");
       }
       
-      // If successful, mark questions as loaded
+      // If successful, mark questions as loaded and recheck to verify
       console.log("Questions generated successfully:", data);
-      setQuestionsLoaded(true);
+      
+      // Fetch questions again to verify they're loaded properly
+      await checkQuestionsExist();
+      
       toast({
         title: "Success",
         description: "Your interview questions are ready!",

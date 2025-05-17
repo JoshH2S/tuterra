@@ -34,55 +34,75 @@ serve(async (req) => {
       );
     }
     
-    // Query the interview_questions table directly
-    const { data, error } = await supabase
+    console.log(`Fetching questions for session ID: ${sessionId}`);
+    
+    // First, try the interview_questions table directly
+    const { data: questionData, error: questionError } = await supabase
       .from('interview_questions')
       .select('id, session_id, question, question_order, created_at')
       .eq('session_id', sessionId)
       .order('question_order', { ascending: true });
     
-    if (error) {
-      // If there's an error with the direct query (e.g., table doesn't exist),
-      // try to get questions from the interview_sessions table's questions JSON field
-      const sessionQuery = await supabase
+    if (!questionError && questionData && questionData.length > 0) {
+      console.log(`Found ${questionData.length} questions in interview_questions table`);
+      return new Response(
+        JSON.stringify({ questions: questionData }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+    
+    // Next, check internship_sessions (primary source for internship questions)
+    const { data: internshipData, error: internshipError } = await supabase
+      .from('internship_sessions')
+      .select('questions')
+      .eq('id', sessionId)
+      .single();
+      
+    if (!internshipError && internshipData && internshipData.questions && 
+        Array.isArray(internshipData.questions) && internshipData.questions.length > 0) {
+      console.log(`Found ${internshipData.questions.length} questions in internship_sessions table`);
+      return new Response(
+        JSON.stringify({ questions: internshipData.questions }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+    
+    // Then check interview_sessions table as fallback
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('interview_sessions')
+      .select('questions')
+      .eq('id', sessionId)
+      .single();
+    
+    if (sessionError) {
+      // If not found by 'id', try by 'session_id'
+      const { data: altSessionData, error: altSessionError } = await supabase
         .from('interview_sessions')
         .select('questions')
         .eq('session_id', sessionId)
         .single();
-      
-      if (sessionQuery.error) {
-        // If not found in interview_sessions, try internship_sessions
-        const internshipQuery = await supabase
-          .from('internship_sessions')
-          .select('questions')
-          .eq('id', sessionId)
-          .single();
-          
-        if (internshipQuery.error) {
-          return new Response(
-            JSON.stringify({ error: "Failed to retrieve questions" }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-          );
-        }
         
-        if (internshipQuery.data && Array.isArray(internshipQuery.data.questions)) {
-          return new Response(
-            JSON.stringify({ questions: internshipQuery.data.questions }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-          );
-        }
-      }
-      
-      if (sessionQuery.data && Array.isArray(sessionQuery.data.questions)) {
+      if (!altSessionError && altSessionData && altSessionData.questions && 
+          Array.isArray(altSessionData.questions) && altSessionData.questions.length > 0) {
+        console.log(`Found ${altSessionData.questions.length} questions in interview_sessions table (by session_id)`);
         return new Response(
-          JSON.stringify({ questions: sessionQuery.data.questions }),
+          JSON.stringify({ questions: altSessionData.questions }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
         );
       }
+    } else if (sessionData && sessionData.questions && 
+               Array.isArray(sessionData.questions) && sessionData.questions.length > 0) {
+      console.log(`Found ${sessionData.questions.length} questions in interview_sessions table (by id)`);
+      return new Response(
+        JSON.stringify({ questions: sessionData.questions }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
     }
     
+    // No questions found in any source
+    console.log(`No questions found for session ID: ${sessionId}`);
     return new Response(
-      JSON.stringify({ questions: data || [] }),
+      JSON.stringify({ questions: [], message: "No questions found for this session" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {

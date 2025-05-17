@@ -23,11 +23,11 @@ export interface InterviewQuestion {
 // Edge function question format
 export interface EdgeFunctionQuestion {
   id: string;
-  text: string;  // This is the question text
-  question?: string; // Added to support legacy format
-  category: string;
-  difficulty: string;
-  estimatedTimeSeconds: number;
+  text?: string;  // Question text in newer format
+  question?: string; // Question text in legacy format
+  category?: string;
+  difficulty?: string;
+  estimatedTimeSeconds?: number;
   keywords?: string[];
   question_order: number;
   created_at: string;
