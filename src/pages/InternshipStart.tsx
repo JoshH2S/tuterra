@@ -102,13 +102,25 @@ const InternshipStart = () => {
       console.log("✅ InternshipStart: createInternshipSession returned", { sessionId });
 
       if (sessionId) {
-        // Session created successfully, now generate interview questions
+        // Session created successfully or an existing session was found
         setGeneratingQuestions(true);
         
-        // Generate interview questions immediately after session creation
+        // Check if we need to generate interview questions (may not be needed for existing sessions)
+        // We'll try to generate them anyway to ensure the session has questions
         const questionsGenerated = await generateInterviewQuestions(sessionId);
         
         console.log("➡️ InternshipStart: Redirecting to interview invitation page", sessionId);
+        
+        // Show a toast message if this was an existing session
+        const isExistingSession = submitting && !loading;
+        if (isExistingSession) {
+          toast({
+            title: "Existing Internship Found",
+            description: "You already have an internship with these criteria. Redirecting you to it.",
+            duration: 5000,
+          });
+        }
+        
         // Redirect to the interview invitation page with session ID
         navigate(`/internship/interview/invite/${sessionId}`);
       } else {

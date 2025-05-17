@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InternshipSession, Task, Deliverable, Feedback } from './types';
@@ -226,10 +227,19 @@ export async function createSession(
       throw new Error(result.error || 'Failed to create internship session');
     }
     
-    toast({
-      title: 'Success',
-      description: 'Your virtual internship session has been created!',
-    });
+    // Check if this was an existing session
+    if (result.message && result.message.includes("already have an internship")) {
+      console.log("ℹ️ internshipService: Using existing internship session", result.sessionId);
+      toast({
+        title: 'Using Existing Internship',
+        description: 'You already have an internship with these criteria. Redirecting you to it.',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Your virtual internship session has been created!',
+      });
+    }
     
     return result.sessionId;
   } catch (error) {
