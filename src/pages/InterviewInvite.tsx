@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/shared/LoadingStates";
 import { ModernCard } from "@/components/ui/modern-card";
-import { Briefcase, Building2, CheckCircle } from "lucide-react";
+import { Briefcase, Building2, CheckCircle, RefreshCw } from "lucide-react";
 
 const InterviewInvite = () => {
   const { sessionId } = useParams();
@@ -18,6 +18,8 @@ const InterviewInvite = () => {
     industry: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [questionsLoaded, setQuestionsLoaded] = useState(false);
+  const [generatingQuestions, setGeneratingQuestions] = useState(false);
 
   useEffect(() => {
     async function fetchSessionData() {
@@ -50,6 +52,9 @@ const InterviewInvite = () => {
         }
 
         setSessionData(data);
+        
+        // Check if questions are already generated for this session
+        await checkQuestionsExist();
       } catch (err) {
         console.error("Unexpected error:", err);
         setError("An unexpected error occurred");
@@ -60,6 +65,67 @@ const InterviewInvite = () => {
 
     fetchSessionData();
   }, [sessionId]);
+  
+  // Check if interview questions are already generated
+  const checkQuestionsExist = async () => {
+    if (!sessionId) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('get-interview-questions', {
+        body: { sessionId }
+      });
+      
+      if (error) {
+        console.error("Error checking questions:", error);
+        setQuestionsLoaded(false);
+        return;
+      }
+      
+      // If we have questions, mark them as loaded
+      setQuestionsLoaded(data?.questions && data.questions.length > 0);
+    } catch (err) {
+      console.error("Error checking interview questions:", err);
+      setQuestionsLoaded(false);
+    }
+  };
+  
+  // Generate interview questions if they don't exist yet
+  const generateInterviewQuestions = async () => {
+    if (!sessionId || !sessionData) return;
+    
+    setGeneratingQuestions(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
+        body: { 
+          sessionId,
+          jobTitle: sessionData.job_title,
+          industry: sessionData.industry,
+          jobDescription: "" // We don't have this here, but the session should have it
+        }
+      });
+      
+      if (error) {
+        throw new Error("Failed to generate interview questions");
+      }
+      
+      // If successful, mark questions as loaded
+      setQuestionsLoaded(true);
+      toast({
+        title: "Success",
+        description: "Your interview questions are ready!",
+      });
+    } catch (err) {
+      console.error("Error generating questions:", err);
+      toast({
+        title: "Error",
+        description: "Failed to generate interview questions. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingQuestions(false);
+    }
+  };
 
   const handleBeginInterview = () => {
     navigate(`/internship/interview/${sessionId}`);
@@ -168,14 +234,46 @@ const InterviewInvite = () => {
                 for real job interviews. Your responses will help tailor feedback for your improvement.
               </p>
             </div>
+            
+            {!questionsLoaded && (
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800/60">
+                <div className="flex items-start space-x-3">
+                  <RefreshCw className="w-5 h-5 text-blue-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-800 dark:text-blue-300">
+                      Your interview questions need to be prepared
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                      Click the button below to generate questions for your interview.
+                    </p>
+                    <Button 
+                      variant="outline"
+                      className="mt-3"
+                      onClick={generateInterviewQuestions}
+                      disabled={generatingQuestions}
+                    >
+                      {generatingQuestions ? (
+                        <div className="flex items-center space-x-2">
+                          <LoadingSpinner size="small" />
+                          <span>Preparing Questions...</span>
+                        </div>
+                      ) : (
+                        "Prepare Interview Questions"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-center pt-2 pb-8">
             <Button 
               onClick={handleBeginInterview}
               className="w-full max-w-md py-6 text-base md:text-lg font-medium"
               size="lg"
+              disabled={!questionsLoaded}
             >
-              Begin Interview
+              {!questionsLoaded ? "Please Generate Questions First" : "Begin Interview"}
             </Button>
           </CardFooter>
         </Card>

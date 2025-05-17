@@ -31,6 +31,7 @@ const InternshipInterviewSimulator = () => {
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const [isFeedbackGenerating, setIsFeedbackGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
   
   // Import interview state management from the shared hook
   const interviewState = useInterviewState();
@@ -51,10 +52,10 @@ const InternshipInterviewSimulator = () => {
     nextQuestion
   } = interviewState;
 
-  // Use existing question generation hooks
-  const { generateQuestions, fetchQuestions, loading: loadingQuestions } = 
+  // Use existing question generation hooks with explicit error handling
+  const { fetchQuestions, loading: loadingQuestions } = 
     useInterviewQuestions(sessionId || null, setQuestions);
-  
+
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
@@ -85,18 +86,8 @@ const InternshipInterviewSimulator = () => {
         try {
           await fetchQuestions();
         } catch (error) {
-          console.log("No existing questions, will generate new ones");
-          
-          // Generate new questions based on job details
-          if (sessionData.job_title && sessionData.industry) {
-            // Handle the return value properly but we don't need to use it
-            void generateQuestions(
-              sessionData.industry,
-              sessionData.job_title,
-              sessionData.job_description || "",
-              sessionId
-            );
-          }
+          console.error("Error fetching questions:", error);
+          setQuestionsError("We couldn't load your interview questions. Please return to the invitation page and regenerate them.");
         }
       } catch (error) {
         console.error("Error loading session:", error);
@@ -107,7 +98,7 @@ const InternshipInterviewSimulator = () => {
     };
     
     fetchSessionData();
-  }, [sessionId, fetchQuestions, generateQuestions]);
+  }, [sessionId, fetchQuestions]);
 
   // Function to generate feedback using AI
   const generateFeedback = async (transcript: InterviewTranscript[]): Promise<string> => {
@@ -209,6 +200,14 @@ const InternshipInterviewSimulator = () => {
     nextQuestion();
   };
 
+  const handleReturnToInvite = () => {
+    if (sessionId) {
+      navigate(`/internship/interview/invite/${sessionId}`);
+    } else {
+      navigate('/internship/start');
+    }
+  };
+
   const currentQuestion = getCurrentQuestion();
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
@@ -234,6 +233,27 @@ const InternshipInterviewSimulator = () => {
             <div className="flex justify-center">
               <Button onClick={() => navigate('/internship/start')}>
                 Start Over
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Show error if questions couldn't be loaded
+  if (questionsError && !questions.length) {
+    return (
+      <div className="container py-8 max-w-4xl mx-auto">
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-center text-amber-500">Questions Not Available</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center mb-4">{questionsError}</p>
+            <div className="flex justify-center">
+              <Button onClick={handleReturnToInvite}>
+                Return to Invitation Page
               </Button>
             </div>
           </CardContent>

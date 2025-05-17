@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/shared/LoadingStates";
 import { industryOptions } from "@/data/industry-options";
 import { useInternship } from "@/hooks/internship";
+import { supabase } from "@/integrations/supabase/client";
 
 const InternshipStart = () => {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ const InternshipStart = () => {
     jobDescription: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [generatingQuestions, setGeneratingQuestions] = useState(false);
+  const [progressStatus, setProgressStatus] = useState("");
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -30,6 +33,45 @@ const InternshipStart = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Generate interview questions for the session
+  const generateInterviewQuestions = async (sessionId: string) => {
+    try {
+      console.log("🔄 InternshipStart: Generating interview questions for session:", sessionId);
+      setProgressStatus("Preparing your interview questions...");
+      
+      const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
+        body: { 
+          sessionId,
+          jobTitle: formData.jobTitle,
+          industry: formData.industry,
+          jobDescription: formData.jobDescription
+        }
+      });
+      
+      if (error) {
+        console.error("❌ InternshipStart: Error generating interview questions:", error);
+        toast({
+          title: "Error",
+          description: "Failed to prepare your interview questions. You can try again from the interview page.",
+          variant: "destructive",
+        });
+        // Continue to the invite page anyway, they can retry question generation there
+        return false;
+      }
+      
+      console.log("✅ InternshipStart: Successfully generated interview questions:", data);
+      return true;
+    } catch (error) {
+      console.error("❌ InternshipStart: Exception generating interview questions:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while preparing your interview questions.",
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,8 +87,9 @@ const InternshipStart = () => {
     try {
       setSubmitting(true);
       console.log("📝 InternshipStart: Form data being submitted:", formData);
+      setProgressStatus("Creating your internship session...");
       
-      // Use the createInternshipSession function from our context and properly handle the return value
+      // Create internship session
       console.log("🔄 InternshipStart: Calling createInternshipSession function");
       const sessionId = await createInternshipSession(
         formData.jobTitle,
@@ -57,6 +100,12 @@ const InternshipStart = () => {
       console.log("✅ InternshipStart: createInternshipSession returned", { sessionId });
 
       if (sessionId) {
+        // Session created successfully, now generate interview questions
+        setGeneratingQuestions(true);
+        
+        // Generate interview questions
+        await generateInterviewQuestions(sessionId);
+        
         console.log("➡️ InternshipStart: Redirecting to interview invitation page", sessionId);
         // Redirect to the interview invitation page with session ID
         navigate(`/internship/interview/invite/${sessionId}`);
@@ -77,6 +126,7 @@ const InternshipStart = () => {
       });
     } finally {
       setSubmitting(false);
+      setGeneratingQuestions(false);
     }
   };
 
@@ -143,12 +193,12 @@ const InternshipStart = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || submitting}
+              disabled={loading || submitting || generatingQuestions}
             >
-              {loading || submitting ? (
+              {(loading || submitting || generatingQuestions) ? (
                 <div className="flex items-center space-x-2">
                   <LoadingSpinner size="small" />
-                  <span>Creating Your Internship...</span>
+                  <span>{progressStatus || "Processing..."}</span>
                 </div>
               ) : (
                 "Start Internship"
