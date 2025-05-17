@@ -41,6 +41,8 @@ const InternshipStart = () => {
       console.log("🔄 InternshipStart: Generating interview questions for session:", sessionId);
       setProgressStatus("Preparing your interview questions...");
       
+      // IMPORTANT: Use supabase.functions.invoke instead of direct fetch
+      // This ensures proper auth headers and works in all environments
       const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
         body: { 
           sessionId,
@@ -103,8 +105,8 @@ const InternshipStart = () => {
         // Session created successfully, now generate interview questions
         setGeneratingQuestions(true);
         
-        // Generate interview questions
-        await generateInterviewQuestions(sessionId);
+        // Generate interview questions immediately after session creation
+        const questionsGenerated = await generateInterviewQuestions(sessionId);
         
         console.log("➡️ InternshipStart: Redirecting to interview invitation page", sessionId);
         // Redirect to the interview invitation page with session ID

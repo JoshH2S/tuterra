@@ -13,6 +13,8 @@ export const useInterviewQuestions = (
 ): QuestionHookReturn => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   const generateQuestions = async (industry: string, jobTitle: string, jobDescription: string, sessionId: string): Promise<InterviewQuestion[]> => {
     // Input validation
@@ -32,6 +34,7 @@ export const useInterviewQuestions = (
     }
     
     setLoading(true);
+    console.log(`Attempting to generate interview questions for session ${sessionId} (${jobTitle} in ${industry})`);
     
     try {
       // For the API, we're using jobRole, not jobTitle
@@ -41,13 +44,17 @@ export const useInterviewQuestions = (
         console.error("Error in generateQuestionsFromApi:", error);
       });
       
-      setQuestions(formattedQuestions);
-      toast({
-        title: "Questions generated",
-        description: "Your interview questions are ready. Let's start the interview!",
-      });
-      
-      return formattedQuestions;
+      if (formattedQuestions && formattedQuestions.length > 0) {
+        console.log(`Successfully generated ${formattedQuestions.length} questions for session ${sessionId}`);
+        setQuestions(formattedQuestions);
+        toast({
+          title: "Questions generated",
+          description: "Your interview questions are ready. Let's start the interview!",
+        });
+        return formattedQuestions;
+      } else {
+        throw new Error("No questions were returned from the API");
+      }
     } catch (error) {
       console.error("Error generating questions:", error);
       
@@ -102,13 +109,22 @@ export const useInterviewQuestions = (
   const fetchQuestions = async () => {
     if (!sessionId) {
       console.error("Cannot fetch questions: No session ID provided");
-      return;
+      return [];
     }
     
     setLoading(true);
     try {
+      console.log(`Fetching questions for session ${sessionId}`);
       const questionsList = await fetchQuestionsFromDb(sessionId);
-      setQuestions(questionsList);
+      
+      if (questionsList && questionsList.length > 0) {
+        console.log(`Successfully fetched ${questionsList.length} questions for session ${sessionId}`);
+        setQuestions(questionsList);
+        return questionsList;
+      } else {
+        console.warn(`No questions found for session ${sessionId}, may need to generate them`);
+        return [];
+      }
     } catch (error) {
       console.error("Error fetching questions:", error);
       toast({
@@ -116,6 +132,7 @@ export const useInterviewQuestions = (
         description: "Failed to fetch interview questions. Please try again.",
         variant: "destructive",
       });
+      return [];
     } finally {
       setLoading(false);
     }

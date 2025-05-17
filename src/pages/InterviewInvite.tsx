@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/shared/LoadingStates";
 import { ModernCard } from "@/components/ui/modern-card";
-import { Briefcase, Building2, CheckCircle, RefreshCw } from "lucide-react";
+import { Briefcase, Building2, CheckCircle, RefreshCw, AlertCircle } from "lucide-react";
 
 const InterviewInvite = () => {
   const { sessionId } = useParams();
@@ -16,22 +16,25 @@ const InterviewInvite = () => {
   const [sessionData, setSessionData] = useState<{
     job_title: string;
     industry: string;
+    job_description?: string | null;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [questionsLoaded, setQuestionsLoaded] = useState(false);
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
+  const [maxRetries, setMaxRetries] = useState(0);
 
   useEffect(() => {
     async function fetchSessionData() {
       if (!sessionId) {
         setError("Invalid session ID");
+        setLoading(false);
         return;
       }
 
       try {
         const { data, error } = await supabase
           .from("internship_sessions")
-          .select("job_title, industry")
+          .select("job_title, industry, job_description")
           .eq("id", sessionId)
           .single();
 
@@ -43,11 +46,13 @@ const InterviewInvite = () => {
             description: "We couldn't load your internship details",
             variant: "destructive",
           });
+          setLoading(false);
           return;
         }
 
         if (!data) {
           setError("Internship session not found");
+          setLoading(false);
           return;
         }
 
@@ -58,7 +63,6 @@ const InterviewInvite = () => {
       } catch (err) {
         console.error("Unexpected error:", err);
         setError("An unexpected error occurred");
-      } finally {
         setLoading(false);
       }
     }
@@ -71,6 +75,8 @@ const InterviewInvite = () => {
     if (!sessionId) return;
     
     try {
+      console.log("Checking if questions exist for session:", sessionId);
+      
       const { data, error } = await supabase.functions.invoke('get-interview-questions', {
         body: { sessionId }
       });
@@ -78,14 +84,19 @@ const InterviewInvite = () => {
       if (error) {
         console.error("Error checking questions:", error);
         setQuestionsLoaded(false);
+        setLoading(false);
         return;
       }
       
       // If we have questions, mark them as loaded
-      setQuestionsLoaded(data?.questions && data.questions.length > 0);
+      const hasQuestions = data?.questions && data.questions.length > 0;
+      console.log(`Questions ${hasQuestions ? 'found' : 'not found'} for session ${sessionId}`);
+      setQuestionsLoaded(hasQuestions);
+      setLoading(false);
     } catch (err) {
       console.error("Error checking interview questions:", err);
       setQuestionsLoaded(false);
+      setLoading(false);
     }
   };
   
@@ -96,20 +107,35 @@ const InterviewInvite = () => {
     setGeneratingQuestions(true);
     
     try {
+      setMaxRetries(prev => prev + 1);
+      if (maxRetries >= 3) {
+        toast({
+          title: "Maximum retries reached",
+          description: "Please contact support if this issue persists.",
+          variant: "destructive"
+        });
+        setGeneratingQuestions(false);
+        return;
+      }
+      
+      console.log("Generating interview questions for session:", sessionId);
+      
       const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
         body: { 
           sessionId,
           jobTitle: sessionData.job_title,
           industry: sessionData.industry,
-          jobDescription: "" // We don't have this here, but the session should have it
+          jobDescription: sessionData.job_description || ""
         }
       });
       
       if (error) {
+        console.error("Error invoking generate-interview-questions:", error);
         throw new Error("Failed to generate interview questions");
       }
       
       // If successful, mark questions as loaded
+      console.log("Questions generated successfully:", data);
       setQuestionsLoaded(true);
       toast({
         title: "Success",
@@ -238,13 +264,13 @@ const InterviewInvite = () => {
             {!questionsLoaded && (
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800/60">
                 <div className="flex items-start space-x-3">
-                  <RefreshCw className="w-5 h-5 text-blue-500 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
                   <div>
-                    <p className="font-medium text-blue-800 dark:text-blue-300">
-                      Your interview questions need to be prepared
+                    <p className="font-medium text-amber-800 dark:text-amber-300">
+                      Interview questions need to be prepared
                     </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
-                      Click the button below to generate questions for your interview.
+                    <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                      Your questions didn't generate properly. Click below to try again.
                     </p>
                     <Button 
                       variant="outline"
@@ -258,7 +284,7 @@ const InterviewInvite = () => {
                           <span>Preparing Questions...</span>
                         </div>
                       ) : (
-                        "Prepare Interview Questions"
+                        "Regenerate Interview Questions"
                       )}
                     </Button>
                   </div>

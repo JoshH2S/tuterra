@@ -52,9 +52,8 @@ const InternshipInterviewSimulator = () => {
     nextQuestion
   } = interviewState;
 
-  // Use existing question generation hooks with explicit error handling
-  const { fetchQuestions, loading: loadingQuestions } = 
-    useInterviewQuestions(sessionId || null, setQuestions);
+  // Use existing question hooks but don't attempt to generate here
+  const { fetchQuestions, loading: loadingQuestions } = useInterviewQuestions(sessionId || null, setQuestions);
 
   useEffect(() => {
     const fetchSessionData = async () => {
@@ -65,6 +64,8 @@ const InternshipInterviewSimulator = () => {
           return;
         }
         
+        console.log("InternshipInterviewSimulator: Fetching session data for", sessionId);
+        
         // Fetch the internship session
         const { data: sessionData, error: sessionError } = await supabase
           .from('internship_sessions')
@@ -73,18 +74,30 @@ const InternshipInterviewSimulator = () => {
           .single();
           
         if (sessionError) {
+          console.error("Error fetching session:", sessionError);
           throw sessionError;
         }
         
         if (!sessionData) {
+          console.error("Session not found");
           throw new Error("Session not found");
         }
         
+        console.log("InternshipInterviewSimulator: Session data retrieved:", sessionData);
         setSession(sessionData);
         
-        // Try to fetch existing questions for this session
+        // Try to fetch existing questions for this session - questions should already be generated at this point
         try {
-          await fetchQuestions();
+          console.log("InternshipInterviewSimulator: Fetching questions for session", sessionId);
+          const questionsList = await fetchQuestions();
+          
+          if (!questionsList || questionsList.length === 0) {
+            console.warn("No questions found for this session, redirecting to invitation page");
+            setQuestionsError("We couldn't load your interview questions. Redirecting to preparation page...");
+            setTimeout(() => {
+              navigate(`/internship/interview/invite/${sessionId}`);
+            }, 3000);
+          }
         } catch (error) {
           console.error("Error fetching questions:", error);
           setQuestionsError("We couldn't load your interview questions. Please return to the invitation page and regenerate them.");
@@ -98,13 +111,14 @@ const InternshipInterviewSimulator = () => {
     };
     
     fetchSessionData();
-  }, [sessionId, fetchQuestions]);
+  }, [sessionId, fetchQuestions, navigate]);
 
   // Function to generate feedback using AI
   const generateFeedback = async (transcript: InterviewTranscript[]): Promise<string> => {
     if (!session) return "";
     
     try {
+      console.log("InternshipInterviewSimulator: Generating feedback for", sessionId);
       const { data, error } = await supabase.functions.invoke('generate-interview-feedback', {
         body: { 
           transcript,
@@ -134,6 +148,8 @@ const InternshipInterviewSimulator = () => {
       // Make sure the transcript is up to date
       updateTranscript();
       
+      console.log("InternshipInterviewSimulator: Saving progress and generating feedback");
+      
       // Generate feedback using AI
       const feedback = await generateFeedback(transcript);
       
@@ -157,6 +173,8 @@ const InternshipInterviewSimulator = () => {
         .eq('id', sessionId);
       
       if (updateError) throw updateError;
+      
+      console.log("InternshipInterviewSimulator: Progress saved, navigating to phase 2");
       
       // Redirect to phase 2
       navigate(`/internship/phase-2/${sessionId}`);
