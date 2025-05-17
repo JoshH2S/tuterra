@@ -28,6 +28,7 @@ serve(async (req) => {
     const { sessionId } = await req.json();
     
     if (!sessionId) {
+      console.error("Missing session ID");
       return new Response(
         JSON.stringify({ error: "Missing session ID" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }

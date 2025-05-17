@@ -19,6 +19,8 @@ export const fetchQuestionsFromDb = async (sessionId: string): Promise<Interview
       throw error;
     }
     
+    console.log("Response from get-interview-questions:", data);
+    
     // Check if questions exist in the response
     const questions = data?.questions;
     
@@ -26,11 +28,11 @@ export const fetchQuestionsFromDb = async (sessionId: string): Promise<Interview
       console.log(`Retrieved ${questions.length} questions via edge function`);
       
       // Format questions to ensure consistency
-      const formattedQuestions: InterviewQuestion[] = questions.map((q: any) => ({
-        id: q.id,
+      const formattedQuestions: InterviewQuestion[] = questions.map((q: any, index: number) => ({
+        id: q.id || `session-q-${index}`,
         session_id: q.session_id || sessionId,
         question: q.question || q.text || '',  // Handle different question formats
-        question_order: q.question_order !== undefined ? q.question_order : 0,
+        question_order: q.question_order !== undefined ? q.question_order : index,
         created_at: q.created_at || new Date().toISOString()
       }));
       
@@ -41,11 +43,11 @@ export const fetchQuestionsFromDb = async (sessionId: string): Promise<Interview
     if (data && Array.isArray(data) && data.length > 0) {
       console.log(`Retrieved ${data.length} questions directly from edge function response`);
       
-      const formattedQuestions: InterviewQuestion[] = data.map((q: any) => ({
-        id: q.id,
+      const formattedQuestions: InterviewQuestion[] = data.map((q: any, index: number) => ({
+        id: q.id || `session-q-${index}`,
         session_id: q.session_id || sessionId,
         question: q.question || q.text || '',
-        question_order: q.question_order !== undefined ? q.question_order : 0,
+        question_order: q.question_order !== undefined ? q.question_order : index,
         created_at: q.created_at || new Date().toISOString()
       }));
       

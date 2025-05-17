@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useInterviewQuestions } from "@/hooks/interview/useInterviewQuestions";
@@ -27,6 +27,7 @@ const InternshipInterviewSimulator = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const shouldAutoStart = searchParams.get('start') === 'true';
+  const autoStartAttempted = useRef(false);
   
   const [session, setSession] = useState<InternshipSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +35,7 @@ const InternshipInterviewSimulator = () => {
   const [isFeedbackGenerating, setIsFeedbackGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [questionsLoaded, setQuestionsLoaded] = useState(false);
   
   // Import interview state management from the shared hook
   const interviewState = useInterviewState();
@@ -101,12 +103,8 @@ const InternshipInterviewSimulator = () => {
               navigate(`/internship/interview/invite/${sessionId}`);
             }, 3000);
           } else {
-            // If questions loaded successfully and we should auto-start, start the interview
-            if (shouldAutoStart && questionsList.length > 0) {
-              setTimeout(() => {
-                startInterview();
-              }, 500); // Small delay to ensure interface is ready
-            }
+            console.log("Questions loaded successfully:", questionsList.length);
+            setQuestionsLoaded(true);
           }
         } catch (error) {
           console.error("Error fetching questions:", error);
@@ -121,7 +119,47 @@ const InternshipInterviewSimulator = () => {
     };
     
     fetchSessionData();
-  }, [sessionId, fetchQuestions, navigate, shouldAutoStart, startInterview]);
+  }, [sessionId, fetchQuestions, navigate]);
+  
+  // Effect to auto-start the interview once questions are loaded
+  // Using a separate effect with correct dependencies to prevent loop
+  useEffect(() => {
+    // Only attempt to auto-start if:
+    // 1. Auto-start flag is true
+    // 2. Questions are loaded
+    // 3. Not already in progress or complete
+    // 4. Not currently loading
+    // 5. We haven't attempted to auto-start already
+    if (
+      shouldAutoStart &&
+      questionsLoaded &&
+      questions.length > 0 &&
+      !isInterviewInProgress &&
+      !isInterviewComplete &&
+      !isLoading &&
+      !loadingQuestions &&
+      !autoStartAttempted.current
+    ) {
+      console.log("Auto-starting interview with", questions.length, "questions");
+      autoStartAttempted.current = true; // Mark that we've attempted to auto-start
+      
+      // Small timeout to ensure UI is ready
+      const timer = setTimeout(() => {
+        startInterview();
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [
+    shouldAutoStart,
+    questionsLoaded,
+    questions.length,
+    isInterviewInProgress,
+    isInterviewComplete,
+    isLoading,
+    loadingQuestions,
+    startInterview
+  ]);
 
   // Function to generate feedback using AI
   const generateFeedback = async (transcript: InterviewTranscript[]): Promise<string> => {
@@ -211,6 +249,7 @@ const InternshipInterviewSimulator = () => {
 
   // Create custom handlers for this specific implementation
   const handleStartChat = () => {
+    console.log("Manually starting interview");
     startInterview();
   };
 
