@@ -30,6 +30,8 @@ export const InterviewChat = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const responseTextareaRef = useRef<HTMLTextAreaElement>(null);
   
+  console.log("InterviewChat: Rendering with typingEffect =", typingEffect);
+  
   // Use our custom hook for voice recording with enhanced options
   const { 
     isRecording, 
@@ -56,12 +58,15 @@ export const InterviewChat = ({
     // Reset response when the question changes
     setResponse("");
     setIsSubmitting(false);
-    
+  }, [currentQuestion?.id]);
+  
+  useEffect(() => {
     // Auto focus on textarea after typing effect is complete
     if (!typingEffect && responseTextareaRef.current) {
+      console.log("InterviewChat: Typing effect complete, focusing on textarea");
       responseTextareaRef.current.focus();
     }
-  }, [currentQuestion, typingEffect]);
+  }, [typingEffect]);
   
   const handleSubmit = async () => {
     if (!response.trim() || !currentQuestion) return;
@@ -97,7 +102,8 @@ export const InterviewChat = ({
           <AnimatePresence mode="wait">
             <QuestionDisplay 
               currentQuestion={currentQuestion} 
-              typingEffect={typingEffect} 
+              typingEffect={typingEffect}
+              onTypingComplete={onTypingComplete}
             />
           </AnimatePresence>
           
@@ -112,6 +118,7 @@ export const InterviewChat = ({
               isTranscribing={isTranscribing}
               onToggleRecording={toggleRecording}
               recordingTime={formattedTime}
+              inputRef={responseTextareaRef}
             />
             <div className="flex justify-between items-center mt-4">
               <p className="text-xs text-muted-foreground">

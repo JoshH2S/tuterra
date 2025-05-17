@@ -13,6 +13,7 @@ interface ResponseInputProps {
   isTranscribing: boolean;
   onToggleRecording: () => void;
   recordingTime?: string;
+  inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
 export const ResponseInput = ({
@@ -24,14 +25,16 @@ export const ResponseInput = ({
   isRecording,
   isTranscribing,
   onToggleRecording,
-  recordingTime = "00:00"
+  recordingTime = "00:00",
+  inputRef
 }: ResponseInputProps) => {
-  const responseTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const defaultRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = inputRef || defaultRef;
   
   return (
     <div className="relative">
       <Textarea
-        ref={responseTextareaRef}
+        ref={textareaRef}
         value={response}
         onChange={(e) => onResponseChange(e.target.value)}
         placeholder="Type your answer here or use the microphone..."

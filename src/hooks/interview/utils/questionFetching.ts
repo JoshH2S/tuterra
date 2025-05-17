@@ -9,6 +9,8 @@ export const fetchQuestionsFromDb = async (sessionId: string): Promise<Interview
   console.log(`Fetching questions for session ${sessionId}`);
   
   try {
+    console.log("Invoking get-interview-questions edge function");
+    
     // Use the get-interview-questions edge function for consistent handling
     const { data, error } = await supabase.functions.invoke('get-interview-questions', {
       body: { sessionId }
@@ -36,6 +38,7 @@ export const fetchQuestionsFromDb = async (sessionId: string): Promise<Interview
         created_at: q.created_at || new Date().toISOString()
       }));
       
+      console.log("Formatted questions:", JSON.stringify(formattedQuestions.map(q => ({ id: q.id, question: q.question }))));
       return formattedQuestions;
     }
     
@@ -51,7 +54,13 @@ export const fetchQuestionsFromDb = async (sessionId: string): Promise<Interview
         created_at: q.created_at || new Date().toISOString()
       }));
       
+      console.log("Formatted direct questions:", JSON.stringify(formattedQuestions.map(q => ({ id: q.id, question: q.question }))));
       return formattedQuestions;
+    }
+    
+    // Check if we have a message about why no questions
+    if (data?.message) {
+      console.warn("Server response message:", data.message);
     }
     
     // If we still have no questions, return an empty array but don't throw an error

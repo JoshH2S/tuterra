@@ -45,15 +45,25 @@ export const useInterviewSession = () => {
   // When typing effect finishes
   useEffect(() => {
     let typingTimer: number;
+    
     if (typingEffect && isInterviewInProgress) {
       // Premium users get faster typing
       const typingSpeed = subscription.tier !== "free" ? 1000 : 2000;
       
+      console.log(`Setting typing effect timer for ${typingSpeed}ms`);
+      
       typingTimer = window.setTimeout(() => {
+        console.log("Typing effect timer completed, setting typingEffect to false");
         setTypingEffect(false);
       }, typingSpeed);
     }
-    return () => clearTimeout(typingTimer);
+    
+    return () => {
+      if (typingTimer) {
+        console.log("Cleaning up typing timer");
+        clearTimeout(typingTimer);
+      }
+    };
   }, [typingEffect, isInterviewInProgress, setTypingEffect, subscription.tier]);
 
   // Generate transcript when interview is completed

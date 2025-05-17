@@ -50,6 +50,7 @@ const InternshipInterviewSimulator = () => {
     isInterviewInProgress,
     isInterviewComplete,
     typingEffect,
+    setTypingEffect,
     transcript,
     updateTranscript,
     startInterview,
@@ -184,6 +185,30 @@ const InternshipInterviewSimulator = () => {
     
     fetchSessionData();
   }, [sessionId, fetchQuestions, navigate, setQuestions]);
+  
+  // Effect for typing effect timer
+  useEffect(() => {
+    let typingTimer: number;
+    
+    if (typingEffect && isInterviewInProgress) {
+      // Set a fixed typing effect duration
+      const typingSpeed = 2000;
+      
+      console.log(`InternshipInterviewSimulator: Setting typing effect timer for ${typingSpeed}ms`);
+      
+      typingTimer = window.setTimeout(() => {
+        console.log("InternshipInterviewSimulator: Typing effect timer completed, disabling typing effect");
+        setTypingEffect(false);
+      }, typingSpeed);
+    }
+    
+    return () => {
+      if (typingTimer) {
+        console.log("InternshipInterviewSimulator: Cleaning up typing timer");
+        clearTimeout(typingTimer);
+      }
+    };
+  }, [typingEffect, isInterviewInProgress, setTypingEffect]);
   
   // Effect to auto-start the interview once questions are loaded
   // Using a separate effect with correct dependencies to prevent loop
@@ -341,6 +366,11 @@ const InternshipInterviewSimulator = () => {
     }
   };
 
+  const handleTypingComplete = () => {
+    console.log("InternshipInterviewSimulator: Handling typing complete callback");
+    setTypingEffect(false);
+  };
+
   const currentQuestion = getCurrentQuestion();
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
@@ -416,7 +446,7 @@ const InternshipInterviewSimulator = () => {
                 currentQuestion={currentQuestion}
                 onSubmitResponse={handleSubmitResponse}
                 typingEffect={typingEffect}
-                onTypingComplete={() => {}}
+                onTypingComplete={handleTypingComplete}
                 isLastQuestion={isLastQuestion}
                 jobTitle={session.job_title}
               />
