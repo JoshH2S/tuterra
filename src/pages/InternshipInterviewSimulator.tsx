@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useInterviewQuestions } from "@/hooks/interview/useInterviewQuestions";
 import { useInterviewState } from "@/hooks/interview/useInterviewState";
@@ -25,6 +25,8 @@ const InternshipInterviewSimulator = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const shouldAutoStart = searchParams.get('start') === 'true';
   
   const [session, setSession] = useState<InternshipSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,6 +100,13 @@ const InternshipInterviewSimulator = () => {
             setTimeout(() => {
               navigate(`/internship/interview/invite/${sessionId}`);
             }, 3000);
+          } else {
+            // If questions loaded successfully and we should auto-start, start the interview
+            if (shouldAutoStart && questionsList.length > 0) {
+              setTimeout(() => {
+                startInterview();
+              }, 500); // Small delay to ensure interface is ready
+            }
           }
         } catch (error) {
           console.error("Error fetching questions:", error);
@@ -112,7 +121,7 @@ const InternshipInterviewSimulator = () => {
     };
     
     fetchSessionData();
-  }, [sessionId, fetchQuestions, navigate]);
+  }, [sessionId, fetchQuestions, navigate, shouldAutoStart, startInterview]);
 
   // Function to generate feedback using AI
   const generateFeedback = async (transcript: InterviewTranscript[]): Promise<string> => {

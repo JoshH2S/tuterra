@@ -22,6 +22,7 @@ const InterviewInvite = () => {
   const [questionsLoaded, setQuestionsLoaded] = useState(false);
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [maxRetries, setMaxRetries] = useState(0);
+  const [startingInterview, setStartingInterview] = useState(false);
 
   useEffect(() => {
     async function fetchSessionData() {
@@ -160,8 +161,23 @@ const InterviewInvite = () => {
     }
   };
 
-  const handleBeginInterview = () => {
-    navigate(`/internship/interview/${sessionId}`);
+  // Modified to directly start the interview, not just navigate to the page
+  const handleBeginInterview = async () => {
+    if (!sessionId) return;
+    
+    setStartingInterview(true);
+    
+    if (!questionsLoaded) {
+      // Try to generate questions if not loaded
+      try {
+        await generateInterviewQuestions();
+      } catch (err) {
+        console.error("Failed to generate questions before starting interview:", err);
+      }
+    }
+    
+    // Navigate directly to the interview simulator
+    navigate(`/internship/interview/${sessionId}?start=true`);
   };
 
   if (loading) {
@@ -304,9 +320,18 @@ const InterviewInvite = () => {
               onClick={handleBeginInterview}
               className="w-full max-w-md py-6 text-base md:text-lg font-medium"
               size="lg"
-              disabled={!questionsLoaded}
+              disabled={!questionsLoaded || startingInterview}
             >
-              {!questionsLoaded ? "Please Generate Questions First" : "Begin Interview"}
+              {startingInterview ? (
+                <div className="flex items-center space-x-2">
+                  <LoadingSpinner size="small" />
+                  <span>Starting Interview...</span>
+                </div>
+              ) : !questionsLoaded ? (
+                "Please Generate Questions First"
+              ) : (
+                "Begin Interview"
+              )}
             </Button>
           </CardFooter>
         </Card>
