@@ -11,7 +11,6 @@ import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "@/components/shared/LoadingStates";
 import { industryOptions } from "@/data/industry-options";
 import { useInternship } from "@/hooks/useInternshipContext";
-import { supabase } from "@/integrations/supabase/client";
 
 const InternshipStart = () => {
   const navigate = useNavigate();
@@ -21,7 +20,6 @@ const InternshipStart = () => {
     industry: "",
     jobDescription: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -35,46 +33,8 @@ const InternshipStart = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("handleSubmit called with form data:", formData);
-    
-    // Prevent double submission
-    if (isSubmitting || loading) {
-      console.log("Submission already in progress, returning early");
-      return;
-    }
-    
-    setIsSubmitting(true);
-    console.log("Set isSubmitting to true");
 
     try {
-      console.log("Checking auth status...");
-      // Verify authentication status
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error("No active session found");
-        toast({
-          title: "Authentication Error",
-          description: "You must be logged in to create an internship",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      console.log("Auth check passed, user is authenticated");
-      
-      // Basic form validation
-      if (!formData.jobTitle.trim() || !formData.industry.trim()) {
-        console.error("Form validation failed: Missing required fields");
-        toast({
-          title: "Missing Information",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      console.log("Creating internship session via createInternshipSession...");
       // Use the createInternshipSession function from our context and properly handle the return value
       const sessionId = await createInternshipSession(
         formData.jobTitle,
@@ -82,33 +42,19 @@ const InternshipStart = () => {
         formData.jobDescription
       );
 
-      console.log("Received session ID:", sessionId);
       if (sessionId) {
         // Redirect to the interview invitation page with session ID
-        console.log("Redirecting to interview invitation page");
         navigate(`/internship/interview/invite/${sessionId}`);
-      } else {
-        console.error("No session ID returned from createInternshipSession");
-        toast({
-          title: "Error",
-          description: "Failed to create internship session",
-          variant: "destructive",
-        });
       }
     } catch (error) {
-      console.error("Unexpected error during submission:", error);
+      console.error("Unexpected error:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again later.",
         variant: "destructive",
       });
-    } finally {
-      console.log("In finally block, resetting isSubmitting");
-      setIsSubmitting(false);
     }
   };
-
-  const submissionInProgress = isSubmitting || loading;
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-8 max-w-3xl">
@@ -126,10 +72,7 @@ const InternshipStart = () => {
             Enter details about the job you're interested in to tailor your internship experience.
           </CardDescription>
         </CardHeader>
-        <form onSubmit={(e) => {
-          console.log("Form submit event triggered");
-          handleSubmit(e);
-        }}>
+        <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="jobTitle">Job Title</Label>
@@ -176,9 +119,9 @@ const InternshipStart = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={submissionInProgress}
+              disabled={loading}
             >
-              {submissionInProgress ? (
+              {loading ? (
                 <div className="flex items-center space-x-2">
                   <LoadingSpinner size="small" />
                   <span>Creating Your Internship...</span>

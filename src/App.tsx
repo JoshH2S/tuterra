@@ -1,56 +1,59 @@
 
-import React from "react";
-import { BrowserRouter as Router } from "react-router-dom";
-import { ThemeProvider } from "./components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
-import { AppRoutes } from "./routes/AppRoutes";
-import { AuthProvider } from "./hooks/auth";
-import { InternshipProvider } from '@/hooks/internship';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// Import the ReactQueryDevtools if you need them later
-// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { SubscriptionProvider } from "./hooks/subscription";
-import { ModalProvider } from "./hooks/modal";
-import { SocketProvider } from "./hooks/socket";
-import { AIProvider } from "./hooks/ai";
-import { StudySessionProvider } from "./hooks/study-session";
+import { BrowserRouter } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
+import { lazyLoad } from "@/utils/lazy-loading";
+import { Toaster } from "@/components/ui/toaster";
+import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
+import { InternshipProvider } from "@/components/internship/InternshipProvider";
+
+// Lazy load MainLayout
+const MainLayout = lazyLoad(
+  () => import("@/components/layout/MainLayout").then(
+    module => ({ default: module.MainLayout })
+  ),
+  "MainLayout"
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      refetchOnWindowFocus: false, // Improves performance by preventing refetches on window focus
       staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
+      retry: 2, // Retry failed requests twice
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+      meta: {
+        // Use meta instead of onError for error handling
+        errorHandler: (error: Error) => {
+          console.error('Query error:', error);
+        }
+      }
     },
   },
 });
 
-function App() {
+// Loading fallback component
+const AppLoading = () => (
+  <div className="flex items-center justify-center h-screen">
+    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+  </div>
+);
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <AuthProvider>
-          <SubscriptionProvider>
-            <ModalProvider>
-              <SocketProvider>
-                <AIProvider>
-                  <StudySessionProvider>
-                    <InternshipProvider>
-                      <Router>
-                        <AppRoutes />
-                        <Toaster />
-                      </Router>
-                    </InternshipProvider>
-                  </StudySessionProvider>
-                </AIProvider>
-              </SocketProvider>
-            </ModalProvider>
-          </SubscriptionProvider>
-        </AuthProvider>
-      </ThemeProvider>
-      {/* Comment out ReactQueryDevtools until installed */}
-      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+      <BrowserRouter>
+        <InternshipProvider>
+          <ConnectionStatusBanner />
+          <Suspense fallback={<AppLoading />}>
+            <MainLayout />
+          </Suspense>
+          <Toaster />
+        </InternshipProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;
