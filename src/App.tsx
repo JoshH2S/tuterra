@@ -1,12 +1,14 @@
+
 import React from "react";
 import { BrowserRouter as Router } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AppRoutes } from "./routes/AppRoutes";
 import { AuthProvider } from "./hooks/auth";
 import { InternshipProvider } from '@/hooks/internship';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+// Import the ReactQueryDevtools if you need them later
+// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SubscriptionProvider } from "./hooks/subscription";
 import { ModalProvider } from "./hooks/modal";
 import { SocketProvider } from "./hooks/socket";
@@ -45,7 +47,8 @@ function App() {
           </SubscriptionProvider>
         </AuthProvider>
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* Comment out ReactQueryDevtools until installed */}
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>
   );
 }
