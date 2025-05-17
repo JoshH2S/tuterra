@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { TextShimmer } from "@/components/ui/text-shimmer";
 import { InterviewQuestion } from "@/types/interview";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface QuestionDisplayProps {
   currentQuestion: InterviewQuestion | null;
@@ -15,11 +15,34 @@ export const QuestionDisplay = ({
   typingEffect,
   onTypingComplete
 }: QuestionDisplayProps) => {
+  const typingCompleteRef = useRef(false);
+  
+  // Reset the completion ref when question or typing effect changes
   useEffect(() => {
-    // If there's no typing effect and we have an onTypingComplete callback
-    if (!typingEffect && onTypingComplete) {
+    typingCompleteRef.current = false;
+  }, [currentQuestion?.id, typingEffect]);
+  
+  // Ensure typing complete is called when no longer in typing effect mode
+  useEffect(() => {
+    if (!typingEffect && onTypingComplete && !typingCompleteRef.current) {
       console.log("QuestionDisplay: Typing effect ended, calling onTypingComplete");
       onTypingComplete();
+      typingCompleteRef.current = true;
+    }
+  }, [typingEffect, onTypingComplete, currentQuestion]);
+  
+  // Safety timeout to ensure typing complete is called even if animations fail
+  useEffect(() => {
+    if (typingEffect && onTypingComplete) {
+      const safetyTimer = setTimeout(() => {
+        if (typingEffect && !typingCompleteRef.current) {
+          console.log("QuestionDisplay: Safety timeout triggered, forcing typing complete");
+          onTypingComplete();
+          typingCompleteRef.current = true;
+        }
+      }, 5000); // 5 second safety timeout
+      
+      return () => clearTimeout(safetyTimer);
     }
   }, [typingEffect, onTypingComplete]);
   
@@ -32,7 +55,7 @@ export const QuestionDisplay = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="h-full flex items-center"
+      className="h-full flex items-center px-1 py-2"
     >
       <AnimatePresence mode="wait">
         {currentQuestion.question && (

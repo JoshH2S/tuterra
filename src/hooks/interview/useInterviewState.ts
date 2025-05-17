@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
 
 export const useInterviewState = () => {
@@ -15,8 +15,21 @@ export const useInterviewState = () => {
   const [isInterviewComplete, setIsInterviewComplete] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<InterviewTranscript[]>([]);
   const [typingEffect, setTypingEffect] = useState<boolean>(false);
+  
+  // Track typing effect timer to ensure proper cleanup
+  const typingTimerRef = useRef<number | null>(null);
+  
+  // Clear any existing typing timer
+  const clearTypingTimer = useCallback(() => {
+    if (typingTimerRef.current) {
+      console.log("Clearing existing typing timer:", typingTimerRef.current);
+      window.clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+  }, []);
 
   const resetInterview = useCallback(() => {
+    clearTypingTimer();
     setCurrentSessionId(null);
     setQuestions([]);
     setResponses({});
@@ -25,7 +38,7 @@ export const useInterviewState = () => {
     setIsInterviewComplete(false);
     setTranscript([]);
     setTypingEffect(false);
-  }, []);
+  }, [clearTypingTimer]);
 
   const startInterview = useCallback(() => {
     console.log("Starting interview, setting typing effect to true");
@@ -39,8 +52,9 @@ export const useInterviewState = () => {
     setIsInterviewInProgress(false);
     setIsInterviewComplete(true);
     // Ensure typing effect is off when completing
+    clearTypingTimer();
     setTypingEffect(false);
-  }, []);
+  }, [clearTypingTimer]);
 
   const nextQuestion = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
@@ -102,6 +116,8 @@ export const useInterviewState = () => {
     setTranscript,
     typingEffect,
     setTypingEffect,
+    typingTimerRef,
+    clearTypingTimer,
     resetInterview,
     startInterview,
     completeInterview,

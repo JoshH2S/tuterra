@@ -51,6 +51,7 @@ const InternshipInterviewSimulator = () => {
     isInterviewComplete,
     typingEffect,
     setTypingEffect,
+    clearTypingTimer,
     transcript,
     updateTranscript,
     startInterview,
@@ -60,6 +61,9 @@ const InternshipInterviewSimulator = () => {
 
   // Use existing question hooks but don't attempt to generate here
   const { fetchQuestions, loading: loadingQuestions } = useInterviewQuestions(sessionId || null, setQuestions);
+
+  // Ref to textarea for auto-focus
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const fetchSessionData = async () => {
@@ -184,31 +188,29 @@ const InternshipInterviewSimulator = () => {
     };
     
     fetchSessionData();
-  }, [sessionId, fetchQuestions, navigate, setQuestions]);
+  }, [sessionId, fetchQuestions, setQuestions]);
   
-  // Effect for typing effect timer
+  // Effect for typing effect timer - use our clearTypingTimer to avoid duplicated logic
   useEffect(() => {
-    let typingTimer: number;
-    
     if (typingEffect && isInterviewInProgress) {
-      // Set a fixed typing effect duration
+      // Set a fixed typing effect duration - 2 seconds for simplicity
       const typingSpeed = 2000;
       
       console.log(`InternshipInterviewSimulator: Setting typing effect timer for ${typingSpeed}ms`);
       
-      typingTimer = window.setTimeout(() => {
+      // Clear any existing timer first
+      clearTypingTimer();
+      
+      const timer = window.setTimeout(() => {
         console.log("InternshipInterviewSimulator: Typing effect timer completed, disabling typing effect");
         setTypingEffect(false);
       }, typingSpeed);
+      
+      return () => {
+        window.clearTimeout(timer);
+      };
     }
-    
-    return () => {
-      if (typingTimer) {
-        console.log("InternshipInterviewSimulator: Cleaning up typing timer");
-        clearTimeout(typingTimer);
-      }
-    };
-  }, [typingEffect, isInterviewInProgress, setTypingEffect]);
+  }, [typingEffect, isInterviewInProgress, setTypingEffect, clearTypingTimer]);
   
   // Effect to auto-start the interview once questions are loaded
   // Using a separate effect with correct dependencies to prevent loop
@@ -386,7 +388,7 @@ const InternshipInterviewSimulator = () => {
   // Show error state
   if (errorMessage) {
     return (
-      <div className="container py-8 max-w-4xl mx-auto">
+      <div className="container py-8 max-w-4xl mx-auto px-4">
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="text-center text-red-500">Error</CardTitle>

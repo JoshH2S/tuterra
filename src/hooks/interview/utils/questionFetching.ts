@@ -23,6 +23,12 @@ export const fetchQuestionsFromDb = async (sessionId: string): Promise<Interview
     
     console.log("Response from get-interview-questions:", data);
     
+    // Safety check - if response is completely empty or null
+    if (!data) {
+      console.warn("Empty response from get-interview-questions function");
+      return [];
+    }
+    
     // Check if questions exist in the response
     const questions = data?.questions;
     
