@@ -28,6 +28,7 @@ const InternshipInterviewSimulator = () => {
   const [searchParams] = useSearchParams();
   const shouldAutoStart = searchParams.get('start') === 'true';
   const autoStartAttempted = useRef(false);
+  const initialLoadComplete = useRef(false);
   
   const [session, setSession] = useState<InternshipSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,10 +62,16 @@ const InternshipInterviewSimulator = () => {
 
   useEffect(() => {
     const fetchSessionData = async () => {
+      if (initialLoadComplete.current) {
+        console.log("Initial load already completed, skipping");
+        return;
+      }
+
       try {
         if (!sessionId) {
           setErrorMessage("No session ID provided");
           setIsLoading(false);
+          initialLoadComplete.current = true;
           return;
         }
         
@@ -97,29 +104,86 @@ const InternshipInterviewSimulator = () => {
           
           // Check if questionsList exists and has items
           if (!questionsList || questionsList.length === 0) {
-            console.warn("No questions found for this session, redirecting to invitation page");
-            setQuestionsError("We couldn't load your interview questions. Redirecting to preparation page...");
-            setTimeout(() => {
-              navigate(`/internship/interview/invite/${sessionId}`);
-            }, 3000);
+            console.warn("No questions found for this session, will use default questions");
+            // Don't redirect immediately - we'll use default questions instead
+            setQuestionsError("No questions found. Using default questions instead.");
+            
+            // Create simple default questions
+            const defaultQuestions: InterviewQuestion[] = [
+              {
+                id: `default-q-1-${sessionId}`,
+                session_id: sessionId,
+                question: `Tell me about your experience and skills relevant to this ${sessionData.job_title} position.`,
+                question_order: 0,
+                created_at: new Date().toISOString()
+              },
+              {
+                id: `default-q-2-${sessionId}`,
+                session_id: sessionId,
+                question: `What interests you about working in the ${sessionData.industry} industry?`,
+                question_order: 1,
+                created_at: new Date().toISOString()
+              },
+              {
+                id: `default-q-3-${sessionId}`,
+                session_id: sessionId,
+                question: "Describe a challenging situation you've faced professionally and how you handled it.",
+                question_order: 2,
+                created_at: new Date().toISOString()
+              }
+            ];
+            
+            // Set these default questions
+            setQuestions(defaultQuestions);
+            setQuestionsLoaded(true);
           } else {
             console.log("Questions loaded successfully:", questionsList.length);
+            setQuestions(questionsList);
             setQuestionsLoaded(true);
           }
         } catch (error) {
           console.error("Error fetching questions:", error);
-          setQuestionsError("We couldn't load your interview questions. Please return to the invitation page and regenerate them.");
+          setQuestionsError("We couldn't load your interview questions. Using default questions instead.");
+          
+          // Still provide default questions
+          const defaultQuestions: InterviewQuestion[] = [
+            {
+              id: `default-q-1-${sessionId}`,
+              session_id: sessionId,
+              question: `Tell me about your experience and skills relevant to this ${sessionData.job_title} position.`,
+              question_order: 0,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: `default-q-2-${sessionId}`,
+              session_id: sessionId,
+              question: `What interests you about working in the ${sessionData.industry} industry?`,
+              question_order: 1,
+              created_at: new Date().toISOString()
+            },
+            {
+              id: `default-q-3-${sessionId}`,
+              session_id: sessionId,
+              question: "Describe a challenging situation you've faced professionally and how you handled it.",
+              question_order: 2,
+              created_at: new Date().toISOString()
+            }
+          ];
+          
+          setQuestions(defaultQuestions);
+          setQuestionsLoaded(true);
         }
       } catch (error) {
         console.error("Error loading session:", error);
         setErrorMessage("Failed to load internship session. Please try again.");
       } finally {
         setIsLoading(false);
+        initialLoadComplete.current = true;
       }
     };
     
     fetchSessionData();
-  }, [sessionId, fetchQuestions, navigate]);
+  }, [sessionId, fetchQuestions, navigate, setQuestions]);
   
   // Effect to auto-start the interview once questions are loaded
   // Using a separate effect with correct dependencies to prevent loop
@@ -130,6 +194,7 @@ const InternshipInterviewSimulator = () => {
     // 3. Not already in progress or complete
     // 4. Not currently loading
     // 5. We haven't attempted to auto-start already
+    // 6. Initial load is complete
     if (
       shouldAutoStart &&
       questionsLoaded &&
@@ -138,7 +203,8 @@ const InternshipInterviewSimulator = () => {
       !isInterviewComplete &&
       !isLoading &&
       !loadingQuestions &&
-      !autoStartAttempted.current
+      !autoStartAttempted.current &&
+      initialLoadComplete.current
     ) {
       console.log("Auto-starting interview with", questions.length, "questions");
       autoStartAttempted.current = true; // Mark that we've attempted to auto-start
@@ -307,27 +373,6 @@ const InternshipInterviewSimulator = () => {
       </div>
     );
   }
-  
-  // Show error if questions couldn't be loaded
-  if (questionsError && questions.length === 0) {
-    return (
-      <div className="container py-8 max-w-4xl mx-auto">
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="text-center text-amber-500">Questions Not Available</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-center mb-4">{questionsError}</p>
-            <div className="flex justify-center">
-              <Button onClick={handleReturnToInvite}>
-                Return to Invitation Page
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="container pt-4 pb-16 max-w-4xl mx-auto px-4">
@@ -353,13 +398,16 @@ const InternshipInterviewSimulator = () => {
             <div className="text-center">
               <h1 className="text-3xl font-bold">{session.job_title} Interview</h1>
               <p className="text-muted-foreground">{session.industry} Industry</p>
+              {questionsError && (
+                <p className="mt-2 text-sm text-amber-500">{questionsError}</p>
+              )}
             </div>
             
             {questions.length > 0 && !isInterviewInProgress && !isInterviewComplete && (
               <InterviewReadyPrompt
                 jobTitle={session.job_title}
                 onStartChat={handleStartChat}
-                usedFallbackQuestions={false}
+                usedFallbackQuestions={!!questionsError}
               />
             )}
             

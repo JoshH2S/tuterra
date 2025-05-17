@@ -54,11 +54,14 @@ export const fetchQuestionsFromDb = async (sessionId: string): Promise<Interview
       return formattedQuestions;
     }
     
-    console.warn(`No questions found for session ${sessionId} via edge function`);
+    // If we still have no questions, return an empty array but don't throw an error
+    // This prevents redirect loops when questions aren't available
+    console.warn(`No questions found for session ${sessionId} via edge function, returning empty array`);
     return [];
   } catch (error) {
     console.error("Error in fetchQuestionsFromDb:", error);
-    throw error;
+    // Return empty array instead of throwing to prevent redirect loops
+    return [];
   }
 };
 
@@ -74,6 +77,7 @@ export const fetchQuestionsFromSessionData = async (sessionId: string): Promise<
     return await fetchQuestionsFromDb(sessionId);
   } catch (error) {
     console.error("Error in legacy fetchQuestionsFromSessionData:", error);
-    throw error;
+    // Return empty array instead of throwing
+    return [];
   }
 };

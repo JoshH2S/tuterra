@@ -25,7 +25,23 @@ serve(async (req) => {
   }
 
   try {
-    const { sessionId } = await req.json();
+    // Parse request, ensuring we have a valid format
+    let requestBody: { sessionId: string };
+    
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to parse request body",
+          details: parseError.message 
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+    
+    const { sessionId } = requestBody;
     
     if (!sessionId) {
       console.error("Missing session ID");
@@ -165,11 +181,16 @@ serve(async (req) => {
         }
       ];
       
-      // Store these fallback questions in the internship_sessions table
-      await supabase
-        .from('internship_sessions')
-        .update({ questions: fallbackQuestions })
-        .eq('id', sessionId);
+      // Try to store these fallback questions in the internship_sessions table,
+      // but don't throw an error if it fails - we'll return them anyway
+      try {
+        await supabase
+          .from('internship_sessions')
+          .update({ questions: fallbackQuestions })
+          .eq('id', sessionId);
+      } catch (updateError) {
+        console.warn("Failed to update internship_sessions with fallback questions:", updateError);
+      }
       
       return new Response(
         JSON.stringify({ 
@@ -180,8 +201,8 @@ serve(async (req) => {
       );
     }
     
-    // No questions found in any source and no session details to generate fallbacks
-    console.log(`No questions or session details found for session ID: ${sessionId}`);
+    // Last resort - return empty questions array with message
+    // This prevents errors on the frontend and lets it handle the no-questions state
     return new Response(
       JSON.stringify({ 
         questions: [],
@@ -192,9 +213,15 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error processing request:", error);
     
+    // Even in case of error, return a 200 response with empty questions
+    // This prevents the frontend from getting stuck in error/retry loops
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      JSON.stringify({ 
+        questions: [],
+        error: error.message || "An unexpected error occurred",
+        message: "Returning empty questions to prevent frontend errors"
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   }
 });
