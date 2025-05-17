@@ -1,7 +1,8 @@
 
-import { Route, Routes } from "react-router-dom";
-import { MediaLibrary } from "@/components/media/MediaLibrary";
+import { Route } from "react-router-dom";
+// Import your media-related components here
+// For example: import MediaLibrary from "@/pages/MediaLibrary";
 
 export const mediaRoutes = [
-  <Route key="media-library" path="/" element={<MediaLibrary />} />
+  // Example: <Route key="media-library" index element={<MediaLibrary />} />
 ];
