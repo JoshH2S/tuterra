@@ -529,6 +529,7 @@ export type Database = {
           industry: string
           job_description: string | null
           job_title: string
+          questions: Json | null
           user_id: string
         }
         Insert: {
@@ -538,6 +539,7 @@ export type Database = {
           industry: string
           job_description?: string | null
           job_title: string
+          questions?: Json | null
           user_id: string
         }
         Update: {
@@ -547,6 +549,7 @@ export type Database = {
           industry?: string
           job_description?: string | null
           job_title?: string
+          questions?: Json | null
           user_id?: string
         }
         Relationships: []

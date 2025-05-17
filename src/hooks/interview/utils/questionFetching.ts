@@ -75,6 +75,20 @@ export const fetchQuestionsFromSessionData = async (sessionId: string): Promise<
       error = response.error;
     }
     
+    // If not found in interview_sessions, try internship_sessions
+    if (error || !data || !data.questions || data.questions.length === 0) {
+      console.log(`No questions found in interview_sessions for ${sessionId}, trying internship_sessions`);
+      
+      const internshipResponse = await supabase
+        .from('internship_sessions')
+        .select('questions, job_title, industry')
+        .eq('id', sessionId)
+        .maybeSingle();
+        
+      data = internshipResponse.data;
+      error = internshipResponse.error;
+    }
+    
     if (error) {
       console.error("Error fetching session:", error);
       throw new Error(`No questions found in database for session ${sessionId}`);

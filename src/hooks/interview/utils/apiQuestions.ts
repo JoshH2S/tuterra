@@ -81,7 +81,7 @@ export const generateQuestionsFromApi = async (
         const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EdgeFunctionQuestion, index: number) => ({
           id: q.id || `q-${crypto.randomUUID()}`,
           session_id: params.sessionId,
-          question: q.text || '', // Use text field as the question field
+          question: q.question || q.text || '', // Use text field as the question field
           question_order: q.question_order !== undefined ? q.question_order : index,
           created_at: q.created_at || new Date().toISOString()
         }));
