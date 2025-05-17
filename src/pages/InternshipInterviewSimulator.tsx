@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +21,17 @@ interface InternshipSession {
   current_phase: number;
 }
 
+// Helper function to format industry name properly
+const formatIndustryName = (industry: string): string => {
+  if (!industry) return '';
+  
+  // Replace underscores with spaces and capitalize each word
+  return industry
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 const InternshipInterviewSimulator = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
@@ -34,6 +46,7 @@ const InternshipInterviewSimulator = () => {
   const [autoStartTimer, setAutoStartTimer] = useState<number | null>(null);
   
   const [session, setSession] = useState<InternshipSession | null>(null);
+  const [formattedIndustry, setFormattedIndustry] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const [isFeedbackGenerating, setIsFeedbackGenerating] = useState(false);
@@ -110,6 +123,11 @@ const InternshipInterviewSimulator = () => {
         
         console.log("InternshipInterviewSimulator: Session data retrieved:", sessionData);
         setSession(sessionData);
+        
+        // Format industry name properly
+        if (sessionData.industry) {
+          setFormattedIndustry(formatIndustryName(sessionData.industry));
+        }
         
         // Try to fetch existing questions for this session
         try {
@@ -486,7 +504,8 @@ const InternshipInterviewSimulator = () => {
           <>
             <div className="text-center">
               <h1 className="text-3xl font-bold">{session.job_title} Interview</h1>
-              <p className="text-muted-foreground">{session.industry} Industry</p>
+              {/* Display the properly formatted industry name */}
+              <p className="text-muted-foreground">{formattedIndustry || session.industry} Industry</p>
               
               {defaultQuestionsState.used && (
                 <div className="mt-3 flex flex-col sm:flex-row items-center justify-center gap-2">

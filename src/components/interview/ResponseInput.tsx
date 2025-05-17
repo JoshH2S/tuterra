@@ -2,6 +2,7 @@
 import { useRef, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { RecordingButton } from "./RecordingButton";
+import { useVoiceRecorder } from "@/hooks/interview/useVoiceRecorder";
 
 interface ResponseInputProps {
   response: string;

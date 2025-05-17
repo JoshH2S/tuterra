@@ -1,5 +1,3 @@
-// Note: We're updating the component to include inputRef in its props
-// Make sure to import useRef and add the proper types
 
 import React, { useRef } from "react";
 import { QuestionDisplay } from "./QuestionDisplay";
@@ -8,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { InterviewQuestion } from "@/types/interview";
 import { Card } from "@/components/ui/card";
+import { useVoiceRecorder } from "@/hooks/interview/useVoiceRecorder"; 
 
 interface InterviewChatProps {
   currentQuestion: InterviewQuestion | null;
@@ -16,7 +15,7 @@ interface InterviewChatProps {
   onTypingComplete?: () => void;
   isLastQuestion: boolean;
   jobTitle: string;
-  inputRef?: React.RefObject<HTMLTextAreaElement>; // Add inputRef prop
+  inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
 export const InterviewChat: React.FC<InterviewChatProps> = ({
@@ -26,12 +25,26 @@ export const InterviewChat: React.FC<InterviewChatProps> = ({
   onTypingComplete,
   isLastQuestion,
   jobTitle,
-  inputRef: externalInputRef // Use the new prop
+  inputRef: externalInputRef 
 }) => {
   const [response, setResponse] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const internalInputRef = useRef<HTMLTextAreaElement>(null);
   const activeInputRef = externalInputRef || internalInputRef;
+  
+  // Use voice recorder hook for speech-to-text functionality
+  const { 
+    isRecording, 
+    isTranscribing, 
+    formattedTime, 
+    toggleRecording 
+  } = useVoiceRecorder((transcribedText) => {
+    // Append transcribed text to existing response
+    setResponse(prev => {
+      const separator = prev && !prev.endsWith(' ') ? ' ' : '';
+      return prev + separator + transcribedText;
+    });
+  });
   
   // Use the existing code for handling submission
   const handleSubmit = async () => {
@@ -73,9 +86,10 @@ export const InterviewChat: React.FC<InterviewChatProps> = ({
           onKeyDown={handleKeyDown}
           isSubmitting={isSubmitting}
           typingEffect={typingEffect}
-          isRecording={false}
-          isTranscribing={false}
-          onToggleRecording={() => {}}
+          isRecording={isRecording}
+          isTranscribing={isTranscribing}
+          onToggleRecording={toggleRecording}
+          recordingTime={formattedTime}
           inputRef={activeInputRef}
         />
         
