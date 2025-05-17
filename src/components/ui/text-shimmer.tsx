@@ -10,6 +10,7 @@ interface TextShimmerProps {
   className?: string;
   duration?: number;
   spread?: number;
+  onAnimationComplete?: () => void; // Add the missing prop
 }
 
 export function TextShimmer({
@@ -18,6 +19,7 @@ export function TextShimmer({
   className,
   duration = 2,
   spread = 2,
+  onAnimationComplete, // Include in destructuring
 }: TextShimmerProps) {
   const MotionComponent = motion(Component as keyof JSX.IntrinsicElements);
 
@@ -41,6 +43,7 @@ export function TextShimmer({
         duration,
         ease: 'linear',
       }}
+      onAnimationComplete={onAnimationComplete} // Add the callback prop
       style={
         {
           '--spread': `${dynamicSpread}px`,

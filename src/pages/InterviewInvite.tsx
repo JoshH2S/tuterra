@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -134,6 +133,8 @@ const InterviewInvite = () => {
   
   // Helper to get question count from various data formats
   const getQuestionCount = (data: any): number => {
+    if (!data) return 0;
+    
     if (data?.questions && Array.isArray(data.questions)) {
       return data.questions.length;
     }
@@ -149,7 +150,7 @@ const InterviewInvite = () => {
       );
       
       if (questionArrays.length > 0) {
-        return questionArrays[0].length;
+        return (questionArrays[0] as any[]).length;
       }
     }
     

@@ -53,7 +53,7 @@ export const fetchQuestionsFromDb = async (sessionId: string, retryAttempts = 3)
           
         if (possibleQuestionArrays.length > 0) {
           // Use the first array found (most likely to be questions)
-          questionsList = normalizeQuestions(possibleQuestionArrays[0], sessionId);
+          questionsList = normalizeQuestions(possibleQuestionArrays[0] as any[], sessionId);
         }
       }
       
