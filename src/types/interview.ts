@@ -24,6 +24,7 @@ export interface InterviewQuestion {
 export interface EdgeFunctionQuestion {
   id: string;
   text: string;  // This is the question text
+  question?: string; // Added to support legacy format
   category: string;
   difficulty: string;
   estimatedTimeSeconds: number;

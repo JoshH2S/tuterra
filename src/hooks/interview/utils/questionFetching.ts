@@ -76,7 +76,8 @@ export const fetchQuestionsFromSessionData = async (sessionId: string): Promise<
     }
     
     // If not found in interview_sessions, try internship_sessions
-    if (error || !data || !data.questions || data.questions.length === 0) {
+    if (error || !data || !data.questions || 
+        !Array.isArray(data.questions) || (Array.isArray(data.questions) && data.questions.length === 0)) {
       console.log(`No questions found in interview_sessions for ${sessionId}, trying internship_sessions`);
       
       const internshipResponse = await supabase
@@ -94,7 +95,7 @@ export const fetchQuestionsFromSessionData = async (sessionId: string): Promise<
       throw new Error(`No questions found in database for session ${sessionId}`);
     }
     
-    if (data && Array.isArray(data.questions) && data.questions.length > 0) {
+    if (data && data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
       console.log(`Retrieved ${data.questions.length} questions from session data`);
       
       // Format the questions from the session data
