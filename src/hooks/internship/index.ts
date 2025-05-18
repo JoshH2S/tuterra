@@ -3,4 +3,5 @@
 export * from './useInternship';
 export * from './types';
 export * from './useInternshipForm';
-export { InternshipContextProvider as InternshipProvider } from './InternshipContextProvider';
+export { InternshipContextProvider } from './InternshipContextProvider';
+export { useInternshipContext } from './InternshipContextProvider';
