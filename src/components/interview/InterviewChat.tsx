@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { InterviewQuestion } from "@/types/interview";
 import { Card } from "@/components/ui/card";
 import { useVoiceRecorder } from "@/hooks/interview/useVoiceRecorder"; 
+import { RecordingButton } from "./RecordingButton";
 
 interface InterviewChatProps {
   currentQuestion: InterviewQuestion | null;
@@ -86,14 +87,33 @@ export const InterviewChat: React.FC<InterviewChatProps> = ({
           onKeyDown={handleKeyDown}
           isSubmitting={isSubmitting}
           typingEffect={typingEffect}
-          isRecording={isRecording}
-          isTranscribing={isTranscribing}
-          onToggleRecording={toggleRecording}
-          recordingTime={formattedTime}
           inputRef={activeInputRef}
         />
         
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-between items-center mt-4">
+          {/* Microphone button section */}
+          <div className="flex items-center space-x-2 touch-manipulation">
+            <RecordingButton
+              isRecording={isRecording}
+              isTranscribing={isTranscribing}
+              isDisabled={isSubmitting || typingEffect}
+              onToggleRecording={toggleRecording}
+            />
+            
+            {isRecording && (
+              <span className="text-xs font-mono bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                {formattedTime}
+              </span>
+            )}
+            
+            {isTranscribing && (
+              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full animate-pulse">
+                Transcribing...
+              </span>
+            )}
+          </div>
+          
+          {/* Submit button */}
           <Button 
             onClick={handleSubmit} 
             disabled={!response.trim() || isSubmitting || typingEffect}

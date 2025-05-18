@@ -1,7 +1,6 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { RecordingButton } from "./RecordingButton";
 
 interface ResponseInputProps {
   response: string;
@@ -9,10 +8,6 @@ interface ResponseInputProps {
   onKeyDown: (e: React.KeyboardEvent) => void;
   isSubmitting: boolean;
   typingEffect: boolean;
-  isRecording: boolean;
-  isTranscribing: boolean;
-  onToggleRecording: () => void;
-  recordingTime?: string;
   inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
@@ -22,17 +17,12 @@ export const ResponseInput = ({
   onKeyDown,
   isSubmitting,
   typingEffect,
-  isRecording,
-  isTranscribing,
-  onToggleRecording,
-  recordingTime = "00:00",
   inputRef
 }: ResponseInputProps) => {
   const defaultRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = inputRef || defaultRef;
   const [focusAttempted, setFocusAttempted] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
-  const [micButtonActive, setMicButtonActive] = useState(false);
   
   // Update viewport height on resize for mobile considerations
   useEffect(() => {
@@ -51,7 +41,7 @@ export const ResponseInput = ({
   
   // Effect to focus the textarea when typing effect ends
   useEffect(() => {
-    if (!typingEffect && !isSubmitting && !isRecording && !isTranscribing) {
+    if (!typingEffect && !isSubmitting) {
       if (focusAttempted) {
         return; // Don't try focusing again if we've already tried
       }
@@ -84,7 +74,7 @@ export const ResponseInput = ({
       
       return () => clearTimeout(timer);
     }
-  }, [typingEffect, isSubmitting, isRecording, isTranscribing, focusAttempted, viewportHeight]);
+  }, [typingEffect, isSubmitting, focusAttempted, viewportHeight]);
   
   // Reset focus attempted state when question changes (implied by typingEffect becoming true again)
   useEffect(() => {
@@ -93,21 +83,9 @@ export const ResponseInput = ({
     }
   }, [typingEffect]);
   
-  // Improved microphone button interaction
-  const handleMicButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Set active state for better touch feedback
-    setMicButtonActive(true);
-    setTimeout(() => setMicButtonActive(false), 200);
-    
-    onToggleRecording();
-  };
-  
   // Touch-friendly handling - ensure taps on the container focus the textarea
   const handleContainerTap = () => {
-    if (!typingEffect && !isSubmitting && !isRecording && !isTranscribing && textareaRef.current) {
+    if (!typingEffect && !isSubmitting && textareaRef.current) {
       textareaRef.current.focus();
     }
   };
@@ -118,33 +96,12 @@ export const ResponseInput = ({
         ref={textareaRef}
         value={response}
         onChange={(e) => onResponseChange(e.target.value)}
-        placeholder="Type your answer here or use the microphone..."
-        className="w-full resize-none h-32 md:h-36 focus:ring-1 focus:ring-primary pr-14"
+        placeholder="Type your answer here..."
+        className="w-full resize-none h-32 md:h-36 focus:ring-1 focus:ring-primary"
         onKeyDown={onKeyDown}
-        disabled={isSubmitting || typingEffect || isRecording || isTranscribing}
-        aria-disabled={isSubmitting || typingEffect || isRecording || isTranscribing}
+        disabled={isSubmitting || typingEffect}
+        aria-disabled={isSubmitting || typingEffect}
       />
-      <div className={`absolute right-3 top-3 flex items-center gap-2 ${micButtonActive ? 'transform scale-95' : ''}`}>
-        {isRecording && (
-          <div className="text-xs font-mono bg-red-100 text-red-800 px-2 py-1 rounded-full">
-            {recordingTime}
-          </div>
-        )}
-        <div 
-          className="touch-manipulation" 
-          onClick={handleMicButtonClick}
-          role="button"
-          aria-label={isRecording ? "Stop recording" : "Start recording"}
-          tabIndex={0}
-        >
-          <RecordingButton
-            isRecording={isRecording}
-            isTranscribing={isTranscribing}
-            isDisabled={isSubmitting || typingEffect}
-            onToggleRecording={onToggleRecording}
-          />
-        </div>
-      </div>
       
       {/* Visual indicator when typing effect is active */}
       {typingEffect && (
@@ -156,7 +113,7 @@ export const ResponseInput = ({
       )}
       
       {/* Mobile-friendly touch target for focusing */}
-      {!typingEffect && !isSubmitting && !isRecording && !isTranscribing && (
+      {!typingEffect && !isSubmitting && (
         <button 
           className="absolute inset-0 opacity-0" 
           aria-hidden="true"
