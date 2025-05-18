@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InternshipSession, Task, Deliverable, Feedback } from './types';
@@ -152,6 +153,7 @@ export async function fetchDeliverablesForTasks(taskIds: string[]): Promise<{
 
 /**
  * Creates a new internship session using the edge function
+ * Returns a Promise that resolves to the session ID if successful
  */
 export async function createSession(
   jobTitle: string, 
@@ -184,16 +186,31 @@ export async function createSession(
   localStorage.setItem('lastSessionCreation', now.toString());
 
   console.log("🔐 internshipService: Getting auth session");
+  // Get auth session and verify it's valid before proceeding
   const authSession = await supabase.auth.getSession();
   console.log("🔐 internshipService: Auth session retrieved", {
     hasSession: !!authSession.data.session,
     hasError: !!authSession.error,
-    userId: authSession.data.session?.user.id
+    userId: authSession.data.session?.user.id,
+    accessToken: authSession.data.session?.access_token ? "exists" : "missing"
   });
 
-  if (!authSession.data.session) {
-    console.error("❌ internshipService: No auth session found");
+  if (!authSession.data.session || !authSession.data.session.access_token) {
+    console.error("❌ internshipService: No valid auth session found");
     throw new Error('You must be logged in to create an internship session');
+  }
+
+  // Double-check token validity to catch edge cases where token exists but is invalid
+  try {
+    const { data: userCheck } = await supabase.auth.getUser(authSession.data.session.access_token);
+    if (!userCheck?.user) {
+      console.error("❌ internshipService: Token exists but user could not be retrieved");
+      throw new Error('Authentication validation failed');
+    }
+    console.log("✅ internshipService: Token validation passed", { userId: userCheck.user.id });
+  } catch (validationError) {
+    console.error("❌ internshipService: Token validation failed", validationError);
+    throw new Error('Your login session could not be verified. Please try refreshing the page.');
   }
 
   // Call edge function to create session (with authorization)

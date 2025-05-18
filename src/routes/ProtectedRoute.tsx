@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [sessionValid, setSessionValid] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -16,6 +18,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     
     // Clean up auth state in localStorage if needed
     const cleanupAuthState = () => {
+      // Look for stale auth tokens and clear them
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('supabase.auth.') && key.includes('stale')) {
           localStorage.removeItem(key);
@@ -35,11 +38,14 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       });
       
       setSession(session);
-      setLoading(false);
       
-      // If session is established, check onboarding status
+      // If session is established, check session validity
       if (session?.user) {
         try {
+          // Check if session is valid by making a simple authenticated request
+          const { data: { user }, error } = await supabase.auth.getUser(session.access_token);
+          setSessionValid(!!user && !error);
+          
           // Check if onboarding is complete in database
           const { data: profile } = await supabase
             .from('profiles')
@@ -52,8 +58,16 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
             localStorage.setItem("onboardingComplete", profile.onboarding_complete ? "true" : "false");
           }
         } catch (error) {
-          console.error("Error checking onboarding status:", error);
+          console.error("Error checking session validity:", error);
+          setSessionValid(false);
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
         }
+      } else {
+        setSessionValid(false);
+        setLoading(false);
       }
       
       // If session is lost during app usage, redirect to auth
@@ -72,6 +86,8 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       cleanupAuthState();
       
       try {
+        console.log("🔒 ProtectedRoute: Getting initial session");
+        
         // Explicitly get the session to ensure we have the latest state
         const { data, error } = await supabase.auth.getSession();
         
@@ -79,6 +95,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           console.error("🔒 ProtectedRoute: Error getting session:", error);
           if (isMounted) {
             setSession(null);
+            setSessionValid(false);
             setLoading(false);
             setIsInitialized(true);
           }
@@ -91,8 +108,33 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           tokenExists: !!data.session?.access_token
         });
         
+        if (data.session && data.session.access_token) {
+          // Verify the session is valid
+          try {
+            const { data: userData, error: userError } = await supabase.auth.getUser(data.session.access_token);
+            
+            if (userError || !userData?.user) {
+              console.error("🔒 ProtectedRoute: Invalid session token", userError);
+              setSessionValid(false);
+              // Try to refresh the session
+              const { data: refreshData } = await supabase.auth.refreshSession();
+              setSessionValid(!!refreshData.session);
+              setSession(refreshData.session);
+            } else {
+              console.log("🔒 ProtectedRoute: Session validated successfully");
+              setSessionValid(true);
+              setSession(data.session);
+            }
+          } catch (verifyError) {
+            console.error("🔒 ProtectedRoute: Error validating session:", verifyError);
+            setSessionValid(false);
+          }
+        } else {
+          setSessionValid(false);
+          setSession(null);
+        }
+        
         if (isMounted) {
-          setSession(data.session);
           setLoading(false);
           setIsInitialized(true);
         }
@@ -100,6 +142,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         console.error("🔒 ProtectedRoute: Exception during initialization:", e);
         if (isMounted) {
           setSession(null);
+          setSessionValid(false);
           setLoading(false);
           setIsInitialized(true);
         }
@@ -116,7 +159,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, [navigate, loading, location.pathname, isInitialized]);
 
   // Compute access condition after all hooks are called
-  const isAuthenticated = !!session;
+  const isAuthenticated = !!session && sessionValid;
   const isLoadingComplete = !loading && isInitialized;
 
   if (!isLoadingComplete) {

@@ -140,17 +140,30 @@ export const useAuth = () => {
   }, [navigate, cleanupAuthState]);
 
   // Helper to verify if the current session is valid
-  const verifySession = useCallback(async (): Promise<boolean> => {
+  const verifySession = useCallback(async (): Promise<{valid: boolean, userId?: string}> => {
     try {
       const { data, error } = await supabase.auth.getSession();
       if (error || !data.session || !data.session.access_token) {
         console.error("❌ useAuth: Session verification failed", error);
-        return false;
+        return { valid: false };
       }
-      return true;
+      
+      // Double-check token by using getUser
+      const { data: userData, error: userError } = await supabase.auth.getUser(data.session.access_token);
+      if (userError || !userData?.user) {
+        console.error("❌ useAuth: Token validation failed", userError);
+        return { valid: false };
+      }
+      
+      console.log("✅ useAuth: Session verified successfully", {
+        userId: userData.user.id,
+        email: userData.user.email
+      });
+      
+      return { valid: true, userId: userData.user.id };
     } catch (error) {
       console.error("❌ useAuth: Error verifying session", error);
-      return false;
+      return { valid: false };
     }
   }, []);
 
