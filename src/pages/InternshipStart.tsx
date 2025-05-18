@@ -229,7 +229,7 @@ const InternshipStart = () => {
             <CardTitle className="text-center">Loading</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center p-6">
-            <LoadingSpinner size="medium" />
+            <LoadingSpinner size="default" />
             <p className="mt-4 text-muted-foreground text-center">
               Checking authentication status...
             </p>
