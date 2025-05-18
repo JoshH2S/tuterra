@@ -10,7 +10,7 @@ interface TextShimmerProps {
   className?: string;
   duration?: number;
   spread?: number;
-  onAnimationComplete?: () => void; // Add the onAnimationComplete prop
+  onAnimationComplete?: () => void; // Added onAnimationComplete prop
 }
 
 export function TextShimmer({

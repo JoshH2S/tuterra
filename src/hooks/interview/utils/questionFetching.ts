@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { InterviewQuestion } from "@/types/interview";
 
@@ -114,3 +113,42 @@ export const fetchQuestionsFromSessionData = async (sessionId: string): Promise<
     return [];
   }
 };
+
+export async function fetchQuestionsFromAPI(sessionId: string): Promise<InterviewQuestion[]> {
+  try {
+    if (!sessionId) throw new Error('Session ID is required');
+    
+    const { data, error } = await supabase.functions.invoke('get-interview-questions', {
+      body: { sessionId }
+    });
+    
+    if (error) {
+      console.error('Error fetching questions:', error);
+      throw new Error(`API error: ${error.message}`);
+    }
+    
+    if (!data) return [];
+    
+    // Process API data with proper type checking
+    const questions = Array.isArray(data) 
+      ? data
+      : data.questions && Array.isArray(data.questions) 
+        ? data.questions
+        : [];
+    
+    if (questions.length === 0) {
+      console.warn('No questions returned from API');
+    }
+    
+    return questions.map((q: any, idx: number) => ({
+      id: q.id || `question-${idx}-${Date.now()}`,
+      session_id: sessionId,
+      question: q.question || q.text || 'No question text available',
+      question_order: q.order || q.question_order || idx,
+      created_at: q.created_at || new Date().toISOString()
+    }));
+  } catch (error) {
+    console.error('fetchQuestionsFromAPI error:', error);
+    return [];
+  }
+}

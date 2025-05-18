@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,18 +46,6 @@ const InternshipInterviewSimulator = () => {
   
   const [session, setSession] = useState<InternshipSession | null>(null);
   const [formattedIndustry, setFormattedIndustry] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSavingProgress, setIsSavingProgress] = useState(false);
-  const [isFeedbackGenerating, setIsFeedbackGenerating] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [questionsError, setQuestionsError] = useState<string | null>(null);
-  const [questionsLoaded, setQuestionsLoaded] = useState(false);
-  const [questionsFetched, setQuestionsFetched] = useState(false);
-  const [retryAttempt, setRetryAttempt] = useState(0);
-  const [defaultQuestionsState, setDefaultQuestionsState] = useState<{
-    used: boolean;
-    reason: string | null;
-  }>({ used: false, reason: null });
   
   // Import interview state management from the shared hook
   const interviewState = useInterviewState();

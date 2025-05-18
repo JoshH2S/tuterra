@@ -46,7 +46,7 @@ export const InterviewChat: React.FC<InterviewChatProps> = ({
     });
   });
   
-  // Use the existing code for handling submission
+  // Handle submission of the response
   const handleSubmit = async () => {
     if (!response.trim() || isSubmitting || typingEffect) return;
     

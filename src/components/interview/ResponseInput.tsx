@@ -2,7 +2,6 @@
 import { useRef, useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { RecordingButton } from "./RecordingButton";
-import { useVoiceRecorder } from "@/hooks/interview/useVoiceRecorder";
 
 interface ResponseInputProps {
   response: string;
@@ -33,6 +32,7 @@ export const ResponseInput = ({
   const textareaRef = inputRef || defaultRef;
   const [focusAttempted, setFocusAttempted] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+  const [micButtonActive, setMicButtonActive] = useState(false);
   
   // Update viewport height on resize for mobile considerations
   useEffect(() => {
@@ -93,6 +93,18 @@ export const ResponseInput = ({
     }
   }, [typingEffect]);
   
+  // Improved microphone button interaction
+  const handleMicButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Set active state for better touch feedback
+    setMicButtonActive(true);
+    setTimeout(() => setMicButtonActive(false), 200);
+    
+    onToggleRecording();
+  };
+  
   // Touch-friendly handling - ensure taps on the container focus the textarea
   const handleContainerTap = () => {
     if (!typingEffect && !isSubmitting && !isRecording && !isTranscribing && textareaRef.current) {
@@ -107,23 +119,31 @@ export const ResponseInput = ({
         value={response}
         onChange={(e) => onResponseChange(e.target.value)}
         placeholder="Type your answer here or use the microphone..."
-        className="w-full resize-none h-32 md:h-36 focus:ring-1 focus:ring-primary pr-10"
+        className="w-full resize-none h-32 md:h-36 focus:ring-1 focus:ring-primary pr-14"
         onKeyDown={onKeyDown}
         disabled={isSubmitting || typingEffect || isRecording || isTranscribing}
         aria-disabled={isSubmitting || typingEffect || isRecording || isTranscribing}
       />
-      <div className="absolute right-3 top-3 flex items-center gap-2">
+      <div className={`absolute right-3 top-3 flex items-center gap-2 ${micButtonActive ? 'transform scale-95' : ''}`}>
         {isRecording && (
           <div className="text-xs font-mono bg-red-100 text-red-800 px-2 py-1 rounded-full">
             {recordingTime}
           </div>
         )}
-        <RecordingButton
-          isRecording={isRecording}
-          isTranscribing={isTranscribing}
-          isDisabled={isSubmitting || typingEffect}
-          onToggleRecording={onToggleRecording}
-        />
+        <div 
+          className="touch-manipulation" 
+          onClick={handleMicButtonClick}
+          role="button"
+          aria-label={isRecording ? "Stop recording" : "Start recording"}
+          tabIndex={0}
+        >
+          <RecordingButton
+            isRecording={isRecording}
+            isTranscribing={isTranscribing}
+            isDisabled={isSubmitting || typingEffect}
+            onToggleRecording={onToggleRecording}
+          />
+        </div>
       </div>
       
       {/* Visual indicator when typing effect is active */}
