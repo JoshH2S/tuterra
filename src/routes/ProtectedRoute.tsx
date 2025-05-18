@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,10 +11,29 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Keep track if the component is still mounted
+    let isMounted = true;
+    
+    // Clean up auth state in localStorage if needed
+    const cleanupAuthState = () => {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') && key.includes('stale')) {
+          localStorage.removeItem(key);
+        }
+      });
+    };
+    
     // Set up auth listener first
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return;
+      
+      console.log("🔒 ProtectedRoute: Auth state changed:", _event, {
+        hasSession: !!session,
+        userId: session?.user?.id
+      });
+      
       setSession(session);
       setLoading(false);
       
@@ -49,13 +67,52 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     });
 
     // Then get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-      setIsInitialized(true);
-    });
+    const initializeAuth = async () => {
+      // Clean up any stale auth state
+      cleanupAuthState();
+      
+      try {
+        // Explicitly get the session to ensure we have the latest state
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("🔒 ProtectedRoute: Error getting session:", error);
+          if (isMounted) {
+            setSession(null);
+            setLoading(false);
+            setIsInitialized(true);
+          }
+          return;
+        }
+        
+        console.log("🔒 ProtectedRoute: Initial session check:", {
+          hasSession: !!data.session,
+          userId: data.session?.user?.id,
+          tokenExists: !!data.session?.access_token
+        });
+        
+        if (isMounted) {
+          setSession(data.session);
+          setLoading(false);
+          setIsInitialized(true);
+        }
+      } catch (e) {
+        console.error("🔒 ProtectedRoute: Exception during initialization:", e);
+        if (isMounted) {
+          setSession(null);
+          setLoading(false);
+          setIsInitialized(true);
+        }
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate, loading, location.pathname, isInitialized]);
 
   // Compute access condition after all hooks are called
@@ -66,6 +123,9 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <span className="ml-3 text-sm text-muted-foreground">
+          Verifying authentication...
+        </span>
       </div>
     );
   }

@@ -91,7 +91,7 @@ export const InterviewChat: React.FC<InterviewChatProps> = ({
         />
         
         <div className="flex justify-between items-center mt-4">
-          {/* Microphone button section */}
+          {/* Moved microphone button to the action row for better visibility and access */}
           <div className="flex items-center space-x-2 touch-manipulation">
             <RecordingButton
               isRecording={isRecording}

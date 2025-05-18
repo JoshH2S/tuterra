@@ -17,6 +17,12 @@ export const useAuth = () => {
 
     // Create a function to update both session and user
     const updateAuthState = (newSession: Session | null) => {
+      console.log("🔒 useAuth: Updating auth state", {
+        hasSession: !!newSession,
+        userId: newSession?.user?.id,
+        accessToken: newSession?.access_token ? "exists" : "null",
+      });
+      
       setSession(newSession);
       setUser(newSession?.user || null);
       
@@ -31,9 +37,28 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log(`🔒 useAuth: Auth state changed: ${_event}`, { 
         hasUser: !!session?.user,
-        userId: session?.user?.id
+        userId: session?.user?.id,
+        accessToken: session?.access_token ? "exists" : "null"
       });
       updateAuthState(session);
+      
+      // If auth status changed to signedIn, refresh the page data
+      if (_event === 'SIGNED_IN') {
+        // Use setTimeout to prevent potential auth deadlocks
+        setTimeout(() => {
+          console.log("🔄 useAuth: Triggering data refresh after sign-in");
+          // Any additional data fetching can be done here
+        }, 0);
+      }
+      
+      // If signed out, perform cleanup
+      if (_event === 'SIGNED_OUT') {
+        console.log("🚪 useAuth: User signed out, cleaning up");
+        // Use setTimeout to prevent potential auth deadlocks
+        setTimeout(() => {
+          // Additional cleanup can go here
+        }, 0);
+      }
     });
 
     // THEN check for existing session to set initial state
@@ -48,7 +73,8 @@ export const useAuth = () => {
         
         console.log("🔒 useAuth: Initial session check:", { 
           hasSession: !!data?.session,
-          userId: data?.session?.user?.id
+          userId: data?.session?.user?.id,
+          accessToken: data?.session?.access_token ? "exists" : "null"
         });
         updateAuthState(data.session);
       } catch (error) {
@@ -66,28 +92,29 @@ export const useAuth = () => {
     };
   }, []);
 
+  // Helper function to clean up auth state in localStorage
+  const cleanupAuthState = useCallback(() => {
+    console.log("🧹 useAuth: Cleaning up auth state in localStorage");
+    // Remove standard auth tokens
+    localStorage.removeItem('supabase.auth.token');
+    // Remove all Supabase auth keys from localStorage
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }, []);
+
   const signOut = useCallback(async () => {
     console.log("🔒 useAuth: Sign out initiated");
     try {
       setLoading(true);
       
       // First clean up any potential stale auth state
-      const cleanupAuthState = () => {
-        // Remove standard auth tokens
-        localStorage.removeItem('supabase.auth.token');
-        // Remove all Supabase auth keys from localStorage
-        Object.keys(localStorage).forEach((key) => {
-          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-            localStorage.removeItem(key);
-          }
-        });
-      };
+      cleanupAuthState();
       
       // Try global sign out first
       await supabase.auth.signOut({ scope: 'global' });
-      
-      // Clean up auth state
-      cleanupAuthState();
       
       // Update local state
       setUser(null);
@@ -110,7 +137,30 @@ export const useAuth = () => {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, cleanupAuthState]);
 
-  return { user, session, loading, initialized, signOut };
+  // Helper to verify if the current session is valid
+  const verifySession = useCallback(async (): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session || !data.session.access_token) {
+        console.error("❌ useAuth: Session verification failed", error);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("❌ useAuth: Error verifying session", error);
+      return false;
+    }
+  }, []);
+
+  return { 
+    user, 
+    session, 
+    loading, 
+    initialized, 
+    signOut,
+    verifySession,
+    cleanupAuthState
+  };
 };

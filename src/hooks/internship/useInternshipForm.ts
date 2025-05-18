@@ -14,7 +14,7 @@ interface FormData {
 
 export function useInternshipForm() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const { createInternshipSession, loading: createLoading } = useInternship();
   
   const [formData, setFormData] = useState<FormData>({
@@ -28,36 +28,54 @@ export function useInternshipForm() {
   const [progressStatus, setProgressStatus] = useState("");
   const [formReady, setFormReady] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [verifyingAuth, setVerifyingAuth] = useState(false);
   
-  // Ensure user is authenticated
+  // Ensure user is authenticated and session is fully loaded
   useEffect(() => {
     const checkAuth = async () => {
       // Check if user is already set from useAuth
       if (!authLoading) {
-        setAuthChecked(true);
-        setFormReady(!!user);
-        
-        console.log("🔒 useInternshipForm: Auth check completed", { 
-          userExists: !!user,
-          userId: user?.id,
-          formReady: !!user
-        });
-        
-        // If no user after auth check completes, redirect to auth
-        if (!user) {
-          console.warn("⚠️ useInternshipForm: No user found, redirecting to auth");
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to create an internship",
-            variant: "destructive",
-          });
-          navigate("/auth", { state: { returnTo: "/internship/start" } });
+        // Double-check the session
+        try {
+          setVerifyingAuth(true);
+          const { data, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error("🔒 useInternshipForm: Error getting session:", error);
+            setFormReady(false);
+          } else {
+            const sessionReady = !!data.session && !!data.session.access_token;
+            setFormReady(sessionReady && !!user);
+            
+            console.log("🔒 useInternshipForm: Auth check completed", { 
+              userExists: !!user,
+              userId: user?.id,
+              sessionExists: !!data.session,
+              tokenExists: !!data.session?.access_token,
+              formReady: sessionReady && !!user
+            });
+            
+            // If no user or session after auth check completes, redirect to auth
+            if (!sessionReady || !user) {
+              console.warn("⚠️ useInternshipForm: No valid auth state found, redirecting to auth");
+              toast({
+                title: "Authentication Required",
+                description: "Please sign in to create an internship",
+                variant: "destructive",
+              });
+              navigate("/auth", { state: { returnTo: "/internship/start" } });
+            }
+          }
+          
+          setAuthChecked(true);
+        } finally {
+          setVerifyingAuth(false);
         }
       }
     };
     
     checkAuth();
-  }, [authLoading, user, navigate]);
+  }, [authLoading, user, navigate, session]);
   
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -67,6 +85,38 @@ export function useInternshipForm() {
       ...prev,
       [name]: value,
     }));
+  };
+  
+  const verifyAuthBeforeSubmit = async (): Promise<boolean> => {
+    try {
+      // Re-check auth session right before submission
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error || !data.session || !data.session.access_token) {
+        console.error("❌ useInternshipForm: Auth verification failed", { error, sessionExists: !!data.session });
+        toast({
+          title: "Authentication Error",
+          description: "Your login session couldn't be verified. Please try refreshing the page.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      console.log("✅ useInternshipForm: Auth verified before submission", { 
+        userId: data.session.user.id,
+        tokenExists: !!data.session.access_token
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("❌ useInternshipForm: Exception during auth verification", error);
+      toast({
+        title: "Authentication Error",
+        description: "There was a problem verifying your login session. Please try refreshing.",
+        variant: "destructive",
+      });
+      return false;
+    }
   };
   
   const generateInterviewQuestions = async (sessionId: string): Promise<boolean> => {
@@ -109,8 +159,17 @@ export function useInternshipForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent submission during auth verification
+    if (verifyingAuth) {
+      toast({
+        title: "Please wait",
+        description: "Verifying your account...",
+      });
+      return;
+    }
+    
     // Extra validation for user authentication
-    if (!user) {
+    if (!user || !session) {
       console.error("❌ useInternshipForm: User not authenticated on submit");
       toast({
         title: "Authentication Required",
@@ -134,6 +193,12 @@ export function useInternshipForm() {
         description: "Please fill out all fields before continuing",
         variant: "destructive",
       });
+      return;
+    }
+    
+    // Pre-submit auth verification
+    const authVerified = await verifyAuthBeforeSubmit();
+    if (!authVerified) {
       return;
     }
     
@@ -167,6 +232,37 @@ export function useInternshipForm() {
         description: "Failed to create internship session. Please try again.",
         variant: "destructive",
       });
+      
+      // Try one more time after a short delay if there might be an auth issue
+      if (error instanceof Error && error.message?.includes('auth')) {
+        setTimeout(async () => {
+          try {
+            console.log("🔄 useInternshipForm: Retrying submission after auth error");
+            const authVerified = await verifyAuthBeforeSubmit();
+            if (!authVerified) return;
+            
+            // Retry submission
+            setProgressStatus("Retrying session creation...");
+            const sessionId = await createInternshipSession(
+              formData.jobTitle,
+              formData.industry,
+              formData.jobDescription
+            );
+            
+            if (sessionId) {
+              toast({
+                title: "Success",
+                description: "Session created on second attempt!",
+              });
+              setGeneratingQuestions(true);
+              await generateInterviewQuestions(sessionId);
+              navigate(`/internship/interview/invite/${sessionId}`);
+            }
+          } catch (retryError) {
+            console.error("❌ useInternshipForm: Retry failed:", retryError);
+          }
+        }, 1500);
+      }
     } finally {
       setSubmitting(false);
       setGeneratingQuestions(false);
@@ -185,6 +281,8 @@ export function useInternshipForm() {
     createLoading,
     formReady,
     authChecked,
-    user
+    verifyingAuth,
+    user,
+    session
   };
 }

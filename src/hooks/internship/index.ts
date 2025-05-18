@@ -1,5 +1,5 @@
 
-export * from './types';
-export * from './InternshipContextProvider';
+// Re-export the hooks and types from this module
 export * from './useInternship';
-export * from './internshipService';
+export * from './types';
+export * from './useInternshipForm';
