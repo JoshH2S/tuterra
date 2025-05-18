@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useInternship } from '@/hooks/internship';
@@ -14,7 +14,7 @@ interface FormData {
 
 export function useInternshipForm() {
   const navigate = useNavigate();
-  const { user, session, loading: authLoading, verifySession, refreshSession } = useAuth();
+  const { user, session, loading: authLoading, verifySession } = useAuth();
   const { createInternshipSession, loading: createLoading } = useInternship();
   
   const [formData, setFormData] = useState<FormData>({
@@ -24,73 +24,35 @@ export function useInternshipForm() {
   });
   
   const [submitting, setSubmitting] = useState(false);
+  const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [progressStatus, setProgressStatus] = useState("");
   const [formReady, setFormReady] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [verifyingAuth, setVerifyingAuth] = useState(false);
+  const [mounted, setMounted] = useState(true);
   
-  // Use refs to track component lifecycle
-  const isMounted = useRef(true);
-  const retryAttempts = useRef(0);
-  const maxRetries = 2;
-  
-  // Set up mounted ref for tracking component lifecycle
+  // Set mounted state for tracking component lifecycle
   useEffect(() => {
-    isMounted.current = true;
-    console.log("🔄 useInternshipForm: Component mounted");
-    
-    return () => {
-      isMounted.current = false;
-      console.log("🔄 useInternshipForm: Component unmounted");
-    };
+    setMounted(true);
+    return () => setMounted(false);
   }, []);
   
   // Ensure user is authenticated and session is fully loaded
   useEffect(() => {
     const checkAuth = async () => {
-      console.log("🔒 useInternshipForm: Checking auth state", { 
-        authLoading, 
-        hasUser: !!user, 
-        hasSession: !!session 
-      });
-      
-      // Skip if already checking or if auth is still loading
-      if (verifyingAuth || authLoading) return;
-      
       // Check if user is already set from useAuth
       if (!authLoading) {
         // Double-check the session
         try {
           setVerifyingAuth(true);
-          
-          // Get the latest session state
           const { data, error } = await supabase.auth.getSession();
           
           if (error) {
             console.error("🔒 useInternshipForm: Error getting session:", error);
-            if (isMounted.current) {
-              setFormReady(false);
-            }
+            setFormReady(false);
           } else {
-            // Check if we have a valid session with access token
             const sessionReady = !!data.session && !!data.session.access_token;
-            
-            // If no valid session but user exists in state, try refreshing the token
-            if (!sessionReady && user && retryAttempts.current < maxRetries) {
-              console.log("🔄 useInternshipForm: Session missing but user exists, refreshing token");
-              retryAttempts.current += 1;
-              const refreshed = await refreshSession();
-              
-              if (refreshed && isMounted.current) {
-                console.log("✅ useInternshipForm: Session refresh successful");
-                setFormReady(true);
-              }
-            } else {
-              // Normal case - set form ready if we have user and session
-              if (isMounted.current) {
-                setFormReady(sessionReady && !!user);
-              }
-            }
+            setFormReady(sessionReady && !!user);
             
             console.log("🔒 useInternshipForm: Auth check completed", { 
               userExists: !!user,
@@ -101,24 +63,22 @@ export function useInternshipForm() {
             });
             
             // If no user or session after auth check completes, redirect to auth
-            if ((!sessionReady || !user) && isMounted.current) {
-              console.warn("⚠️ useInternshipForm: No valid auth state found, redirecting to auth");
-              toast({
-                title: "Authentication Required",
-                description: "Please sign in to create an internship",
-                variant: "destructive",
-              });
-              navigate("/auth", { state: { returnTo: "/internship/start" } });
+            if (!sessionReady || !user) {
+              if (mounted) {
+                console.warn("⚠️ useInternshipForm: No valid auth state found, redirecting to auth");
+                toast({
+                  title: "Authentication Required",
+                  description: "Please sign in to create an internship",
+                  variant: "destructive",
+                });
+                navigate("/auth", { state: { returnTo: "/internship/start" } });
+              }
             }
           }
           
-          if (isMounted.current) {
-            setAuthChecked(true);
-          }
-        } catch (error) {
-          console.error("🔒 useInternshipForm: Error in auth check:", error);
+          setAuthChecked(true);
         } finally {
-          if (isMounted.current) {
+          if (mounted) {
             setVerifyingAuth(false);
           }
         }
@@ -126,13 +86,13 @@ export function useInternshipForm() {
     };
     
     checkAuth();
-  }, [authLoading, user, navigate, session, refreshSession]);
+  }, [authLoading, user, navigate, session]);
   
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -145,40 +105,24 @@ export function useInternshipForm() {
       
       if (error || !data.session || !data.session.access_token) {
         console.error("❌ useInternshipForm: Auth verification failed", { error, sessionExists: !!data.session });
-        
-        // Try to refresh the session once
-        const refreshed = await refreshSession();
-        if (!refreshed) {
-          toast({
-            title: "Authentication Error",
-            description: "Your login session couldn't be verified. Please try refreshing the page.",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        console.log("✅ useInternshipForm: Session refreshed successfully on pre-submit check");
-        return true;
+        toast({
+          title: "Authentication Error",
+          description: "Your login session couldn't be verified. Please try refreshing the page.",
+          variant: "destructive",
+        });
+        return false;
       }
       
       // Verify token validity with getUser
       const { data: userData, error: userError } = await supabase.auth.getUser(data.session.access_token);
       if (userError || !userData?.user) {
         console.error("❌ useInternshipForm: Token invalid", userError);
-        
-        // Try to refresh the session once
-        const refreshed = await refreshSession();
-        if (!refreshed) {
-          toast({
-            title: "Authentication Error", 
-            description: "Your session appears to have expired. Please refresh the page or log in again.",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        console.log("✅ useInternshipForm: Session refreshed successfully after invalid token");
-        return true;
+        toast({
+          title: "Authentication Error", 
+          description: "Your session appears to have expired. Please refresh the page or log in again.",
+          variant: "destructive",
+        });
+        return false;
       }
       
       console.log("✅ useInternshipForm: Auth verified before submission", { 
@@ -256,7 +200,7 @@ export function useInternshipForm() {
         description: "Please sign in to create an internship session",
         variant: "destructive",
       });
-      navigate("/auth", { state: { returnTo: "/internship/start" } });
+      navigate("/auth");
       return;
     }
     
@@ -277,7 +221,7 @@ export function useInternshipForm() {
     }
     
     try {
-      if (isMounted.current) {
+      if (mounted) {
         setSubmitting(true);
         setProgressStatus("Verifying authentication...");
       }
@@ -285,7 +229,7 @@ export function useInternshipForm() {
       // Pre-submit auth verification
       const authVerified = await verifyAuthBeforeSubmit();
       if (!authVerified) {
-        if (isMounted.current) {
+        if (mounted) {
           setSubmitting(false);
           setProgressStatus("");
         }
@@ -297,7 +241,7 @@ export function useInternshipForm() {
         userId: user.id
       });
       
-      if (isMounted.current) {
+      if (mounted) {
         setProgressStatus("Creating your internship session...");
       }
       
@@ -307,17 +251,15 @@ export function useInternshipForm() {
         formData.jobDescription
       );
       
+      console.log("✅ useInternshipForm: Session created with ID:", sessionId);
+      
       if (sessionId) {
-        console.log("✅ useInternshipForm: Session created with ID:", sessionId);
-        
-        if (isMounted.current) {
+        if (mounted) {
+          setGeneratingQuestions(true);
           setProgressStatus("Preparing interview questions...");
         }
-        
         await generateInterviewQuestions(sessionId);
-        
-        if (isMounted.current) {
-          // Navigate to the interview invite page
+        if (mounted) {
           navigate(`/internship/interview/invite/${sessionId}`);
         }
       } else {
@@ -325,20 +267,82 @@ export function useInternshipForm() {
       }
     } catch (error) {
       console.error("❌ useInternshipForm: Error in submit handler:", error);
-      
-      if (isMounted.current) {
+      if (mounted) {
         toast({
           title: "Error",
           description: "Failed to create internship session. Please try again.",
           variant: "destructive",
         });
+      }
+      
+      // Try one more time after a short delay if there might be an auth issue
+      if (error instanceof Error && error.message?.includes('auth') && mounted) {
+        toast({
+          title: "Retrying...",
+          description: "Attempting to create session again after authentication refresh.",
+        });
+        
+        setTimeout(async () => {
+          try {
+            if (mounted) {
+              console.log("🔄 useInternshipForm: Retrying submission after auth error");
+              setProgressStatus("Refreshing authentication...");
+              
+              // Force refresh the auth session
+              await supabase.auth.refreshSession();
+              
+              const authVerified = await verifyAuthBeforeSubmit();
+              if (!authVerified) {
+                if (mounted) {
+                  setSubmitting(false);
+                  setProgressStatus("");
+                }
+                return;
+              }
+              
+              // Retry submission with fresh token
+              setProgressStatus("Retrying session creation...");
+              const sessionId = await createInternshipSession(
+                formData.jobTitle,
+                formData.industry,
+                formData.jobDescription
+              );
+              
+              if (sessionId) {
+                toast({
+                  title: "Success",
+                  description: "Session created on second attempt!",
+                });
+                setGeneratingQuestions(true);
+                setProgressStatus("Preparing interview questions...");
+                await generateInterviewQuestions(sessionId);
+                navigate(`/internship/interview/invite/${sessionId}`);
+              }
+            }
+          } catch (retryError) {
+            console.error("❌ useInternshipForm: Retry failed:", retryError);
+            if (mounted) {
+              toast({
+                title: "Error",
+                description: "Session creation failed. Please refresh the page and try again.",
+                variant: "destructive",
+              });
+              setSubmitting(false);
+              setProgressStatus("");
+            }
+          }
+        }, 1500);
+      } else if (mounted) {
         setSubmitting(false);
         setProgressStatus("");
       }
     } finally {
-      if (isMounted.current) {
+      if (mounted) {
         setSubmitting(false);
-        setProgressStatus("");
+        setGeneratingQuestions(false);
+        if (!progressStatus.includes("Retrying")) {
+          setProgressStatus("");
+        }
       }
     }
   };
@@ -348,8 +352,10 @@ export function useInternshipForm() {
     handleChange,
     handleSubmit,
     submitting,
+    generatingQuestions,
     progressStatus,
     authLoading,
+    createLoading,
     formReady,
     authChecked,
     verifyingAuth,

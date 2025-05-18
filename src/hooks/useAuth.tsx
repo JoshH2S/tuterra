@@ -14,12 +14,9 @@ export const useAuth = () => {
 
   useEffect(() => {
     console.log("🔒 useAuth: Initializing auth state");
-    let isMounted = true; // Track component mounting state
 
     // Create a function to update both session and user
     const updateAuthState = (newSession: Session | null) => {
-      if (!isMounted) return;
-
       console.log("🔒 useAuth: Updating auth state", {
         hasSession: !!newSession,
         userId: newSession?.user?.id,
@@ -29,7 +26,7 @@ export const useAuth = () => {
       setSession(newSession);
       setUser(newSession?.user || null);
       
-      if (!initialized && isMounted) {
+      if (!initialized) {
         setInitialized(true);
       }
       
@@ -91,7 +88,6 @@ export const useAuth = () => {
     // Clean up subscription when component unmounts
     return () => {
       console.log("🔒 useAuth: Cleaning up auth subscription");
-      isMounted = false;
       subscription.unsubscribe();
     };
   }, [initialized]);
@@ -105,12 +101,6 @@ export const useAuth = () => {
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
         localStorage.removeItem(key);
-      }
-    });
-    // Also clear from sessionStorage if used
-    Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        sessionStorage.removeItem(key);
       }
     });
   }, []);
@@ -177,27 +167,6 @@ export const useAuth = () => {
     }
   }, []);
 
-  // New method to refresh the auth token
-  const refreshSession = useCallback(async (): Promise<boolean> => {
-    try {
-      console.log("🔄 useAuth: Refreshing session token");
-      const { data, error } = await supabase.auth.refreshSession();
-      
-      if (error || !data.session) {
-        console.error("❌ useAuth: Failed to refresh session", error);
-        return false;
-      }
-      
-      console.log("✅ useAuth: Session refreshed successfully");
-      setSession(data.session);
-      setUser(data.session.user);
-      return true;
-    } catch (error) {
-      console.error("❌ useAuth: Error refreshing session", error);
-      return false;
-    }
-  }, []);
-
   return { 
     user, 
     session, 
@@ -205,7 +174,6 @@ export const useAuth = () => {
     initialized, 
     signOut,
     verifySession,
-    refreshSession, // Added new method
     cleanupAuthState
   };
 };
