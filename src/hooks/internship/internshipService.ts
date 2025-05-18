@@ -50,7 +50,11 @@ export async function fetchSessionById(sessionId: string): Promise<InternshipSes
   if (sessionError) throw sessionError;
   if (!data) throw new Error('Session not found');
 
-  return data;
+  // Transform the data to ensure questions is always an array
+  return {
+    ...data,
+    questions: Array.isArray(data.questions) ? data.questions : (data.questions ? JSON.parse(JSON.stringify(data.questions)) : [])
+  } as InternshipSession;
 }
 
 /**

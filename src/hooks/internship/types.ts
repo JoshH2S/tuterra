@@ -8,7 +8,7 @@ export interface InternshipSession {
   job_description?: string;
   created_at: string;
   current_phase: number;
-  questions?: any[];
+  questions?: any[] | null;
 }
 
 export interface Task {
