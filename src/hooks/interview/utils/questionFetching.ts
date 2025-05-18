@@ -52,7 +52,11 @@ export const fetchQuestionsFromDb = async (sessionId: string, retryAttempts = 3)
           
         if (possibleQuestionArrays.length > 0) {
           // Use the first array found (most likely to be questions)
-          questionsList = normalizeQuestions(possibleQuestionArrays[0] as any[], sessionId);
+          // Fix TypeScript error by ensuring we're passing an array
+          const firstArray = possibleQuestionArrays[0];
+          if (Array.isArray(firstArray)) {
+            questionsList = normalizeQuestions(firstArray, sessionId);
+          }
         }
       }
       

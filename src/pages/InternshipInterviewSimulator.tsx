@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +39,20 @@ const InternshipInterviewSimulator = () => {
   const [searchParams] = useSearchParams();
   const shouldAutoStart = searchParams.get('start') === 'true';
   const questionsVerified = searchParams.get('questionsVerified') === 'true';
+  
+  // Add all missing state variables
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [questionsLoaded, setQuestionsLoaded] = useState<boolean>(false);
+  const [questionsFetched, setQuestionsFetched] = useState<boolean>(false);
+  const [retryAttempt, setRetryAttempt] = useState<number>(0);
+  const [defaultQuestionsState, setDefaultQuestionsState] = useState<{
+    used: boolean;
+    reason: string | null;
+  }>({ used: false, reason: null });
+  const [isSavingProgress, setIsSavingProgress] = useState<boolean>(false);
+  const [isFeedbackGenerating, setIsFeedbackGenerating] = useState<boolean>(false);
   
   // Use state instead of refs for better component lifecycle handling
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
