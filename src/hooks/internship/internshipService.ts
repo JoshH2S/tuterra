@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { InternshipSession, Task, Deliverable, Feedback } from './types';
@@ -184,7 +183,8 @@ export async function createSession(
   const authSession = await supabase.auth.getSession();
   console.log("🔐 internshipService: Auth session retrieved", {
     hasSession: !!authSession.data.session,
-    hasError: !!authSession.error
+    hasError: !!authSession.error,
+    userId: authSession.data.session?.user.id
   });
 
   if (!authSession.data.session) {
@@ -195,7 +195,8 @@ export async function createSession(
   // Call edge function to create session (with authorization)
   console.log("📡 internshipService: Calling edge function to create session");
   try {
-    const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/create-internship-session', {
+    // Try first with the edge function API
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL || 'https://nhlsrtubyvggtkyrhkuu.supabase.co'}/functions/v1/create-internship-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -213,14 +214,28 @@ export async function createSession(
       ok: response.ok
     });
 
+    // Handle HTTP errors
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("❌ internshipService: Error response from edge function", errorData);
-      throw new Error(errorData.error || `HTTP error ${response.status}`);
+      let errorMessage = `HTTP error ${response.status}`;
+      try {
+        const errorData = await response.json();
+        console.error("❌ internshipService: Error response from edge function", errorData);
+        errorMessage = errorData.error || errorMessage;
+      } catch (parseError) {
+        console.error("❌ internshipService: Failed to parse error response", parseError);
+      }
+      throw new Error(errorMessage);
     }
 
-    const result = await response.json();
-    console.log("✅ internshipService: Edge function result", result);
+    // Parse successful response
+    let result;
+    try {
+      result = await response.json();
+      console.log("✅ internshipService: Edge function result", result);
+    } catch (parseError) {
+      console.error("❌ internshipService: Failed to parse success response", parseError);
+      throw new Error('Invalid response from server');
+    }
     
     if (!result.success) {
       console.error("❌ internshipService: Edge function returned success: false", result);
@@ -244,7 +259,43 @@ export async function createSession(
     return result.sessionId;
   } catch (error) {
     console.error("❌ internshipService: Exception when calling edge function", error);
-    throw error;
+    
+    // Try fallback method if edge function fails
+    try {
+      console.log("🔄 internshipService: Attempting fallback method via Supabase client");
+      
+      const { data: sessionData, error: insertError } = await supabase
+        .from("internship_sessions")
+        .insert({
+          user_id: authSession.data.session.user.id,
+          job_title: jobTitle,
+          industry: industry,
+          job_description: jobDescription || null,
+          created_at: new Date().toISOString(),
+          current_phase: 1,
+        })
+        .select("id")
+        .single();
+
+      if (insertError) {
+        console.error("❌ internshipService: Fallback method failed:", insertError);
+        throw insertError;
+      }
+
+      if (sessionData && sessionData.id) {
+        console.log("✅ internshipService: Fallback method succeeded:", sessionData.id);
+        toast({
+          title: 'Success',
+          description: 'Your virtual internship session has been created!',
+        });
+        return sessionData.id;
+      }
+      
+      throw new Error("Failed to create session");
+    } catch (fallbackError) {
+      console.error("❌ internshipService: Fallback method error:", fallbackError);
+      throw error; // throw the original error
+    }
   }
 }
 

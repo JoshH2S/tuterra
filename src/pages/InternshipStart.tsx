@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,12 @@ import { LoadingSpinner } from "@/components/shared/LoadingStates";
 import { industryOptions } from "@/data/industry-options";
 import { useInternship } from "@/hooks/internship";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const InternshipStart = () => {
   const navigate = useNavigate();
-  const { createInternshipSession, loading } = useInternship();
+  const { user, loading: authLoading } = useAuth();
+  const { createInternshipSession, loading: createLoading } = useInternship();
   const [formData, setFormData] = useState({
     jobTitle: "",
     industry: "",
@@ -24,6 +26,43 @@ const InternshipStart = () => {
   const [submitting, setSubmitting] = useState(false);
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const [progressStatus, setProgressStatus] = useState("");
+  const [authReady, setAuthReady] = useState(false);
+
+  // Track if the component is mounted
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Effect to track mounted state and log auth state
+  useEffect(() => {
+    setIsMounted(true);
+    console.log("🔍 InternshipStart: Component mounted, auth state:", { 
+      userExists: !!user, 
+      userId: user?.id, 
+      authLoading,
+      authReady: !authLoading && !!user
+    });
+    
+    // Consider auth ready when loading is false and user exists
+    if (!authLoading) {
+      const isReady = !!user;
+      setAuthReady(isReady);
+      console.log(`🔒 Auth state ready: ${isReady ? "YES" : "NO"}, user: ${user ? user.id : "null"}`);
+      
+      // If no user and not loading, redirect to auth
+      if (!user) {
+        console.warn("⚠️ No authenticated user found after auth loading completed");
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to create an internship session",
+          variant: "destructive",
+        });
+        navigate("/auth");
+      }
+    }
+    
+    return () => {
+      setIsMounted(false);
+    };
+  }, [user, authLoading, navigate]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -78,11 +117,39 @@ const InternshipStart = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("🔍 InternshipStart: Form submit handler triggered");
+    console.log("🔍 InternshipStart: Form submit handler triggered", {
+      isAuthenticated: !!user,
+      userId: user?.id,
+      authLoading,
+      submitting,
+      formData
+    });
+    
+    // Double check authentication is ready
+    if (!user) {
+      console.error("❌ InternshipStart: User not authenticated on submit");
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create an internship session",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
     
     // Prevent double submission
-    if (submitting) {
+    if (submitting || createLoading) {
       console.log("🚫 InternshipStart: Preventing double submission");
+      return;
+    }
+
+    // Form validation
+    if (!formData.jobTitle.trim() || !formData.industry.trim() || !formData.jobDescription.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill out all fields before continuing",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -112,7 +179,7 @@ const InternshipStart = () => {
         console.log("➡️ InternshipStart: Redirecting to interview invitation page", sessionId);
         
         // Show a toast message if this was an existing session
-        const isExistingSession = submitting && !loading;
+        const isExistingSession = submitting && !createLoading;
         if (isExistingSession) {
           toast({
             title: "Existing Internship Found",
@@ -122,7 +189,9 @@ const InternshipStart = () => {
         }
         
         // Redirect to the interview invitation page with session ID
-        navigate(`/internship/interview/invite/${sessionId}`);
+        if (isMounted) {
+          navigate(`/internship/interview/invite/${sessionId}`);
+        }
       } else {
         console.error("❌ InternshipStart: No sessionId returned but no error thrown");
         toast({
@@ -139,10 +208,36 @@ const InternshipStart = () => {
         variant: "destructive",
       });
     } finally {
-      setSubmitting(false);
-      setGeneratingQuestions(false);
+      if (isMounted) {
+        setSubmitting(false);
+        setGeneratingQuestions(false);
+        setProgressStatus("");
+      }
     }
   };
+
+  // Determine if form should be enabled
+  const isFormDisabled = authLoading || !user;
+  const isSubmitDisabled = isFormDisabled || submitting || createLoading || generatingQuestions;
+
+  // Show loading state while authentication is being determined
+  if (authLoading) {
+    return (
+      <div className="container mx-auto py-12 px-4 flex items-center justify-center">
+        <Card className="w-full max-w-md shadow-md">
+          <CardHeader>
+            <CardTitle className="text-center">Loading</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center p-6">
+            <LoadingSpinner size="medium" />
+            <p className="mt-4 text-muted-foreground text-center">
+              Checking authentication status...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-8 max-w-3xl">
@@ -172,6 +267,7 @@ const InternshipStart = () => {
                 onChange={handleChange}
                 required
                 className="w-full"
+                disabled={isFormDisabled}
               />
             </div>
 
@@ -186,6 +282,7 @@ const InternshipStart = () => {
                 placeholder="Select industry"
                 required
                 className="w-full"
+                disabled={isFormDisabled}
               />
             </div>
 
@@ -200,6 +297,7 @@ const InternshipStart = () => {
                 rows={6}
                 required
                 className="w-full"
+                disabled={isFormDisabled}
               />
             </div>
           </CardContent>
@@ -207,9 +305,9 @@ const InternshipStart = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || submitting || generatingQuestions}
+              disabled={isSubmitDisabled}
             >
-              {(loading || submitting || generatingQuestions) ? (
+              {(submitting || createLoading || generatingQuestions) ? (
                 <div className="flex items-center space-x-2">
                   <LoadingSpinner size="small" />
                   <span>{progressStatus || "Processing..."}</span>
