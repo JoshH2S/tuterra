@@ -1,11 +1,11 @@
 
 import { useContext } from 'react';
-import { InternshipContext } from './InternshipContextProvider';
+import { InternshipContext, InternshipContextType } from './InternshipContextProvider';
 
 /**
  * Custom hook for accessing the Internship context
  */
-export const useInternship = () => {
+export const useInternship = (): InternshipContextType => {
   console.log("🔄 useInternship: Hook called");
   const context = useContext(InternshipContext);
   

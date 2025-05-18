@@ -4,20 +4,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { createSession } from './internshipService';
 import { InternshipSession } from './types';
 
-interface InternshipContextType {
+export interface InternshipContextType {
   loading: boolean;
   error: Error | null;
   currentSession: InternshipSession | null;
+  session: InternshipSession | null; // Added for compatibility with useInternship
+  tasks: any[]; // Added for compatibility with useInternship
   setCurrentSession: (session: InternshipSession | null) => void;
   createInternshipSession: (jobTitle: string, industry: string, jobDescription: string) => Promise<string | null>;
 }
 
-const InternshipContext = createContext<InternshipContextType | undefined>(undefined);
+// Make the context available for direct import
+export const InternshipContext = createContext<InternshipContextType | undefined>(undefined);
 
 export const InternshipContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [currentSession, setCurrentSession] = useState<InternshipSession | null>(null);
+  const [tasks, setTasks] = useState<any[]>([]); // Added for compatibility
 
   const createInternshipSession = async (
     jobTitle: string,
@@ -47,10 +51,13 @@ export const InternshipContextProvider: React.FC<{ children: React.ReactNode }> 
     }
   };
 
-  const value = {
+  // Create the context value with all required properties
+  const value: InternshipContextType = {
     loading,
     error,
     currentSession,
+    session: currentSession, // Alias for compatibility
+    tasks, // Added for compatibility
     setCurrentSession,
     createInternshipSession,
   };
