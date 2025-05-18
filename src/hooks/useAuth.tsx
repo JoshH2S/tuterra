@@ -90,7 +90,7 @@ export const useAuth = () => {
       console.log("🔒 useAuth: Cleaning up auth subscription");
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initialized]);
 
   // Helper function to clean up auth state in localStorage
   const cleanupAuthState = useCallback(() => {
