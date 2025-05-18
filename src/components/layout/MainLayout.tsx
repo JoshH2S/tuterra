@@ -21,21 +21,40 @@ export const MainLayout = () => {
 
   const isLandingPage = location.pathname === "/";
   const isDashboardPage = location.pathname === "/dashboard";
+  const isAuthRelatedPage = location.pathname === "/auth" || 
+                            location.pathname === "/forgot-password" || 
+                            location.pathname === "/reset-password" || 
+                            location.pathname === "/verify-email";
 
+  // Log important state changes for debugging
+  useEffect(() => {
+    console.log("🔍 MainLayout: Auth state changed", { 
+      loading, 
+      hasUser: !!user, 
+      userId: user?.id,
+      pathname: location.pathname
+    });
+  }, [loading, user, location.pathname]);
+
+  // Set layout ready when auth loading completes
   useEffect(() => {
     if (!loading) {
+      console.log("✅ MainLayout: Auth loading complete, setting layout ready");
       setIsLayoutReady(true);
     }
   }, [loading]);
 
+  // Scroll to top on route change for better mobile experience
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  if (!isLayoutReady && location.pathname !== "/" && location.pathname !== "/auth") {
+  // Show loading spinner only for routes that need authentication
+  if (!isLayoutReady && !isLandingPage && !isAuthRelatedPage) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+        <p className="mt-4 text-sm text-muted-foreground">Loading your experience...</p>
       </div>
     );
   }
