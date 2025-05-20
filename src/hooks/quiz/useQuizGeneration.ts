@@ -1,75 +1,91 @@
 
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { shuffleQuestionsOptions } from "@/utils/quiz-helpers";
-import { FILE_LIMITS } from "@/utils/file-limits";
-import { useQuizFileUpload } from "./useQuizFileUpload";
+import { toast } from "@/hooks/use-toast";
 import { QuestionDifficulty } from "@/types/quiz";
-import { useQuizTopicsManagement } from "./useQuizTopicsManagement";
+import { Topic, Question } from "@/types/quiz-generation";
+import { useQuizFile } from "./useQuizFile";
+import { useQuizTopics } from "./useQuizTopics";
 import { useQuizSettings } from "./useQuizSettings";
 import { useQuizSubmission } from "./useQuizSubmission";
 
-export interface Topic {
-  description: string;
-  numQuestions: number;
-}
-
-export interface Question {
-  question: string;
-  options: {
-    A: string;
-    B: string;
-    C: string;
-    D: string;
-  };
-  correctAnswer: string;
-  topic: string;
-  points: number;
+// Define the progress type for quiz generation
+interface QuizGenerationProgress {
+  stage: 'preparing' | 'analyzing' | 'generating' | 'saving' | 'complete' | 'error';
+  percentComplete: number;
+  message: string;
 }
 
 export const useQuizGeneration = () => {
   const navigate = useNavigate();
   const { id: courseId } = useParams();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
-  const [quizId, setQuizId] = useState<string | null>(null);
-  const [generationProgress, setGenerationProgress] = useState<{
-    stage: 'preparing' | 'analyzing' | 'generating' | 'saving' | 'complete' | 'error';
-    percentComplete: number;
-    message: string;
-  }>({
+  const [generationProgress, setGenerationProgress] = useState<QuizGenerationProgress>({
     stage: 'preparing',
     percentComplete: 0,
-    message: 'Preparing to generate quiz...'
+    message: 'Preparing your quiz...'
   });
-  const [error, setError] = useState<Error | null>(null);
-
-  // Use our more focused hooks
-  const { topics, addTopic, updateTopic, removeTopic } = useQuizTopicsManagement();
-  const { title, duration, selectedCourseId, difficulty, setTitle, setDuration, setSelectedCourseId, setDifficulty } = useQuizSettings();
-  const { handleSubmit: submitQuiz } = useQuizSubmission();
-
-  // Integrate the improved file upload hook
+  
+  // Use the refactored hooks
+  const { selectedFile, contentLength, fileError, handleFileSelect } = useQuizFile();
+  
+  const { 
+    topics, 
+    addTopic, 
+    updateTopic, 
+    removeTopic 
+  } = useQuizTopics();
+  
   const {
-    selectedFile,
-    contentLength,
-    fileError,
-    isValidating,
-    handleFileSelect: selectFile,
-    clearFile
-  } = useQuizFileUpload();
+    title,
+    duration,
+    selectedCourseId,
+    difficulty,
+    setTitle,
+    setDuration,
+    setSelectedCourseId,
+    setDifficulty
+  } = useQuizSettings();
+  
+  const {
+    isProcessing,
+    quizQuestions,
+    quizId,
+    error,
+    handleSubmit,
+    retrySubmission
+  } = useQuizSubmission();
 
-  const resetProgress = () => {
+  const updateGenerationProgress = (stage: QuizGenerationProgress['stage'], percentComplete: number, message: string) => {
     setGenerationProgress({
-      stage: 'preparing',
-      percentComplete: 0,
-      message: 'Preparing to generate quiz...'
+      stage,
+      percentComplete,
+      message
     });
   };
 
-  const handleSubmit = async () => {
+  const handleRetry = () => {
+    if (selectedFile && selectedCourseId) {
+      updateGenerationProgress('preparing', 0, 'Preparing your quiz...');
+      // First get the text content and then pass it
+      selectedFile.text().then(fileContent => {
+        return retrySubmission(
+          fileContent,
+          topics,
+          difficulty,
+          title,
+          duration,
+          selectedCourseId === 'none' ? undefined : selectedCourseId
+        );
+      }).catch(error => {
+        console.error("Error reading file text:", error);
+        return { error: new Error("Failed to read file content") };
+      });
+      return { success: true };
+    }
+    return { error: new Error("Missing required data for retry") };
+  };
+
+  const handleGenerateQuiz = async () => {
     if (!selectedFile) {
       toast({
         title: "Error",
@@ -88,53 +104,34 @@ export const useQuizGeneration = () => {
       return;
     }
 
-    setIsProcessing(true);
-    setQuizQuestions([]);
-    setError(null);
-    resetProgress();
-
+    updateGenerationProgress('preparing', 10, 'Preparing your quiz...');
+    
     try {
-      // Read the file content
       const fileContent = await selectedFile.text();
       
-      // Submit the quiz
-      const result = await submitQuiz(
-        fileContent, 
-        topics, 
-        difficulty as QuestionDifficulty, 
-        title,
-        duration, 
-        selectedCourseId
-      );
-
-      if (result.error) {
-        throw result.error;
-      }
-
-      // We'll get the quizId and questions from the submission response if needed
-
-    } catch (error) {
-      console.error('Error processing quiz:', error);
-      setError(error instanceof Error ? error : new Error('An unknown error occurred'));
-      setGenerationProgress({
-        stage: 'error',
-        percentComplete: 0,
-        message: 'Error generating quiz'
-      });
+      updateGenerationProgress('analyzing', 30, 'Analyzing content...');
       
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate quiz. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
+      const result = await handleSubmit(
+        fileContent,
+        topics,
+        difficulty,
+        title,
+        duration,
+        selectedCourseId === 'none' ? undefined : selectedCourseId
+      );
+      
+      if (result.error) {
+        updateGenerationProgress('error', 100, 'Error generating quiz');
+      } else {
+        updateGenerationProgress('complete', 100, 'Quiz generated successfully!');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      updateGenerationProgress('error', 100, 'Error generating quiz');
+      return { error: error instanceof Error ? error : new Error(String(error)) };
     }
-  };
-
-  const handleRetry = () => {
-    setError(null);
-    handleSubmit();
   };
 
   return {
@@ -150,18 +147,16 @@ export const useQuizGeneration = () => {
     difficulty,
     generationProgress,
     error,
-    isValidating,
     fileError,
     handleRetry,
     setTitle,
-    handleFileSelect: selectFile,
+    handleFileSelect,
     addTopic,
     updateTopic,
     removeTopic,
-    handleSubmit,
+    handleSubmit: handleGenerateQuiz,
     setDuration,
     setSelectedCourseId,
     setDifficulty,
-    resetProgress
   };
 };

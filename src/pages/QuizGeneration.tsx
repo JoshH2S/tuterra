@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -17,7 +16,6 @@ import { useCourseTemplates } from "@/hooks/useCourseTemplates";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
 import { GenerateQuizDialog } from "@/components/quiz-generation/GenerateQuizDialog";
 import { QuizGenerationModal } from "@/components/quiz-generation/QuizGenerationModal";
-import { toast } from "@/hooks/use-toast";
 
 const QuizGeneration = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -38,7 +36,6 @@ const QuizGeneration = () => {
     generationProgress,
     error,
     handleRetry,
-    isValidating,
     setTitle,
     handleFileSelect,
     addTopic,
@@ -54,50 +51,6 @@ const QuizGeneration = () => {
   const { createTemplate } = useCourseTemplates();
 
   const handleNextStep = () => {
-    // Validation rules for each step
-    switch (currentStep) {
-      case 1:
-        if (!selectedCourseId) {
-          toast({
-            title: "Course required",
-            description: "Please select a course before continuing",
-            variant: "destructive",
-          });
-          return;
-        }
-        if (!title) {
-          toast({
-            title: "Title required",
-            description: "Please enter a quiz title before continuing",
-            variant: "destructive",
-          });
-          return;
-        }
-        break;
-        
-      case 2:
-        if (!selectedFile) {
-          toast({
-            title: "File required",
-            description: "Please upload a file before continuing",
-            variant: "destructive",
-          });
-          return;
-        }
-        break;
-        
-      case 3:
-        if (topics.some(topic => !topic.description)) {
-          toast({
-            title: "Topics required",
-            description: "Please fill out all topic descriptions before continuing",
-            variant: "destructive",
-          });
-          return;
-        }
-        break;
-    }
-    
     if (currentStep < totalSteps) {
       setCurrentStep(prevStep => prevStep + 1);
     } else if (currentStep === totalSteps) {
@@ -201,7 +154,6 @@ const QuizGeneration = () => {
                   handleFileSelect={handleFileSelect}
                   contentLength={contentLength}
                   fileError={fileError}
-                  isValidating={isValidating}
                 />
               </StepContainer>
             )}
@@ -242,7 +194,7 @@ const QuizGeneration = () => {
             handlePreviousStep={handlePreviousStep}
             handleNextStep={handleNextStep}
             canProceedToNextStep={canProceedToNextStep()}
-            isProcessing={isProcessing || isValidating}
+            isProcessing={isProcessing}
             handleSubmit={handleSubmit}
           />
 

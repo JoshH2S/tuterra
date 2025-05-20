@@ -2,10 +2,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { QuestionDifficulty, Question } from "@/types/quiz";
+import { QuestionDifficulty } from "@/types/quiz";
+import { Topic, Question } from "@/types/quiz-generation";
 import { useQuizAPI } from "./useQuizAPI";
 import { useQuizSave } from "./useQuizSave";
-import { Question as GenerationQuestion } from "@/types/quiz-generation";
 
 export const useQuizSubmission = () => {
   const navigate = useNavigate();
@@ -17,17 +17,9 @@ export const useQuizSubmission = () => {
   const { generateQuiz } = useQuizAPI();
   const { saveQuizToDatabase } = useQuizSave();
 
-  // Helper function to convert Question types
-  const convertToQuizQuestion = (questions: GenerationQuestion[]): Question[] => {
-    return questions.map(q => ({
-      ...q,
-      difficulty: q.difficulty || 'university' as QuestionDifficulty, // Ensure difficulty is always set
-    })) as Question[];
-  };
-
   const handleSubmit = async (
     fileContent: string,
-    topics: { description: string; numQuestions: number }[],
+    topics: Topic[],
     difficulty: QuestionDifficulty,
     title: string,
     duration: number,
@@ -39,14 +31,12 @@ export const useQuizSubmission = () => {
     
     try {
       // Generate quiz questions
-      const generatedQuestions = await generateQuiz(fileContent, topics, difficulty);
-      // Convert to the correct Question type
-      const convertedQuestions = convertToQuizQuestion(generatedQuestions);
-      setQuizQuestions(convertedQuestions);
+      const questions = await generateQuiz(fileContent, topics, difficulty);
+      setQuizQuestions(questions);
       
       // Save quiz to database
       const { success, quizId } = await saveQuizToDatabase(
-        convertedQuestions,
+        questions,
         title || `Quiz for ${topics.map(t => t.description).join(", ")}`,
         duration || 15,
         courseId
@@ -58,7 +48,7 @@ export const useQuizSubmission = () => {
           title: "Success",
           description: "Quiz generated and saved successfully!",
         });
-        return { success: true, quizId };
+        return { success: true };
       } else {
         throw new Error("Failed to save quiz to database");
       }
@@ -78,7 +68,7 @@ export const useQuizSubmission = () => {
   
   const retrySubmission = async (
     fileContent: string,
-    topics: { description: string; numQuestions: number }[],
+    topics: Topic[],
     difficulty: QuestionDifficulty,
     title: string,
     duration: number,

@@ -50,8 +50,12 @@ export interface QuizSettings {
   difficulty: QuestionDifficulty;
 }
 
-// Using central file limits
-export { FILE_LIMITS as CONTENT_LIMITS } from "@/utils/file-limits";
+export const CONTENT_LIMITS = {
+  MAX_CONTENT_LENGTH: 50 * 1024 * 1024, // 50MB
+  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB for file uploads
+  MAX_CHARACTERS: 50_000,
+  WARNING_THRESHOLD: 25_000
+};
 
 export const isCaseStudyQuestion = (question: Question): question is CaseStudyQuestion => {
   return question.caseStudy !== undefined;

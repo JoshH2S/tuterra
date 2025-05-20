@@ -5,7 +5,6 @@ import { Quiz } from "@/types/quiz-display";
 
 export const useQuizActions = () => {
   const [confirmRetakeQuiz, setConfirmRetakeQuiz] = useState<Quiz | null>(null);
-  const [showQuizTypeDialog, setShowQuizTypeDialog] = useState(false);
   const navigate = useNavigate();
 
   const handleViewResults = (quizId: string, quizzesByCourse: Record<string, Quiz[]>) => {
@@ -42,30 +41,18 @@ export const useQuizActions = () => {
   };
 
   const handleCreateQuiz = () => {
-    // Show quiz type selection dialog instead of navigating directly
-    setShowQuizTypeDialog(true);
-  };
-  
-  const handleQuizTypeSelect = (type: "standard" | "case-study") => {
-    setShowQuizTypeDialog(false);
-    
-    if (type === "standard") {
-      navigate('/quizzes/quiz-generation');
-    } else if (type === "case-study") {
-      navigate('/quizzes/case-study-quiz');
-    }
+    console.log('Navigation triggered to quiz generation');
+    // Use the correct path for quiz generation
+    navigate('/quizzes/quiz-generation');
   };
 
   return {
     confirmRetakeQuiz,
-    showQuizTypeDialog,
     setConfirmRetakeQuiz,
-    setShowQuizTypeDialog,
     handleViewResults,
     handleStartQuiz,
     handleRetakeQuiz,
     handleRetakeConfirm,
-    handleCreateQuiz,
-    handleQuizTypeSelect
+    handleCreateQuiz
   };
 };

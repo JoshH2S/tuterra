@@ -12,12 +12,6 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Processing limits
-const LIMITS = {
-  MAX_CHARACTERS: 50_000, // Hard maximum for text content (characters)
-  MAX_TOKENS_PER_REQUEST: 14_000, // Safe limit for GPT model
-};
-
 const generatePrompt = (industry: string, role: string, additionalInfo: string) => {
   return `
     Create a comprehensive skill assessment for a ${role} position in the ${industry} industry.
@@ -73,7 +67,6 @@ serve(async (req) => {
     // Parse request body
     const { industry, role, additionalInfo } = await req.json();
 
-    // Validate required fields
     if (!industry || !role) {
       return new Response(
         JSON.stringify({ error: "Industry and role are required" }),
@@ -84,25 +77,9 @@ serve(async (req) => {
       );
     }
 
-    // Validate content length
-    const combinedContent = JSON.stringify({ industry, role, additionalInfo });
-    if (combinedContent.length > LIMITS.MAX_CHARACTERS) {
-      return new Response(
-        JSON.stringify({ 
-          error: "Input content exceeds maximum length", 
-          details: `Maximum allowed is ${LIMITS.MAX_CHARACTERS} characters, received ${combinedContent.length} characters` 
-        }),
-        {
-          status: 413, // Payload Too Large
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Generate the prompt based on inputs
+    // Call OpenAI API
     const prompt = generatePrompt(industry, role, additionalInfo || "");
 
-    // Call OpenAI API
     const openAIResponse = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
@@ -127,11 +104,9 @@ serve(async (req) => {
 
     if (!openAIResponse.ok) {
       const error = await openAIResponse.json();
-      console.error("OpenAI API error:", error);
       throw new Error(JSON.stringify(error));
     }
 
-    // Parse the OpenAI response
     const data = await openAIResponse.json();
     let responseContent = data.choices[0].message.content;
     
@@ -147,9 +122,6 @@ serve(async (req) => {
     try {
       // Parse the cleaned JSON
       const assessment = JSON.parse(responseContent);
-      
-      // Log successful generation
-      console.log(`Successfully generated assessment for ${role} in ${industry}`);
       
       return new Response(
         JSON.stringify({ assessment }),

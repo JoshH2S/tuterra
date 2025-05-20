@@ -1,5 +1,5 @@
 
-import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import OnboardingPage from "@/pages/OnboardingPage";
 import { authRoutes } from "./AuthRoutes";
@@ -31,19 +31,12 @@ import Contact from "@/pages/Contact";
 import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
 import OnboardingRedirect from "@/pages/OnboardingRedirect";
 
-// Create a ProtectedLayout component that wraps the Outlet
-const ProtectedLayout = () => (
-  <ProtectedRoute>
-    <Outlet />
-  </ProtectedRoute>
-);
-
 export const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
       
-      {/* Auth Routes - these are already just Route elements */}
+      {/* Auth Routes */}
       {authRoutes}
       
       {/* Public Landing-style Routes */}
@@ -53,56 +46,135 @@ export const AppRoutes = () => {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/contact" element={<Contact />} />
       
-      {/* Protected Routes with Layout */}
-      <Route element={<ProtectedLayout />}>
-        {/* Dashboard Routes */}
-        <Route path="/dashboard">
-          {dashboardRoutes}
-        </Route>
-        
-        {/* Quiz Routes */}
-        <Route path="/quizzes">
-          {quizRoutes}
-        </Route>
-        
-        {/* Course Routes */}
-        <Route path="/courses">
-          {courseRoutes}
-        </Route>
-        
-        {/* Assessment Routes */}
-        <Route path="/assessments">
-          {assessmentRoutes}
-        </Route>
-        
-        {/* Media Routes */}
-        <Route path="/media">
-          {mediaRoutes}
-        </Route>
-        
-        {/* Interview simulator routes */}
-        <Route path="/interview-simulator" element={<JobInterviewSimulator />} />
-        
-        {/* Regular Interview session route with ID parameter */}
-        <Route path="/interview/:id" element={<JobInterviewSimulator />} />
-        
-        {/* Internship routes */}
-        <Route path="/internship/start" element={<InternshipStart />} />
-        <Route path="/internship/interview/invite/:sessionId" element={<InterviewInvite />} />
-        <Route path="/internship/interview/:sessionId" element={<InternshipInterviewSimulator />} />
-        <Route path="/internship/phase-2/:sessionId" element={<InternshipPhase2 />} />
-        <Route path="/internship/phase-3/:sessionId" element={<InternshipPhase3 />} />
-        <Route path="/internship/completion/:sessionId" element={<InternshipCompletion />} />
-        <Route path="/internship/dashboard" element={<InternshipDashboard />} />
-        
-        <Route path="/profile-settings" element={<ProfileSettings />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
-        <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-        <Route path="/subscription-canceled" element={<SubscriptionCanceled />} />
-      </Route>
+      {/* Protected Routes */}
+      <Route path="/dashboard/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {dashboardRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/quizzes/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {quizRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/courses/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {courseRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/assessments/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {assessmentRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/media/*" element={
+        <ProtectedRoute>
+          <Routes>
+            {mediaRoutes}
+          </Routes>
+        </ProtectedRoute>
+      } />
+      
+      {/* Interview simulator routes */}
+      <Route path="/interview-simulator" element={
+        <ProtectedRoute>
+          <JobInterviewSimulator />
+        </ProtectedRoute>
+      } />
+      
+      {/* Regular Interview session route with ID parameter */}
+      <Route path="/interview/:id" element={
+        <ProtectedRoute>
+          <JobInterviewSimulator />
+        </ProtectedRoute>
+      } />
+      
+      {/* Internship routes */}
+      <Route path="/internship/start" element={
+        <ProtectedRoute>
+          <InternshipStart />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/interview/invite/:sessionId" element={
+        <ProtectedRoute>
+          <InterviewInvite />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/interview/:sessionId" element={
+        <ProtectedRoute>
+          <InternshipInterviewSimulator />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/phase-2/:sessionId" element={
+        <ProtectedRoute>
+          <InternshipPhase2 />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/phase-3/:sessionId" element={
+        <ProtectedRoute>
+          <InternshipPhase3 />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/completion/:sessionId" element={
+        <ProtectedRoute>
+          <InternshipCompletion />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/internship/dashboard" element={
+        <ProtectedRoute>
+          <InternshipDashboard />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/profile-settings" element={
+        <ProtectedRoute>
+          <ProfileSettings />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/update-password" element={
+        <ProtectedRoute>
+          <UpdatePassword />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/subscription-success" element={
+        <ProtectedRoute>
+          <SubscriptionSuccess />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/subscription-canceled" element={
+        <ProtectedRoute>
+          <SubscriptionCanceled />
+        </ProtectedRoute>
+      } />
       
       {/* Unprotected Routes */}
-      <Route path="/demos/*" element={<Routes>{demoRoutes}</Routes>} />
+      
+      <Route path="/demos/*" element={
+        <Routes>
+          {demoRoutes}
+        </Routes>
+      } />
       
       <Route path="/onboarding" element={
         <ProtectedRoute>
