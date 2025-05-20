@@ -13,12 +13,11 @@ export interface EdgeFunctionResponse {
   sessionId: string;
   questions: any[];
   requirements?: string[];
-  sessionType?: "interview" | "internship";
 }
 
 export interface QuestionHookReturn {
   generateQuestions: (industry: string, jobRole: string, jobDescription: string, sessionId: string) => Promise<InterviewQuestion[]>;
   generateFallbackQuestions: (jobRole: string, industry: string) => Promise<InterviewQuestion[]>;
-  fetchQuestions: () => Promise<InterviewQuestion[]>; // Return Promise<InterviewQuestion[]> for consistency
+  fetchQuestions: () => Promise<void>;
   loading: boolean;
 }

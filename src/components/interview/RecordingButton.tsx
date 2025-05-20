@@ -44,22 +44,16 @@ export const RecordingButton = ({
         variants={pulseVariants}
         initial="idle"
         animate={isRecording ? "recording" : "idle"}
-        whileTap={{ scale: 0.95 }} // Add touch feedback
       >
         <Button
           type="button"
           size="icon"
           variant={isRecording ? "destructive" : "outline"}
           className={cn(
-            "rounded-full w-10 h-10", // Increased touch target size
-            isRecording && "bg-red-600 hover:bg-red-700 text-white",
-            !isDisabled && !isRecording && "hover:bg-primary/10 active:bg-primary/20" // Better hover/active states
+            "rounded-full",
+            isRecording && "bg-red-600 hover:bg-red-700 text-white"
           )}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleRecording();
-          }}
+          onClick={onToggleRecording}
           disabled={isDisabled}
           aria-label={isRecording ? "Stop recording" : "Start recording"}
         >

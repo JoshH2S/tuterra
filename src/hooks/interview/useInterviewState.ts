@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from "react";
+import { useState } from "react";
 import { InterviewQuestion, InterviewTranscript } from "@/types/interview";
 
 export const useInterviewState = () => {
@@ -15,21 +15,8 @@ export const useInterviewState = () => {
   const [isInterviewComplete, setIsInterviewComplete] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<InterviewTranscript[]>([]);
   const [typingEffect, setTypingEffect] = useState<boolean>(false);
-  
-  // Track typing effect timer to ensure proper cleanup
-  const typingTimerRef = useRef<number | null>(null);
-  
-  // Clear any existing typing timer
-  const clearTypingTimer = useCallback(() => {
-    if (typingTimerRef.current) {
-      console.log("Clearing existing typing timer:", typingTimerRef.current);
-      window.clearTimeout(typingTimerRef.current);
-      typingTimerRef.current = null;
-    }
-  }, []);
 
-  const resetInterview = useCallback(() => {
-    clearTypingTimer();
+  const resetInterview = () => {
     setCurrentSessionId(null);
     setQuestions([]);
     setResponses({});
@@ -38,35 +25,30 @@ export const useInterviewState = () => {
     setIsInterviewComplete(false);
     setTranscript([]);
     setTypingEffect(false);
-  }, [clearTypingTimer]);
+  };
 
-  const startInterview = useCallback(() => {
-    console.log("Starting interview, setting typing effect to true");
+  const startInterview = () => {
     setIsInterviewInProgress(true);
     setCurrentQuestionIndex(0);
     setIsInterviewComplete(false);
     setTypingEffect(true);
-  }, []);
+  };
 
-  const completeInterview = useCallback(() => {
+  const completeInterview = () => {
     setIsInterviewInProgress(false);
     setIsInterviewComplete(true);
-    // Ensure typing effect is off when completing
-    clearTypingTimer();
-    setTypingEffect(false);
-  }, [clearTypingTimer]);
+  };
 
-  const nextQuestion = useCallback(() => {
+  const nextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prevIndex => prevIndex + 1);
-      console.log("Moving to next question, setting typing effect to true");
       setTypingEffect(true);
     } else {
       completeInterview();
     }
-  }, [currentQuestionIndex, questions.length, completeInterview]);
+  };
 
-  const updateTranscript = useCallback(() => {
+  const updateTranscript = () => {
     console.log("Updating transcript with responses:", responses);
     console.log("Questions available:", questions);
     
@@ -82,14 +64,14 @@ export const useInterviewState = () => {
     
     console.log("Generated transcript:", newTranscript);
     setTranscript(newTranscript);
-  }, [questions, responses]);
+  };
 
-  const getCurrentQuestion = useCallback((): InterviewQuestion | null => {
+  const getCurrentQuestion = (): InterviewQuestion | null => {
     if (questions.length === 0 || currentQuestionIndex >= questions.length) {
       return null;
     }
     return questions[currentQuestionIndex];
-  }, [questions, currentQuestionIndex]);
+  };
 
   return {
     industry,
@@ -116,8 +98,6 @@ export const useInterviewState = () => {
     setTranscript,
     typingEffect,
     setTypingEffect,
-    typingTimerRef,
-    clearTypingTimer,
     resetInterview,
     startInterview,
     completeInterview,

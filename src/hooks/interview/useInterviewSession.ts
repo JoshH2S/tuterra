@@ -29,8 +29,6 @@ export const useInterviewSession = () => {
     transcript,
     typingEffect,
     setTypingEffect,
-    typingTimerRef,
-    clearTypingTimer,
     resetInterview,
     startInterview,
     completeInterview,
@@ -44,28 +42,19 @@ export const useInterviewSession = () => {
   const { downloadTranscript } = useInterviewPersistence();
   const { subscription } = useSubscription();
 
-  // When typing effect starts, set a timer to end it
+  // When typing effect finishes
   useEffect(() => {
+    let typingTimer: number;
     if (typingEffect && isInterviewInProgress) {
-      // Clear any existing timer first
-      clearTypingTimer();
-      
       // Premium users get faster typing
-      const typingSpeed = subscription.tier !== "free" ? 1500 : 2500;
+      const typingSpeed = subscription.tier !== "free" ? 1000 : 2000;
       
-      console.log(`Setting typing effect timer for ${typingSpeed}ms`);
-      
-      // Set new timer and store its ID
-      typingTimerRef.current = window.setTimeout(() => {
-        console.log("Typing effect timer completed, setting typingEffect to false");
+      typingTimer = window.setTimeout(() => {
         setTypingEffect(false);
       }, typingSpeed);
     }
-    
-    return () => {
-      clearTypingTimer();
-    };
-  }, [typingEffect, isInterviewInProgress, setTypingEffect, subscription.tier, typingTimerRef, clearTypingTimer]);
+    return () => clearTimeout(typingTimer);
+  }, [typingEffect, isInterviewInProgress, setTypingEffect, subscription.tier]);
 
   // Generate transcript when interview is completed
   useEffect(() => {
@@ -112,11 +101,6 @@ export const useInterviewSession = () => {
     nextQuestion();
   };
 
-  const handleTypingComplete = () => {
-    console.log("Typing effect complete callback from child component");
-    setTypingEffect(false);
-  };
-
   const handleDownloadTranscript = (format: 'txt' | 'pdf') => {
     console.log(`Downloading transcript in ${format} format`);
     downloadTranscript(transcript, jobTitle, format);
@@ -152,7 +136,6 @@ export const useInterviewSession = () => {
     handleStartChat,
     handleSubmitResponse,
     handleDownloadTranscript,
-    handleStartNew,
-    handleTypingComplete
+    handleStartNew
   };
 };

@@ -38,8 +38,7 @@ export const generateQuestionsFromApi = async (
     // Log the exact payload being sent to help with debugging
     console.log("Calling generate-interview-questions with payload:", JSON.stringify(payload));
     
-    // IMPORTANT: Use the Supabase client's functions.invoke method which automatically includes auth headers
-    // This is the proper way to call edge functions and works in all environments
+    // Use the Supabase client's functions.invoke method which automatically includes auth headers
     const { data, error } = await supabase.functions.invoke('generate-interview-questions', {
       body: payload
     });
@@ -63,28 +62,26 @@ export const generateQuestionsFromApi = async (
       
       // Check if we have enhanced questions with the new format
       const hasEnhancedFormat = response_data.questions.length > 0 && 
-                              ('text' in response_data.questions[0] || 
-                              'category' in response_data.questions[0]);
-                              
-      console.log("Question format detected:", hasEnhancedFormat ? "enhanced" : "standard");
+                              'text' in response_data.questions[0] && 
+                              'category' in response_data.questions[0];
 
       if (hasEnhancedFormat) {
         // Process enhanced question format
-        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: any, index: number) => ({
+        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EnhancedInterviewQuestion, index: number) => ({
           id: q.id || `q-${crypto.randomUUID()}`,
           session_id: params.sessionId,
-          question: q.text || q.question || '', // Support both text and question fields
+          question: q.text || '', // Text field contains the question
           question_order: q.question_order !== undefined ? q.question_order : index,
           created_at: q.created_at || new Date().toISOString()
         }));
         return formattedQuestions;
       } else {
         // Process legacy question format
-        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: any, index: number) => ({
+        const formattedQuestions: InterviewQuestion[] = response_data.questions.map((q: EdgeFunctionQuestion, index: number) => ({
           id: q.id || `q-${crypto.randomUUID()}`,
           session_id: params.sessionId,
-          question: q.question || q.text || '', // Support both formats
-          question_order: q.question_order !== undefined ? q.question_order : index,
+          question: q.text || '', // Use q.text instead of q.question
+          question_order: q.question_order || index,
           created_at: q.created_at || new Date().toISOString()
         }));
         return formattedQuestions;

@@ -1,8 +1,7 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { RequestBody, EdgeFunctionResponse } from "./types.ts";
-import { corsHeaders, createSuccessResponse, createErrorResponse, validateRequest, verifySessionExists, storeQuestionsForSession } from "./utils.ts";
+import { corsHeaders, createSuccessResponse, createErrorResponse, validateRequest, verifySessionExists } from "./utils.ts";
 import { extractRequirements } from "./requirementsExtractor.ts";
 import { generateEnhancedQuestions } from "./questionGenerator.ts";
 import { generateBasicInterviewQuestions } from "./fallbackQuestions.ts";
@@ -117,7 +116,7 @@ serve(async (req) => {
     
     // Verify session exists in database with enhanced retry logic
     console.log(`Verifying session ${sessionId} exists in database with enhanced retry logic`);
-    const { exists: sessionExists, sessionType } = await verifySessionExists(sessionId, 4, 800);
+    const sessionExists = await verifySessionExists(sessionId, 4, 800);
 
     if (!sessionExists) {
       console.error("Session not found after maximum retries:", sessionId);
@@ -128,7 +127,7 @@ serve(async (req) => {
       }, 404);
     }
     
-    console.log(`Session verified as ${sessionType} type. Generating enhanced questions for session ${sessionId}`);
+    console.log(`Session verified. Generating enhanced questions for session ${sessionId}`);
     let questions = [];
     let requirements = [];
 
@@ -151,42 +150,55 @@ serve(async (req) => {
       questions = generateBasicInterviewQuestions(industry, jobTitle, jobDescription);
     }
     
-    // Store questions in the appropriate table based on session type
-    if (!sessionType) {
-      console.error("Session type is undefined, cannot store questions");
+    // Try to update session with both ID and session_id for maximum compatibility
+    console.log("Updating session with generated questions");
+    
+    try {
+      // First try to update using id column (primary key)
+      const { error: updateError } = await supabase
+        .from('interview_sessions')
+        .update({ 
+          questions,
+          job_description: jobDescription || null
+        })
+        .eq('id', sessionId);
+      
+      if (updateError) {
+        console.error("Error updating session with primary key (id):", updateError);
+        
+        // If that fails, try with session_id column
+        const { error: fallbackUpdateError } = await adminSupabase
+          .from('interview_sessions')
+          .update({ 
+            questions,
+            job_description: jobDescription || null
+          })
+          .eq('session_id', sessionId);
+        
+        if (fallbackUpdateError) {
+          console.error("Error also updating with session_id:", fallbackUpdateError);
+          return createErrorResponse({ 
+            message: "Failed to update session with questions",
+            operation: "update session with questions",
+            sessionId
+          }, 500);
+        }
+      }
+      
+      console.log("Successfully updated session with questions");
+      return createSuccessResponse({ 
+        success: true, 
+        sessionId, 
+        questions
+      });
+    } catch (error) {
+      console.error("Error in database update:", error);
       return createErrorResponse({ 
-        message: "Invalid session type",
-        sessionId,
+        message: "Database error",
+        operation: "update session with questions",
+        details: error.message
       }, 500);
     }
-    
-    const storageSuccess = await storeQuestionsForSession(
-      sessionId, 
-      sessionType, 
-      questions, 
-      jobDescription
-    );
-    
-    if (!storageSuccess) {
-      console.error("Failed to store questions for session:", sessionId);
-      return createErrorResponse({ 
-        message: "Failed to update session with questions",
-        operation: `update ${sessionType}_sessions with questions`,
-        sessionId
-      }, 500);
-    }
-    
-    console.log(`Successfully stored questions for ${sessionType} session ${sessionId}`);
-    
-    // Create any required interview question entries if needed
-    // This can be expanded later if needed
-    
-    return createSuccessResponse({ 
-      success: true, 
-      sessionId, 
-      questions,
-      sessionType
-    });
     
   } catch (error) {
     console.error("Error processing request:", error);

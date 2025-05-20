@@ -51,11 +51,7 @@ export async function fetchSessionById(sessionId: string): Promise<InternshipSes
   if (sessionError) throw sessionError;
   if (!data) throw new Error('Session not found');
 
-  // Transform the data to ensure questions is always an array
-  return {
-    ...data,
-    questions: Array.isArray(data.questions) ? data.questions : (data.questions ? JSON.parse(JSON.stringify(data.questions)) : [])
-  } as InternshipSession;
+  return data;
 }
 
 /**
@@ -153,171 +149,55 @@ export async function fetchDeliverablesForTasks(taskIds: string[]): Promise<{
 
 /**
  * Creates a new internship session using the edge function
- * Returns a Promise that resolves to the session ID if successful
  */
 export async function createSession(
   jobTitle: string, 
   industry: string,
   jobDescription: string
 ): Promise<string | null> {
-  console.log("🔄 internshipService: createSession called with:", {
-    jobTitle,
-    industry,
-    jobDescriptionLength: jobDescription?.length || 0
-  });
-  
   // Client-side validation
-  if (!jobTitle.trim()) {
-    console.error("❌ internshipService: Empty job title");
-    throw new Error('Job title is required');
-  }
-  if (!industry.trim()) {
-    console.error("❌ internshipService: Empty industry");
-    throw new Error('Industry is required');
-  }
+  if (!jobTitle.trim()) throw new Error('Job title is required');
+  if (!industry.trim()) throw new Error('Industry is required');
   
   // Rate limiting check
   const lastRequestTime = localStorage.getItem('lastSessionCreation');
   const now = Date.now();
   if (lastRequestTime && (now - parseInt(lastRequestTime)) < 10000) { // 10 second cooldown
-    console.warn("⚠️ internshipService: Rate limiting - too many requests");
     throw new Error('Please wait before creating another session');
   }
   localStorage.setItem('lastSessionCreation', now.toString());
 
-  console.log("🔐 internshipService: Getting auth session");
-  // Get auth session and verify it's valid before proceeding
-  const authSession = await supabase.auth.getSession();
-  console.log("🔐 internshipService: Auth session retrieved", {
-    hasSession: !!authSession.data.session,
-    hasError: !!authSession.error,
-    userId: authSession.data.session?.user.id,
-    accessToken: authSession.data.session?.access_token ? "exists" : "missing"
+  // Call edge function to create session (with authorization)
+  const response = await fetch('https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/create-internship-session', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+    },
+    body: JSON.stringify({
+      job_title: jobTitle,
+      industry: industry,
+      job_description: jobDescription
+    })
   });
 
-  if (!authSession.data.session || !authSession.data.session.access_token) {
-    console.error("❌ internshipService: No valid auth session found");
-    throw new Error('You must be logged in to create an internship session');
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || `HTTP error ${response.status}`);
   }
 
-  // Double-check token validity to catch edge cases where token exists but is invalid
-  try {
-    const { data: userCheck } = await supabase.auth.getUser(authSession.data.session.access_token);
-    if (!userCheck?.user) {
-      console.error("❌ internshipService: Token exists but user could not be retrieved");
-      throw new Error('Authentication validation failed');
-    }
-    console.log("✅ internshipService: Token validation passed", { userId: userCheck.user.id });
-  } catch (validationError) {
-    console.error("❌ internshipService: Token validation failed", validationError);
-    throw new Error('Your login session could not be verified. Please try refreshing the page.');
+  const result = await response.json();
+  
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to create internship session');
   }
-
-  // Call edge function to create session (with authorization)
-  console.log("📡 internshipService: Calling edge function to create session");
-  try {
-    // Try first with the edge function API
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL || 'https://nhlsrtubyvggtkyrhkuu.supabase.co'}/functions/v1/create-internship-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authSession.data.session.access_token}`
-      },
-      body: JSON.stringify({
-        job_title: jobTitle,
-        industry: industry,
-        job_description: jobDescription
-      })
-    });
-
-    console.log("📡 internshipService: Edge function response received", {
-      status: response.status,
-      ok: response.ok
-    });
-
-    // Handle HTTP errors
-    if (!response.ok) {
-      let errorMessage = `HTTP error ${response.status}`;
-      try {
-        const errorData = await response.json();
-        console.error("❌ internshipService: Error response from edge function", errorData);
-        errorMessage = errorData.error || errorMessage;
-      } catch (parseError) {
-        console.error("❌ internshipService: Failed to parse error response", parseError);
-      }
-      throw new Error(errorMessage);
-    }
-
-    // Parse successful response
-    let result;
-    try {
-      result = await response.json();
-      console.log("✅ internshipService: Edge function result", result);
-    } catch (parseError) {
-      console.error("❌ internshipService: Failed to parse success response", parseError);
-      throw new Error('Invalid response from server');
-    }
-    
-    if (!result.success) {
-      console.error("❌ internshipService: Edge function returned success: false", result);
-      throw new Error(result.error || 'Failed to create internship session');
-    }
-    
-    // Check if this was an existing session
-    if (result.message && result.message.includes("already have an internship")) {
-      console.log("ℹ️ internshipService: Using existing internship session", result.sessionId);
-      toast({
-        title: 'Using Existing Internship',
-        description: 'You already have an internship with these criteria. Redirecting you to it.',
-      });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Your virtual internship session has been created!',
-      });
-    }
-    
-    return result.sessionId;
-  } catch (error) {
-    console.error("❌ internshipService: Exception when calling edge function", error);
-    
-    // Try fallback method if edge function fails
-    try {
-      console.log("🔄 internshipService: Attempting fallback method via Supabase client");
-      
-      const { data: sessionData, error: insertError } = await supabase
-        .from("internship_sessions")
-        .insert({
-          user_id: authSession.data.session.user.id,
-          job_title: jobTitle,
-          industry: industry,
-          job_description: jobDescription || null,
-          created_at: new Date().toISOString(),
-          current_phase: 1,
-        })
-        .select("id")
-        .single();
-
-      if (insertError) {
-        console.error("❌ internshipService: Fallback method failed:", insertError);
-        throw insertError;
-      }
-
-      if (sessionData && sessionData.id) {
-        console.log("✅ internshipService: Fallback method succeeded:", sessionData.id);
-        toast({
-          title: 'Success',
-          description: 'Your virtual internship session has been created!',
-        });
-        return sessionData.id;
-      }
-      
-      throw new Error("Failed to create session");
-    } catch (fallbackError) {
-      console.error("❌ internshipService: Fallback method error:", fallbackError);
-      throw error; // throw the original error
-    }
-  }
+  
+  toast({
+    title: 'Success',
+    description: 'Your virtual internship session has been created!',
+  });
+  
+  return result.sessionId;
 }
 
 /**

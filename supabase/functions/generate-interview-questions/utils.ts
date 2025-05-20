@@ -54,48 +54,40 @@ export const validateRequest = (body: any) => {
   }
 };
 
-// Enhanced session verification with checking in both tables
-export async function verifySessionExists(sessionId: string, maxRetries = 4, initialDelay = 800): Promise<{ exists: boolean, sessionType: "interview" | "internship" | null }> {
+// Enhanced session verification with more gradual backoff and detailed logging
+export async function verifySessionExists(sessionId: string, maxRetries = 4, initialDelay = 800): Promise<boolean> {
   console.log(`Starting verification for session ${sessionId} with ${maxRetries} attempts`);
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     console.log(`Verification attempt ${attempt} of ${maxRetries} for session ${sessionId}`);
     
     try {
-      // First try with interview_sessions table (job interview)
-      const { data: jobSessionData, error: jobSessionError } = await adminSupabase
+      // First try with id column (primary key)
+      const { data: sessionData, error: sessionError } = await adminSupabase
         .from('interview_sessions')
         .select('id, session_id, job_title, industry')
         .eq('id', sessionId)
         .maybeSingle();
         
-      if (jobSessionData) {
-        console.log(`Session ${sessionId} verified successfully in interview_sessions on attempt ${attempt}:`, jobSessionData);
-        return { exists: true, sessionType: "interview" };
-      }
-      
-      // Try with session_id column for interview_sessions
-      const { data: jobSessionFallbackData } = await adminSupabase
-        .from('interview_sessions')
-        .select('id')
-        .eq('session_id', sessionId)
-        .maybeSingle();
+      if (sessionError) {
+        console.error(`Database error on verification attempt ${attempt}:`, sessionError);
+      } else if (sessionData) {
+        console.log(`Session ${sessionId} verified successfully on attempt ${attempt}:`, sessionData);
+        return true;
+      } else {
+        console.log(`Session not found using id column on attempt ${attempt}, trying session_id column`);
         
-      if (jobSessionFallbackData) {
-        console.log(`Session found in interview_sessions using session_id column with ID: ${jobSessionFallbackData.id}`);
-        return { exists: true, sessionType: "interview" };
-      }
-      
-      // Next, try with internship_sessions table (internship)
-      const { data: internshipSessionData, error: internshipSessionError } = await adminSupabase
-        .from('internship_sessions')
-        .select('id, job_title, industry')
-        .eq('id', sessionId)
-        .maybeSingle();
-        
-      if (internshipSessionData) {
-        console.log(`Session ${sessionId} verified successfully in internship_sessions on attempt ${attempt}:`, internshipSessionData);
-        return { exists: true, sessionType: "internship" };
+        // Double-check using session_id as fallback (just in case)
+        const { data: fallbackData } = await adminSupabase
+          .from('interview_sessions')
+          .select('id')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+          
+        if (fallbackData) {
+          console.log(`Session found using fallback lookup (session_id column) with ID: ${fallbackData.id}`);
+          return true;
+        }
       }
       
       if (attempt < maxRetries) {
@@ -109,66 +101,6 @@ export async function verifySessionExists(sessionId: string, maxRetries = 4, ini
     }
   }
   
-  console.log(`Session ${sessionId} could not be verified after ${maxRetries} attempts in either tables`);
-  return { exists: false, sessionType: null };
-}
-
-// New function to store questions in the appropriate table based on session type
-export async function storeQuestionsForSession(
-  sessionId: string, 
-  sessionType: "interview" | "internship", 
-  questions: any[], 
-  jobDescription?: string
-): Promise<boolean> {
-  try {
-    console.log(`Storing questions for ${sessionType} session ${sessionId}`);
-    
-    if (sessionType === "interview") {
-      // Store in interview_sessions table
-      const { error } = await adminSupabase
-        .from('interview_sessions')
-        .update({ 
-          questions,
-          job_description: jobDescription || null
-        })
-        .eq('id', sessionId);
-        
-      if (error) {
-        console.error(`Error updating interview_sessions:`, error);
-        
-        // Try with session_id column as fallback
-        const { error: fallbackError } = await adminSupabase
-          .from('interview_sessions')
-          .update({ 
-            questions,
-            job_description: jobDescription || null
-          })
-          .eq('session_id', sessionId);
-          
-        if (fallbackError) {
-          console.error(`Error also updating with session_id:`, fallbackError);
-          return false;
-        }
-      }
-    } else if (sessionType === "internship") {
-      // Store in internship_sessions table
-      const { error } = await adminSupabase
-        .from('internship_sessions')
-        .update({ 
-          questions  // Add questions to the JSON field
-        })
-        .eq('id', sessionId);
-        
-      if (error) {
-        console.error(`Error updating internship_sessions:`, error);
-        return false;
-      }
-    }
-    
-    console.log(`Successfully stored questions for ${sessionType} session ${sessionId}`);
-    return true;
-  } catch (error) {
-    console.error(`Unexpected error storing questions:`, error);
-    return false;
-  }
+  console.log(`Session ${sessionId} could not be verified after ${maxRetries} attempts`);
+  return false;
 }

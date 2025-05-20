@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { InternshipContextProvider } from '@/hooks/internship';
+import { InternshipProvider as ContextProvider } from '@/hooks/useInternshipContext';
 
 export const InternshipProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <InternshipContextProvider>{children}</InternshipContextProvider>;
+  return <ContextProvider>{children}</ContextProvider>;
 };

@@ -1,158 +1,127 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { InterviewQuestion } from "@/types/interview";
 
 /**
  * Fetches questions from the database for a given session
- * Enhanced with retry logic and consistent format handling
  */
-export const fetchQuestionsFromDb = async (sessionId: string, retryAttempts = 3): Promise<InterviewQuestion[]> => {
-  console.log(`Fetching questions for session ${sessionId} (attempt 1/${retryAttempts + 1})`);
+export const fetchQuestionsFromDb = async (sessionId: string): Promise<InterviewQuestion[]> => {
+  console.log(`Fetching questions for session ${sessionId}`);
   
-  let attempts = 0;
-  let lastError = null;
-  
-  while (attempts <= retryAttempts) {
-    try {
-      if (attempts > 0) {
-        console.log(`Retry attempt ${attempts}/${retryAttempts} for session ${sessionId}`);
-        // Add exponential backoff between retries
-        await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempts - 1)));
-      }
+  try {
+    // First try to get questions from the interview_questions table
+    const { data, error } = await supabase
+      .from('interview_questions')
+      .select('id, session_id, question, question_order, created_at')
+      .eq('session_id', sessionId)
+      .order('question_order', { ascending: true });
+    
+    if (error) {
+      console.error("Error fetching questions from interview_questions table:", error);
       
-      // Use the get-interview-questions edge function for consistent handling
-      const { data, error } = await supabase.functions.invoke('get-interview-questions', {
-        body: { sessionId }
-      });
-      
-      if (error) {
-        console.error(`Error invoking get-interview-questions (attempt ${attempts + 1}):`, error);
-        lastError = error;
-        attempts++;
-        continue; // Try again
-      }
-      
-      console.log("Response format from get-interview-questions:", data ? typeof data : 'null', 
-        data ? (Array.isArray(data) ? 'array' : 'object') : 'null');
-      
-      // Standardize question format regardless of response structure
-      let questionsList: InterviewQuestion[] = [];
-      
-      // Handle various response formats
-      if (data?.questions && Array.isArray(data.questions) && data.questions.length > 0) {
-        // Format 1: { questions: [...] }
-        questionsList = normalizeQuestions(data.questions, sessionId);
-      } else if (data && Array.isArray(data) && data.length > 0) {
-        // Format 2: [...]
-        questionsList = normalizeQuestions(data, sessionId);
-      } else if (data && typeof data === 'object' && !Array.isArray(data)) {
-        // Format 3: { someKey: [...], otherData: ... }
-        // Check for any array properties that might contain questions
-        const possibleQuestionArrays = Object.values(data)
-          .filter(val => Array.isArray(val) && val.length > 0);
-          
-        if (possibleQuestionArrays.length > 0) {
-          // Use the first array found (most likely to be questions)
-          // Fix TypeScript error by ensuring we're passing an array
-          const firstArray = possibleQuestionArrays[0];
-          if (Array.isArray(firstArray)) {
-            questionsList = normalizeQuestions(firstArray, sessionId);
-          }
-        }
-      }
-      
-      // If we successfully found and formatted questions
-      if (questionsList.length > 0) {
-        console.log(`Successfully retrieved ${questionsList.length} questions for session ${sessionId}`);
-        return questionsList;
-      }
-      
-      // If data exists but no questions were extracted, log warning and try again
-      if (data) {
-        console.warn("Response received but no questions extracted:", data);
-      } else {
-        console.warn("Empty response received");
-      }
-      
-      attempts++;
-      
-    } catch (error) {
-      console.error(`Error in fetchQuestionsFromDb (attempt ${attempts + 1}):`, error);
-      lastError = error;
-      attempts++;
+      // If there's an error with the direct query, try to get questions from the 
+      // interview_sessions table's questions JSON field as fallback
+      return fetchQuestionsFromSessionData(sessionId);
     }
+    
+    if (data && Array.isArray(data) && data.length > 0) {
+      console.log(`Retrieved ${data.length} questions from interview_questions table`);
+      
+      // Format the questions from the query result
+      const formattedQuestions: InterviewQuestion[] = data.map((q) => ({
+        id: q.id,
+        session_id: q.session_id,
+        question: q.question,
+        question_order: q.question_order,
+        created_at: q.created_at
+      }));
+      
+      return formattedQuestions;
+    } 
+    
+    // If no questions found in the direct table, try the JSON field
+    console.log("No questions found in interview_questions table, trying session data");
+    return fetchQuestionsFromSessionData(sessionId);
+  } catch (error) {
+    console.error("Error in fetchQuestionsFromDb:", error);
+    throw error;
   }
-  
-  // If we've exhausted all retries, return an empty array rather than throwing
-  console.warn(`Failed to fetch questions after ${retryAttempts + 1} attempts`);
-  return [];
 };
-
-/**
- * Normalize various question formats into a consistent InterviewQuestion structure
- */
-function normalizeQuestions(questions: any[], sessionId: string): InterviewQuestion[] {
-  return questions.map((q: any, index: number) => ({
-    id: q.id || `session-q-${index}-${Date.now()}`,
-    session_id: q.session_id || sessionId,
-    question: q.question || q.text || q.content || '',
-    question_order: q.question_order !== undefined ? q.question_order : 
-                   q.order !== undefined ? q.order : index,
-    created_at: q.created_at || new Date().toISOString()
-  }));
-}
 
 /**
  * Fetches questions from the session data's JSON field as a fallback
- * This is a legacy function that is kept for backwards compatibility
  */
 export const fetchQuestionsFromSessionData = async (sessionId: string): Promise<InterviewQuestion[]> => {
-  console.log("Using legacy fetchQuestionsFromSessionData as fallback");
-  
   try {
-    // Call the edge function instead for consistent handling
-    return await fetchQuestionsFromDb(sessionId);
-  } catch (error) {
-    console.error("Error in legacy fetchQuestionsFromSessionData:", error);
-    // Return empty array instead of throwing
-    return [];
-  }
-};
-
-export async function fetchQuestionsFromAPI(sessionId: string): Promise<InterviewQuestion[]> {
-  try {
-    if (!sessionId) throw new Error('Session ID is required');
+    console.log(`Attempting to fetch questions from session data for session ${sessionId}`);
     
-    const { data, error } = await supabase.functions.invoke('get-interview-questions', {
-      body: { sessionId }
-    });
+    // Try fetching with ID column first (primary key)
+    let { data, error } = await supabase
+      .from('interview_sessions')
+      .select('questions, job_title, industry')
+      .eq('id', sessionId)
+      .maybeSingle();
+    
+    // If not found via ID column, try with session_id column as fallback
+    if (error || !data) {
+      console.log(`No session found with id=${sessionId}, trying session_id column as fallback`);
+      const response = await supabase
+        .from('interview_sessions')
+        .select('questions, job_title, industry')
+        .eq('session_id', sessionId)
+        .maybeSingle();
+      
+      data = response.data;
+      error = response.error;
+    }
     
     if (error) {
-      console.error('Error fetching questions:', error);
-      throw new Error(`API error: ${error.message}`);
+      console.error("Error fetching session:", error);
+      throw new Error(`No questions found in database for session ${sessionId}`);
     }
     
-    if (!data) return [];
+    if (data && Array.isArray(data.questions) && data.questions.length > 0) {
+      console.log(`Retrieved ${data.questions.length} questions from session data`);
+      
+      // Format the questions from the session data
+      const formattedQuestions: InterviewQuestion[] = data.questions.map((q: any, index: number) => ({
+        id: q.id || `session-q-${index}`,
+        session_id: sessionId,
+        question: q.question || q.text || '', // Handle different question formats
+        question_order: q.question_order !== undefined ? q.question_order : index,
+        created_at: q.created_at || new Date().toISOString()
+      }));
+      
+      return formattedQuestions;
+    } 
     
-    // Process API data with proper type checking
-    const questions = Array.isArray(data) 
-      ? data
-      : data.questions && Array.isArray(data.questions) 
-        ? data.questions
-        : [];
+    console.error("No questions found in any source for session:", sessionId);
+    console.log("Session data:", data);
     
-    if (questions.length === 0) {
-      console.warn('No questions returned from API');
+    // If we have job title and industry, we can generate fallback questions
+    if (data && data.job_title && data.industry) {
+      console.log("Generating emergency fallback questions based on job details");
+      return [
+        {
+          id: `emergency-fallback-1`,
+          session_id: sessionId,
+          question: `Tell me about your experience and skills relevant to this ${data.job_title} position.`,
+          question_order: 0,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: `emergency-fallback-2`,
+          session_id: sessionId,
+          question: `What interests you about working in the ${data.industry} industry?`,
+          question_order: 1,
+          created_at: new Date().toISOString()
+        }
+      ];
     }
     
-    return questions.map((q: any, idx: number) => ({
-      id: q.id || `question-${idx}-${Date.now()}`,
-      session_id: sessionId,
-      question: q.question || q.text || 'No question text available',
-      question_order: q.order || q.question_order || idx,
-      created_at: q.created_at || new Date().toISOString()
-    }));
+    throw new Error("No questions found and insufficient data to generate fallbacks");
   } catch (error) {
-    console.error('fetchQuestionsFromAPI error:', error);
-    return [];
+    console.error("Error in fetchQuestionsFromSessionData:", error);
+    throw error;
   }
-}
+};

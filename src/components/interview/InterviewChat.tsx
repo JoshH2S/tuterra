@@ -1,138 +1,141 @@
 
-import React, { useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { InterviewQuestion } from "@/types/interview";
+import { PremiumContentCard } from "@/components/ui/premium-card";
+import { AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { useVoiceRecorder } from "@/hooks/interview/useVoiceRecorder";
 import { QuestionDisplay } from "./QuestionDisplay";
 import { ResponseInput } from "./ResponseInput";
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import { InterviewQuestion } from "@/types/interview";
-import { Card } from "@/components/ui/card";
-import { useVoiceRecorder } from "@/hooks/interview/useVoiceRecorder"; 
-import { RecordingButton } from "./RecordingButton";
 
 interface InterviewChatProps {
   currentQuestion: InterviewQuestion | null;
   onSubmitResponse: (response: string) => void;
   typingEffect: boolean;
-  onTypingComplete?: () => void;
+  onTypingComplete: () => void;
   isLastQuestion: boolean;
-  jobTitle: string;
-  inputRef?: React.RefObject<HTMLTextAreaElement>;
+  jobTitle?: string;
 }
 
-export const InterviewChat: React.FC<InterviewChatProps> = ({
+export const InterviewChat = ({
   currentQuestion,
   onSubmitResponse,
   typingEffect,
   onTypingComplete,
   isLastQuestion,
-  jobTitle,
-  inputRef: externalInputRef 
-}) => {
-  const [response, setResponse] = React.useState('');
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const internalInputRef = useRef<HTMLTextAreaElement>(null);
-  const activeInputRef = externalInputRef || internalInputRef;
+  jobTitle = ""
+}: InterviewChatProps) => {
+  const [response, setResponse] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const responseTextareaRef = useRef<HTMLTextAreaElement>(null);
   
-  // Use voice recorder hook for speech-to-text functionality
+  // Use our custom hook for voice recording with enhanced options
   const { 
     isRecording, 
     isTranscribing, 
-    formattedTime, 
+    formattedTime,
     toggleRecording 
-  } = useVoiceRecorder((transcribedText) => {
-    // Append transcribed text to existing response
-    setResponse(prev => {
-      const separator = prev && !prev.endsWith(' ') ? ' ' : '';
-      return prev + separator + transcribedText;
-    });
-  });
+  } = useVoiceRecorder(
+    // Transcription callback
+    (transcribedText) => {
+      // Append the transcribed text to current response
+      setResponse(prev => {
+        const separator = prev.trim().length > 0 ? " " : "";
+        return prev + separator + transcribedText;
+      });
+    },
+    // Options
+    {
+      maxRecordingTime: 180000, // 3 minutes max
+      audioBitsPerSecond: 128000 // Higher quality audio
+    }
+  );
   
-  // Handle submission of the response
+  useEffect(() => {
+    // Reset response when the question changes
+    setResponse("");
+    setIsSubmitting(false);
+    
+    // Auto focus on textarea after typing effect is complete
+    if (!typingEffect && responseTextareaRef.current) {
+      responseTextareaRef.current.focus();
+    }
+  }, [currentQuestion, typingEffect]);
+  
   const handleSubmit = async () => {
-    if (!response.trim() || isSubmitting || typingEffect) return;
+    if (!response.trim() || !currentQuestion) return;
     
     setIsSubmitting(true);
-    try {
-      await onSubmitResponse(response);
-      setResponse('');
-    } catch (error) {
-      console.error("Error submitting response:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    await onSubmitResponse(response);
+    setIsSubmitting(false);
   };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isSubmitting && !typingEffect) {
-      e.preventDefault();
-      void handleSubmit();
-    }
-  };
-
   
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Submit on Enter key
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  const getCardTitle = () => {
+    if (jobTitle) {
+      return `${jobTitle} Interview`;
+    }
+    return "Interview Question";
+  };
+
   return (
-    <Card className="shadow-md p-4 md:p-6 h-full flex flex-col">
-      <div className="bg-muted/50 rounded-md p-3 md:p-4 mb-4 flex-grow overflow-y-auto">
-        <QuestionDisplay
-          currentQuestion={currentQuestion}
-          typingEffect={typingEffect}
-          onTypingComplete={onTypingComplete}
-        />
-      </div>
-      
-      <div className="mt-2">
-        <ResponseInput
-          response={response}
-          onResponseChange={setResponse}
-          onKeyDown={handleKeyDown}
-          isSubmitting={isSubmitting}
-          typingEffect={typingEffect}
-          inputRef={activeInputRef}
-        />
-        
-        <div className="flex justify-between items-center mt-4">
-          {/* Moved microphone button to the action row for better visibility and access */}
-          <div className="flex items-center space-x-2 touch-manipulation">
-            <RecordingButton
+    <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
+      <PremiumContentCard 
+        title={getCardTitle()}
+        variant="glass"
+        className="mb-4 shadow-md"
+      >
+        <div className="space-y-4">
+          <AnimatePresence mode="wait">
+            <QuestionDisplay 
+              currentQuestion={currentQuestion} 
+              typingEffect={typingEffect} 
+            />
+          </AnimatePresence>
+          
+          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 mt-4">
+            <ResponseInput
+              response={response}
+              onResponseChange={setResponse}
+              onKeyDown={handleKeyDown}
+              isSubmitting={isSubmitting}
+              typingEffect={typingEffect}
               isRecording={isRecording}
               isTranscribing={isTranscribing}
-              isDisabled={isSubmitting || typingEffect}
               onToggleRecording={toggleRecording}
+              recordingTime={formattedTime}
             />
-            
-            {isRecording && (
-              <span className="text-xs font-mono bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                {formattedTime}
-              </span>
-            )}
-            
-            {isTranscribing && (
-              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full animate-pulse">
-                Transcribing...
-              </span>
-            )}
+            <div className="flex justify-between items-center mt-4">
+              <p className="text-xs text-muted-foreground">
+                Press Enter to submit or use the microphone to speak
+              </p>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={!response.trim() || isSubmitting || typingEffect || isRecording || isTranscribing}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : isLastQuestion ? (
+                  "Complete Interview"
+                ) : (
+                  "Next Question"
+                )}
+              </Button>
+            </div>
           </div>
-          
-          {/* Submit button */}
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!response.trim() || isSubmitting || typingEffect}
-            size="lg"
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center">
-                <span className="animate-pulse">Submitting</span>
-                <span className="ml-2 animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
-              </span>
-            ) : (
-              <span className="flex items-center">
-                {isLastQuestion ? "Finish" : "Next"} <ArrowRight className="ml-2 h-4 w-4" />
-              </span>
-            )}
-          </Button>
         </div>
-      </div>
-    </Card>
+      </PremiumContentCard>
+    </div>
   );
 };

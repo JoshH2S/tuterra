@@ -15,7 +15,6 @@ export interface EdgeFunctionResponse {
   sessionId: string;
   questions: any[];
   requirements?: string[];
-  sessionType?: "interview" | "internship";
 }
 
 export interface EnhancedInterviewQuestion {

@@ -19,26 +19,9 @@ export function useVoiceRecorder(
   const [recordingTime, setRecordingTime] = useState<number>(0);
   const voiceRecorderRef = useRef<VoiceRecorder | null>(null);
   const { toast } = useToast();
-  const permissionGrantedRef = useRef<boolean | null>(null);
-  
-  // Check microphone permissions on mount
+
+  // Cleanup function for unmounting
   useEffect(() => {
-    const checkMicrophonePermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Got permission, stop the stream
-        stream.getTracks().forEach(track => track.stop());
-        permissionGrantedRef.current = true;
-        console.log("Microphone permission granted");
-      } catch (error) {
-        permissionGrantedRef.current = false;
-        console.error("Microphone permission denied:", error);
-      }
-    };
-    
-    void checkMicrophonePermission();
-    
-    // Cleanup function for unmounting
     return () => {
       if (voiceRecorderRef.current?.isRecording()) {
         voiceRecorderRef.current.stop();
@@ -47,27 +30,10 @@ export function useVoiceRecorder(
   }, []);
 
   const toggleRecording = async () => {
-    // If we're currently recording, stop
     if (isRecording) {
-      console.log("Stopping recording");
+      // Stop recording
       voiceRecorderRef.current?.stop();
-      return;
-    }
-    
-    // If we're not recording, start a new recording
-    try {
-      // Check if permission was previously denied
-      if (permissionGrantedRef.current === false) {
-        toast({
-          title: "Microphone access required",
-          description: "Please grant microphone permissions to use this feature.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      console.log("Starting new voice recording");
-      
+    } else {
       // Start new recorder with enhanced options
       voiceRecorderRef.current = new VoiceRecorder(
         // onStart
@@ -85,14 +51,12 @@ export function useVoiceRecorder(
           setIsTranscribing(true);
           
           try {
-            console.log("Processing audio recording...");
             // Try to convert audio to webm format if it's not already
             const processedBlob = await convertAudioFormat(audioBlob, 'audio/webm');
             
             // Convert audio blob to base64
             const base64Audio = await blobToBase64(processedBlob);
             
-            console.log("Sending audio to transcription service...");
             // Send to our edge function
             const { data, error } = await supabase.functions.invoke('voice-to-text', {
               body: { 
@@ -106,16 +70,8 @@ export function useVoiceRecorder(
             }
             
             if (data.text) {
-              console.log("Transcription received:", data.text.substring(0, 20) + "...");
               // Call the callback with transcribed text
               onTranscriptionComplete(data.text);
-              
-              toast({
-                title: "Transcription complete",
-                description: "Your speech has been converted to text",
-              });
-            } else {
-              throw new Error("No text returned from transcription service");
             }
           } catch (error) {
             console.error("Transcription error:", error);
@@ -134,12 +90,6 @@ export function useVoiceRecorder(
           setIsRecording(false);
           setRecordingTime(0);
           console.error("Recording error:", error);
-          
-          // Set permission status if it was a permissions error
-          if (error.name === "NotAllowedError" || error.message.includes("permission")) {
-            permissionGrantedRef.current = false;
-          }
-          
           toast({
             title: "Recording error",
             description: error.message || "Could not access microphone",
@@ -159,15 +109,7 @@ export function useVoiceRecorder(
       );
       
       // Start recording
-      console.log("Initializing voice recorder...");
       voiceRecorderRef.current.start();
-    } catch (error) {
-      console.error("Failed to toggle recording:", error);
-      toast({
-        title: "Recording failed",
-        description: "Could not start recording. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
