@@ -108,56 +108,18 @@ serve(async (req) => {
     }
 
     const data = await openAIResponse.json();
-    let responseContent = data.choices[0].message.content;
+    const responseContent = data.choices[0].message.content;
     
-    // Clean up the JSON string if needed
-    responseContent = responseContent.trim();
-    
-    // Handle Markdown code blocks by removing them before parsing
-    if (responseContent.includes('```')) {
-      // Remove code block formatting (```json and ```)
-      responseContent = responseContent.replace(/```(?:json)?\s*([\s\S]*?)\s*```/, '$1');
-    }
-    
-    try {
-      // Parse the cleaned JSON
-      const assessment = JSON.parse(responseContent);
-      
-      return new Response(
-        JSON.stringify({ assessment }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError.message);
-      console.error("Response content causing error:", responseContent);
-      
-      // Try a more flexible approach for extracting JSON
-      const jsonMatch = responseContent.match(/{[\s\S]*}/);
-      if (jsonMatch) {
-        try {
-          const extractedJson = jsonMatch[0];
-          const assessment = JSON.parse(extractedJson);
-          
-          return new Response(
-            JSON.stringify({ 
-              assessment,
-              note: "JSON was extracted using fallback method"
-            }),
-            {
-              status: 200,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
-          );
-        } catch (secondError) {
-          throw new Error(`Failed to parse JSON with fallback method: ${secondError.message}`);
-        }
+    // Parse the JSON from the response
+    const assessment = JSON.parse(responseContent);
+
+    return new Response(
+      JSON.stringify({ assessment }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
-      
-      throw new Error(`Failed to parse JSON response: ${parseError.message}`);
-    }
+    );
   } catch (error) {
     console.error("Error:", error.message);
     return new Response(

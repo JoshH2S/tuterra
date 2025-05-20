@@ -1,115 +1,164 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-import { corsHeaders } from '../_shared/cors.ts';
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
+// Get environment variables
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Initialize Supabase client with admin rights
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+// CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 serve(async (req) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: corsHeaders,
+      status: 204,
+    });
   }
 
   try {
-    // Parse request body
-    const { transcript, jobTitle, industry, isInternship = false } = await req.json();
+    // Get OpenAI API key from environment
+    const openAiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAiKey) {
+      throw new Error("OPENAI_API_KEY is not set");
+    }
 
-    if (!transcript || !jobTitle || !industry) {
+    const { sessionId, transcript } = await req.json();
+    
+    if (!sessionId) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Missing session ID" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
-
-    // Validate transcript format
-    if (!Array.isArray(transcript) || !transcript.length) {
+    
+    if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Invalid transcript format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create prompt for feedback
-    let promptContent = isInternship 
-      ? `You are an HR manager evaluating a candidate for a ${jobTitle} role in the ${industry} sector. Based on the following interview responses, provide 1-2 strengths and 1 constructive improvement. Be helpful and encouraging.`
-      : `You are a professional interview coach reviewing a practice interview for a ${jobTitle} position in the ${industry} industry. Provide detailed feedback on the candidate's responses.`;
-
-    // Format transcript for the prompt
-    const formattedTranscript = transcript.map((t, i) => 
-      `Question ${i + 1}: ${t.question}\nCandidate's Answer: ${t.answer}\n`
-    ).join('\n');
-
-    // Call OpenAI API for feedback generation
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: promptContent },
-          { role: 'user', content: formattedTranscript }
-        ],
-        temperature: 0.7,
-        max_tokens: 600,
-      }),
-    });
-
-    const gptResponse = await response.json();
-
-    if (gptResponse.error) {
-      console.error('OpenAI API error:', gptResponse.error);
-      throw new Error('Error generating feedback with OpenAI');
-    }
-
-    const feedbackContent = gptResponse.choices[0].message.content;
-    
-    // Extract strengths and areas for improvement using simple parsing
-    let strengths = [];
-    let improvements = [];
-    
-    // Simple parsing - can be enhanced for better accuracy
-    const strengthsMatch = feedbackContent.match(/Strengths?:?(.*?)(?:Areas? for improvement|Improvement opportunities?|$)/is);
-    const improvementsMatch = feedbackContent.match(/(?:Areas? for improvement|Improvement opportunities?):?(.*?)$/is);
-    
-    if (strengthsMatch && strengthsMatch[1]) {
-      strengths = strengthsMatch[1]
-        .split(/(?:\d+\.)|\n/)
-        .map(s => s.trim())
-        .filter(Boolean);
-    }
-    
-    if (improvementsMatch && improvementsMatch[1]) {
-      improvements = improvementsMatch[1]
-        .split(/(?:\d+\.)|\n/)
-        .map(s => s.trim())
-        .filter(Boolean);
-    }
-    
-    // Return structured feedback
-    return new Response(
-      JSON.stringify({ 
-        feedback: {
-          overall_feedback: feedbackContent.trim(),
-          strengths: strengths.length ? strengths : [],
-          areas_for_improvement: improvements.length ? improvements : [],
+        JSON.stringify({
+          error: "Invalid transcript data",
+          details: "Transcript must be a non-empty array"
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400
         }
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      );
+    }
     
+    console.log(`Generating feedback for interview session ${sessionId}`);
+    
+    // Format the transcript for the prompt
+    const formattedTranscript = transcript
+      .map((item, index) => `Question ${index + 1}: ${item.question}\nAnswer: ${item.answer}`)
+      .join("\n\n");
+    
+    // Create the system prompt for the AI
+    const systemPrompt = `
+    You are an expert interview coach. Review the following job interview transcript and provide constructive feedback:
+    
+    Provide an analysis in JSON format with the following structure:
+    {
+      "feedback": "Overall feedback and analysis",
+      "strengths": ["Strength 1", "Strength 2", "Strength 3"],
+      "areas_for_improvement": ["Area 1", "Area 2", "Area 3"],
+      "overall_score": A number from 1-10 rating the overall interview performance
+    }
+    `;
+    
+    try {
+      // Make direct API call to OpenAI using fetch
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openAiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { 
+              role: "system", 
+              content: systemPrompt 
+            },
+            { 
+              role: "user", 
+              content: formattedTranscript 
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenAI API error:", errorText);
+        throw new Error(`OpenAI API request failed: ${response.status} - ${errorText}`);
+      }
+      
+      const completion = await response.json();
+      const responseText = completion.choices[0]?.message?.content || "{}";
+      
+      // Parse the response to extract the feedback
+      let feedbackData;
+      try {
+        // Clean the response text to ensure it's valid JSON
+        const cleaned = responseText.replace(/```json|```/g, "").trim();
+        feedbackData = JSON.parse(cleaned);
+      } catch (error) {
+        console.error("Error parsing feedback:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to parse feedback from AI response" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
+      }
+      
+      // Save feedback to the database
+      const { data, error } = await supabase
+        .from('interview_feedback')
+        .insert({
+          session_id: sessionId,
+          feedback: feedbackData.feedback,
+          strengths: feedbackData.strengths,
+          areas_for_improvement: feedbackData.areas_for_improvement,
+          overall_score: feedbackData.overall_score
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error saving feedback:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to save feedback to the database" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ feedback: data }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    } catch (openAiError) {
+      console.error("OpenAI API error:", openAiError);
+      return new Response(
+        JSON.stringify({ error: `OpenAI API error: ${openAiError.message}` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error in generate-interview-feedback function:', error);
+    console.error("Error processing request:", error);
     
     return new Response(
-      JSON.stringify({ error: 'Internal server error generating feedback' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });

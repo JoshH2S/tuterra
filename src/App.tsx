@@ -6,7 +6,6 @@ import { Loader2 } from "lucide-react";
 import { lazyLoad } from "@/utils/lazy-loading";
 import { Toaster } from "@/components/ui/toaster";
 import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
-import { InternshipProvider } from "@/components/internship/InternshipProvider";
 
 // Lazy load MainLayout
 const MainLayout = lazyLoad(
@@ -44,13 +43,11 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <InternshipProvider>
-          <ConnectionStatusBanner />
-          <Suspense fallback={<AppLoading />}>
-            <MainLayout />
-          </Suspense>
-          <Toaster />
-        </InternshipProvider>
+        <ConnectionStatusBanner />
+        <Suspense fallback={<AppLoading />}>
+          <MainLayout />
+        </Suspense>
+        <Toaster />
       </BrowserRouter>
     </QueryClientProvider>
   );

@@ -14,7 +14,6 @@ import {
   ScrollText,
   Users,
   FileQuestion,
-  Briefcase,
   LucideIcon
 } from "lucide-react";
 
@@ -55,11 +54,6 @@ export const navigationItems: NavigationItem[] = [
     icon: BrainCircuit, 
     label: "Interview Simulator", 
     path: "/interview-simulator" 
-  },
-  { 
-    icon: Briefcase, 
-    label: "Virtual Internship", 
-    path: "/internship/start" 
   },
   { 
     icon: UserRoundCog, 
