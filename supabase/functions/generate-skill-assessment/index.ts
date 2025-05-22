@@ -69,6 +69,12 @@ const generatePrompt = (industry: string, role: string, additionalInfo: string) 
     }
     
     Make sure the questions adequately assess both fundamental and advanced skills for the role. Include scenario-based questions where appropriate.
+    
+    Design considerations:
+    - Create concise, mobile-friendly questions that display well on small screens
+    - Ensure option text is brief enough to read on mobile devices
+    - Use touch-friendly language (e.g., "tap" instead of "click")
+    - Consider thumb zones when designing multiple-choice options
   `;
 };
 
@@ -80,11 +86,14 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { industry, role, additionalInfo } = await req.json();
+    const { industry, role, additionalInfo, modelType, maxTokens } = await req.json();
 
     if (!industry || !role) {
       return new Response(
-        JSON.stringify({ error: "Industry and role are required" }),
+        JSON.stringify({ 
+          error: "Industry and role are required",
+          success: false 
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -97,6 +106,7 @@ serve(async (req) => {
     
     console.log("Sending request to OpenAI API with prompt:", prompt.substring(0, 100) + "...");
 
+    const model = modelType || "gpt-3.5-turbo-16k";
     const openAIResponse = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
@@ -104,11 +114,11 @@ serve(async (req) => {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo-16k",
+        model: model,
         messages: [
           {
             role: "system",
-            content: "You are an expert in creating skill assessments for job roles. Provide detailed, accurate, and relevant questions that truly test a candidate's abilities.",
+            content: "You are an expert in creating skill assessments for job roles. Provide detailed, accurate, and relevant questions that truly test a candidate's abilities. Optimize content for mobile device viewing.",
           },
           {
             role: "user",
@@ -116,19 +126,34 @@ serve(async (req) => {
           },
         ],
         temperature: 0.3,
+        max_tokens: maxTokens || 3000,
       }),
     });
 
     if (!openAIResponse.ok) {
       const error = await openAIResponse.json();
       console.error("OpenAI API error:", error);
-      throw new Error(JSON.stringify(error));
+      
+      // Return more detailed error information
+      return new Response(
+        JSON.stringify({ 
+          error: "OpenAI API error", 
+          details: error,
+          success: false
+        }),
+        {
+          status: openAIResponse.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const data = await openAIResponse.json();
     const responseContent = data.choices[0].message.content;
+    const tokenUsage = data.usage?.total_tokens || 0;
     
     console.log("OpenAI response received, first 100 chars:", responseContent.substring(0, 100) + "...");
+    console.log("Token usage:", tokenUsage);
     
     // Clean up the response content to handle markdown-formatted JSON
     const cleanedContent = cleanupJSONContent(responseContent);
@@ -138,8 +163,19 @@ serve(async (req) => {
     try {
       const assessment = JSON.parse(cleanedContent);
       
+      // Add mobile-friendly metadata
+      assessment.metadata = {
+        optimizedForMobile: true,
+        generatedWithModel: model,
+        timestamp: new Date().toISOString()
+      };
+      
       return new Response(
-        JSON.stringify({ assessment }),
+        JSON.stringify({ 
+          assessment,
+          token_usage: tokenUsage,
+          success: true
+        }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -153,7 +189,8 @@ serve(async (req) => {
         JSON.stringify({ 
           error: "Failed to parse assessment JSON", 
           details: parseError.message,
-          content: cleanedContent.substring(0, 500) + "..." // Including part of the content for debugging
+          content: cleanedContent.substring(0, 500) + "...", // Including part of the content for debugging
+          success: false
         }),
         {
           status: 500,
@@ -164,7 +201,11 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error:", error.message);
     return new Response(
-      JSON.stringify({ error: "Failed to generate assessment", details: error.message }),
+      JSON.stringify({ 
+        error: "Failed to generate assessment", 
+        details: error.message,
+        success: false
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
