@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +9,7 @@ export interface UserCredits {
   interview_credits: number;
   assessment_credits: number;
   tutor_message_credits: number;
-  [key: string]: number;
+  [key: string]: number | string | undefined; // Allow string and undefined values for certain properties
 }
 
 export const useUserCredits = () => {
@@ -41,7 +42,13 @@ export const useUserCredits = () => {
         setError(creditsError);
         setIsOfflineMode(true);
       } else {
-        setCredits(creditsData);
+        // Extract only the credit fields we need for the credits state
+        setCredits({
+          quiz_credits: creditsData.quiz_credits,
+          interview_credits: creditsData.interview_credits,
+          assessment_credits: creditsData.assessment_credits,
+          tutor_message_credits: creditsData.tutor_message_credits,
+        });
         setIsOfflineMode(false);
       }
     } catch (err) {
