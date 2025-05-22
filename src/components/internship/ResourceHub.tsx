@@ -1,5 +1,5 @@
 
-import { PremiumCard } from "@/components/ui/premium-card";
+import { ModernCard } from "@/components/ui/modern-card";
 
 // Mock resources
 const resources = [
