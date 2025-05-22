@@ -24,74 +24,40 @@ export const useUserCredits = () => {
   const fetchingCredits = useRef(false);
   const [pendingTransactions, setPendingTransactions] = useState<{[key: string]: boolean}>({});
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, authReady } = useAuth();
 
   const fetchUserCredits = useCallback(async () => {
-    if (fetchingCredits.current) return;
-    
+    if (fetchingCredits.current || !authReady || !user) return;
     try {
       fetchingCredits.current = true;
       setLoading(true);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session || !session.user) {
-        setCredits({
-          quiz_credits: 5,
-          interview_credits: 2,
-          assessment_credits: 2,
-          tutor_message_credits: 10
-        });
-        setIsOfflineMode(true);
-        return;
-      }
-
       const { data: creditsData, error: creditsError } = await supabase
         .from('user_credits')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .single();
-
       if (creditsError) {
         console.error("Error fetching user credits:", creditsError);
         setError(creditsError);
         setIsOfflineMode(true);
-      }
-      
-      if (creditsData) {
-        setCredits({
-          quiz_credits: creditsData.quiz_credits,
-          interview_credits: creditsData.interview_credits,
-          assessment_credits: creditsData.assessment_credits,
-          tutor_message_credits: creditsData.tutor_message_credits || 10
-        });
-        setError(null);
-        setIsOfflineMode(false);
       } else {
-        console.warn("No credits found for user, using defaults");
-        setCredits({
-          quiz_credits: 5,
-          interview_credits: 2,
-          assessment_credits: 2,
-          tutor_message_credits: 10
-        });
-        setIsOfflineMode(true);
+        setCredits(creditsData);
+        setIsOfflineMode(false);
       }
-      
-    } catch (error: any) {
-      console.error("Unexpected error fetching user credits:", error);
-      setError(error);
+    } catch (err) {
+      setError(err);
       setIsOfflineMode(true);
-      toast({
-        title: "Error fetching credits",
-        description: error.message,
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
       fetchingCredits.current = false;
     }
-  }, [toast]);
+  }, [user, authReady]);
+
+  useEffect(() => {
+    if (authReady && user) {
+      fetchUserCredits();
+    }
+  }, [authReady, user, fetchUserCredits]);
 
   const checkCredits = async (creditType: string): Promise<boolean> => {
     if (!creditType) {
@@ -194,10 +160,6 @@ export const useUserCredits = () => {
     return;
   };
 
-  useEffect(() => {
-    fetchUserCredits();
-  }, [fetchUserCredits]);
-
   return {
     credits,
     loading,
@@ -207,6 +169,7 @@ export const useUserCredits = () => {
     decrementCredits,
     fetchUserCredits,
     pendingTransactions,
+    setPendingTransactions,
     retryFetch
   };
 };

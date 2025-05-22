@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { User, Sparkles, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,8 +6,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { SubscriptionBadge } from "@/components/ai-tutor/SubscriptionBadge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
@@ -17,7 +14,7 @@ interface SidebarUserProfileProps {
 }
 
 export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfileProps) => {
-  const { user } = useAuth();
+  const { user, authReady, signOut } = useAuth();
   const { subscription } = useSubscription();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -30,42 +27,20 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
 
   useEffect(() => {
     if (!user) return;
-
     setAvatarUrl(user.user_metadata?.avatar_url || null);
-
-    const channel = supabase
-      .channel('profile-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`
-        },
-        (payload: { new: { avatar_url: string | null } }) => {
-          setAvatarUrl(payload.new.avatar_url);
-        }
-      )
-      .subscribe();
-
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        if (event === 'USER_UPDATED') {
-          setAvatarUrl(session?.user?.user_metadata?.avatar_url || null);
-        }
-      }
-    );
-
-    return () => {
-      channel.unsubscribe();
-      authSubscription.unsubscribe();
-    };
   }, [user]);
-  
+
+  if (!authReady) {
+    return <div className="h-16 flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
+
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       toast({
         title: "Success",
         description: "You have been logged out successfully.",

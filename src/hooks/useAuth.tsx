@@ -1,26 +1,27 @@
-
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 
-export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
-      setLoading(false);
+      setAuthReady(true);
     });
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
-      setLoading(false);
+      setAuthReady(true);
     });
 
     return () => subscription.unsubscribe();
@@ -28,6 +29,10 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      console.debug('[useAuth] Signing out user...');
+      // Only clear localStorage/sessionStorage on logout
+      localStorage.clear();
+      sessionStorage.clear();
       await supabase.auth.signOut();
       toast({
         title: "Success",
@@ -44,5 +49,13 @@ export const useAuth = () => {
     }
   };
 
-  return { user, loading, signOut };
-};
+  return (
+    <AuthContext.Provider value={{ user, authReady, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}

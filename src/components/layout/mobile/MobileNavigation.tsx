@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp } from "lucide-react";
@@ -15,7 +14,10 @@ export function MobileNavigation() {
 
   // Don't show on desktop or on the landing page
   const isLandingPage = location.pathname === "/";
-  if (!isMobile || isLandingPage) return null;
+  if (!isMobile || isLandingPage) {
+    console.debug("[MobileNavigation] Early return: not mobile or landing page", { isMobile, pathname: location.pathname });
+    return null;
+  }
 
   // Show/hide back to top button on scroll
   useEffect(() => {

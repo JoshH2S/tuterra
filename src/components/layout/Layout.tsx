@@ -1,4 +1,3 @@
-
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -51,7 +50,7 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
             !hideSidebar && !isMobile && "ml-[200px]"
           )}
         >
-          {!hideSidebar && (isMobile ? <MobileHeader /> : <DesktopHeader />)}
+          {(!hideSidebar && (isMobile ? <MobileHeader /> : <DesktopHeader />)) || <div style={{ height: 56 }} />}
           <main 
             id="main-content" 
             className={cn(
@@ -64,7 +63,9 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
           <Footer />
         </div>
       </div>
-      {isMobile && !hideSidebar && <MobileNavigation />}
+      <div style={{ display: isMobile && !hideSidebar ? undefined : 'none' }}>
+        <MobileNavigation />
+      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -33,6 +32,7 @@ export const MainLayout = () => {
   }, [location.pathname]);
 
   if (!isLayoutReady && location.pathname !== "/" && location.pathname !== "/auth") {
+    console.debug("[MainLayout] Early return: layout not ready", { isLayoutReady, pathname: location.pathname });
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
