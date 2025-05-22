@@ -234,6 +234,15 @@ export const useSkillAssessmentGeneration = () => {
 
       // Generate assessment using edge function
       const startTime = Date.now();
+      
+      console.log("Calling generate-skill-assessment with params:", {
+        industry: params.industry,
+        role: params.role,
+        additionalInfoLength: params.additionalInfo?.length || 0,
+        modelType,
+        maxTokens
+      });
+      
       const response = await supabase.functions.invoke('generate-skill-assessment', {
         body: {
           ...params,
@@ -244,6 +253,23 @@ export const useSkillAssessmentGeneration = () => {
 
       const generationTime = Date.now() - startTime;
       
+      console.log("Response from generate-skill-assessment:", {
+        hasError: !!response.error,
+        hasData: !!response.data,
+        hasAssessment: !!response.data?.assessment,
+        responseTime: generationTime
+      });
+      
+      if (response.error) {
+        console.error("Edge function error:", response.error);
+        throw new Error(`Failed to generate assessment: ${response.error.message || 'Unknown error'}`);
+      }
+      
+      if (!response.data?.assessment) {
+        console.error("No assessment data in response:", response.data);
+        throw new Error("No assessment was generated. Please try again.");
+      }
+      
       setProgress(80);
 
       // Cache the result for future use
@@ -253,23 +279,33 @@ export const useSkillAssessmentGeneration = () => {
         const cachedUntil = new Date();
         cachedUntil.setDate(cachedUntil.getDate() + cacheDuration);
 
-        // Store in cache
-        await supabase.from('cached_assessments').insert({
-          cache_key: cacheKey,
-          assessment_data: response.data.assessment,
-          cached_until: cachedUntil.toISOString(),
-          model_used: modelType,
-          generation_time: generationTime,
-        });
+        try {
+          // Store in cache
+          await supabase.from('cached_assessments').insert({
+            cache_key: cacheKey,
+            assessment_data: response.data.assessment,
+            cached_until: cachedUntil.toISOString(),
+            model_used: modelType,
+            generation_time: generationTime,
+          });
+        } catch (cacheError) {
+          console.error('Error caching assessment:', cacheError);
+          // Continue even if caching fails
+        }
 
-        // Track analytics
-        await supabase.from('assessment_analytics').insert({
-          user_id: user.id,
-          model_used: modelType,
-          generation_time: generationTime,
-          token_usage: response.data.token_usage || 0,
-          user_tier: tier,
-        });
+        try {
+          // Track analytics
+          await supabase.from('assessment_analytics').insert({
+            user_id: user.id,
+            model_used: modelType,
+            generation_time: generationTime,
+            token_usage: response.data.token_usage || 0,
+            user_tier: tier,
+          });
+        } catch (analyticsError) {
+          console.error('Error tracking analytics:', analyticsError);
+          // Continue even if analytics tracking fails
+        }
         
         // Decrement the assessment credits after successful generation
         // Skip decrementing for premium users who have unlimited
