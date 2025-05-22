@@ -60,22 +60,31 @@ Difficulty Requirements for ${difficulty}:
 Topics distribution (it is CRITICAL that you follow these numbers EXACTLY):
 ${chunk.topics.map(t => `- ${t.description}: EXACTLY ${t.numQuestions} questions - no more, no less`).join('\n')}
 
+Mobile-Friendly Design Requirements:
+- Create concise questions (max 200-250 characters)
+- Keep answer options short (max 80-100 characters)
+- Use simple, clear language that's easy to read on small screens
+- Use "tap" instead of "click" in instruction text
+- Design with thumb zones in mind (bottom-oriented interactive elements)
+- Avoid complex formatting that may render poorly on mobile
+
 Important instructions:
 1. Generate EXACTLY the number of questions requested for each topic - no more, no less.
 2. For topic "${chunk.topics[0].description}", create EXACTLY ${chunk.topics[0].numQuestions} questions.
 ${chunk.topics.slice(1).map((t, i) => `${i+3}. For topic "${t.description}", create EXACTLY ${t.numQuestions} questions.`).join('\n')}
+3. Prioritize concise, mobile-friendly questions and answers
 
 Return a valid JSON array with each question having these fields:
 {
-  "question": "Question text matching ${difficulty} level",
+  "question": "Question text matching ${difficulty} level (keep concise for mobile)",
   "options": {"A": "First option", "B": "Second option", "C": "Third option", "D": "Fourth option"},
   "correctAnswer": "A or B or C or D",
   "topic": "The topic this question belongs to - must match one of the provided topics exactly",
   "points": a number between ${guidelines.points.min} and ${guidelines.points.max},
-  "explanation": "Explanation appropriate for ${difficulty} level",
+  "explanation": "Brief explanation appropriate for ${difficulty} level",
   "difficulty": "${difficulty}",
   "conceptTested": "Specific concept being tested",
-  "learningObjective": "Clear learning objective"
+  "mobileOptimized": true
 }
 
 Return ONLY the JSON array with no additional text.`;
@@ -136,10 +145,19 @@ STEM-SPECIFIC REQUIREMENTS:
    - Include a "formula" field with the main formula being tested in LaTeX notation
    - Ensure all variables in formulas are defined in the explanation
 
+MOBILE-FRIENDLY DESIGN REQUIREMENTS:
+- Create concise questions that display well on small screens (max 250 characters)
+- Keep answer options brief enough to read on mobile devices (max 100 characters)
+- Use touch-friendly language (e.g., "tap" instead of "click")
+- Simplify complex LaTeX when possible for better mobile rendering
+- Consider thumb zones when designing multiple-choice options
+- Use responsive formatting that works on all device sizes
+
 Important instructions:
 1. Generate EXACTLY the number of questions requested for each topic - no more, no less.
 2. For topic "${chunk.topics[0].description}", create EXACTLY ${chunk.topics[0].numQuestions} questions.
 ${chunk.topics.slice(1).map((t, i) => `${i+3}. For topic "${t.description}", create EXACTLY ${t.numQuestions} questions.`).join('\n')}
+3. Optimize all content for mobile viewing
 
 Return a valid JSON array with each question having these fields:
 {
@@ -151,9 +169,9 @@ Return a valid JSON array with each question having these fields:
   "explanation": "Step-by-step explanation with LaTeX formatting where needed",
   "difficulty": "${difficulty}",
   "conceptTested": "Specific concept being tested",
-  "learningObjective": "Clear learning objective",
   "formula": "Key formula in LaTeX notation if applicable",
-  "visualizationPrompt": "Description of visualization if applicable"
+  "visualizationPrompt": "Description of visualization if applicable",
+  "mobileOptimized": true
 }
 
 Return ONLY the JSON array with no additional text.`;

@@ -13,6 +13,15 @@ import { cleanupJSONContent } from "./utils.ts";
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const deepSeekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
 
+// Define content limits
+const CONTENT_LIMITS = {
+  MAX_CONTENT_LENGTH: 75_000, // Maximum character count for processing
+  RECOMMENDED_LENGTH: 25_000, // Recommended optimal character count
+  MAX_TOPICS: 10, // Maximum number of topics allowed
+  MAX_QUESTIONS_PER_TOPIC: 20, // Maximum questions per topic
+  MAX_TOTAL_QUESTIONS: 50, // Maximum total questions allowed
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -26,10 +35,21 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       status: 'ok',
       timestamp: new Date().toISOString(),
+      contentLimits: CONTENT_LIMITS,
       apiKeys: {
         openAI: !!openAIApiKey,
         deepSeek: !!deepSeekApiKey
       }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  
+  // Add a limits endpoint to expose backend constraints to frontend
+  if (url.pathname.endsWith('/limits')) {
+    console.log("Content limits requested");
+    return new Response(JSON.stringify({ 
+      contentLimits: CONTENT_LIMITS
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -46,21 +66,23 @@ serve(async (req) => {
       console.error("Error parsing request JSON:", parseError);
       return new Response(JSON.stringify({ 
         error: "Invalid request format", 
-        details: parseError.message
+        details: parseError.message,
+        success: false
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    const { content, topics, difficulty } = requestBody;
+    const { content, topics, difficulty, maxTokens, modelType } = requestBody;
     
     // Input validation with detailed errors
     if (!content || typeof content !== 'string') {
       console.error("Invalid content format:", content);
       return new Response(JSON.stringify({ 
         error: "Invalid content format", 
-        details: "Content must be a non-empty string"
+        details: "Content must be a non-empty string",
+        success: false
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -71,7 +93,46 @@ serve(async (req) => {
       console.error("Invalid topics format:", topics);
       return new Response(JSON.stringify({ 
         error: "Invalid topics format", 
-        details: "Topics must be a non-empty array"
+        details: "Topics must be a non-empty array",
+        success: false
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Check for excessive topics
+    if (topics.length > CONTENT_LIMITS.MAX_TOPICS) {
+      return new Response(JSON.stringify({
+        error: "Too many topics",
+        details: `Maximum ${CONTENT_LIMITS.MAX_TOPICS} topics are allowed, but ${topics.length} were provided`,
+        success: false
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Check for excessive questions per topic
+    const totalQuestionsRequested = topics.reduce((sum, t: Topic) => sum + t.numQuestions, 0);
+    if (totalQuestionsRequested > CONTENT_LIMITS.MAX_TOTAL_QUESTIONS) {
+      return new Response(JSON.stringify({
+        error: "Too many questions requested",
+        details: `Maximum ${CONTENT_LIMITS.MAX_TOTAL_QUESTIONS} total questions are allowed, but ${totalQuestionsRequested} were requested`,
+        success: false
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Check individual topic question counts
+    const topicWithTooManyQuestions = topics.find((t: Topic) => t.numQuestions > CONTENT_LIMITS.MAX_QUESTIONS_PER_TOPIC);
+    if (topicWithTooManyQuestions) {
+      return new Response(JSON.stringify({
+        error: "Too many questions for a single topic",
+        details: `Maximum ${CONTENT_LIMITS.MAX_QUESTIONS_PER_TOPIC} questions per topic are allowed, but ${topicWithTooManyQuestions.numQuestions} were requested for "${topicWithTooManyQuestions.description}"`,
+        success: false
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -79,11 +140,13 @@ serve(async (req) => {
     }
     
     // Validate difficulty
-    if (!Object.keys(DIFFICULTY_GUIDELINES).includes(difficulty)) {
+    const validDifficulties = Object.keys(DIFFICULTY_GUIDELINES);
+    if (!validDifficulties.includes(difficulty)) {
       console.error("Invalid difficulty level:", difficulty);
       return new Response(JSON.stringify({ 
         error: "Invalid difficulty level", 
-        details: `Supported difficulty levels: ${Object.keys(DIFFICULTY_GUIDELINES).join(', ')}`
+        details: `Supported difficulty levels: ${validDifficulties.join(', ')}`,
+        success: false
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -98,20 +161,35 @@ serve(async (req) => {
       console.error("OpenAI API key is missing");
       return new Response(JSON.stringify({ 
         error: "Configuration error", 
-        details: "OpenAI API key is missing"
+        details: "OpenAI API key is missing",
+        success: false
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    // Trim content to maximum length
-    const LIMITS = {
-      MAX_FILE_SIZE: 75_000, // Maximum content size in characters
-    };
+    // Check if content is too long and explicitly reject if so
+    const contentLength = content.length;
+    if (contentLength > CONTENT_LIMITS.MAX_CONTENT_LENGTH) {
+      return new Response(JSON.stringify({
+        error: "Content too large",
+        details: `Content length (${contentLength} characters) exceeds the maximum allowed (${CONTENT_LIMITS.MAX_CONTENT_LENGTH} characters)`,
+        recommendation: "Please reduce your content size or split it into multiple quiz generations",
+        contentLimits: CONTENT_LIMITS,
+        success: false
+      }), {
+        status: 413, // Payload Too Large
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
-    const trimmedContent = content.slice(0, LIMITS.MAX_FILE_SIZE);
-    console.log(`Processing request with content length: ${trimmedContent.length}`);
+    // Warn if content is approaching the limit
+    const isApproachingLimit = contentLength > CONTENT_LIMITS.RECOMMENDED_LENGTH;
+    
+    // Trim content to maximum length - shouldn't happen since we reject above, but safety measure
+    const trimmedContent = content.slice(0, CONTENT_LIMITS.MAX_CONTENT_LENGTH);
+    console.log(`Processing request with content length: ${trimmedContent.length} of ${contentLength} original characters`);
     console.log(`Number of topics: ${topics.length}`);
     
     // Track originally requested question counts
@@ -129,7 +207,8 @@ serve(async (req) => {
       console.error("Error splitting content:", chunkError);
       return new Response(JSON.stringify({ 
         error: "Content processing error", 
-        details: chunkError.message
+        details: chunkError.message,
+        success: false
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -139,26 +218,39 @@ serve(async (req) => {
     // Generate questions from chunks
     let generationResult;
     try {
-      generationResult = await generateQuizFromChunks(chunks, difficulty, openAIApiKey, deepSeekApiKey);
+      const selectedModel = modelType || 'gpt-3.5-turbo';
+      const tokensToUse = maxTokens || 2000;
+      
+      generationResult = await generateQuizFromChunks(
+        chunks, 
+        difficulty, 
+        openAIApiKey, 
+        deepSeekApiKey,
+        selectedModel,
+        tokensToUse
+      );
       console.log(`Generated ${generationResult.questions.length} raw questions`);
     } catch (generationError) {
       console.error("Error generating questions:", generationError);
       return new Response(JSON.stringify({ 
         error: "Question generation failed", 
-        details: generationError.message
+        details: generationError.message,
+        success: false
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
     
-    const { questions: generatedQuestions, modelsUsed, stemDetected } = generationResult;
+    const { questions: generatedQuestions, modelsUsed, stemDetected, tokenUsage } = generationResult;
     
     if (!generatedQuestions || !Array.isArray(generatedQuestions) || generatedQuestions.length === 0) {
       console.error("No questions were generated");
       return new Response(JSON.stringify({ 
         error: "Question generation failed", 
-        details: "No questions were generated"
+        details: "No questions were generated. The content may not contain enough relevant information for the requested topics.",
+        recommendation: "Try providing more detailed content or fewer topics",
+        success: false
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -174,7 +266,8 @@ serve(async (req) => {
       console.error("Error validating questions:", validationError);
       return new Response(JSON.stringify({ 
         error: "Question validation failed", 
-        details: validationError.message
+        details: validationError.message,
+        success: false
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -206,7 +299,9 @@ serve(async (req) => {
       console.error("No questions matched the requested topics");
       return new Response(JSON.stringify({ 
         error: "Question generation failed", 
-        details: "No questions could be generated for the requested topics"
+        details: "No questions could be generated for the requested topics. The content may not contain relevant information.",
+        recommendation: "Try different topics or provide more relevant content",
+        success: false
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -215,16 +310,33 @@ serve(async (req) => {
     
     console.log(`Returning ${finalQuestions.length} final questions`);
     
+    // Add mobile-friendly design considerations to questions
+    const mobileOptimizedQuestions = finalQuestions.map(q => ({
+      ...q,
+      mobileOptimized: true
+    }));
+    
     return new Response(JSON.stringify({
-      quizQuestions: finalQuestions,
+      quizQuestions: mobileOptimizedQuestions,
       metadata: {
         topics: topics.map((t: Topic) => t.description),
         difficulty,
         totalPoints: finalQuestions.reduce((sum, q) => sum + q.points, 0),
         estimatedDuration: Math.max(15, finalQuestions.length),
         modelsUsed: Array.from(modelsUsed),
-        stemTopicsDetected: stemDetected
-      }
+        stemTopicsDetected: stemDetected,
+        contentStats: {
+          originalLength: contentLength,
+          processedLength: trimmedContent.length,
+          wasContentTrimmed: contentLength > trimmedContent.length,
+          isApproachingLimit,
+          contentLimits: CONTENT_LIMITS
+        },
+        tokenUsage,
+        generatedAt: new Date().toISOString(),
+        optimizedForMobile: true
+      },
+      success: true
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -249,7 +361,8 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ 
       error: errorMessage,
-      details: errorDetails
+      details: errorDetails,
+      success: false
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
