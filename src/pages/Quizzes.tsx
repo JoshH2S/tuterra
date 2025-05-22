@@ -12,6 +12,7 @@ import { CourseQuizSection } from "@/components/quizzes/CourseQuizSection";
 import { QuizzesEmptyState } from "@/components/quizzes/QuizzesEmptyState";
 import { RetakeConfirmDialog } from "@/components/quiz-taking/RetakeConfirmDialog";
 import { QuizDisclaimer } from "@/components/quiz-generation/QuizDisclaimer";
+import { CreateQuizTypeDialog } from "@/components/quizzes/CreateQuizTypeDialog";
 
 export default function Quizzes() {
   const location = useLocation();
@@ -34,6 +35,8 @@ export default function Quizzes() {
   const {
     confirmRetakeQuiz,
     setConfirmRetakeQuiz,
+    showCreateQuizDialog,
+    setShowCreateQuizDialog,
     handleViewResults,
     handleStartQuiz,
     handleRetakeQuiz,
@@ -106,6 +109,11 @@ export default function Quizzes() {
             undefined}
         />
       )}
+      
+      <CreateQuizTypeDialog
+        open={showCreateQuizDialog}
+        onOpenChange={setShowCreateQuizDialog}
+      />
     </div>
   );
 }

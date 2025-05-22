@@ -5,6 +5,7 @@ import { Quiz } from "@/types/quiz-display";
 
 export const useQuizActions = () => {
   const [confirmRetakeQuiz, setConfirmRetakeQuiz] = useState<Quiz | null>(null);
+  const [showCreateQuizDialog, setShowCreateQuizDialog] = useState(false);
   const navigate = useNavigate();
 
   const handleViewResults = (quizId: string, quizzesByCourse: Record<string, Quiz[]>) => {
@@ -41,14 +42,15 @@ export const useQuizActions = () => {
   };
 
   const handleCreateQuiz = () => {
-    console.log('Navigation triggered to quiz generation');
-    // Use the correct path for quiz generation
-    navigate('/quizzes/quiz-generation');
+    console.log('Opening quiz type selection dialog');
+    setShowCreateQuizDialog(true);
   };
 
   return {
     confirmRetakeQuiz,
     setConfirmRetakeQuiz,
+    showCreateQuizDialog,
+    setShowCreateQuizDialog,
     handleViewResults,
     handleStartQuiz,
     handleRetakeQuiz,
