@@ -88,7 +88,9 @@ export const useUserCredits = () => {
       return false;
     }
 
-    return credits[creditType] > 0;
+    // Ensure we're dealing with a number for comparison
+    const creditValue = typeof credits[creditType] === 'number' ? credits[creditType] as number : 0;
+    return creditValue > 0;
   };
 
   const decrementCredits = async (creditType: string): Promise<boolean> => {
@@ -110,14 +112,19 @@ export const useUserCredits = () => {
       setPendingTransactions(prev => ({ ...prev, [creditType]: true }));
 
       const previousCredits = { ...credits };
+      
+      // Ensure we're working with numbers for the decrement operation
+      const currentCreditValue = typeof credits[creditType] === 'number' ? 
+        credits[creditType] as number : 0;
+      
       setCredits(prev => ({
         ...prev,
-        [creditType]: Math.max(0, prev[creditType] - 1)
+        [creditType]: Math.max(0, currentCreditValue - 1)
       }));
 
       const { data, error } = await supabase
         .from('user_credits')
-        .update({ [creditType]: Math.max(0, credits[creditType] - 1) })
+        .update({ [creditType]: Math.max(0, currentCreditValue - 1) })
         .eq('user_id', user?.id)
         .select();
 
