@@ -30,6 +30,7 @@ export function InternshipSetupForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState<number>(0);
 
   // Set default date to today in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
@@ -56,27 +57,49 @@ export function InternshipSetupForm() {
     }
 
     setIsSubmitting(true);
+    setGenerationProgress(10); // Start progress indication
     
     try {
-      // Insert new internship session into Supabase
-      const { data: session, error } = await supabase
-        .from("internship_sessions")
-        .insert({
-          user_id: user.id,
+      // Show initial toast
+      toast({
+        title: "Creating your internship...",
+        description: "Setting up your virtual internship experience. This might take a minute.",
+      });
+      
+      setGenerationProgress(30);
+
+      // Get the session JWT for auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No active session found");
+      }
+
+      // Use the edge function to create the internship
+      const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/create-internship-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
           job_title: data.jobTitle,
           industry: data.industry,
           job_description: data.jobDescription,
           duration_weeks: data.durationWeeks,
-          start_date: data.startDate,
-          current_phase: 1,
+          start_date: data.startDate
         })
-        .select()
-        .single();
+      });
 
-      if (error) {
-        throw error;
+      setGenerationProgress(70);
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || result.details || "Failed to create internship");
       }
 
+      setGenerationProgress(100);
+      
       toast({
         title: "Internship Created!",
         description: "Your virtual internship has been set up successfully.",
@@ -84,7 +107,7 @@ export function InternshipSetupForm() {
       
       // Navigate to the internship dashboard
       navigate("/dashboard/virtual-internship", { 
-        state: { newInternship: true, internshipId: session.id } 
+        state: { newInternship: true, internshipId: result.sessionId } 
       });
     } catch (error: any) {
       console.error("Error creating internship:", error);
@@ -95,6 +118,7 @@ export function InternshipSetupForm() {
       });
     } finally {
       setIsSubmitting(false);
+      setGenerationProgress(0);
     }
   };
 
@@ -116,7 +140,7 @@ export function InternshipSetupForm() {
   ];
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-2xl mx-auto shadow-md">
       <CardHeader className="space-y-1">
         <div className="flex items-center gap-2">
           <Briefcase className="h-6 w-6 text-primary" />
@@ -239,6 +263,20 @@ export function InternshipSetupForm() {
                 )}
               />
             </div>
+            
+            {generationProgress > 0 && (
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                <div 
+                  className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${generationProgress}%` }}
+                ></div>
+                <p className="text-sm text-center text-muted-foreground mt-2">
+                  {generationProgress < 30 && "Preparing your internship..."}
+                  {generationProgress >= 30 && generationProgress < 70 && "Generating personalized internship content..."}
+                  {generationProgress >= 70 && "Finalizing your virtual workplace..."}
+                </p>
+              </div>
+            )}
           </form>
         </Form>
       </CardContent>
@@ -247,9 +285,19 @@ export function InternshipSetupForm() {
           type="submit"
           onClick={form.handleSubmit(onSubmit)}
           disabled={isSubmitting}
-          className="w-full md:w-auto"
+          className="w-full md:w-auto flex items-center gap-2"
         >
-          {isSubmitting ? "Creating..." : "Create Internship"}
+          {isSubmitting ? (
+            <>
+              <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+              Creating...
+            </>
+          ) : (
+            <>
+              <Briefcase className="h-4 w-4" />
+              Create Internship
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>

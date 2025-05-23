@@ -448,6 +448,38 @@ export type Database = {
           },
         ]
       }
+      internship_events: {
+        Row: {
+          date: string
+          id: string
+          session_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          date: string
+          id?: string
+          session_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          session_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internship_feedback: {
         Row: {
           created_at: string
@@ -479,6 +511,41 @@ export type Database = {
             columns: ["deliverable_id"]
             isOneToOne: false
             referencedRelation: "internship_deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internship_messages: {
+        Row: {
+          content: string
+          id: string
+          sender: string
+          sent_at: string
+          session_id: string | null
+          subject: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          sender: string
+          sent_at?: string
+          session_id?: string | null
+          subject: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          sender?: string
+          sent_at?: string
+          session_id?: string | null
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -517,6 +584,38 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internship_resources: {
+        Row: {
+          id: string
+          link: string
+          session_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          id?: string
+          link: string
+          session_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          id?: string
+          link?: string
+          session_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_resources_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
             referencedColumns: ["id"]
           },
         ]

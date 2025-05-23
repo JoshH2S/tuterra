@@ -24,3 +24,6 @@ verify_jwt = false
 
 [functions.send-session-reminder]
 verify_jwt = false
+
+[functions.create-internship-session]
+verify_jwt = true
