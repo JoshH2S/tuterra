@@ -18,11 +18,11 @@ export interface InternshipSession {
   job_title: string;
   industry: string;
   job_description: string;
-  duration_weeks?: number; // Make optional since it might not be in the database response
-  start_date?: string; // Make optional since it might not be in the database response
+  duration_weeks?: number; // Optional since it might not be in the database response
+  start_date?: string; // Optional since it might not be in the database response
   current_phase: number;
   created_at: string;
-  questions?: any;
+  questions?: Json;
 }
 
 export default function VirtualInternshipDashboard() {

@@ -1,31 +1,42 @@
-import { useState, useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { MobileInternshipHeader } from "./MobileInternshipHeader";
-import { WelcomePanel } from "./WelcomePanel";
-import { TaskOverview } from "./TaskOverview";
-import { MessagingPanel } from "./MessagingPanel";
-import { FeedbackCenter } from "./FeedbackCenter";
-import { CalendarView } from "./CalendarView";
-import { ResourceHub } from "./ResourceHub";
-import { GamificationPanel } from "./GamificationPanel";
-import { ExitActions } from "./ExitActions";
+
+import { useEffect, useState } from "react";
+import { Tab } from "@/components/ui/tab";
+import { format } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
-import { LoadingSpinner } from "@/components/ui/loading-states";
+import { WelcomePanel } from "./WelcomePanel";
+import { TaskOverview } from "./TaskOverview";
+import { CalendarView } from "./CalendarView";
+import { MessagingPanel } from "./MessagingPanel";
+import { ResourceHub } from "./ResourceHub";
+import { FeedbackCenter } from "./FeedbackCenter";
+import { GamificationPanel } from "./GamificationPanel";
+import { ExitActions } from "./ExitActions";
+import { MobileInternshipHeader } from "./MobileInternshipHeader";
 
-export interface InternshipTask {
+export type InternshipTask = {
   id: string;
   session_id: string;
   title: string;
   description: string;
   instructions?: string | null;
-  due_date: string;
-  status: 'not_started' | 'in_progress' | 'completed' | 'overdue';
   task_order: number;
-  created_at: string;
+  due_date: string;
+  status: "not_started" | "in_progress" | "completed" | "overdue";
   task_type?: string | null;
-}
+  created_at: string;
+};
+
+export type InternshipEvent = {
+  id: string;
+  session_id: string;
+  title: string;
+  date: string;
+  type: "meeting" | "deadline" | "milestone";
+};
 
 export interface InternshipMessage {
   id: string;
@@ -36,14 +47,6 @@ export interface InternshipMessage {
   sent_at: string;
 }
 
-export interface InternshipEvent {
-  id: string;
-  session_id: string;
-  title: string;
-  type: 'meeting' | 'deadline' | 'milestone';
-  date: string;
-}
-
 export interface InternshipResource {
   id: string;
   session_id: string;
@@ -52,288 +55,268 @@ export interface InternshipResource {
   link: string;
 }
 
-interface InternshipContent {
-  tasks: InternshipTask[];
-  messages: InternshipMessage[];
-  events: InternshipEvent[];
-  resources: InternshipResource[];
-}
-
 interface SwipeableInternshipViewProps {
   sessionData: InternshipSession;
 }
 
-/**
- * A component that provides swipeable navigation between different
- * sections of the virtual internship dashboard on mobile devices.
- */
 export function SwipeableInternshipView({ sessionData }: SwipeableInternshipViewProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const [selectedView, setSelectedView] = useState<string>("overview");
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [tasks, setTasks] = useState<InternshipTask[]>([]);
+  const [events, setEvents] = useState<InternshipEvent[]>([]);
+  const [messages, setMessages] = useState<InternshipMessage[]>([]);
+  const [resources, setResources] = useState<InternshipResource[]>([]);
   const [loading, setLoading] = useState(true);
-  const [internshipContent, setInternshipContent] = useState<InternshipContent>({
-    tasks: [],
-    messages: [],
-    events: [],
-    resources: []
-  });
+
+  const tabs = [
+    "Overview", 
+    "Tasks", 
+    "Calendar", 
+    "Messages", 
+    "Resources", 
+    "Feedback", 
+    "Achievements"
+  ];
   
+  // Define the start date, defaulting to created_at if not available
+  const startDate = sessionData.start_date || sessionData.created_at;
+
   useEffect(() => {
-    async function fetchInternshipContent() {
+    const fetchInternshipData = async () => {
       setLoading(true);
       try {
-        // Fetch all related content in parallel
-        const [tasksResult, messagesResult, eventsResult, resourcesResult] = await Promise.all([
-          supabase
-            .from("internship_tasks")
-            .select("*")
-            .eq("session_id", sessionData.id)
-            .order("task_order", { ascending: true }),
+        // Fetch tasks
+        const { data: taskData, error: taskError } = await supabase
+          .from("internship_tasks")
+          .select("*")
+          .eq("session_id", sessionData.id)
+          .order("task_order");
           
-          supabase
-            .from("internship_messages")
-            .select("*")
-            .eq("session_id", sessionData.id)
-            .order("sent_at", { ascending: false }),
-          
-          supabase
-            .from("internship_events")
-            .select("*")
-            .eq("session_id", sessionData.id)
-            .order("date", { ascending: true }),
-          
-          supabase
-            .from("internship_resources")
-            .select("*")
-            .eq("session_id", sessionData.id)
-        ]);
-
-        if (tasksResult.error) throw tasksResult.error;
-        if (messagesResult.error) throw messagesResult.error;
-        if (eventsResult.error) throw eventsResult.error;
-        if (resourcesResult.error) throw resourcesResult.error;
-
-        // Update task status based on due dates
-        const tasks = tasksResult.data.map(task => {
+        if (taskError) throw taskError;
+        
+        // Check for overdue tasks
+        const now = new Date();
+        const tasksWithOverdueStatus = (taskData || []).map(task => {
           const dueDate = new Date(task.due_date);
-          const isOverdue = task.status !== 'completed' && dueDate < new Date() && task.status !== 'overdue';
+          let status = task.status as InternshipTask["status"]; // Cast to the correct type
+          
+          if (status !== 'completed' && dueDate < now) {
+            status = 'overdue';
+          }
           
           return {
             ...task,
-            status: isOverdue ? 'overdue' : task.status
+            status
           } as InternshipTask;
         });
-
-        setInternshipContent({
-          tasks,
-          messages: messagesResult.data,
-          events: eventsResult.data.map(event => ({
-            ...event,
-            type: event.type as 'meeting' | 'deadline' | 'milestone'
-          })),
-          resources: resourcesResult.data
-        });
-
+        
+        setTasks(tasksWithOverdueStatus);
+        
+        // Fetch events
+        const { data: eventData, error: eventError } = await supabase
+          .from("internship_events")
+          .select("*")
+          .eq("session_id", sessionData.id);
+        
+        if (eventError) throw eventError;
+        setEvents((eventData || []) as InternshipEvent[]);
+        
+        // Fetch messages
+        const { data: messageData, error: messageError } = await supabase
+          .from("internship_messages")
+          .select("*")
+          .eq("session_id", sessionData.id)
+          .order("sent_at", { ascending: false });
+        
+        if (messageError) throw messageError;
+        setMessages(messageData || []);
+        
+        // Fetch resources
+        const { data: resourceData, error: resourceError } = await supabase
+          .from("internship_resources")
+          .select("*")
+          .eq("session_id", sessionData.id);
+        
+        if (resourceError) throw resourceError;
+        setResources(resourceData || []);
+        
       } catch (error) {
-        console.error("Error fetching internship content:", error);
+        console.error("Error fetching internship data:", error);
         toast({
-          title: "Error Loading Content",
-          description: "We couldn't retrieve the full internship content. Some features may be limited.",
+          title: "Error loading internship data",
+          description: "There was an issue loading your internship details. Please try again.",
           variant: "destructive",
         });
       } finally {
         setLoading(false);
       }
-    }
-
+    };
+    
     if (sessionData?.id) {
-      fetchInternshipContent();
+      fetchInternshipData();
     }
   }, [sessionData, toast]);
-  
-  // Views in the order they should appear
-  const views = [
-    "overview", "tasks", "messages", "feedback", 
-    "calendar", "resources", "achievements", "exit"
-  ];
 
-  // Minimum swipe distance to trigger navigation (in pixels)
-  const minSwipeDistance = 50;
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    
-    const currentIndex = views.indexOf(selectedView);
-    
-    if (isLeftSwipe && currentIndex < views.length - 1) {
-      // Navigate to next view
-      setSelectedView(views[currentIndex + 1]);
-    }
-    
-    if (isRightSwipe && currentIndex > 0) {
-      // Navigate to previous view
-      setSelectedView(views[currentIndex - 1]);
-    }
-    
-    // Reset touch values
-    setTouchStart(null);
-    setTouchEnd(null);
-  };
-  
-  // Function to update task status
-  const updateTaskStatus = async (taskId: string, newStatus: 'not_started' | 'in_progress' | 'completed') => {
+  const updateTaskStatus = async (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => {
     try {
+      // Update the task status in the database
       const { error } = await supabase
         .from("internship_tasks")
-        .update({ status: newStatus })
+        .update({ status })
         .eq("id", taskId);
-      
+        
       if (error) throw error;
       
-      // Update local state
-      setInternshipContent(prev => ({
-        ...prev,
-        tasks: prev.tasks.map(task => 
-          task.id === taskId ? { ...task, status: newStatus } : task
+      // Update the local state
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.id === taskId ? { ...task, status } : task
         )
-      }));
+      );
       
+      // Show success message
       toast({
-        title: "Task Updated",
-        description: `Task has been marked as ${newStatus.replace('_', ' ')}.`,
+        title: status === 'completed' ? "Task completed!" : "Task status updated",
+        description: status === 'completed' 
+          ? "Great job! Your progress has been saved." 
+          : "Your task status has been updated successfully.",
+        variant: "default",
       });
       
-      // Provide haptic feedback if supported
-      if ('vibrate' in navigator) {
-        navigator.vibrate(100);
-      }
+      // If task was marked as completed, you might trigger feedback generation here
+      // via an edge function or other business logic
       
     } catch (error) {
-      console.error("Error updating task:", error);
+      console.error("Error updating task status:", error);
       toast({
-        title: "Update Failed",
-        description: "Could not update the task status. Please try again.",
+        title: "Error updating task",
+        description: "There was an issue updating the task status. Please try again.",
         variant: "destructive",
       });
     }
   };
+
+  const handlePrevious = () => {
+    setActiveIndex(i => Math.max(0, i - 1));
+  };
   
-  // Function to render the appropriate mobile view based on selection
-  const renderMobileView = () => {
+  const handleNext = () => {
+    setActiveIndex(i => Math.min(tabs.length - 1, i + 1));
+  };
+  
+  const renderTabContent = () => {
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center p-8">
-          <LoadingSpinner size="default" />
-          <p className="mt-4 text-sm text-muted-foreground">Loading internship content...</p>
+        <div className="flex items-center justify-center p-8">
+          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       );
     }
     
-    switch (selectedView) {
-      case "tasks":
-        return <TaskOverview 
-                 tasks={internshipContent.tasks} 
-                 updateTaskStatus={updateTaskStatus}
-               />;
-      case "messages":
-        return <MessagingPanel messages={internshipContent.messages} />;
-      case "feedback":
+    switch (activeIndex) {
+      case 0: // Overview
+        return <WelcomePanel sessionData={sessionData} tasks={tasks} startDate={startDate} />;
+      case 1: // Tasks
+        return <TaskOverview tasks={tasks} updateTaskStatus={updateTaskStatus} />;
+      case 2: // Calendar
+        return <CalendarView events={events} tasks={tasks} />;
+      case 3: // Messages
+        return <MessagingPanel messages={messages} />;
+      case 4: // Resources
+        return <ResourceHub resources={resources} />;
+      case 5: // Feedback
         return <FeedbackCenter sessionData={sessionData} />;
-      case "calendar":
-        return <CalendarView events={internshipContent.events} tasks={internshipContent.tasks} />;
-      case "resources":
-        return <ResourceHub resources={internshipContent.resources} />;
-      case "achievements":
-        return <GamificationPanel sessionData={sessionData} tasks={internshipContent.tasks} />;
-      case "exit":
-        return <ExitActions sessionId={sessionData.id} />;
+      case 6: // Achievements
+        return <GamificationPanel sessionData={sessionData} tasks={tasks} />;
       default:
-        return <WelcomePanel 
-                 sessionData={sessionData}
-                 tasks={internshipContent.tasks} 
-                 startDate={sessionData?.start_date || sessionData.created_at}
-               />;
+        return <div>Select a tab</div>;
     }
   };
-  
-  if (loading && !isMobile) {
+
+  if (isMobile) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {Array(3).fill(0).map((_, i) => (
-          <div key={i} className="space-y-6">
-            {Array(i === 0 ? 3 : i === 1 ? 2 : 3).fill(0).map((_, j) => (
-              <div key={j} className="rounded-lg border bg-card p-6 animate-pulse">
-                <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
-                <div className="h-20 bg-muted rounded w-full"></div>
-              </div>
+      <div className="flex flex-col h-full">
+        <MobileInternshipHeader 
+          title={sessionData.job_title}
+          industry={sessionData.industry}
+        />
+        
+        <div className="overflow-x-auto mt-2">
+          <div className="flex space-x-2 px-4">
+            {tabs.map((tab, index) => (
+              <Tab
+                key={tab}
+                className={`px-3 py-2 whitespace-nowrap ${
+                  activeIndex === index
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }`}
+                onClick={() => setActiveIndex(index)}
+              >
+                {tab}
+              </Tab>
             ))}
           </div>
-        ))}
-      </div>
-    );
-  }
-  
-  if (!isMobile) {
-    // Render traditional layout for desktop
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="space-y-6">
-          <WelcomePanel 
-            sessionData={sessionData}
-            tasks={internshipContent.tasks}
-            startDate={sessionData?.start_date || sessionData.created_at}
-          />
-          <MessagingPanel messages={internshipContent.messages} />
-          <GamificationPanel sessionData={sessionData} tasks={internshipContent.tasks} />
         </div>
         
-        <div className="space-y-6">
-          <TaskOverview 
-            tasks={internshipContent.tasks} 
-            updateTaskStatus={updateTaskStatus}
-          />
-          <FeedbackCenter sessionData={sessionData} />
+        <div className="flex-1 overflow-auto p-4">
+          {renderTabContent()}
         </div>
         
-        <div className="space-y-6">
-          <CalendarView events={internshipContent.events} tasks={internshipContent.tasks} />
-          <ResourceHub resources={internshipContent.resources} />
+        <div className="flex justify-between p-4 bg-background sticky bottom-0 border-t">
+          <button
+            onClick={handlePrevious}
+            className="flex items-center justify-center p-2"
+            disabled={activeIndex === 0}
+          >
+            <ChevronLeft className="h-6 w-6" />
+            <span className="ml-1">{activeIndex > 0 ? tabs[activeIndex - 1] : ""}</span>
+          </button>
+          
+          <button
+            onClick={handleNext}
+            className="flex items-center justify-center p-2"
+            disabled={activeIndex === tabs.length - 1}
+          >
+            <span className="mr-1">{activeIndex < tabs.length - 1 ? tabs[activeIndex + 1] : ""}</span>
+            <ChevronRight className="h-6 w-6" />
+          </button>
+        </div>
+        
+        <div className="p-4 border-t">
           <ExitActions sessionId={sessionData.id} />
         </div>
       </div>
     );
   }
-  
-  // Mobile view with touch events
+
   return (
-    <div className="space-y-4">
-      <MobileInternshipHeader 
-        selectedView={selectedView}
-        setSelectedView={setSelectedView}
-        jobTitle={sessionData?.job_title || ""}
-      />
-      <div 
-        className="mb-16 touch-manipulation"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {renderMobileView()}
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="md:col-span-1">
+        <div className="space-y-2 sticky top-4">
+          {tabs.map((tab, index) => (
+            <Tab
+              key={tab}
+              className={`w-full p-3 ${
+                activeIndex === index
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted"
+              }`}
+              onClick={() => setActiveIndex(index)}
+            >
+              {tab}
+            </Tab>
+          ))}
+          
+          <div className="mt-4">
+            <ExitActions sessionId={sessionData.id} />
+          </div>
+        </div>
+      </div>
+      
+      <div className="md:col-span-2 lg:col-span-3">
+        {renderTabContent()}
       </div>
     </div>
   );
