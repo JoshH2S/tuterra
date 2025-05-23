@@ -1,6 +1,4 @@
-
 import { useEffect, useState } from "react";
-import { Tab } from "@/components/ui/tab";
 import { format } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +14,7 @@ import { FeedbackCenter } from "./FeedbackCenter";
 import { GamificationPanel } from "./GamificationPanel";
 import { ExitActions } from "./ExitActions";
 import { MobileInternshipHeader } from "./MobileInternshipHeader";
+import { Tab } from "@/components/ui/tabs";
 
 export type InternshipTask = {
   id: string;
@@ -238,7 +237,7 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
     return (
       <div className="flex flex-col h-full">
         <MobileInternshipHeader 
-          title={sessionData.job_title}
+          jobTitle={sessionData.job_title}
           industry={sessionData.industry}
         />
         
