@@ -31,6 +31,7 @@ export function InternshipSetupForm() {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<number>(0);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
 
   // Set default date to today in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
@@ -105,6 +106,11 @@ export function InternshipSetupForm() {
         description: "Your virtual internship has been set up successfully.",
       });
       
+      // Add haptic feedback for mobile devices if supported
+      if ('vibrate' in navigator) {
+        navigator.vibrate(200);
+      }
+      
       // Navigate to the internship dashboard
       navigate("/dashboard/virtual-internship", { 
         state: { newInternship: true, internshipId: result.sessionId } 
@@ -120,6 +126,26 @@ export function InternshipSetupForm() {
       setIsSubmitting(false);
       setGenerationProgress(0);
     }
+  };
+
+  // Touch gesture handlers for form scrolling
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartY) return;
+    const touchY = e.touches[0].clientY;
+    const diff = touchStartY - touchY;
+    
+    // If user is scrolling down on the form, prevent default to allow smooth scrolling
+    if (Math.abs(diff) > 10) {
+      // Allow natural scrolling behavior
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStartY(null);
   };
 
   const industries = [
@@ -140,7 +166,12 @@ export function InternshipSetupForm() {
   ];
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-md">
+    <Card 
+      className="w-full max-w-2xl mx-auto shadow-md"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <CardHeader className="space-y-1">
         <div className="flex items-center gap-2">
           <Briefcase className="h-6 w-6 text-primary" />
@@ -163,7 +194,8 @@ export function InternshipSetupForm() {
                     <Input 
                       placeholder="e.g. Frontend Developer" 
                       {...field} 
-                      className="h-12 text-base md:text-sm" 
+                      className="h-14 text-base md:h-12 md:text-sm"
+                      autoComplete="off" 
                     />
                   </FormControl>
                   <FormDescription>
@@ -182,11 +214,11 @@ export function InternshipSetupForm() {
                   <FormLabel>Industry</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="h-12 text-base md:text-sm">
+                      <SelectTrigger className="h-14 text-base md:h-12 md:text-sm">
                         <SelectValue placeholder="Select an industry" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="max-h-[300px]">
                       {industries.map((industry) => (
                         <SelectItem key={industry} value={industry}>
                           {industry}
@@ -213,7 +245,7 @@ export function InternshipSetupForm() {
                       placeholder="Enter job description or responsibilities you'd like to focus on..." 
                       {...field} 
                       rows={5}
-                      className="text-base md:text-sm"
+                      className="text-base md:text-sm min-h-[120px]"
                     />
                   </FormControl>
                   <FormDescription>
@@ -237,7 +269,7 @@ export function InternshipSetupForm() {
                         min={1} 
                         max={52} 
                         {...field} 
-                        className="h-12 text-base md:text-sm"
+                        className="h-14 text-base md:h-12 md:text-sm"
                       />
                     </FormControl>
                     <FormMessage />
@@ -255,7 +287,7 @@ export function InternshipSetupForm() {
                       <Input 
                         type="date" 
                         {...field} 
-                        className="h-12 text-base md:text-sm"
+                        className="h-14 text-base md:h-12 md:text-sm"
                       />
                     </FormControl>
                     <FormMessage />
@@ -265,9 +297,9 @@ export function InternshipSetupForm() {
             </div>
             
             {generationProgress > 0 && (
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-3 mt-6">
                 <div 
-                  className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
+                  className="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${generationProgress}%` }}
                 ></div>
                 <p className="text-sm text-center text-muted-foreground mt-2">
@@ -280,21 +312,29 @@ export function InternshipSetupForm() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col sm:flex-row gap-4">
+        <Button
+          variant="outline"
+          onClick={() => navigate(-1)}
+          className="w-full sm:w-auto order-2 sm:order-1 touch-manipulation"
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
         <Button
           type="submit"
           onClick={form.handleSubmit(onSubmit)}
           disabled={isSubmitting}
-          className="w-full md:w-auto flex items-center gap-2"
+          className="w-full sm:w-auto flex items-center gap-2 order-1 sm:order-2 h-14 sm:h-10 touch-manipulation"
         >
           {isSubmitting ? (
             <>
-              <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+              <span className="h-5 w-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
               Creating...
             </>
           ) : (
             <>
-              <Briefcase className="h-4 w-4" />
+              <Briefcase className="h-5 w-5" />
               Create Internship
             </>
           )}
