@@ -1,118 +1,134 @@
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { ModernCard } from "@/components/ui/modern-card";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, AlertCircle, Clock, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { InternshipTask } from "./SwipeableInternshipView";
+import { format } from "date-fns";
 
-// Mock task data
-const currentTasks = [
-  {
-    id: 1,
-    title: "Market Segmentation Analysis",
-    deadline: "May 26, 2025",
-    summary: "Analyze customer data to identify 3-5 key market segments based on demographics and purchase behavior.",
-  },
-  {
-    id: 2,
-    title: "Competitor Review Document",
-    deadline: "May 30, 2025",
-    summary: "Create a detailed report on our top 3 competitors including strengths, weaknesses, and market positioning.",
-  },
-];
+interface TaskOverviewProps {
+  tasks: InternshipTask[];
+  updateTaskStatus: (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => Promise<void>;
+}
 
-const pastTasks = [
-  {
-    id: 3,
-    title: "Brand Voice Guidelines",
-    deadline: "May 15, 2025",
-    summary: "Develop brand voice documentation for consistent messaging across all platforms.",
-    status: "Completed",
-  },
-  {
-    id: 4,
-    title: "Customer Survey Results",
-    deadline: "May 10, 2025",
-    summary: "Analyze and present findings from the Q2 customer satisfaction survey.",
-    status: "Completed",
-  },
-  {
-    id: 5,
-    title: "Social Media Audit",
-    deadline: "May 5, 2025",
-    summary: "Review performance metrics for all social media channels.",
-    status: "Completed Late",
-  },
-];
-
-export function TaskOverview() {
-  const [showPastTasks, setShowPastTasks] = useState(false);
+export function TaskOverview({ tasks, updateTaskStatus }: TaskOverviewProps) {
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'overdue':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'in_progress':
+        return <Clock className="h-4 w-4 text-amber-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-slate-400" />;
+    }
+  };
   
+  const getStatusBadgeColor = (status: string) => {
+    switch(status) {
+      case 'completed':
+        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800";
+      case 'overdue':
+        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-800";
+      case 'in_progress':
+        return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900 dark:text-amber-200 dark:border-amber-800";
+      default:
+        return "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700";
+    }
+  };
+  
+  const handleTaskAction = (task: InternshipTask) => {
+    if (task.status === 'not_started') {
+      updateTaskStatus(task.id, 'in_progress');
+    } else if (task.status === 'in_progress' || task.status === 'overdue') {
+      updateTaskStatus(task.id, 'completed');
+    } else if (task.status === 'completed') {
+      // Re-open task if previously completed
+      updateTaskStatus(task.id, 'in_progress');
+    }
+  };
+  
+  const getActionButtonText = (status: string) => {
+    switch(status) {
+      case 'completed':
+        return "Reopen Task";
+      case 'overdue':
+      case 'in_progress':
+        return "Mark Complete";
+      default:
+        return "Start Task";
+    }
+  };
+  
+  // Sort tasks by status (incomplete first) then by due date
+  const sortedTasks = [...tasks].sort((a, b) => {
+    // First by completion status
+    if (a.status === 'completed' && b.status !== 'completed') return 1;
+    if (a.status !== 'completed' && b.status === 'completed') return -1;
+    
+    // Then by overdue status
+    if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+    if (a.status !== 'overdue' && b.status === 'overdue') return 1;
+    
+    // Then by due date
+    return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+  });
+
   return (
-    <ModernCard className="overflow-hidden">
+    <ModernCard>
       <div className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Task Overview</h2>
+        <h2 className="text-xl font-semibold mb-4">Tasks & Deliverables</h2>
         
-        <div className="space-y-4">
-          {/* Current Tasks */}
-          <div>
-            <h3 className="text-md font-medium mb-2">Current Tasks</h3>
-            <div className="space-y-3">
-              {currentTasks.map((task) => (
-                <div 
-                  key={task.id} 
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-primary transition-colors"
-                >
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-medium text-base">{task.title}</h4>
-                    <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-full">
-                      Due {task.deadline}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 my-2">{task.summary}</p>
-                  <button className="text-sm text-primary hover:text-primary-dark font-medium mt-1">
-                    View Details →
-                  </button>
-                </div>
-              ))}
+        {tasks.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-4">
+              <Clock className="h-6 w-6 text-muted-foreground" />
             </div>
+            <h3 className="font-medium mb-2">No Tasks Available</h3>
+            <p className="text-sm text-muted-foreground">
+              Your tasks will appear here once they are assigned.
+            </p>
           </div>
-          
-          {/* Past Tasks Toggle */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-            <button
-              onClick={() => setShowPastTasks(!showPastTasks)}
-              className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors w-full justify-between"
-            >
-              <span>Past Tasks ({pastTasks.length})</span>
-              {showPastTasks ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-          </div>
-          
-          {/* Past Tasks List (Collapsible) */}
-          {showPastTasks && (
-            <div className="space-y-2 pt-1">
-              {pastTasks.map((task) => (
-                <div 
-                  key={task.id} 
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-800"
-                >
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-medium text-sm">{task.title}</h4>
-                    <span 
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        task.status === "Completed" 
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
-                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                      }`}
+        ) : (
+          <div className="space-y-3">
+            {sortedTasks.map((task) => (
+              <div key={task.id} className="border rounded-lg overflow-hidden">
+                <div className="flex items-center p-3 border-b bg-muted/20 gap-3">
+                  {getStatusIcon(task.status)}
+                  <h3 className="font-medium flex-1 text-sm md:text-base">{task.title}</h3>
+                  <Badge className={`${getStatusBadgeColor(task.status)} text-xs whitespace-nowrap`}>
+                    {task.status === 'not_started' ? 'Not Started' : 
+                     task.status === 'in_progress' ? 'In Progress' : 
+                     task.status === 'overdue' ? 'Overdue' : 
+                     'Completed'}
+                  </Badge>
+                </div>
+                
+                <div className="p-3">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {task.description}
+                  </p>
+                  
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="text-xs text-muted-foreground">
+                      Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-xs h-8 px-3 touch-manipulation"
+                      onClick={() => handleTaskAction(task)}
                     >
-                      {task.status}
-                    </span>
+                      {getActionButtonText(task.status)}
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{task.summary}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </ModernCard>
   );

@@ -1,61 +1,112 @@
 
-import { PremiumCard } from "@/components/ui/premium-card";
+import { ModernCard } from "@/components/ui/modern-card";
+import { Progress } from "@/components/ui/progress";
+import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
+import { InternshipTask } from "./SwipeableInternshipView";
+import { useAuth } from "@/hooks/useAuth";
+import { differenceInDays } from "date-fns";
 
-export function WelcomePanel() {
-  // Mock data
-  const internshipTitle = "Marketing Analyst at NovaTech";
-  const progressPercent = 33;
-  const currentWeek = 3;
-  const totalWeeks = 12;
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const nextDeadline = "May 26, 2025";
+interface WelcomePanelProps {
+  sessionData: InternshipSession;
+  tasks: InternshipTask[];
+  startDate: string;
+}
+
+export function WelcomePanel({ sessionData, tasks, startDate }: WelcomePanelProps) {
+  const { user } = useAuth();
   
+  // Calculate progress based on completed tasks and time elapsed
+  const calculateProgressPercentage = (): number => {
+    if (!tasks.length) return 0;
+    
+    // Method 1: Based on completed tasks
+    const completedTasks = tasks.filter(task => task.status === 'completed').length;
+    const taskProgress = (completedTasks / tasks.length) * 100;
+    
+    // Method 2: Based on time elapsed (from start_date to duration_weeks)
+    const start = new Date(startDate);
+    const now = new Date();
+    const endDate = new Date(start);
+    endDate.setDate(start.getDate() + (sessionData.duration_weeks * 7));
+    
+    let timeProgress = 0;
+    if (now >= endDate) {
+      timeProgress = 100;
+    } else if (now <= start) {
+      timeProgress = 0;
+    } else {
+      const totalDuration = differenceInDays(endDate, start);
+      const elapsed = differenceInDays(now, start);
+      timeProgress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+    }
+    
+    // Combined progress (weight tasks more heavily)
+    return Math.round((taskProgress * 0.7) + (timeProgress * 0.3));
+  };
+
+  const progressPercentage = calculateProgressPercentage();
+  const completedTasksCount = tasks.filter(task => task.status === 'completed').length;
+  const totalTasksCount = tasks.length;
+
   return (
-    <PremiumCard variant="elevated" className="overflow-hidden">
+    <ModernCard>
       <div className="p-6">
-        <h2 className="text-xl font-semibold mb-4">{internshipTitle}</h2>
+        <h2 className="text-2xl font-bold mb-2">
+          Welcome{user?.user_metadata?.first_name ? `, ${user.user_metadata.first_name}` : ''}!
+        </h2>
+        <p className="text-muted-foreground mb-5">
+          Your {sessionData.job_title} internship at {sessionData.industry} is in progress
+        </p>
         
-        <div className="space-y-3">
-          {/* Progress bar */}
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Progress</span>
-              <span className="font-medium">{progressPercent}%</span>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span>Internship Progress</span>
+              <span className="font-medium">{progressPercentage}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-              <div 
-                className="bg-primary h-2.5 rounded-full" 
-                style={{ width: `${progressPercent}%` }}
-              ></div>
-            </div>
-            <p className="text-sm text-gray-500 mt-1">Week {currentWeek} of {totalWeeks}</p>
+            <Progress value={progressPercentage} className="h-2" />
           </div>
           
-          {/* Date and next deadline */}
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-2 text-sm">
-            <div className="flex items-center">
-              <span className="text-gray-700 dark:text-gray-300">{currentDate}</span>
+          <div className="flex flex-wrap gap-4">
+            <div className="bg-primary/10 rounded-lg p-3 flex-1">
+              <div className="text-sm text-muted-foreground">Completed Tasks</div>
+              <div className="text-xl font-bold">{completedTasksCount} of {totalTasksCount}</div>
             </div>
-            <div className="flex items-center">
-              <span className="text-gray-700 dark:text-gray-300 font-medium">
-                Next Deadline: {nextDeadline}
-              </span>
+            <div className="bg-primary/10 rounded-lg p-3 flex-1">
+              <div className="text-sm text-muted-foreground">Week</div>
+              <div className="text-xl font-bold">
+                {Math.min(
+                  sessionData.duration_weeks,
+                  Math.max(1, Math.ceil(differenceInDays(new Date(), new Date(startDate)) / 7))
+                )} of {sessionData.duration_weeks}
+              </div>
             </div>
           </div>
           
-          {/* AI message */}
-          <div className="mt-4 bg-primary/10 rounded-lg p-4 border border-primary/20">
-            <p className="text-sm">
-              <span className="font-semibold">Welcome back, Alex!</span> You're making great progress on your marketing campaign analysis. Remember to review the latest consumer data before Friday's team meeting.
-            </p>
-          </div>
+          {sessionData.duration_weeks && tasks.length > 0 && (
+            <div className="flex flex-col border rounded-lg">
+              <div className="p-3 bg-muted/20 border-b">
+                <h3 className="text-sm font-medium">Up Next</h3>
+              </div>
+              <div className="p-3">
+                {/* Show first incomplete task */}
+                {tasks.find(task => task.status !== 'completed') ? (
+                  <div>
+                    <p className="font-medium">
+                      {tasks.find(task => task.status !== 'completed')?.title}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      {tasks.find(task => task.status !== 'completed')?.description}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Great job! You've completed all the tasks.</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </PremiumCard>
+    </ModernCard>
   );
 }

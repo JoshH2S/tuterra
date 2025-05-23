@@ -1,5 +1,4 @@
-
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SwipeableInternshipView } from "@/components/internship/SwipeableInternshipView";
@@ -7,45 +6,112 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Briefcase, PlusCircle } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-states";
+import { useToast } from "@/hooks/use-toast";
+
+export interface InternshipSession {
+  id: string;
+  user_id: string;
+  job_title: string;
+  industry: string;
+  job_description: string;
+  duration_weeks: number;
+  start_date: string;
+  current_phase: number;
+  created_at: string;
+}
 
 export default function VirtualInternshipDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('sessionId');
   const [hasInternships, setHasInternships] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [internshipSession, setInternshipSession] = useState<InternshipSession | null>(null);
 
   useEffect(() => {
-    async function checkForExistingInternships() {
+    // Show a welcome toast if redirected from internship creation
+    if (location.state?.newInternship) {
+      toast({
+        title: "Internship Created Successfully",
+        description: "Your virtual internship experience has been set up and is ready to explore.",
+      });
+    }
+  }, [location.state, toast]);
+
+  useEffect(() => {
+    async function fetchInternshipData() {
       if (!user) return;
       
       setLoading(true);
       try {
-        const { data, error, count } = await supabase
-          .from("internship_sessions")
-          .select("id", { count: 'exact' })
-          .eq("user_id", user.id)
-          .limit(1);
+        // If a specific sessionId is provided, fetch that session
+        if (sessionId) {
+          const { data: sessionData, error: sessionError } = await supabase
+            .from("internship_sessions")
+            .select("*")
+            .eq("id", sessionId)
+            .eq("user_id", user.id)
+            .single();
           
-        if (error) {
-          throw error;
+          if (sessionError) {
+            console.error("Error fetching internship session:", sessionError);
+            throw sessionError;
+          }
+          
+          if (sessionData) {
+            setInternshipSession(sessionData);
+            setHasInternships(true);
+          } else {
+            setHasInternships(false);
+          }
+        } else {
+          // Otherwise, check if the user has any internships
+          const { data, error, count } = await supabase
+            .from("internship_sessions")
+            .select("*", { count: 'exact' })
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(1);
+            
+          if (error) {
+            console.error("Error checking internships:", error);
+            throw error;
+          }
+          
+          if (count && count > 0 && data && data.length > 0) {
+            setInternshipSession(data[0]);
+            setHasInternships(true);
+          } else {
+            setHasInternships(false);
+          }
         }
-        
-        setHasInternships(count !== null && count > 0);
       } catch (error) {
-        console.error("Error checking internships:", error);
+        console.error("Error fetching internship data:", error);
         setHasInternships(false);
+        toast({
+          title: "Error Loading Internship",
+          description: "We couldn't retrieve your internship data. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     }
     
-    checkForExistingInternships();
-  }, [user]);
+    fetchInternshipData();
+  }, [user, sessionId, toast]);
   
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center gap-4">
+          <LoadingSpinner size="large" />
+          <p className="text-muted-foreground">Loading your internship experience...</p>
+        </div>
       </div>
     );
   }
@@ -61,7 +127,7 @@ export default function VirtualInternshipDashboard() {
           </p>
           <Button 
             onClick={() => navigate("/dashboard/internship/create")} 
-            className="gap-2"
+            className="gap-2 touch-manipulation"
           >
             <PlusCircle className="h-5 w-5" />
             Create Virtual Internship
@@ -73,7 +139,7 @@ export default function VirtualInternshipDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-4 max-w-7xl">
-      <SwipeableInternshipView />
+      <SwipeableInternshipView sessionData={internshipSession!} />
     </div>
   );
 }
