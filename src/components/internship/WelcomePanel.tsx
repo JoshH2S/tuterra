@@ -1,112 +1,104 @@
 
-import { ModernCard } from "@/components/ui/modern-card";
-import { Progress } from "@/components/ui/progress";
-import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InternshipTask } from "./SwipeableInternshipView";
-import { useAuth } from "@/hooks/useAuth";
-import { differenceInDays } from "date-fns";
+import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
+import { Progress } from "@/components/ui/progress";
+import { CalendarClock, CheckCircle2 } from "lucide-react";
 
 interface WelcomePanelProps {
   sessionData: InternshipSession;
   tasks: InternshipTask[];
-  startDate: string;
+  startDate: string; // Changed from optional to required since we provide a fallback
 }
 
 export function WelcomePanel({ sessionData, tasks, startDate }: WelcomePanelProps) {
-  const { user } = useAuth();
-  
-  // Calculate progress based on completed tasks and time elapsed
-  const calculateProgressPercentage = (): number => {
-    if (!tasks.length) return 0;
+  // Calculate internship progress percentage
+  const calculateProgress = () => {
+    // Default to 4 weeks if duration_weeks is not provided
+    const durationWeeks = sessionData.duration_weeks || 4;
+    const totalDurationMs = durationWeeks * 7 * 24 * 60 * 60 * 1000;
     
-    // Method 1: Based on completed tasks
-    const completedTasks = tasks.filter(task => task.status === 'completed').length;
-    const taskProgress = (completedTasks / tasks.length) * 100;
+    const startDateObj = new Date(startDate);
+    const currentDate = new Date();
+    const elapsedMs = currentDate.getTime() - startDateObj.getTime();
     
-    // Method 2: Based on time elapsed (from start_date to duration_weeks)
-    const start = new Date(startDate);
-    const now = new Date();
-    const endDate = new Date(start);
-    endDate.setDate(start.getDate() + (sessionData.duration_weeks * 7));
+    // Cap progress at 100%
+    let progressPercentage = Math.min((elapsedMs / totalDurationMs) * 100, 100);
     
-    let timeProgress = 0;
-    if (now >= endDate) {
-      timeProgress = 100;
-    } else if (now <= start) {
-      timeProgress = 0;
-    } else {
-      const totalDuration = differenceInDays(endDate, start);
-      const elapsed = differenceInDays(now, start);
-      timeProgress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+    // Ensure progress is at least 1% if internship has started
+    if (currentDate > startDateObj && progressPercentage < 1) {
+      progressPercentage = 1;
     }
     
-    // Combined progress (weight tasks more heavily)
-    return Math.round((taskProgress * 0.7) + (timeProgress * 0.3));
+    // Ensure progress is non-negative
+    return Math.max(0, Math.round(progressPercentage));
+  };
+  
+  // Count completed tasks
+  const completedTasks = tasks.filter(task => task.status === "completed").length;
+  const totalTasks = tasks.length;
+  const taskCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const progressPercentage = calculateProgressPercentage();
-  const completedTasksCount = tasks.filter(task => task.status === 'completed').length;
-  const totalTasksCount = tasks.length;
-
   return (
-    <ModernCard>
-      <div className="p-6">
-        <h2 className="text-2xl font-bold mb-2">
-          Welcome{user?.user_metadata?.first_name ? `, ${user.user_metadata.first_name}` : ''}!
-        </h2>
-        <p className="text-muted-foreground mb-5">
-          Your {sessionData.job_title} internship at {sessionData.industry} is in progress
-        </p>
-        
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-sm">
-              <span>Internship Progress</span>
-              <span className="font-medium">{progressPercentage}%</span>
-            </div>
-            <Progress value={progressPercentage} className="h-2" />
-          </div>
-          
-          <div className="flex flex-wrap gap-4">
-            <div className="bg-primary/10 rounded-lg p-3 flex-1">
-              <div className="text-sm text-muted-foreground">Completed Tasks</div>
-              <div className="text-xl font-bold">{completedTasksCount} of {totalTasksCount}</div>
-            </div>
-            <div className="bg-primary/10 rounded-lg p-3 flex-1">
-              <div className="text-sm text-muted-foreground">Week</div>
-              <div className="text-xl font-bold">
-                {Math.min(
-                  sessionData.duration_weeks,
-                  Math.max(1, Math.ceil(differenceInDays(new Date(), new Date(startDate)) / 7))
-                )} of {sessionData.duration_weeks}
-              </div>
-            </div>
-          </div>
-          
-          {sessionData.duration_weeks && tasks.length > 0 && (
-            <div className="flex flex-col border rounded-lg">
-              <div className="p-3 bg-muted/20 border-b">
-                <h3 className="text-sm font-medium">Up Next</h3>
-              </div>
-              <div className="p-3">
-                {/* Show first incomplete task */}
-                {tasks.find(task => task.status !== 'completed') ? (
-                  <div>
-                    <p className="font-medium">
-                      {tasks.find(task => task.status !== 'completed')?.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                      {tasks.find(task => task.status !== 'completed')?.description}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Great job! You've completed all the tasks.</p>
-                )}
-              </div>
-            </div>
-          )}
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col space-y-1.5">
+          <CardTitle className="text-xl">Welcome to your Virtual Internship</CardTitle>
+          <CardDescription>
+            {sessionData.job_title} in {sessionData.industry}
+          </CardDescription>
         </div>
-      </div>
-    </ModernCard>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Internship Progress</span>
+            <span>{calculateProgress()}%</span>
+          </div>
+          <Progress value={calculateProgress()} className="h-2" />
+        </div>
+        
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="flex flex-col p-3 border rounded-md bg-muted/30">
+            <div className="flex items-center gap-2 mb-1">
+              <CalendarClock className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Start Date</span>
+            </div>
+            <span className="text-sm text-muted-foreground">{formatDate(startDate)}</span>
+          </div>
+          
+          <div className="flex flex-col p-3 border rounded-md bg-muted/30">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Task Completion</span>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {completedTasks} of {totalTasks} tasks ({taskCompletion}%)
+            </span>
+          </div>
+        </div>
+
+        {sessionData.job_description && (
+          <div className="mt-4">
+            <h3 className="text-sm font-medium mb-2">Position Overview</h3>
+            <p className="text-sm text-muted-foreground">
+              {sessionData.job_description.length > 150
+                ? `${sessionData.job_description.substring(0, 150)}...`
+                : sessionData.job_description}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

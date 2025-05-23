@@ -266,7 +266,7 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
         return <WelcomePanel 
                  sessionData={sessionData}
                  tasks={internshipContent.tasks} 
-                 startDate={sessionData?.start_date || ""}
+                 startDate={sessionData?.start_date || sessionData.created_at}
                />;
     }
   };
@@ -296,7 +296,7 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
           <WelcomePanel 
             sessionData={sessionData}
             tasks={internshipContent.tasks}
-            startDate={sessionData?.start_date || ""}
+            startDate={sessionData?.start_date || sessionData.created_at}
           />
           <MessagingPanel messages={internshipContent.messages} />
           <GamificationPanel sessionData={sessionData} tasks={internshipContent.tasks} />

@@ -9,15 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Briefcase, PlusCircle } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import { useToast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 
+// Update the interface to match what comes from the database
 export interface InternshipSession {
   id: string;
   user_id: string;
   job_title: string;
   industry: string;
   job_description: string;
-  duration_weeks: number;
-  start_date: string;
+  duration_weeks?: number; // Make optional since it might not be in the database response
+  start_date?: string; // Make optional since it might not be in the database response
   current_phase: number;
   created_at: string;
   questions?: any;
@@ -67,9 +69,9 @@ export default function VirtualInternshipDashboard() {
           if (sessionData) {
             // Ensure all required properties are present in the session data
             const completeSessionData: InternshipSession = {
-              ...sessionData,
-              duration_weeks: sessionData.duration_weeks || 4, // Default to 4 weeks if missing
-              start_date: sessionData.start_date || sessionData.created_at // Use created_at as fallback for start_date
+              ...sessionData as InternshipSession, // Cast to InternshipSession to avoid type errors
+              duration_weeks: (sessionData as any).duration_weeks || 4, // Default to 4 weeks if missing
+              start_date: (sessionData as any).start_date || sessionData.created_at // Use created_at as fallback for start_date
             };
             
             setInternshipSession(completeSessionData);
@@ -94,9 +96,9 @@ export default function VirtualInternshipDashboard() {
           if (count && count > 0 && data && data.length > 0) {
             // Ensure all required properties are present in the session data
             const completeSessionData: InternshipSession = {
-              ...data[0],
-              duration_weeks: data[0].duration_weeks || 4, // Default to 4 weeks if missing
-              start_date: data[0].start_date || data[0].created_at // Use created_at as fallback for start_date
+              ...data[0] as InternshipSession, // Cast to InternshipSession to avoid type errors
+              duration_weeks: (data[0] as any).duration_weeks || 4, // Default to 4 weeks if missing
+              start_date: (data[0] as any).start_date || data[0].created_at // Use created_at as fallback for start_date
             };
             
             setInternshipSession(completeSessionData);
