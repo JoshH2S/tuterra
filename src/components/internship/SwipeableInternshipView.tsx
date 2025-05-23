@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileInternshipHeader } from "./MobileInternshipHeader";
@@ -20,11 +19,12 @@ export interface InternshipTask {
   session_id: string;
   title: string;
   description: string;
-  instructions?: string;
+  instructions?: string | null;
   due_date: string;
   status: 'not_started' | 'in_progress' | 'completed' | 'overdue';
   task_order: number;
   created_at: string;
+  task_type?: string | null;
 }
 
 export interface InternshipMessage {
@@ -124,13 +124,16 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
           return {
             ...task,
             status: isOverdue ? 'overdue' : task.status
-          };
+          } as InternshipTask;
         });
 
         setInternshipContent({
           tasks,
           messages: messagesResult.data,
-          events: eventsResult.data,
+          events: eventsResult.data.map(event => ({
+            ...event,
+            type: event.type as 'meeting' | 'deadline' | 'milestone'
+          })),
           resources: resourcesResult.data
         });
 

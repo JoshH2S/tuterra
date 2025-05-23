@@ -1,3 +1,4 @@
+
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -19,6 +20,7 @@ export interface InternshipSession {
   start_date: string;
   current_phase: number;
   created_at: string;
+  questions?: any;
 }
 
 export default function VirtualInternshipDashboard() {
@@ -63,7 +65,14 @@ export default function VirtualInternshipDashboard() {
           }
           
           if (sessionData) {
-            setInternshipSession(sessionData);
+            // Ensure all required properties are present in the session data
+            const completeSessionData: InternshipSession = {
+              ...sessionData,
+              duration_weeks: sessionData.duration_weeks || 4, // Default to 4 weeks if missing
+              start_date: sessionData.start_date || sessionData.created_at // Use created_at as fallback for start_date
+            };
+            
+            setInternshipSession(completeSessionData);
             setHasInternships(true);
           } else {
             setHasInternships(false);
@@ -83,7 +92,14 @@ export default function VirtualInternshipDashboard() {
           }
           
           if (count && count > 0 && data && data.length > 0) {
-            setInternshipSession(data[0]);
+            // Ensure all required properties are present in the session data
+            const completeSessionData: InternshipSession = {
+              ...data[0],
+              duration_weeks: data[0].duration_weeks || 4, // Default to 4 weeks if missing
+              start_date: data[0].start_date || data[0].created_at // Use created_at as fallback for start_date
+            };
+            
+            setInternshipSession(completeSessionData);
             setHasInternships(true);
           } else {
             setHasInternships(false);
