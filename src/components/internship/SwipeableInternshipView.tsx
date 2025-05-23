@@ -15,7 +15,7 @@ import { FeedbackCenter } from "./FeedbackCenter";
 import { GamificationPanel } from "./GamificationPanel";
 import { ExitActions } from "./ExitActions";
 import { MobileInternshipHeader } from "./MobileInternshipHeader";
-import { TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsTrigger } from "@/components/ui/tabs";
 
 export type InternshipTask = {
   id: string;
