@@ -147,7 +147,7 @@ export function FeedbackCenter({ sessionData, tasks = [] }: FeedbackCenterProps)
     }
   };
 
-  // Calculate overall performance score based on latest feedback ratings
+  // Calculate overall performance metrics based on latest feedback ratings
   const calculatePerformanceMetrics = () => {
     if (!feedbackItems.length) return [];
     
