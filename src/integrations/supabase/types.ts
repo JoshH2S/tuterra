@@ -482,28 +482,40 @@ export type Database = {
       }
       internship_feedback: {
         Row: {
+          collaboration_rating: number
           created_at: string
-          deliverable_id: string
-          feedback: string
+          deliverable_id: string | null
+          feedback_text: string
           id: string
-          improvements: string[] | null
-          strengths: string[] | null
+          quality_rating: number
+          session_id: string
+          task_title: string
+          timeliness_rating: number
+          user_id: string
         }
         Insert: {
+          collaboration_rating: number
           created_at?: string
-          deliverable_id: string
-          feedback: string
+          deliverable_id?: string | null
+          feedback_text: string
           id?: string
-          improvements?: string[] | null
-          strengths?: string[] | null
+          quality_rating: number
+          session_id: string
+          task_title: string
+          timeliness_rating: number
+          user_id: string
         }
         Update: {
+          collaboration_rating?: number
           created_at?: string
-          deliverable_id?: string
-          feedback?: string
+          deliverable_id?: string | null
+          feedback_text?: string
           id?: string
-          improvements?: string[] | null
-          strengths?: string[] | null
+          quality_rating?: number
+          session_id?: string
+          task_title?: string
+          timeliness_rating?: number
+          user_id?: string
         }
         Relationships: [
           {

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -226,7 +225,7 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
       case 4: // Resources
         return <ResourceHub resources={resources} />;
       case 5: // Feedback
-        return <FeedbackCenter sessionData={sessionData} />;
+        return <FeedbackCenter sessionData={sessionData} tasks={tasks} />;
       case 6: // Achievements
         return <GamificationPanel sessionData={sessionData} tasks={tasks} />;
       default:
