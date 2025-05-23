@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -14,7 +15,7 @@ import { FeedbackCenter } from "./FeedbackCenter";
 import { GamificationPanel } from "./GamificationPanel";
 import { ExitActions } from "./ExitActions";
 import { MobileInternshipHeader } from "./MobileInternshipHeader";
-import { Tab } from "@/components/ui/tabs";
+import { TabsTrigger } from "@/components/ui/tabs";
 
 export type InternshipTask = {
   id: string;
@@ -244,7 +245,7 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
         <div className="overflow-x-auto mt-2">
           <div className="flex space-x-2 px-4">
             {tabs.map((tab, index) => (
-              <Tab
+              <TabsTrigger
                 key={tab}
                 className={`px-3 py-2 whitespace-nowrap ${
                   activeIndex === index
@@ -252,9 +253,10 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
                     : "bg-muted"
                 }`}
                 onClick={() => setActiveIndex(index)}
+                value={tab.toLowerCase()}
               >
                 {tab}
-              </Tab>
+              </TabsTrigger>
             ))}
           </div>
         </div>
@@ -295,7 +297,7 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
       <div className="md:col-span-1">
         <div className="space-y-2 sticky top-4">
           {tabs.map((tab, index) => (
-            <Tab
+            <TabsTrigger
               key={tab}
               className={`w-full p-3 ${
                 activeIndex === index
@@ -303,9 +305,10 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
                   : "bg-muted"
               }`}
               onClick={() => setActiveIndex(index)}
+              value={tab.toLowerCase()}
             >
               {tab}
-            </Tab>
+            </TabsTrigger>
           ))}
           
           <div className="mt-4">
