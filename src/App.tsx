@@ -2,16 +2,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
-import { lazyLoad } from "@/utils/lazy-loading";
+import { lazyLoad, lazyLoadNamed } from "@/utils/lazy-loading";
 import { Toaster } from "@/components/ui/toaster";
 import { ConnectionStatusBanner } from "@/components/ui/connection-status-banner";
 import { AuthProvider } from "@/hooks/useAuth";
 
 // Lazy load MainLayout
-const MainLayout = lazyLoad(
-  () => import("@/components/layout/MainLayout").then(
-    module => ({ default: module.MainLayout })
-  ),
+const MainLayout = lazyLoadNamed(
+  () => import("@/components/layout/MainLayout"),
+  "MainLayout",
   "MainLayout"
 );
 
