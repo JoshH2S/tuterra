@@ -1,19 +1,21 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { Configuration, OpenAIApi } from "https://esm.sh/openai@3.1.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Get environment variables
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const openAiKey = Deno.env.get("OPENAI_API_KEY");
-
-// Initialize Supabase client with admin rights
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+interface RequestBody {
+  submission_id: string;
+  task_id: string;
+  submission_text: string;
+  task_description: string;
+  task_instructions?: string;
+  job_title: string;
+  industry: string;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,141 +27,142 @@ serve(async (req) => {
   }
 
   try {
-    // Check if OpenAI API key exists
-    if (!openAiKey) {
-      throw new Error("OPENAI_API_KEY is not set");
-    }
+    // Create a Supabase client with the Auth context of the function
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
+    );
 
-    // Parse the request body
-    const { sessionId, userId, taskId, taskTitle, taskSummary, userResponse, jobTitle, industry } = await req.json();
+    // Get the request body
+    const requestData: RequestBody = await req.json();
+    const { 
+      submission_id, 
+      task_id, 
+      submission_text,
+      task_description,
+      task_instructions,
+      job_title,
+      industry
+    } = requestData;
 
-    // Validate required fields
-    if (!sessionId || !taskTitle || !userResponse) {
+    if (!submission_id || !submission_text || !task_description) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields", details: "sessionId, taskTitle, and userResponse are required" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        }
+        JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Generating feedback for task "${taskTitle}" in session ${sessionId}`);
+    // Initialize OpenAI API
+    const configuration = new Configuration({
+      apiKey: Deno.env.get("OPENAI_API_KEY"),
+    });
+    const openai = new OpenAIApi(configuration);
 
-    // Create system prompt for OpenAI
-    const prompt = `You are acting as an internship supervisor for a virtual internship. 
-The intern is working as a ${jobTitle || 'professional'} in the ${industry || 'relevant'} industry. 
-They just submitted the following task: ${taskTitle}. 
-${taskSummary ? `Task summary: ${taskSummary}.` : ''}
-Their response was: ${userResponse}.
+    // Create the prompt for feedback generation
+    const prompt = `
+      You are an expert mentor in the field of ${industry} providing feedback on an internship task submission.
+      
+      Task Description: ${task_description}
+      ${task_instructions ? `Task Instructions: ${task_instructions}` : ""}
+      
+      The intern is working as a ${job_title}.
+      
+      Here is their submission:
+      """
+      ${submission_text}
+      """
+      
+      Please provide constructive feedback on this submission and rate the work on three dimensions on a scale of 1-10:
+      
+      Your response MUST be in the following JSON format:
+      
+      {
+        "feedback_text": "Your detailed markdown-formatted feedback with sections for strengths, areas for improvement, and next steps",
+        "quality_rating": [1-10 numeric rating],
+        "timeliness_rating": [1-10 numeric rating],
+        "collaboration_rating": [1-10 numeric rating],
+        "overall_assessment": "Excellent/Good/Satisfactory/Needs Improvement"
+      }
+      
+      For the ratings:
+      - Quality: Rate the accuracy, thoroughness and professionalism of the work
+      - Timeliness: Rate how well this would meet deadlines in a real workplace setting
+      - Collaboration: Rate how well this demonstrates ability to work with others or build on existing work
+      
+      Keep the feedback professional, encouraging, and constructive. Format the feedback_text in Markdown.
+    `;
 
-Give them a short feedback paragraph (2–4 sentences), and rate them from 1 to 10 on quality, timeliness, and collaboration. 
-Respond in the following JSON format:
-{
-  "feedback_text": "...",
-  "quality_rating": 8,
-  "timeliness_rating": 9,
-  "collaboration_rating": 7
-}`;
-
-    // Make a request to OpenAI
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openAiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-      }),
+    // Generate feedback using OpenAI
+    const response = await openai.createCompletion({
+      model: "text-davinci-003", // Or gpt-3.5-turbo if available in your setup
+      prompt: prompt,
+      max_tokens: 1000,
+      temperature: 0.7,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("OpenAI API error:", error);
-      throw new Error(`OpenAI API request failed: ${response.status} - ${error}`);
-    }
+    let feedbackText = "";
+    let qualityRating = 0;
+    let timelinessRating = 0;
+    let collaborationRating = 0;
+    let overallAssessment = "";
 
-    // Parse the OpenAI response
-    const completion = await response.json();
-    const content = completion.choices[0]?.message?.content;
-    
-    if (!content) {
-      throw new Error("No content in OpenAI response");
-    }
-
-    // Parse the JSON content (handling potential formatting issues)
-    let parsedFeedback;
     try {
-      parsedFeedback = JSON.parse(content.trim());
-    } catch (err) {
-      console.error("Error parsing OpenAI response:", err);
-      // Try to extract JSON from text if it's not properly formatted
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      // Try to parse the response as JSON
+      const responseText = response.data.choices[0].text?.trim() || "";
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      
       if (jsonMatch) {
-        try {
-          parsedFeedback = JSON.parse(jsonMatch[0]);
-        } catch {
-          throw new Error("Could not parse feedback from OpenAI response");
-        }
+        const feedbackData = JSON.parse(jsonMatch[0]);
+        feedbackText = feedbackData.feedback_text || "Unable to generate feedback at this time.";
+        qualityRating = feedbackData.quality_rating || 0;
+        timelinessRating = feedbackData.timeliness_rating || 0;
+        collaborationRating = feedbackData.collaboration_rating || 0;
+        overallAssessment = feedbackData.overall_assessment || "";
       } else {
-        throw new Error("Could not extract JSON from OpenAI response");
+        // If not JSON, use the text as is
+        feedbackText = responseText;
       }
+    } catch (error) {
+      console.error("Error parsing AI response:", error);
+      feedbackText = response.data.choices[0].text?.trim() || "Unable to generate feedback at this time.";
     }
 
-    // Validate parsed feedback
-    if (!parsedFeedback.feedback_text || 
-        !parsedFeedback.quality_rating || 
-        !parsedFeedback.timeliness_rating || 
-        !parsedFeedback.collaboration_rating) {
-      throw new Error("Incomplete feedback data from OpenAI");
-    }
-
-    // Save feedback to the database
-    const { data: feedbackData, error: insertError } = await supabase
-      .from("internship_feedback")
-      .insert({
-        user_id: userId,
-        session_id: sessionId,
-        task_title: taskTitle,
-        deliverable_id: taskId || null,
-        feedback_text: parsedFeedback.feedback_text,
-        quality_rating: parsedFeedback.quality_rating,
-        timeliness_rating: parsedFeedback.timeliness_rating,
-        collaboration_rating: parsedFeedback.collaboration_rating,
+    // Save the feedback to the database
+    const { error: updateError } = await supabaseClient
+      .from("internship_task_submissions")
+      .update({
+        feedback_text: feedbackText,
+        quality_rating: qualityRating,
+        timeliness_rating: timelinessRating,
+        collaboration_rating: collaborationRating,
+        overall_assessment: overallAssessment,
+        feedback_provided_at: new Date().toISOString()
       })
-      .select()
-      .single();
+      .eq("id", submission_id);
 
-    if (insertError) {
-      console.error("Error saving feedback to database:", insertError);
-      throw new Error(`Database error: ${insertError.message}`);
+    if (updateError) {
+      console.error("Error updating submission with feedback:", updateError);
+      return new Response(
+        JSON.stringify({ error: "Failed to save feedback" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // Return the feedback data
+    // Return success response
     return new Response(
-      JSON.stringify({
-        success: true,
-        feedback: feedbackData,
+      JSON.stringify({ 
+        success: true, 
+        message: "Feedback generated and saved successfully" 
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error in generate-internship-feedback function:", error);
     
     return new Response(
-      JSON.stringify({
-        error: error.message || "An unexpected error occurred",
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 });

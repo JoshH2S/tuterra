@@ -37,15 +37,6 @@ export type InternshipEvent = {
   type: "meeting" | "deadline" | "milestone";
 };
 
-export interface InternshipMessage {
-  id: string;
-  session_id: string;
-  sender: string;
-  subject: string;
-  content: string;
-  sent_at: string;
-}
-
 export interface InternshipResource {
   id: string;
   session_id: string;
@@ -64,7 +55,6 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
   const { toast } = useToast();
   const [tasks, setTasks] = useState<InternshipTask[]>([]);
   const [events, setEvents] = useState<InternshipEvent[]>([]);
-  const [messages, setMessages] = useState<InternshipMessage[]>([]);
   const [resources, setResources] = useState<InternshipResource[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -120,16 +110,6 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
         
         if (eventError) throw eventError;
         setEvents((eventData || []) as InternshipEvent[]);
-        
-        // Fetch messages
-        const { data: messageData, error: messageError } = await supabase
-          .from("internship_messages")
-          .select("*")
-          .eq("session_id", sessionData.id)
-          .order("sent_at", { ascending: false });
-        
-        if (messageError) throw messageError;
-        setMessages(messageData || []);
         
         // Fetch resources
         const { data: resourceData, error: resourceError } = await supabase
@@ -221,7 +201,7 @@ export function SwipeableInternshipView({ sessionData }: SwipeableInternshipView
       case 2: // Calendar
         return <CalendarView events={events} tasks={tasks} />;
       case 3: // Messages
-        return <MessagingPanel messages={messages} />;
+        return <MessagingPanel sessionId={sessionData.id} />;
       case 4: // Resources
         return <ResourceHub resources={resources} />;
       case 5: // Feedback
