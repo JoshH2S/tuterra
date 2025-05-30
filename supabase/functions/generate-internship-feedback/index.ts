@@ -5,6 +5,8 @@ import { Configuration, OpenAIApi } from "https://esm.sh/openai@3.1.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Max-Age": "86400"
 };
 
 interface RequestBody {
@@ -49,8 +51,54 @@ serve(async (req) => {
     if (!submission_id || !submission_text || !task_description) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 400, 
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          } 
+        }
       );
+    }
+
+    // After getting the submission details, fetch company profile information
+    const { data: taskData, error: taskError } = await supabaseClient
+      .from('internship_tasks')
+      .select('session_id')
+      .eq('id', task_id)
+      .single();
+
+    if (taskError) {
+      console.error('Error fetching task session:', taskError);
+      return new Response(
+        JSON.stringify({ error: 'Error fetching task information' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const sessionId = taskData.session_id;
+
+    // Get company profile information
+    const { data: companyProfile, error: companyError } = await supabaseClient
+      .from('internship_company_profiles')
+      .select('*')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (companyError && companyError.code !== 'PGRST116') {
+      console.error('Error fetching company profile:', companyError);
+    }
+
+    // Build company context from the company profile
+    let companyContext = '';
+    if (companyProfile) {
+      companyContext = `
+Company Name: ${companyProfile.company_name}
+Company Overview: ${companyProfile.company_overview || ''}
+Company Mission: ${companyProfile.company_mission || ''}
+Team Structure: ${companyProfile.team_structure || ''}
+Company Values: ${companyProfile.company_values || ''}
+`;
     }
 
     // Initialize OpenAI API
@@ -59,39 +107,31 @@ serve(async (req) => {
     });
     const openai = new OpenAIApi(configuration);
 
-    // Create the prompt for feedback generation
+    // Add company context to the prompt
     const prompt = `
-      You are an expert mentor in the field of ${industry} providing feedback on an internship task submission.
-      
-      Task Description: ${task_description}
-      ${task_instructions ? `Task Instructions: ${task_instructions}` : ""}
-      
-      The intern is working as a ${job_title}.
-      
-      Here is their submission:
-      """
-      ${submission_text}
-      """
-      
-      Please provide constructive feedback on this submission and rate the work on three dimensions on a scale of 1-10:
-      
-      Your response MUST be in the following JSON format:
-      
-      {
-        "feedback_text": "Your detailed markdown-formatted feedback with sections for strengths, areas for improvement, and next steps",
-        "quality_rating": [1-10 numeric rating],
-        "timeliness_rating": [1-10 numeric rating],
-        "collaboration_rating": [1-10 numeric rating],
-        "overall_assessment": "Excellent/Good/Satisfactory/Needs Improvement"
-      }
-      
-      For the ratings:
-      - Quality: Rate the accuracy, thoroughness and professionalism of the work
-      - Timeliness: Rate how well this would meet deadlines in a real workplace setting
-      - Collaboration: Rate how well this demonstrates ability to work with others or build on existing work
-      
-      Keep the feedback professional, encouraging, and constructive. Format the feedback_text in Markdown.
-    `;
+You are a professional mentor providing feedback on an intern's work.
+${companyContext ? 'Use the following company information as context:' : ''}
+${companyContext}
+
+Job Title: ${job_title}
+Industry: ${industry}
+Task Description: ${task_description}
+Task Instructions: ${task_instructions || "No specific instructions provided."}
+
+Intern's Submission:
+${submission_text}
+
+Provide constructive feedback on this submission. Your feedback should be encouraging but also highlight areas for improvement. Please format your response in this structure:
+
+1. Overall Assessment: A paragraph summarizing the quality of the work
+2. Strengths: 2-3 bullet points highlighting what was done well
+3. Areas for Improvement: 2-3 bullet points suggesting how the work could be better
+4. Recommendations: Specific tips or resources that would help the intern improve
+
+Keep your feedback professional, specific, and actionable. Tie your feedback to industry standards and the skills that would be valuable in the ${industry} field.
+
+Be supportive and encouraging while also providing honest criticism where needed.
+`;
 
     // Generate feedback using OpenAI
     const response = await openai.createCompletion({
@@ -145,7 +185,13 @@ serve(async (req) => {
       console.error("Error updating submission with feedback:", updateError);
       return new Response(
         JSON.stringify({ error: "Failed to save feedback" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        { 
+          status: 500, 
+          headers: { 
+            "Content-Type": "application/json",
+            ...corsHeaders 
+          } 
+        }
       );
     }
 
@@ -155,14 +201,26 @@ serve(async (req) => {
         success: true, 
         message: "Feedback generated and saved successfully" 
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { 
+        status: 200, 
+        headers: { 
+          "Content-Type": "application/json",
+          ...corsHeaders 
+        } 
+      }
     );
   } catch (error) {
     console.error("Error in generate-internship-feedback function:", error);
     
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { 
+        status: 500, 
+        headers: { 
+          "Content-Type": "application/json",
+          ...corsHeaders 
+        } 
+      }
     );
   }
 });

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -60,72 +59,130 @@ export function InternshipSetupForm() {
     setIsSubmitting(true);
     setGenerationProgress(10); // Start progress indication
     
-    try {
-      // Show initial toast
-      toast({
-        title: "Creating your internship...",
-        description: "Setting up your virtual internship experience. This might take a minute.",
-      });
-      
-      setGenerationProgress(30);
+    // Add max retries for 500 errors
+    const maxRetries = 3;
+    let attempt = 0;
+    let lastError = null;
+    
+    while (attempt < maxRetries) {
+      try {
+        // Show initial toast on first attempt
+        if (attempt === 0) {
+          toast({
+            title: "Creating your internship...",
+            description: "Setting up your virtual internship experience. This might take a minute.",
+          });
+        } else {
+          toast({
+            title: `Retrying (${attempt}/${maxRetries})...`,
+            description: "Previous attempt encountered an error. Retrying...",
+          });
+        }
+        
+        setGenerationProgress(30);
 
-      // Get the session JWT for auth
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("No active session found");
+        // Get the session JWT for auth
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error("No active session found");
+        }
+
+        // Use the edge function to create the internship
+        const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/create-internship-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            job_title: data.jobTitle,
+            industry: data.industry,
+            job_description: data.jobDescription,
+            duration_weeks: data.durationWeeks,
+            start_date: data.startDate
+          })
+        });
+
+        setGenerationProgress(70);
+
+        // Parse response
+        const result = await response.json();
+        
+        // Check if we should retry (only for 500 errors which might be temporary)
+        if (!response.ok && response.status === 500) {
+          lastError = new Error(result.error || result.details || "Server error");
+          console.warn(`Attempt ${attempt + 1} failed with 500 error:`, result);
+          
+          // Increment attempt and retry after delay if not the last attempt
+          attempt++;
+          if (attempt < maxRetries) {
+            const delayMs = Math.pow(2, attempt) * 1000; // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            continue; // Skip to the next attempt
+          } else {
+            // We've exhausted retries, throw the last error
+            throw lastError;
+          }
+        }
+        
+        // Handle other errors (non-500)
+        if (!response.ok) {
+          // More detailed error handling based on status code
+          if (response.status === 400) {
+            throw new Error(result.details || "Invalid input. Please check your form values.");
+          } else if (response.status === 401) {
+            throw new Error("Authentication failed. Please sign in again.");
+          } else {
+            throw new Error(result.error || result.details || "Failed to create internship");
+          }
+        }
+        
+        if (!result.success) {
+          // Handle a valid response that indicates failure
+          console.warn("API returned failure:", result);
+          throw new Error(result.error || result.details || "Failed to create internship");
+        }
+
+        // If we reach here, the request was successful
+        setGenerationProgress(100);
+        
+        toast({
+          title: "Internship Created!",
+          description: "Your virtual internship has been set up successfully.",
+        });
+        
+        // Add haptic feedback for mobile devices if supported
+        if ('vibrate' in navigator) {
+          navigator.vibrate(200);
+        }
+        
+        // Navigate to the internship dashboard
+        navigate("/dashboard/virtual-internship", { 
+          state: { newInternship: true, internshipId: result.sessionId } 
+        });
+        
+        // Exit the retry loop on success
+        break;
+      } catch (error: any) {
+        lastError = error;
+        
+        // Only increment attempt for 500 errors (handled above)
+        // For other errors, we'll exit immediately
+        if (attempt === maxRetries - 1 || !lastError || lastError.message !== "Server error") {
+          console.error("Error creating internship:", error);
+          toast({
+            title: "Failed to create internship",
+            description: error.message || "There was an error setting up your internship.",
+            variant: "destructive",
+          });
+          break;
+        }
       }
-
-      // Use the edge function to create the internship
-      const response = await fetch(`https://nhlsrtubyvggtkyrhkuu.supabase.co/functions/v1/create-internship-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          job_title: data.jobTitle,
-          industry: data.industry,
-          job_description: data.jobDescription,
-          duration_weeks: data.durationWeeks,
-          start_date: data.startDate
-        })
-      });
-
-      setGenerationProgress(70);
-
-      const result = await response.json();
-      
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || result.details || "Failed to create internship");
-      }
-
-      setGenerationProgress(100);
-      
-      toast({
-        title: "Internship Created!",
-        description: "Your virtual internship has been set up successfully.",
-      });
-      
-      // Add haptic feedback for mobile devices if supported
-      if ('vibrate' in navigator) {
-        navigator.vibrate(200);
-      }
-      
-      // Navigate to the internship dashboard
-      navigate("/dashboard/virtual-internship", { 
-        state: { newInternship: true, internshipId: result.sessionId } 
-      });
-    } catch (error: any) {
-      console.error("Error creating internship:", error);
-      toast({
-        title: "Failed to create internship",
-        description: error.message || "There was an error setting up your internship.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-      setGenerationProgress(0);
     }
+    
+    // Always clean up
+    setIsSubmitting(false);
+    setGenerationProgress(0);
   };
 
   // Touch gesture handlers for form scrolling

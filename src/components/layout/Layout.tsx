@@ -21,6 +21,11 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
   const isMobile = useIsMobile();
   const location = useLocation();
 
+  // Check if current route is a virtual internship page
+  const isVirtualInternshipPage = 
+    location.pathname.includes("/dashboard/virtual-internship") || 
+    location.pathname.includes("/dashboard/internship");
+
   // Hide sidebar and header on specific routes
   const hideSidebar = isLandingPage || 
     location.pathname === "/about" || 
@@ -31,14 +36,15 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
     location.pathname === "/reset-password" ||
     location.pathname === "/onboarding" ||
     location.pathname === "/onboarding-redirect" ||
-    location.pathname === "/verify-email";
+    location.pathname === "/verify-email" ||
+    isVirtualInternshipPage;
 
   // Show Header1 on specific routes where the sidebar is hidden but we need navigation
   const showPublicHeader = location.pathname === "/about" || 
     location.pathname === "/contact";
 
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden bg-gray-50">
       <SkipToContent />
       {showPublicHeader && <Header1 />}
       
@@ -46,7 +52,7 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
         {!hideSidebar && <MainSidebar />}
         <div 
           className={cn(
-            "flex-1 flex flex-col transition-all duration-300 ease-in-out bg-white w-full",
+            "flex-1 flex flex-col transition-all duration-300 ease-in-out w-full bg-gray-50",
             !hideSidebar && !isMobile && "ml-[200px]"
           )}
         >

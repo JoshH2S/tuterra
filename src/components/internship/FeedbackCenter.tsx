@@ -1,325 +1,203 @@
-
 import { useState, useEffect } from "react";
-import { PremiumCard } from "@/components/ui/premium-card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Check, Award, Calendar, MessageSquare } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LoadingSpinner } from "@/components/ui/loading-states";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import { InternshipTask } from "./SwipeableInternshipView";
+import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
+import { FeedbackViewer } from "./FeedbackViewer";
+import { useAuth } from "@/hooks/useAuth";
+
+interface SubmissionWithTask {
+  id: string;
+  task_id: string;
+  response_text: string;
+  created_at: string;
+  feedback_text: string | null;
+  feedback_provided_at: string | null;
+  quality_rating: number | null;
+  timeliness_rating: number | null;
+  collaboration_rating: number | null;
+  overall_assessment: string | null;
+  task: {
+    title: string;
+    description: string;
+    status: string;
+  };
+}
 
 interface FeedbackCenterProps {
   sessionData: InternshipSession;
-  tasks?: InternshipTask[];
+  tasks: InternshipTask[];
 }
 
-interface InternshipFeedback {
-  id: string;
-  user_id: string;
-  session_id: string;
-  task_title: string;
-  feedback_text: string;
-  quality_rating: number;
-  timeliness_rating: number;
-  collaboration_rating: number;
-  created_at: string;
-}
-
-export function FeedbackCenter({ sessionData, tasks = [] }: FeedbackCenterProps) {
-  const [feedbackItems, setFeedbackItems] = useState<InternshipFeedback[]>([]);
-  const [selectedTaskId, setSelectedTaskId] = useState<string>("");
-  const [userResponse, setUserResponse] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const { toast } = useToast();
-  
-  // Get completed tasks that don't have feedback yet
-  const eligibleTasks = tasks.filter(task => 
-    task.status === "completed"
-  );
+export function FeedbackCenter({ sessionData, tasks }: FeedbackCenterProps) {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [submissions, setSubmissions] = useState<SubmissionWithTask[]>([]);
+  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchFeedback() {
+    const fetchSubmissions = async () => {
+      if (!user || !sessionData.id) return;
+      
       try {
         setLoading(true);
         
-        const { data: user } = await supabase.auth.getUser();
-        if (!user?.user) return;
-        
-        const { data: feedback, error } = await supabase
-          .from('internship_feedback')
-          .select('*')
-          .eq('session_id', sessionData.id)
-          .eq('user_id', user.user.id)
-          .order('created_at', { ascending: false });
+        const { data, error } = await supabase
+          .from("internship_task_submissions")
+          .select(`
+            *,
+            task:internship_tasks(title, description, status)
+          `)
+          .eq("session_id", sessionData.id)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
         
         if (error) throw error;
         
-        setFeedbackItems(feedback || []);
+        const typedData = data as unknown as SubmissionWithTask[];
+        setSubmissions(typedData);
+        
+        // Set the first submission as active if there is one
+        if (typedData.length > 0) {
+          setActiveSubmissionId(typedData[0].id);
+        }
+        
       } catch (error) {
-        console.error("Error fetching feedback:", error);
-        toast({
-          title: "Error",
-          description: "Could not load feedback. Please try again.",
-          variant: "destructive",
-        });
+        console.error("Error fetching task submissions:", error);
       } finally {
         setLoading(false);
       }
-    }
+    };
     
-    if (sessionData?.id) {
-      fetchFeedback();
+    fetchSubmissions();
+  }, [sessionData.id, user]);
+  
+  const getSubmissionStatus = (submission: SubmissionWithTask) => {
+    if (submission.feedback_text) {
+      return {
+        label: "Feedback Received",
+        color: "bg-green-100 text-green-800 border-green-200"
+      };
+    } else {
+      return {
+        label: "Awaiting Feedback",
+        color: "bg-amber-100 text-amber-800 border-amber-200"
+      };
     }
-  }, [sessionData, toast]);
-
-  const handleSubmitForFeedback = async () => {
-    if (!selectedTaskId || !userResponse.trim()) {
-      toast({
-        title: "Missing information",
-        description: "Please select a task and provide your response before requesting feedback.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      const selectedTask = tasks.find(task => task.id === selectedTaskId);
-      if (!selectedTask) {
-        throw new Error("Task not found");
-      }
-      
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) {
-        throw new Error("User not authenticated");
-      }
-      
-      const response = await fetch("/api/generate-internship-feedback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sessionId: sessionData.id,
-          userId: userData.user.id,
-          taskId: selectedTask.id,
-          taskTitle: selectedTask.title,
-          taskSummary: selectedTask.description,
-          userResponse,
-          jobTitle: sessionData.job_title,
-          industry: sessionData.industry,
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate feedback");
-      }
-      
-      const result = await response.json();
-      
-      // Add the new feedback to the list
-      setFeedbackItems(prev => [result.feedback, ...prev]);
-      
-      // Reset form
-      setSelectedTaskId("");
-      setUserResponse("");
-      
-      toast({
-        title: "Feedback received",
-        description: "Your work has been reviewed. Check out the feedback below.",
-        variant: "default",
-      });
-      
-    } catch (error) {
-      console.error("Error submitting for feedback:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to get feedback. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Calculate overall performance metrics based on latest feedback ratings
-  const calculatePerformanceMetrics = () => {
-    if (!feedbackItems.length) return [];
-    
-    const latestFeedbackItems = feedbackItems.slice(0, 3); // Use last 3 feedback items for metrics
-    
-    const qualitySum = latestFeedbackItems.reduce((sum, item) => sum + item.quality_rating, 0);
-    const timelinessSum = latestFeedbackItems.reduce((sum, item) => sum + item.timeliness_rating, 0);
-    const collaborationSum = latestFeedbackItems.reduce((sum, item) => sum + item.collaboration_rating, 0);
-    
-    return [
-      { 
-        category: "Quality", 
-        score: Math.round(qualitySum / latestFeedbackItems.length * 10), 
-        color: "bg-green-500" 
-      },
-      { 
-        category: "Timeliness", 
-        score: Math.round(timelinessSum / latestFeedbackItems.length * 10), 
-        color: "bg-yellow-500" 
-      },
-      { 
-        category: "Collaboration", 
-        score: Math.round(collaborationSum / latestFeedbackItems.length * 10), 
-        color: "bg-blue-500" 
-      },
-    ];
   };
   
-  const performanceMetrics = calculatePerformanceMetrics();
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <LoadingSpinner size="default" />
+      </div>
+    );
+  }
+  
+  if (submissions.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <div className="mb-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-muted-foreground">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+              </svg>
+            </div>
+          </div>
+          <h3 className="text-lg font-medium mb-2">No Submissions Yet</h3>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Complete and submit tasks from the Tasks tab to receive mentor feedback here.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
-    <PremiumCard>
-      <div className="p-6 space-y-6">
-        <h2 className="text-xl font-semibold mb-4">Feedback Center</h2>
-        
-        {/* Submit work for feedback */}
-        <div className="p-4 bg-muted/30 rounded-lg border border-muted dark:border-gray-700">
-          <h3 className="text-sm font-medium mb-3">Request Supervisor Feedback</h3>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Submissions list - left sidebar */}
+      <div className="md:col-span-1">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">Your Submissions</CardTitle>
+          </CardHeader>
           
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="task-select" className="block text-sm font-medium mb-1">
-                Select completed task
-              </label>
-              <select
-                id="task-select"
-                value={selectedTaskId}
-                onChange={(e) => setSelectedTaskId(e.target.value)}
-                className="w-full p-2 bg-background border border-input rounded text-sm"
-                disabled={isSubmitting}
-              >
-                <option value="">-- Select a task --</option>
-                {eligibleTasks.map(task => (
-                  <option key={task.id} value={task.id}>
-                    {task.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="response" className="block text-sm font-medium mb-1">
-                Your work submission
-              </label>
-              <Textarea
-                id="response"
-                placeholder="Describe your work and what you learned..."
-                value={userResponse}
-                onChange={(e) => setUserResponse(e.target.value)}
-                className="min-h-[100px]"
-                disabled={isSubmitting}
-              />
-            </div>
-            
-            <Button 
-              onClick={handleSubmitForFeedback}
-              disabled={isSubmitting || !selectedTaskId || !userResponse.trim()}
-              className="w-full touch-manipulation"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Submit for Feedback
-                </>
-              )}
-            </Button>
+          <CardContent className="p-0">
+            <div className="max-h-[600px] overflow-y-auto">
+              {submissions.map((submission) => {
+                const status = getSubmissionStatus(submission);
+                
+                return (
+                  <button
+                    key={submission.id}
+                    onClick={() => setActiveSubmissionId(submission.id)}
+                    className={`w-full text-left p-3 border-b last:border-b-0 transition hover:bg-muted/40 ${
+                      activeSubmissionId === submission.id ? "bg-muted/60" : ""
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="font-medium text-sm truncate pr-2">{submission.task.title}</h4>
+                      <Badge className={status.color} variant="outline">
+                        {status.label}
+                      </Badge>
           </div>
+                    <div className="text-xs text-muted-foreground">
+                      Submitted: {format(new Date(submission.created_at), "MMM d, yyyy")}
         </div>
-        
-        {/* Recent feedback */}
-        {loading ? (
-          <div className="mb-5 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 animate-pulse">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-          </div>
-        ) : feedbackItems.length > 0 ? (
-          <div className="mb-5 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Latest Feedback
-              </h3>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3 mr-1" />
-                {format(new Date(feedbackItems[0].created_at), 'MMM d, yyyy')}
-              </div>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
             </div>
             
-            <div className="flex items-start gap-3 mb-3">
-              <Award className="h-5 w-5 text-amber-500 mt-1" />
-              <div>
-                <h4 className="text-sm font-medium mb-1">{feedbackItems[0].task_title}</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {feedbackItems[0].feedback_text}
-                </p>
+      {/* Feedback display - right side */}
+      <div className="md:col-span-2">
+        {activeSubmissionId ? (
+          <div className="space-y-4">
+            <Tabs defaultValue="feedback">
+              <TabsList>
+                <TabsTrigger value="feedback">Feedback</TabsTrigger>
+                <TabsTrigger value="submission">Your Submission</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="feedback" className="mt-4">
+                <FeedbackViewer 
+                  submissionId={activeSubmissionId} 
+                  taskId={submissions.find(s => s.id === activeSubmissionId)?.task_id || ""}
+                />
+              </TabsContent>
+              
+              <TabsContent value="submission" className="mt-4">
+                <Card>
+                  <CardHeader className="pb-2 border-b">
+                    <CardTitle className="text-base font-medium">
+                      {submissions.find(s => s.id === activeSubmissionId)?.task.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="whitespace-pre-line">
+                      {submissions.find(s => s.id === activeSubmissionId)?.response_text}
               </div>
-            </div>
-            
-            <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span>Quality: {feedbackItems[0].quality_rating}/10</span>
-              <span>Timeliness: {feedbackItems[0].timeliness_rating}/10</span>
-              <span>Collaboration: {feedbackItems[0].collaboration_rating}/10</span>
-            </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         ) : (
-          <div className="mb-5 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Feedback
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              No feedback available yet. Complete tasks and submit your work to receive feedback from your supervisor.
-            </p>
-          </div>
-        )}
-        
-        {/* Performance metrics - show if we have feedback */}
-        {performanceMetrics.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Performance Summary</h3>
-            
-            <div className="space-y-3">
-              {performanceMetrics.map((metric) => (
-                <div key={metric.category}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>{metric.category}</span>
-                    <span className="font-medium">{metric.score}/100</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                    <div 
-                      className={`${metric.color} h-2.5 rounded-full transition-all duration-1000 ease-in-out`}
-                      style={{ width: `${metric.score}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {feedbackItems.length > 1 && (
-              <div className="mt-4">
-                <Button variant="outline" className="w-full">
-                  View All Feedback ({feedbackItems.length})
-                </Button>
-              </div>
-            )}
-          </div>
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              Select a submission to view feedback
+            </CardContent>
+          </Card>
         )}
       </div>
-    </PremiumCard>
+    </div>
   );
 }

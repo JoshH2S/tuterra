@@ -12,13 +12,6 @@ export function MobileNavigation() {
   const location = useLocation();
   const { isLoggedIn } = useAuthStatus();
 
-  // Don't show on desktop or on the landing page
-  const isLandingPage = location.pathname === "/";
-  if (!isMobile || isLandingPage) {
-    console.debug("[MobileNavigation] Early return: not mobile or landing page", { isMobile, pathname: location.pathname });
-    return null;
-  }
-
   // Show/hide back to top button on scroll
   useEffect(() => {
     const handleScroll = () => setShowToTop(window.scrollY > 300);
@@ -30,6 +23,22 @@ export function MobileNavigation() {
   useEffect(() => {
     if (isMobile) window.scrollTo(0, 0);
   }, [location.pathname, isMobile]);
+
+  // Check if current route is a virtual internship page
+  const isVirtualInternshipPage = 
+    location.pathname.includes("/dashboard/virtual-internship") || 
+    location.pathname.includes("/dashboard/internship");
+
+  // Don't show on desktop, landing page, or virtual internship pages
+  const isLandingPage = location.pathname === "/";
+  if (!isMobile || isLandingPage || isVirtualInternshipPage) {
+    console.debug("[MobileNavigation] Early return: not showing navigation", { 
+      isMobile, 
+      pathname: location.pathname,
+      isVirtualInternshipPage
+    });
+    return null;
+  }
 
   return (
     <>

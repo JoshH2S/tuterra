@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -85,7 +84,7 @@ export function ModernSidebar() {
         width: isCollapsed ? 64 : 240,
         transition: { duration: 0.2, type: "spring", stiffness: 500, damping: 30 },
       }}
-      className="fixed left-0 top-0 z-30 h-screen border-r border-slate-200 bg-gradient-to-br from-primary-100/80 to-primary-200/80 dark:border-slate-800 dark:bg-slate-800 shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]"
+      className="fixed left-0 top-0 z-30 h-screen border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-800 shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]"
     >
       <div className="flex h-full flex-col">
         {/* Header with team switcher */}

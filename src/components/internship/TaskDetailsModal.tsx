@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,9 @@ import { format } from "date-fns";
 import { isPast } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle2, Link, FileText } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
@@ -27,13 +29,113 @@ interface TaskDetailsModalProps {
   onSubmissionComplete: () => void;
 }
 
+interface TaskDetail {
+  id: string;
+  task_id: string;
+  background: string;
+  instructions?: string;
+  deliverables?: string;
+  success_criteria?: string;
+  resources?: string;
+  created_at: string;
+  updated_at: string;
+  generated_by?: string;
+  generation_status?: string;
+}
+
+interface Resource {
+  title: string;
+  description: string;
+  url?: string;
+}
+
+// Add this helper function to parse JSON arrays from strings
+const parseJsonArray = (jsonString?: string): string[] => {
+  if (!jsonString) return [];
+  try {
+    const parsed = JSON.parse(jsonString);
+    return Array.isArray(parsed) ? parsed : [jsonString];
+  } catch (e) {
+    console.error("Error parsing JSON array:", e);
+    return [jsonString];
+  }
+};
+
 export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionComplete }: TaskDetailsModalProps) {
   const { toast } = useToast();
   const [response, setResponse] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [taskDetails, setTaskDetails] = useState<TaskDetail | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   
   const isPastDeadline = task ? isPast(new Date(task.due_date)) : false;
+  
+  // Fetch detailed task content when modal opens
+  useEffect(() => {
+    if (isOpen && task) {
+      fetchTaskDetails();
+    }
+  }, [isOpen, task]);
+  
+  const fetchTaskDetails = async () => {
+    if (!task) return;
+    
+    setIsLoadingDetails(true);
+    
+    try {
+      // First check if details already exist in the database
+      const { data, error } = await supabase
+        .from("internship_task_details")
+        .select("*")
+        .eq("task_id", task.id)
+        .limit(1);
+      
+      if (data && data.length > 0) {
+        setTaskDetails(data[0] as TaskDetail);
+      } else {
+        // If details don't exist, generate them using the Edge Function
+        // Fetch job title and industry from the session first
+        const { data: sessionData, error: sessionError } = await supabase
+          .from("internship_sessions")
+          .select("job_title, industry")
+          .eq("id", task.session_id)
+          .limit(1);
+          
+        if (sessionError) throw sessionError;
+        
+        const sessionInfo = sessionData && sessionData.length > 0 ? sessionData[0] : null;
+        if (!sessionInfo) throw new Error("Session data not found");
+        
+        // Call the Edge Function to generate task details
+        const { data: functionData, error: functionError } = await supabase.functions.invoke('generate-task-details', {
+          body: {
+            task_id: task.id,
+            task_title: task.title,
+            task_description: task.description,
+            job_title: sessionInfo.job_title,
+            industry: sessionInfo.industry
+          }
+        });
+        
+        if (functionError) throw functionError;
+        
+        if (functionData && functionData.data) {
+          setTaskDetails(functionData.data as TaskDetail);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching task details:", error);
+      toast({
+        title: "Error Loading Task Details",
+        description: "We couldn't load the detailed task information. You can still submit your response.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
   
   const getStatusBadgeStyle = (status: string) => {
     switch (status.toLowerCase()) {
@@ -76,8 +178,8 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
     
     try {
       // Save submission to Supabase
-      const result = await supabase
-        .from("internship_task_submissions" as any)
+      const { data: submissionData, error: submissionError } = await supabase
+        .from("internship_task_submissions")
         .insert({
           session_id: task.session_id,
           task_id: task.id,
@@ -85,12 +187,19 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
           response_text: response,
         })
         .select("id")
-        .single();
+        .limit(1);
       
-      if (result.error) throw result.error;
+      if (submissionError) throw submissionError;
       
       // Get the submission ID from the result
-      const submissionId = result.data ? (result.data as any).id : null;
+      // Use type assertion to tell TypeScript the expected structure
+      type SubmissionResult = { id: string };
+      const submissions = submissionData as SubmissionResult[] | null;
+      const submissionId = submissions && submissions.length > 0 ? submissions[0].id : null;
+      
+      if (!submissionId) {
+        throw new Error("Failed to get submission ID");
+      }
       
       // Update task status to submitted
       const { error: updateError } = await supabase
@@ -107,9 +216,12 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
           .from("internship_sessions")
           .select("job_title, industry")
           .eq("id", task.session_id)
-          .single();
+          .limit(1);
           
         if (sessionError) throw sessionError;
+        
+        const sessionInfo = sessionData && sessionData.length > 0 ? sessionData[0] : null;
+        if (!sessionInfo) throw new Error("Session data not found");
         
         // Call the Edge Function to generate feedback
         const { error: functionError } = await supabase.functions.invoke('generate-internship-feedback', {
@@ -118,9 +230,9 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
             task_id: task.id,
             submission_text: response,
             task_description: task.description,
-            task_instructions: task.instructions,
-            job_title: sessionData.job_title,
-            industry: sessionData.industry
+            task_instructions: taskDetails?.instructions || task.instructions,
+            job_title: sessionInfo.job_title,
+            industry: sessionInfo.industry
           }
         });
         
@@ -157,14 +269,26 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
     setTimeout(() => {
       setResponse("");
       setShowSuccess(false);
+      setActiveTab("overview");
     }, 300);
+  };
+  
+  const parseResources = (jsonString?: string): Resource[] => {
+    if (!jsonString) return [];
+    try {
+      const parsed = JSON.parse(jsonString);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error("Error parsing resources:", e);
+      return [];
+    }
   };
   
   if (!task) return null;
   
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseAndReset}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         {showSuccess ? (
           // Success view
           <div className="py-6 flex flex-col items-center text-center">
@@ -191,30 +315,190 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
                 <Clock className="mr-1 h-4 w-4" />
                 <span>Due: {format(new Date(task.due_date), "MMMM d, yyyy")}</span>
               </div>
-              <DialogDescription className="text-base mt-4">
-                {task.description}
-              </DialogDescription>
             </DialogHeader>
             
-            {task.instructions && (
-              <div className="my-4">
+            {isLoadingDetails ? (
+              <div className="py-8 flex justify-center">
+                <LoadingSpinner size="default" />
+              </div>
+            ) : (
+              <>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+                  <TabsList className="grid grid-cols-4 mb-4">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="details" disabled={!taskDetails}>Details</TabsTrigger>
+                    <TabsTrigger value="resources" disabled={false}>Resources</TabsTrigger>
+                    <TabsTrigger value="submit">Submit</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="overview" className="mt-0">
+                    <DialogDescription className="text-base">
+                      {task.description}
+                    </DialogDescription>
+                    
+                    {taskDetails && (
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-2">Background:</h4>
+                        <p className="text-sm">{taskDetails.background}</p>
+                      </div>
+                    )}
+                    
+                    {(taskDetails?.instructions || task.instructions) && (
+                      <div className="mt-4">
                 <h4 className="font-medium mb-2">Instructions:</h4>
+                        {taskDetails?.instructions ? (
+                          <div className="text-sm bg-muted p-3 rounded-md">
+                            <ol className="list-decimal pl-5 space-y-2">
+                              {parseJsonArray(taskDetails.instructions).map((item, index) => (
+                                <li key={index} className="pl-1">
+                                  {item.replace(/^Step \d+:\s*/i, '')}
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+                        ) : (
                 <div className="text-sm bg-muted p-3 rounded-md whitespace-pre-line">
                   {task.instructions}
                 </div>
+                        )}
               </div>
             )}
             
             {isPastDeadline && (
-              <div className="my-4 flex items-center p-3 bg-amber-50 text-amber-800 rounded-md">
+                      <div className="mt-4 flex items-center p-3 bg-amber-50 text-amber-800 rounded-md">
                 <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0" />
                 <p className="text-sm">
                   This task is past its deadline. Your submission may still be accepted, but please contact your mentor.
                 </p>
               </div>
             )}
-            
-            <div className="my-4">
+                  </TabsContent>
+                  
+                  <TabsContent value="details" className="mt-0">
+                    {taskDetails && (
+                      <>
+                        {taskDetails.instructions && (
+                          <div className="mb-4">
+                            <h4 className="font-medium mb-2">Instructions:</h4>
+                            <div className="text-sm bg-muted p-3 rounded-md">
+                              <ol className="list-decimal pl-5 space-y-2">
+                                {parseJsonArray(taskDetails.instructions).map((item, index) => (
+                                  <li key={index} className="pl-1">
+                                    {item.replace(/^Step \d+:\s*/i, '')}
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {taskDetails.deliverables && (
+                          <div className="mb-4">
+                            <h4 className="font-medium mb-2">Deliverables:</h4>
+                            <div className="text-sm bg-muted p-3 rounded-md">
+                              <ul className="list-disc pl-5 space-y-1">
+                                {parseJsonArray(taskDetails.deliverables).map((item, index) => (
+                                  <li key={index}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {taskDetails.success_criteria && (
+                          <div className="mb-4">
+                            <h4 className="font-medium mb-2">Success Criteria:</h4>
+                            <div className="text-sm bg-muted p-3 rounded-md">
+                              <ul className="list-disc pl-5 space-y-1">
+                                {parseJsonArray(taskDetails.success_criteria).map((item, index) => (
+                                  <li key={index}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="resources" className="mt-0">
+                    <div className="grid gap-3">
+                      {taskDetails && taskDetails.resources ? (
+                        parseResources(taskDetails.resources).map((resource, index) => (
+                          <Card key={index}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                  <Link className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <h5 className="font-medium text-sm">{resource.title}</h5>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {resource.description}
+                                  </p>
+                                  {resource.url && (
+                                    <a 
+                                      href={resource.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-primary mt-2 inline-block hover:underline"
+                                    >
+                                      Open Resource
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : (
+                        <>
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                  <Link className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <h5 className="font-medium text-sm">Documentation Resources</h5>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Access helpful guides and documentation related to this task.
+                                  </p>
+                                  <a 
+                                    href="https://www.tuterra.com/resources" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-primary mt-2 inline-block hover:underline"
+                                  >
+                                    Open Resource
+                                  </a>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                  <FileText className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <h5 className="font-medium text-sm">Task Template</h5>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Use this template as a starting point for your work.
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="submit" className="mt-0">
+                    <div>
               <h4 className="font-medium mb-2">Your Response:</h4>
               <Textarea 
                 placeholder="Type your response here..." 
@@ -223,9 +507,8 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
                 onChange={(e) => setResponse(e.target.value)}
                 disabled={isSubmitting}
               />
-            </div>
             
-            <DialogFooter>
+                      <div className="mt-4 flex justify-end gap-2">
               <Button variant="outline" onClick={handleCloseAndReset} disabled={isSubmitting}>
                 Cancel
               </Button>
@@ -235,7 +518,12 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
               >
                 {isSubmitting ? <LoadingSpinner size="small" /> : "Submit Task"}
               </Button>
-            </DialogFooter>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
           </>
         )}
       </DialogContent>

@@ -450,35 +450,43 @@ export type Database = {
       }
       internship_events: {
         Row: {
-          date: string
-          id: string
-          session_id: string | null
-          title: string
-          type: string
-        }
+          id: string;
+          session_id: string;
+          title: string;
+          description: string | null;
+          date: string;
+          type: string | null;
+          created_at: string;
+          updated_at: string;
+        };
         Insert: {
-          date: string
-          id?: string
-          session_id?: string | null
-          title: string
-          type: string
-        }
+          id?: string;
+          session_id: string;
+          title: string;
+          description?: string | null;
+          date: string;
+          type?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
         Update: {
-          date?: string
-          id?: string
-          session_id?: string | null
-          title?: string
-          type?: string
-        }
+          id?: string;
+          session_id?: string;
+          title?: string;
+          description?: string | null;
+          date?: string;
+          type?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "internship_events_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "internship_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
+            foreignKeyName: "internship_events_session_id_fkey";
+            columns: ["session_id"];
+            referencedRelation: "internship_sessions";
+            referencedColumns: ["id"];
+          }
+        ];
       }
       internship_feedback: {
         Row: {
@@ -696,6 +704,7 @@ export type Database = {
           task_order: number
           task_type: string | null
           title: string
+          visible_after: string | null
         }
         Insert: {
           created_at?: string
@@ -708,6 +717,7 @@ export type Database = {
           task_order: number
           task_type?: string | null
           title: string
+          visible_after?: string | null
         }
         Update: {
           created_at?: string
@@ -720,6 +730,7 @@ export type Database = {
           task_order?: number
           task_type?: string | null
           title?: string
+          visible_after?: string | null
         }
         Relationships: [
           {
@@ -2314,6 +2325,190 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
+      },
+      internship_settings: {
+        Row: {
+          id: string;
+          session_id: string;
+          banner_url: string | null;
+          theme: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          banner_url?: string | null;
+          theme?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          banner_url?: string | null;
+          theme?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "internship_settings_session_id_fkey";
+            columns: ["session_id"];
+            referencedRelation: "internship_sessions";
+            referencedColumns: ["id"];
+          }
+        ];
+      },
+      user_activity_streaks: {
+        Row: {
+          id: string;
+          user_id: string;
+          current_streak: number;
+          longest_streak: number;
+          last_active_date: string | null;
+          streak_start_date: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          current_streak?: number;
+          longest_streak?: number;
+          last_active_date?: string | null;
+          streak_start_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          current_streak?: number;
+          longest_streak?: number;
+          last_active_date?: string | null;
+          streak_start_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_streaks_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      },
+      internship_task_details: {
+        Row: {
+          id: string;
+          task_id: string;
+          background: string;
+          instructions: string | null;
+          deliverables: string | null;
+          success_criteria: string | null;
+          resources: string | null;
+          generation_status: string | null;
+          generated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          background: string;
+          instructions?: string | null;
+          deliverables?: string | null;
+          success_criteria?: string | null;
+          resources?: string | null;
+          generation_status?: string | null;
+          generated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          task_id?: string;
+          background?: string;
+          instructions?: string | null;
+          deliverables?: string | null;
+          success_criteria?: string | null;
+          resources?: string | null;
+          generation_status?: string | null;
+          generated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "internship_task_details_task_id_fkey";
+            columns: ["task_id"];
+            referencedRelation: "internship_tasks";
+            referencedColumns: ["id"];
+          }
+        ];
+      },
+      internship_company_profiles: {
+        Row: {
+          id: string;
+          session_id: string;
+          company_name: string;
+          industry: string;
+          company_overview: string | null;
+          company_mission: string | null;
+          team_structure: string | null;
+          company_values: string | null;
+          clients_or_products: string | null;
+          headquarters_location: string | null;
+          company_logo_url: string | null;
+          supervisor_name: string | null;
+          background_story: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          company_name: string;
+          industry: string;
+          company_overview?: string | null;
+          company_mission?: string | null;
+          team_structure?: string | null;
+          company_values?: string | null;
+          clients_or_products?: string | null;
+          headquarters_location?: string | null;
+          company_logo_url?: string | null;
+          supervisor_name?: string | null;
+          background_story?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          company_name?: string;
+          industry?: string;
+          company_overview?: string | null;
+          company_mission?: string | null;
+          team_structure?: string | null;
+          company_values?: string | null;
+          clients_or_products?: string | null;
+          headquarters_location?: string | null;
+          company_logo_url?: string | null;
+          supervisor_name?: string | null;
+          background_story?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "internship_company_profiles_session_id_fkey";
+            columns: ["session_id"];
+            referencedRelation: "internship_sessions";
+            referencedColumns: ["id"];
+          }
+        ];
       },
     }
     Views: {

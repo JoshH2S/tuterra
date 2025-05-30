@@ -1,11 +1,11 @@
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SwipeableInternshipView } from "@/components/internship/SwipeableInternshipView";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Briefcase, PlusCircle, Calendar, ExternalLink, MessageSquare, Award, BarChart, History } from "lucide-react";
+import { Briefcase, PlusCircle, Calendar, ExternalLink, MessageSquare, Award, BarChart, History, CheckCircle, FileCheck, Wifi, WifiOff } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import { useToast } from "@/hooks/use-toast";
 import { Json } from "@/integrations/supabase/types";
@@ -15,6 +15,16 @@ import { format, isPast } from "date-fns";
 import { TaskDetailsModal } from "@/components/internship/TaskDetailsModal";
 import { TaskFeedbackDialog } from "@/components/internship/TaskFeedbackDialog";
 import { FeedbackHistoryDialog } from "@/components/internship/FeedbackHistoryDialog";
+import { AchievementsDisplay } from "@/components/internship/AchievementsDisplay";
+import { ActivityStreakDisplay } from "@/components/internship/ActivityStreakDisplay";
+import { updateActivityStreak } from "@/services/achievements";
+import { TaskOverview } from "@/components/internship/TaskOverview";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { useInternshipRealtime } from "@/hooks/useInternshipRealtime";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { InternshipBanner } from "@/components/internship/InternshipBanner";
+import { CompanyInfoCard } from "@/components/internship/CompanyInfoCard";
 
 // Update the interface to match what comes from the database
 export interface InternshipSession {
@@ -28,6 +38,7 @@ export interface InternshipSession {
   current_phase: number;
   created_at: string;
   questions?: Json;
+  is_completed?: boolean; // Add is_completed field
 }
 
 // Interface for task data from Supabase
@@ -43,6 +54,7 @@ export interface InternshipTask {
   task_type?: string | null;
   created_at: string;
   submission?: TaskSubmission | null;
+  visible_after?: string | null;
 }
 
 // Interface for task submission data
@@ -75,6 +87,196 @@ export default function VirtualInternshipDashboard() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false); // For demo purposes, could be determined by user role
   const [hasFeedbackItems, setHasFeedbackItems] = useState(false);
+  const [completedTasksCount, setCompletedTasksCount] = useState(0);
+  const [totalTasksCount, setTotalTasksCount] = useState(0);
+  const [canSubmitFinal, setCanSubmitFinal] = useState(false);
+  const [allTasks, setAllTasks] = useState<InternshipTask[]>([]);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
+
+  // Define fetchTasks as a useCallback function
+  const fetchTasks = useCallback(async (sessionId: string) => {
+    if (!user) return;
+    
+    setTasksLoading(true);
+    try {
+      // Fetch all tasks for this session
+      const { data: taskData, error } = await supabase
+        .from("internship_tasks")
+        .select("*")
+        .eq("session_id", sessionId)
+        .order("task_order");
+
+      if (error) throw error;
+      
+      // Store all tasks for upcoming task preview
+      const allTasks = [...taskData];
+      
+      // Filter out tasks that aren't visible yet
+      const now = new Date();
+      const visibleTasks = taskData.filter(task => {
+        // If visible_after is null or the current time is after visible_after, the task is visible
+        return !task.visible_after || new Date(task.visible_after) <= now;
+      });
+
+      if (visibleTasks.length === 0) {
+        setTasks([]);
+        setAllTasks(allTasks); // Store all tasks for upcoming task preview
+        setTasksLoading(false);
+        return;
+      }
+
+      // Fetch submissions for these tasks
+      const { data: submissionData, error: submissionError } = await supabase
+        .from("internship_task_submissions")
+        .select("*")
+        .eq("session_id", sessionId)
+        .eq("user_id", user.id);
+
+      if (submissionError) throw submissionError;
+
+      // Process tasks with any available submission data
+      const processedTasks = visibleTasks.map(task => {
+        // Find matching submission if any
+        const submission = submissionData.find(sub => sub.task_id === task.id);
+        
+        // Create typed submission object if we found a match
+        let typedSubmission: TaskSubmission | null = null;
+        
+        if (submission) {
+          typedSubmission = {
+            id: submission.id,
+            response_text: submission.response_text,
+            created_at: submission.created_at,
+            feedback_text: submission.feedback_text || null,
+            feedback_provided_at: submission.feedback_provided_at || null,
+            quality_rating: submission.quality_rating || null,
+            timeliness_rating: submission.timeliness_rating || null,
+            collaboration_rating: submission.collaboration_rating || null
+          };
+        }
+        
+        // Determine task status
+        const isPastDueDate = isPast(new Date(task.due_date));
+        let updatedStatus = task.status;
+        
+        // If there's a submission, mark as "submitted" or "feedback pending/received"
+        if (typedSubmission) {
+          updatedStatus = typedSubmission.feedback_text ? "feedback_received" : "feedback_pending";
+        } 
+        // If past due date and no submission, mark as overdue
+        else if (isPastDueDate && task.status !== "completed") {
+          updatedStatus = "overdue";
+        }
+        
+        // Return the task with updated status and submission data
+        return {
+          ...task,
+          status: updatedStatus,
+          submission: typedSubmission
+        };
+      });
+      
+      // Also process all tasks with status updates for the preview
+      const processedAllTasks = allTasks.map(task => {
+        const isPastDueDate = isPast(new Date(task.due_date));
+        let updatedStatus = task.status;
+        
+        if (isPastDueDate && task.status !== "completed") {
+          updatedStatus = "overdue";
+        }
+        
+        return {
+          ...task,
+          status: updatedStatus
+        };
+      });
+      
+      setTasks(processedTasks);
+      setAllTasks(processedAllTasks); // Store all tasks for upcoming task preview
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      toast({
+        title: "Error Loading Tasks",
+        description: "We couldn't retrieve your task data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setTasksLoading(false);
+    }
+  }, [user, toast]);
+
+  // Function to update task status (used by TaskOverview component)
+  const handleUpdateTaskStatus = useCallback(async (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => {
+    if (!user || !internshipSession) return;
+    
+    try {
+      // Update the task status in the database
+      const { error } = await supabase
+        .from("internship_tasks")
+        .update({ status })
+        .eq("id", taskId);
+        
+      if (error) throw error;
+      
+      // Refresh tasks to get updated state
+      await fetchTasks(internshipSession.id);
+      
+      // Show success message
+      toast({
+        title: status === 'completed' ? "Task completed" : "Task status updated",
+        description: status === 'completed' 
+          ? "Great job! You've marked this task as complete." 
+          : `Task status changed to ${status.replace('_', ' ')}.`,
+      });
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      toast({
+        title: "Error updating task",
+        description: "There was a problem updating the task status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [user, internshipSession, toast, fetchTasks]);
+  
+  // Callback functions for real-time updates
+  const handleTasksUpdate = useCallback(() => {
+    if (internshipSession) {
+      console.log("Refreshing tasks due to real-time update");
+      fetchTasks(internshipSession.id);
+    }
+  }, [internshipSession, fetchTasks]);
+  
+  const handleMessagesUpdate = useCallback(() => {
+    console.log("New message received in real-time");
+    toast({
+      title: "New message received",
+      description: "You have a new message from your internship supervisor.",
+    });
+  }, [toast]);
+  
+  const handleFeedbackUpdate = useCallback(() => {
+    console.log("New feedback received in real-time");
+    toast({
+      title: "Feedback available",
+      description: "New feedback is available for one of your submissions.",
+    });
+    if (internshipSession) {
+      fetchTasks(internshipSession.id);
+    }
+  }, [toast, internshipSession, fetchTasks]);
+  
+  // Initialize real-time subscriptions
+  const { connected } = useInternshipRealtime({
+    sessionId: internshipSession?.id || "",
+    onTasksUpdate: handleTasksUpdate,
+    onMessagesUpdate: handleMessagesUpdate,
+    onFeedbackUpdate: handleFeedbackUpdate,
+  });
+  
+  // Update UI when connection status changes
+  useEffect(() => {
+    setRealtimeConnected(connected);
+  }, [connected]);
 
   useEffect(() => {
     // Show a welcome toast if redirected from internship creation
@@ -167,100 +369,7 @@ export default function VirtualInternshipDashboard() {
     }
     
     fetchInternshipData();
-  }, [user, sessionId, toast]);
-  
-  // Function to fetch tasks for the current session
-  async function fetchTasks(sessionId: string) {
-    if (!user) return;
-    
-    setTasksLoading(true);
-    try {
-      // First, fetch all tasks for the session
-      const { data: taskData, error: taskError } = await supabase
-        .from("internship_tasks")
-        .select("*")
-        .eq("session_id", sessionId)
-        .order("due_date", { ascending: true });
-        
-      if (taskError) {
-        throw taskError;
-      }
-      
-      if (taskData) {
-        let submissionData: any[] = [];
-        
-        try {
-          // Use a try/catch to handle potential errors with the submissions table
-          const response = await supabase
-            .from("internship_task_submissions" as any)
-            .select("*")
-            .eq("session_id", sessionId)
-            .eq("user_id", user.id);
-            
-          if (response.data) {
-            // Double cast to avoid TypeScript errors
-            submissionData = response.data as any;
-          }
-        } catch (submissionError) {
-          console.error("Error fetching submissions:", submissionError);
-          // Continue with no submissions data
-        }
-        
-        // Process tasks with any available submission data
-        const processedTasks = taskData.map(task => {
-          // Find matching submission if any
-          const submission = submissionData.find(sub => sub.task_id === task.id);
-          
-          // Create typed submission object if we found a match
-          let typedSubmission: TaskSubmission | null = null;
-          
-          if (submission) {
-            typedSubmission = {
-              id: submission.id,
-              response_text: submission.response_text,
-              created_at: submission.created_at,
-              feedback_text: submission.feedback_text || null,
-              feedback_provided_at: submission.feedback_provided_at || null,
-              quality_rating: submission.quality_rating || null,
-              timeliness_rating: submission.timeliness_rating || null,
-              collaboration_rating: submission.collaboration_rating || null
-            };
-          }
-          
-          // Determine task status
-          const isPastDueDate = isPast(new Date(task.due_date));
-          let updatedStatus = task.status;
-          
-          // If there's a submission, mark as "submitted" or "feedback pending/received"
-          if (typedSubmission) {
-            updatedStatus = typedSubmission.feedback_text ? "feedback_received" : "feedback_pending";
-          } 
-          // If past due date and no submission, mark as overdue
-          else if (isPastDueDate && task.status !== "completed") {
-            updatedStatus = "overdue";
-          }
-          
-          // Return the task with updated status and submission data
-          return {
-            ...task,
-            status: updatedStatus,
-            submission: typedSubmission
-          };
-        });
-        
-        setTasks(processedTasks);
-      }
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-      toast({
-        title: "Error Loading Tasks",
-        description: "We couldn't retrieve your task data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setTasksLoading(false);
-    }
-  }
+  }, [user, sessionId, toast, fetchTasks]);
 
   // Helper function to get status badge style
   const getStatusBadgeStyle = (status: string) => {
@@ -339,6 +448,26 @@ export default function VirtualInternshipDashboard() {
     }
   }, [tasks]);
 
+  // Update activity streak whenever the dashboard is loaded
+  useEffect(() => {
+    if (user && hasInternships) {
+      updateActivityStreak(user.id);
+    }
+  }, [user, hasInternships]);
+
+  // Add useEffect to calculate task completion status
+  useEffect(() => {
+    if (tasks.length > 0) {
+      const total = tasks.length;
+      const completed = tasks.filter(task => task.status === 'completed').length;
+      setTotalTasksCount(total);
+      setCompletedTasksCount(completed);
+      
+      // Can submit final project if at least 75% of tasks are completed
+      setCanSubmitFinal(completed >= Math.ceil(total * 0.75));
+    }
+  }, [tasks]);
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
@@ -371,120 +500,274 @@ export default function VirtualInternshipDashboard() {
     );
   }
 
+  const handleSubmitFinalProject = () => {
+    if (internshipSession) {
+      navigate(`/dashboard/virtual-internship/submit-final?sessionId=${internshipSession.id}`);
+    }
+  };
+
+  // If the internship is completed, show a completion card
+  if (internshipSession?.is_completed) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <Card className="border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-900">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-green-800 dark:text-green-300">
+                  Internship Completed
+                </CardTitle>
+                <CardDescription className="text-green-700 dark:text-green-400">
+                  Congratulations on completing your virtual internship!
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-green-700 dark:text-green-400">
+              You've successfully completed your internship as a {internshipSession.job_title} in the {internshipSession.industry} industry.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+              <Button 
+                onClick={() => navigate(`/dashboard/virtual-internship/completion?sessionId=${internshipSession.id}`)}
+                className="gap-2"
+              >
+                <Award className="h-4 w-4" />
+                View Completion Certificate
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/dashboard/virtual-internship/new")}
+                className="gap-2"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Start New Internship
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 py-4 max-w-7xl">
-      <SwipeableInternshipView sessionData={internshipSession!} />
+    <div className="container mx-auto px-4 py-6 max-w-7xl min-h-screen">
+      {/* Banner that spans the full width */}
+      {internshipSession && (
+        <InternshipBanner 
+          sessionId={internshipSession.id}
+          industry={internshipSession.industry}
+        />
+      )}
       
-      {/* Feedback History Button (if there are feedback items) */}
+      {/* User profile header with company information - now positioned on top of the banner */}
+      <div className="relative z-10 -mt-24 mb-8 flex flex-col items-center sm:items-start sm:flex-row gap-4">
+        <div className="relative">
+          <Avatar className="h-24 w-24 border-4 border-white shadow-md">
+            {user?.user_metadata?.avatar_url ? (
+              <AvatarImage 
+                src={user.user_metadata.avatar_url} 
+                alt="Profile" 
+                className="object-cover" 
+              />
+            ) : (
+              <AvatarFallback className="text-xl bg-primary/10 text-primary">
+                {`${user?.user_metadata?.first_name?.[0] || ""}${user?.user_metadata?.last_name?.[0] || ""}`.toUpperCase() || "?"}
+              </AvatarFallback>
+            )}
+          </Avatar>
+          <div className="absolute -bottom-3 -right-3 bg-white rounded-full p-2 shadow-md">
+            <Badge className="bg-primary hover:bg-primary text-xs font-normal">
+              Active
+            </Badge>
+          </div>
+        </div>
+        <div className="text-center sm:text-left bg-white/90 p-3 rounded-lg shadow-sm backdrop-blur-sm">
+          <h2 className="text-xl sm:text-2xl font-bold">
+            {user?.user_metadata?.first_name} {user?.user_metadata?.last_name}
+          </h2>
+          <div className="text-sm text-muted-foreground">
+            Intern at <span className="font-medium text-primary">Acme {internshipSession?.industry || "Technology"}</span>
+          </div>
+          <div className="mt-2 flex flex-wrap justify-center sm:justify-start items-center gap-2">
+            <Badge variant="outline" className="bg-background">
+              {internshipSession?.job_title || "Virtual Intern"}
+            </Badge>
+            <div className="h-1 w-1 rounded-full bg-muted-foreground"></div>
+            <span className="text-xs text-muted-foreground">
+              Started {internshipSession?.start_date ? format(new Date(internshipSession.start_date), 'MMM d, yyyy') : 'Recently'}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Clean, focused header */}
+      <header className="mb-6 pb-4 border-b">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">
+              {internshipSession?.job_title || "Virtual Internship"}
+            </h1>
+            <p className="text-muted-foreground">{internshipSession?.industry}</p>
+          </div>
+          
+          <div className="flex items-center gap-3 mt-2 md:mt-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-muted/40">
+                    {realtimeConnected ? (
+                      <Wifi className="h-3.5 w-3.5 text-green-500" />
+                    ) : (
+                      <WifiOff className="h-3.5 w-3.5 text-amber-500" />
+                    )}
+                    <span className="text-muted-foreground">
+                      {realtimeConnected ? "Live" : "Offline"}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {realtimeConnected 
+                    ? "Real-time updates are active" 
+                    : "Currently in offline mode. Updates require page refresh."}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
       {hasFeedbackItems && internshipSession && (
-        <div className="mt-6 flex justify-end">
           <Button 
             variant="outline" 
             size="sm" 
-            className="gap-2"
+                className="gap-1.5 h-8"
             onClick={() => setIsHistoryModalOpen(true)}
           >
-            <History className="h-4 w-4" />
-            View Feedback History
+                <History className="h-3.5 w-3.5" />
+                Feedback History
           </Button>
-        </div>
-      )}
-      
-      {/* Current Tasks Section */}
-      <div className="mt-8 mb-4">
-        <h2 className="text-2xl font-bold mb-4">Current Tasks</h2>
-        
-        {tasksLoading ? (
-          <div className="flex justify-center py-8">
-            <LoadingSpinner size="default" />
+            )}
           </div>
-        ) : tasks.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center text-center py-8">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-4">
-                <Calendar className="h-6 w-6 text-muted-foreground" />
+        </div>
+      </header>
+      
+      {/* Navigation tabs */}
+      <div className="mb-6">
+        <SwipeableInternshipView sessionData={internshipSession!} onOpenTaskDetails={handleOpenTaskDetails} />
+      </div>
+      
+      {/* Conditional final project card */}
+      {canSubmitFinal && internshipSession && (
+        <section className="mb-6">
+          <Card className="border-primary/20 bg-white shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <FileCheck className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Ready to Complete Your Internship</h3>
+                    <p className="text-xs text-muted-foreground">
+                      You've completed {completedTasksCount} of {totalTasksCount} tasks
+                    </p>
+                  </div>
+          </div>
+                <Button onClick={handleSubmitFinalProject} size="sm" className="whitespace-nowrap">
+                  Submit Final Project
+                </Button>
               </div>
-              <h3 className="font-medium mb-2">📭 No tasks assigned yet.</h3>
-              <p className="text-sm text-muted-foreground">
-                Your tasks will appear here once they are assigned.
-              </p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tasks.map((task) => (
-              <Card key={task.id} className="h-full flex flex-col" id={`task-${task.id}`}>
-                <CardHeader>
-                  <div className="flex justify-between items-start gap-2">
-                    <CardTitle className="text-lg">{task.title}</CardTitle>
-                    <Badge className={getStatusBadgeStyle(task.status)}>
-                      {formatStatus(task.status)}
-                    </Badge>
+        </section>
+      )}
+      
+      {/* Additional Dashboard Sections with better spacing */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="md:col-span-2">
+          {/* Achievements Section */}
+          <Card className="shadow-sm bg-white h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                Achievements
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AchievementsDisplay className="mb-0" />
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div>
+          {/* Company Information */}
+          {internshipSession && (
+            <CompanyInfoCard sessionId={internshipSession.id} />
+          )}
+        </div>
+      </div>
+      
+      {/* Exit Actions Section */}
+      {internshipSession && (
+        <section className="mb-6">
+          <Card className="shadow-sm bg-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+                Exit Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="p-3 border rounded-md bg-muted/20 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700">
+                      <Award className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium">Generate Certificate</h3>
+                      <p className="text-xs text-muted-foreground">Available on completion</p>
+                    </div>
                   </div>
-                  <CardDescription className="mt-2">
-                    Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground">{task.description.substring(0, 150)}
-                    {task.description.length > 150 ? '...' : ''}
-                  </p>
-                  
-                  {task.status === 'feedback_received' && task.submission?.feedback_text && (
-                    <div className="mt-3 pt-3 border-t">
-                      <div className="flex items-center gap-1 mb-1">
-                        <Award className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-xs font-medium">Recent Feedback</span>
                       </div>
-                      <p className="text-xs text-muted-foreground italic">
-                        "{task.submission.feedback_text.substring(0, 100).replace(/#+\s*|_|\*\*/g, '')}..."
-                      </p>
-                      
-                      {task.submission.quality_rating && task.submission.timeliness_rating && task.submission.collaboration_rating && (
-                        <div className="flex gap-2 mt-2">
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs">Q:</span>
-                            <span className="text-xs font-medium">{task.submission.quality_rating}/10</span>
+                
+                <div className="p-3 border rounded-md bg-muted/20 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
+                      <FileCheck className="h-4 w-4" />
                           </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs">T:</span>
-                            <span className="text-xs font-medium">{task.submission.timeliness_rating}/10</span>
+                    <div>
+                      <h3 className="text-sm font-medium">Download Report</h3>
+                      <p className="text-xs text-muted-foreground">Summary of your internship</p>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs">C:</span>
-                            <span className="text-xs font-medium">{task.submission.collaboration_rating}/10</span>
                           </div>
                         </div>
-                      )}
+                
+                <div className="p-3 border rounded-md bg-muted/20 hover:bg-muted/30 transition-colors">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start p-0 h-auto hover:bg-transparent"
+                    onClick={() => navigate("/dashboard")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-700">
+                        <Briefcase className="h-4 w-4" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-sm font-medium">Exit to Dashboard</h3>
+                        <p className="text-xs text-muted-foreground">Return to main dashboard</p>
+                      </div>
                     </div>
-                  )}
+                  </Button>
+                </div>
+              </div>
                 </CardContent>
-                <CardFooter className="pt-0 flex flex-col gap-2">
-                  {task.status === 'feedback_received' && task.submission?.feedback_text ? (
-                    <Button 
-                      variant="secondary" 
-                      className="w-full"
-                      onClick={() => handleViewFeedback(task)}
-                    >
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      View Feedback
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => handleOpenTaskDetails(task)}
-                    >
-                      View Details
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </Button>
-                  )}
-                </CardFooter>
               </Card>
-            ))}
-          </div>
+        </section>
         )}
-      </div>
 
       {/* Task Details Modal */}
       {user && (
