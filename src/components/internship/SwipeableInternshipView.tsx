@@ -29,6 +29,11 @@ export interface TaskSubmission {
   quality_rating?: number | null;
   timeliness_rating?: number | null;
   collaboration_rating?: number | null;
+  file_url?: string | null;
+  file_name?: string | null;
+  file_type?: string | null;
+  file_size?: number | null;
+  content_type?: 'text' | 'file' | 'both' | null;
 }
 
 // Use the same task interface as in the dashboard
@@ -50,6 +55,29 @@ export interface InternshipResource {
   description?: string;
   content?: string;
   link: string;
+}
+
+export interface InternshipSession {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  start_date: string;
+  created_at: string;
+  duration_weeks: number;
+  status: string;
+}
+
+export interface InternshipTask {
+  id: string;
+  session_id: string;
+  title: string;
+  description: string;
+  instructions?: string | null;
+  due_date: string;
+  status: string;
+  task_type?: string | null;
+  visible_after?: string;
 }
 
 interface SwipeableInternshipViewProps {

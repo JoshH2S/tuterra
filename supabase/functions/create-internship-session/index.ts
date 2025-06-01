@@ -809,9 +809,9 @@ function validateAndDistributeTasks(tasks: any[], durationWeeks: number, startDa
     return [];
   }
   
-  // Calculate the ideal number of tasks (1-2 per week)
-  const minTasks = durationWeeks;
-  const maxTasks = durationWeeks * 2;
+  // Calculate the minimum and maximum number of tasks
+  const minTasks = durationWeeks; // At least 1 task per week
+  const maxTasks = durationWeeks * 2; // Maximum 2 tasks per week
   
   // Ensure we have enough tasks (at least 1 per week)
   if (tasks.length < minTasks) {
@@ -819,21 +819,21 @@ function validateAndDistributeTasks(tasks: any[], durationWeeks: number, startDa
     
     // Create additional generic tasks if necessary
     const genericTaskTemplates = [
-      "Research on industry trends",
-      "Create a project proposal",
-      "Analyze competitor strategies",
-      "Prepare a presentation",
-      "Develop implementation plan",
-      "Conduct user testing",
-      "Write a summary report"
+      "Research and Analysis Task",
+      "Project Planning and Documentation",
+      "Implementation and Development",
+      "Testing and Quality Assurance",
+      "Stakeholder Communication",
+      "Progress Presentation",
+      "Milestone Review"
     ];
     
     const originalTaskCount = tasks.length;
     for (let i = 0; i < minTasks - originalTaskCount; i++) {
       const templateIndex = i % genericTaskTemplates.length;
       tasks.push({
-        title: `${genericTaskTemplates[templateIndex]} - Part ${Math.floor(i / genericTaskTemplates.length) + 1}`,
-        description: `Additional task to ensure balanced workload distribution throughout the internship.`,
+        title: `${genericTaskTemplates[templateIndex]} - Week ${Math.floor(i / genericTaskTemplates.length) + 1}`,
+        description: `Complete this task to demonstrate your progress for Week ${Math.floor(i / genericTaskTemplates.length) + 1}.`,
         task_order: originalTaskCount + i + 1
       });
     }
@@ -845,7 +845,7 @@ function validateAndDistributeTasks(tasks: any[], durationWeeks: number, startDa
     tasks = tasks.slice(0, maxTasks);
   }
   
-  // Calculate the start date and internship duration in milliseconds
+  // Calculate the start date and internship duration
   const startDateObj = safeParseDate(startDate);
   const internshipDurationMs = durationWeeks * 7 * 24 * 60 * 60 * 1000;
   const endDateObj = new Date(startDateObj.getTime() + internshipDurationMs);
@@ -856,7 +856,7 @@ function validateAndDistributeTasks(tasks: any[], durationWeeks: number, startDa
     weekBuckets[i] = [];
   }
   
-  // Distribute tasks that already have due dates to their appropriate weeks
+  // First pass: Distribute tasks that already have due dates
   const tasksWithDueDate = tasks.filter((t: any) => t.due_date);
   const tasksWithoutDueDate = tasks.filter((t: any) => !t.due_date);
   
@@ -881,42 +881,53 @@ function validateAndDistributeTasks(tasks: any[], durationWeeks: number, startDa
     }
   });
   
-  // Distribute remaining tasks evenly across weeks, prioritizing weeks with fewer tasks
-  while (tasksWithoutDueDate.length > 0) {
-    // Find the week with the fewest tasks
-    let minTasksWeek = 1;
-    for (let week = 1; week <= durationWeeks; week++) {
-      if (weekBuckets[week].length < weekBuckets[minTasksWeek].length) {
-        minTasksWeek = week;
-      }
-    }
-    
-    // If the week already has 2 tasks, find the next best week
-    if (weekBuckets[minTasksWeek].length >= 2) {
-      let nextBestWeek = 0;
-      for (let week = 1; week <= durationWeeks; week++) {
-        if (weekBuckets[week].length < 2) {
-          nextBestWeek = week;
-          break;
-        }
+  // Second pass: Ensure at least one task per week and distribute remaining tasks
+  for (let week = 1; week <= durationWeeks; week++) {
+    // If week has no tasks, assign one from tasksWithoutDueDate or create a new one
+    if (weekBuckets[week].length === 0) {
+      let task;
+      if (tasksWithoutDueDate.length > 0) {
+        task = tasksWithoutDueDate.shift();
+      } else {
+        const templateIndex = (week - 1) % genericTaskTemplates.length;
+        task = {
+          title: `${genericTaskTemplates[templateIndex]} - Week ${week}`,
+          description: `Complete this task to demonstrate your progress for Week ${week}.`,
+          task_order: tasks.length + 1
+        };
       }
       
-      // If all weeks have 2 tasks, use the original minTasksWeek
-      minTasksWeek = nextBestWeek || minTasksWeek;
+      // Calculate due date for end of the week (Friday)
+      const weekStartMs = startDateObj.getTime() + ((week - 1) * 7 * 24 * 60 * 60 * 1000);
+      const dueDateMs = weekStartMs + (5 * 24 * 60 * 60 * 1000); // Friday
+      task.due_date = new Date(dueDateMs).toISOString();
+      weekBuckets[week].push(task);
     }
-    
-    // Calculate a due date for this week (middle of the week)
-    const weekStartMs = startDateObj.getTime() + (minTasksWeek - 1) * 7 * 24 * 60 * 60 * 1000;
-    const dueDateMs = weekStartMs + (3.5 * 24 * 60 * 60 * 1000); // Middle of the week (Wednesday)
-    const dueDate = new Date(dueDateMs);
-    
-    // Assign the task to this week with the calculated due date
-    const task = tasksWithoutDueDate.shift();
-    task.due_date = dueDate.toISOString();
-    weekBuckets[minTasksWeek].push(task);
   }
   
-  // Flatten the buckets back into a single array and ensure task_order is set
+  // Third pass: Distribute any remaining tasks evenly
+  while (tasksWithoutDueDate.length > 0) {
+    // Find the week with the fewest tasks (that has less than 2)
+    let targetWeek = 1;
+    for (let week = 1; week <= durationWeeks; week++) {
+      if (weekBuckets[week].length < weekBuckets[targetWeek].length && weekBuckets[week].length < 2) {
+        targetWeek = week;
+      }
+    }
+    
+    // If all weeks have 2 tasks, break
+    if (weekBuckets[targetWeek].length >= 2) break;
+    
+    // Calculate due date (Tuesday of the week)
+    const weekStartMs = startDateObj.getTime() + ((targetWeek - 1) * 7 * 24 * 60 * 60 * 1000);
+    const dueDateMs = weekStartMs + (2 * 24 * 60 * 60 * 1000); // Tuesday
+    
+    const task = tasksWithoutDueDate.shift();
+    task.due_date = new Date(dueDateMs).toISOString();
+    weekBuckets[targetWeek].push(task);
+  }
+  
+  // Flatten the buckets and ensure task_order is set
   const redistributedTasks = Object.values(weekBuckets)
     .flat()
     .map((task, index) => ({
@@ -925,6 +936,5 @@ function validateAndDistributeTasks(tasks: any[], durationWeeks: number, startDa
     }));
   
   console.log(`Task validation complete. Final count: ${redistributedTasks.length} tasks`);
-  
   return redistributedTasks;
 }

@@ -4,29 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
 import { isPast } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Clock, AlertTriangle, CheckCircle2, Link, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileUploadField } from "./FileUploadField";
+import { InternshipSession, InternshipTask } from "./SwipeableInternshipView";
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  task: {
-    id: string;
-    session_id: string;
-    title: string;
-    description: string;
-    instructions?: string | null;
-    due_date: string;
-    status: string;
-    task_type?: string | null;
-  } | null;
+  task: InternshipTask;
   userId: string;
-  onSubmissionComplete: () => void;
+  sessionData: InternshipSession;
+  tasks: InternshipTask[];
+  onSubmissionComplete?: () => void;
 }
 
 interface TaskDetail {
@@ -41,6 +36,15 @@ interface TaskDetail {
   updated_at: string;
   generated_by?: string;
   generation_status?: string;
+}
+
+interface TaskUpdateData {
+  title: string;
+  description: string;
+  due_date: string;
+  status: string;
+  task_type?: string | null;
+  instructions?: string | null;
 }
 
 interface Resource {
@@ -61,14 +65,37 @@ const parseJsonArray = (jsonString?: string): string[] => {
   }
 };
 
-export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionComplete }: TaskDetailsModalProps) {
+export function TaskDetailsModal({ 
+  isOpen, 
+  onClose, 
+  task, 
+  userId, 
+  sessionData,
+  tasks,
+  onSubmissionComplete 
+}: TaskDetailsModalProps) {
   const { toast } = useToast();
   const [response, setResponse] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [taskDetails, setTaskDetails] = useState<TaskDetail | null>(null);
+  const [taskUpdateData, setTaskUpdateData] = useState<TaskUpdateData>({
+    title: task?.title || "",
+    description: task?.description || "",
+    due_date: task?.due_date || "",
+    status: task?.status || "not_started",
+    task_type: task?.task_type,
+    instructions: task?.instructions
+  });
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [submissionType, setSubmissionType] = useState<'text' | 'file' | 'both'>('text');
+  const [fileData, setFileData] = useState<{
+    url: string;
+    name: string;
+    type: string;
+    size: number;
+  } | null>(null);
   
   const isPastDeadline = task ? isPast(new Date(task.due_date)) : false;
   
@@ -171,8 +198,65 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
     }
   };
   
-  const handleSubmit = async () => {
-    if (!task || !response.trim()) return;
+  const validateTaskDueDate = (dueDate: Date, sessionStartDate: string, durationWeeks: number) => {
+    const startDate = new Date(sessionStartDate);
+    const endDate = addDays(startDate, durationWeeks * 7);
+    
+    // Ensure due date is within the internship period
+    if (dueDate < startDate || dueDate > endDate) {
+      return {
+        isValid: false,
+        message: "Due date must be within the internship period"
+      };
+    }
+    
+    // Get the week number for this due date
+    const weekNumber = Math.ceil((dueDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    
+    // Get the start and end of the week
+    const weekStart = startOfWeek(dueDate);
+    const weekEnd = endOfWeek(dueDate);
+    
+    // Check if there are already 2 tasks in this week
+    const tasksInWeek = tasks.filter(t => {
+      const taskDate = new Date(t.due_date);
+      return taskDate >= weekStart && taskDate <= weekEnd && t.id !== task.id; // Exclude current task
+    });
+    
+    if (tasksInWeek.length >= 2) {
+      return {
+        isValid: false,
+        message: "Maximum of 2 tasks allowed per week"
+      };
+    }
+    
+    return {
+      isValid: true,
+      message: ""
+    };
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!task) return;
+    
+    // Validate due date if it's being modified
+    if (taskUpdateData.due_date) {
+      const validation = validateTaskDueDate(
+        new Date(taskUpdateData.due_date),
+        sessionData.start_date || sessionData.created_at,
+        sessionData.duration_weeks || 4
+      );
+      
+      if (!validation.isValid) {
+        toast({
+          title: "Invalid Due Date",
+          description: validation.message,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
     
     setIsSubmitting(true);
     
@@ -185,6 +269,11 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
           task_id: task.id,
           user_id: userId,
           response_text: response,
+          file_url: fileData?.url || null,
+          file_name: fileData?.name || null,
+          file_type: fileData?.type || null,
+          file_size: fileData?.size || null,
+          content_type: submissionType
         })
         .select("id")
         .limit(1);
@@ -249,7 +338,7 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
       setShowSuccess(true);
       
       // Notify parent component that submission is complete
-      onSubmissionComplete();
+      onSubmissionComplete?.();
       
     } catch (error) {
       console.error("Error submitting task:", error);
@@ -481,7 +570,7 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
                             <CardContent className="p-4">
                               <div className="flex items-start gap-3">
                                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                  <FileText className="h-4 w-4 text-primary" />
+                                  <Link className="h-4 w-4 text-primary" />
                                 </div>
                                 <div>
                                   <h5 className="font-medium text-sm">Task Template</h5>
@@ -498,26 +587,81 @@ export function TaskDetailsModal({ isOpen, onClose, task, userId, onSubmissionCo
                   </TabsContent>
                   
                   <TabsContent value="submit" className="mt-0">
-                    <div>
-              <h4 className="font-medium mb-2">Your Response:</h4>
-              <Textarea 
-                placeholder="Type your response here..." 
-                className="min-h-[150px]"
-                value={response}
-                onChange={(e) => setResponse(e.target.value)}
-                disabled={isSubmitting}
-              />
-            
-                      <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={handleCloseAndReset} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSubmit} 
-                disabled={isSubmitting || !response.trim()}
-              >
-                {isSubmitting ? <LoadingSpinner size="small" /> : "Submit Task"}
-              </Button>
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Submission Type</h4>
+                          <div className="flex space-x-4">
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                value="text"
+                                checked={submissionType === 'text'}
+                                onChange={(e) => setSubmissionType('text')}
+                                className="form-radio"
+                              />
+                              <span>Text Only</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                value="file"
+                                checked={submissionType === 'file'}
+                                onChange={(e) => setSubmissionType('file')}
+                                className="form-radio"
+                              />
+                              <span>File Only</span>
+                            </label>
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                value="both"
+                                checked={submissionType === 'both'}
+                                onChange={(e) => setSubmissionType('both')}
+                                className="form-radio"
+                              />
+                              <span>Both Text & File</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        {(submissionType === 'text' || submissionType === 'both') && (
+                          <div>
+                            <h4 className="font-medium mb-2">Your Response:</h4>
+                            <Textarea 
+                              placeholder="Type your response here..." 
+                              className="min-h-[150px]"
+                              value={response}
+                              onChange={(e) => setResponse(e.target.value)}
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                        )}
+
+                        {(submissionType === 'file' || submissionType === 'both') && (
+                          <div>
+                            <h4 className="font-medium mb-2">Upload File:</h4>
+                            <FileUploadField
+                              onFileUpload={setFileData}
+                              onFileRemove={() => setFileData(null)}
+                              taskId={task?.id || ''}
+                              sessionId={task?.session_id || ''}
+                              userId={userId}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={handleCloseAndReset} disabled={isSubmitting}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={handleSubmit} 
+                          disabled={isSubmitting || (!response.trim() && !fileData)}
+                        >
+                          {isSubmitting ? <LoadingSpinner size="small" /> : "Submit Task"}
+                        </Button>
                       </div>
                     </div>
                   </TabsContent>

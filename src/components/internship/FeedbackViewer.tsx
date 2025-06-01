@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import ReactMarkdown from "react-markdown";
 import { Progress } from "@/components/ui/progress";
+import { FileText, Download, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface FeedbackViewerProps {
   submissionId: string;
@@ -22,6 +24,11 @@ interface FeedbackData {
   collaboration_rating: number;
   overall_assessment: string;
   feedback_provided_at: string;
+  file_url?: string | null;
+  file_name?: string | null;
+  file_type?: string | null;
+  file_size?: number | null;
+  content_type?: 'text' | 'file' | 'both' | null;
 }
 
 export function FeedbackViewer({ submissionId, taskId }: FeedbackViewerProps) {
@@ -76,6 +83,64 @@ export function FeedbackViewer({ submissionId, taskId }: FeedbackViewerProps) {
     if (rating >= 6) return "bg-blue-600";
     if (rating >= 4) return "bg-yellow-600";
     return "bg-red-600";
+  };
+  
+  const renderFilePreview = (feedback: FeedbackData) => {
+    if (!feedback.file_url || !feedback.file_name) return null;
+
+    const fileExt = feedback.file_name.split('.').pop()?.toLowerCase();
+    const isPreviewable = ['pdf', 'txt'].includes(fileExt || '');
+    
+    return (
+      <div className="mb-6">
+        <h4 className="font-medium mb-2 flex items-center">
+          <FileText className="h-4 w-4 mr-2" />
+          Submitted File
+        </h4>
+        <div className="bg-muted rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <p className="text-sm font-medium">{feedback.file_name}</p>
+              {feedback.file_size && (
+                <p className="text-xs text-muted-foreground">
+                  {(feedback.file_size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {isPreviewable && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(feedback.file_url, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(feedback.file_url, '_blank')}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </div>
+          </div>
+          
+          {isPreviewable && feedback.file_url && fileExt === 'pdf' && (
+            <div className="mt-4 border rounded-lg overflow-hidden">
+              <iframe
+                src={`${feedback.file_url}#toolbar=0`}
+                className="w-full h-[400px]"
+                title="PDF Preview"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
   
   if (loading) {
