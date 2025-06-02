@@ -133,6 +133,100 @@ export async function updateActivityStreak(userId: string): Promise<void> {
   }
 }
 
+/**
+ * Updates the user's virtual internship activity streak specifically for daily logins to the virtual internship page
+ * This tracks consecutive days a user visits the virtual internship dashboard
+ * @param userId The user's ID
+ */
+export async function updateVirtualInternshipStreak(userId: string): Promise<void> {
+  if (!userId) return;
+  
+  try {
+    console.log(`Updating virtual internship daily login streak for user ${userId}`);
+    const today = new Date();
+    const todayFormatted = format(today, 'yyyy-MM-dd');
+
+    // First, try to get the existing streak record
+    const { data: existingStreak, error: fetchError } = await supabase
+      .from('user_activity_streaks')
+      .select('id, current_streak, longest_streak, last_active_date, streak_start_date')
+      .eq('user_id', userId)
+      .single();
+    
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 is "not found" which is expected for new users
+      console.error('Error fetching virtual internship streak:', fetchError);
+      return;
+    }
+
+    // Calculate new streak values
+    let currentStreak = 1; // Default for new users
+    let longestStreak = 1; // Default for new users
+    let streakStartDate = todayFormatted;
+
+    if (existingStreak) {
+      const lastActiveDate = existingStreak.last_active_date ? new Date(existingStreak.last_active_date) : null;
+      
+      if (lastActiveDate) {
+        const daysSinceLastActive = differenceInDays(today, lastActiveDate);
+        
+        // If user was active yesterday, increment the streak
+        if (daysSinceLastActive === 1) {
+          currentStreak = existingStreak.current_streak + 1;
+          streakStartDate = existingStreak.streak_start_date || todayFormatted;
+          longestStreak = Math.max(currentStreak, existingStreak.longest_streak);
+          console.log(`🔥 Streak continued! Day ${currentStreak} of consecutive virtual internship logins`);
+        }
+        // If user is active again today, keep the streak the same
+        else if (daysSinceLastActive === 0) {
+          console.log(`✅ Already logged virtual internship activity today. Current streak: ${existingStreak.current_streak} days`);
+          return; // No need to update if already logged today
+        }
+        // If user missed days, reset the streak
+        else {
+          currentStreak = 1;
+          streakStartDate = todayFormatted;
+          longestStreak = existingStreak.longest_streak;
+          console.log(`🔄 Streak reset! Missed ${daysSinceLastActive} days. Starting fresh with day 1.`);
+        }
+      }
+    } else {
+      console.log(`🎉 Starting new virtual internship login streak! Day 1.`);
+    }
+
+    // Upsert the streak record (update if exists, insert if not)
+    const { error: upsertError } = await supabase
+      .from('user_activity_streaks')
+      .upsert({
+        user_id: userId,
+        current_streak: currentStreak,
+        longest_streak: longestStreak,
+        last_active_date: todayFormatted,
+        streak_start_date: streakStartDate,
+        updated_at: new Date().toISOString()
+      }, { 
+        onConflict: 'user_id' 
+      });
+
+    if (upsertError) {
+      console.error('Error updating virtual internship streak:', upsertError);
+    } else {
+      console.log(`🎯 Virtual internship streak updated successfully! Current: ${currentStreak} days, Longest: ${longestStreak} days`);
+      
+      // Log milestone achievements
+      if (currentStreak === 7) {
+        console.log(`🏆 Week streak achieved! 7 consecutive days of virtual internship engagement`);
+      } else if (currentStreak === 30) {
+        console.log(`🏆 Month streak achieved! 30 consecutive days of virtual internship engagement`);
+      } else if (currentStreak % 10 === 0 && currentStreak > 0) {
+        console.log(`🏆 Milestone achieved! ${currentStreak} consecutive days of virtual internship engagement`);
+      }
+    }
+  } catch (error) {
+    console.error('Unexpected error updating virtual internship streak:', error);
+  }
+}
+
 // Check and award achievement if conditions are met
 export async function checkAndAwardAchievement(
   userId: string, 

@@ -690,10 +690,39 @@ serve(async (req) => {
         }
       }
 
+      // Auto-generate comprehensive company profile for immersive experience
+      console.log('🏢 Auto-generating comprehensive company profile...');
+      try {
+        const companyProfileResponse = await fetch(`${supabaseUrl}/functions/v1/generate-company-profile`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            job_title,
+            industry
+          })
+        });
+
+        if (companyProfileResponse.ok) {
+          const companyResult = await companyProfileResponse.json();
+          console.log('✅ Company profile auto-generated successfully:', companyResult.message);
+        } else {
+          const errorText = await companyProfileResponse.text();
+          console.warn('⚠️ Company profile auto-generation failed:', errorText);
+          // Don't fail the whole request if company profile generation fails
+        }
+      } catch (companyError) {
+        console.warn('⚠️ Company profile auto-generation error:', companyError);
+        // Don't fail the whole request if company profile generation fails
+      }
+
       return new Response(JSON.stringify({ 
         success: true, 
         sessionId,
-        message: "Internship session created successfully with AI-generated content"
+        message: "Internship session created successfully with AI-generated content and company profile"
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

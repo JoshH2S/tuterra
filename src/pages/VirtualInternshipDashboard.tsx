@@ -17,7 +17,7 @@ import { TaskFeedbackDialog } from "@/components/internship/TaskFeedbackDialog";
 import { FeedbackHistoryDialog } from "@/components/internship/FeedbackHistoryDialog";
 import { AchievementsDisplay } from "@/components/internship/AchievementsDisplay";
 import { ActivityStreakDisplay } from "@/components/internship/ActivityStreakDisplay";
-import { updateActivityStreak } from "@/services/achievements";
+import { useVirtualInternshipStreak } from "@/hooks/useActivityStreak";
 import { TaskOverview } from "@/components/internship/TaskOverview";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useInternshipRealtime } from "@/hooks/useInternshipRealtime";
@@ -92,6 +92,9 @@ export default function VirtualInternshipDashboard() {
   const [canSubmitFinal, setCanSubmitFinal] = useState(false);
   const [allTasks, setAllTasks] = useState<InternshipTask[]>([]);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+
+  // Track virtual internship daily login streak
+  const { streakData: virtualInternshipStreak } = useVirtualInternshipStreak();
 
   // Define fetchTasks as a useCallback function
   const fetchTasks = useCallback(async (sessionId: string) => {
@@ -447,13 +450,6 @@ export default function VirtualInternshipDashboard() {
       setHasFeedbackItems(hasAnyFeedback);
     }
   }, [tasks]);
-
-  // Update activity streak whenever the dashboard is loaded
-  useEffect(() => {
-    if (user && hasInternships) {
-      updateActivityStreak(user.id);
-    }
-  }, [user, hasInternships]);
 
   // Add useEffect to calculate task completion status
   useEffect(() => {

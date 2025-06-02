@@ -1,23 +1,22 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight, BarChart2, Briefcase, FileCheck, Calendar, MessageSquare, ExternalLink, Award, CheckCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, BarChart2, Briefcase, FileCheck, Calendar, MessageSquare, Award, CheckCircle, Building } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { InternshipSession, InternshipTask as DashboardInternshipTask } from "@/pages/VirtualInternshipDashboard";
 import { WelcomePanel } from "./WelcomePanel";
 import { TaskOverview } from "./TaskOverview";
 import { CalendarView } from "./CalendarView";
 import { MessagingPanel } from "./MessagingPanel";
-import { ResourceHub } from "./ResourceHub";
 import { FeedbackCenter } from "./FeedbackCenter";
 import { GamificationPanel } from "./GamificationPanel";
 import { MobileInternshipHeader } from "./MobileInternshipHeader";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InternshipMetricsDashboard } from "./InternshipMetricsDashboard";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CompanyInfoCard } from "./CompanyInfoCard";
 
 // Task submission interface
 export interface TaskSubmission {
@@ -36,53 +35,17 @@ export interface TaskSubmission {
   content_type?: 'text' | 'file' | 'both' | null;
 }
 
-// Use the same task interface as in the dashboard
-export type InternshipTask = DashboardInternshipTask;
-
-export type InternshipEvent = {
-  id: string;
-  session_id: string;
-  title: string;
-  date: string;
-  type: "meeting" | "deadline" | "milestone";
-};
-
-export interface InternshipResource {
-  id: string;
-  session_id: string;
-  title: string;
-  type: string;
-  description?: string;
-  content?: string;
-  link: string;
-}
-
-export interface InternshipSession {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  start_date: string;
-  created_at: string;
-  duration_weeks: number;
-  status: string;
-}
-
-export interface InternshipTask {
-  id: string;
-  session_id: string;
-  title: string;
-  description: string;
-  instructions?: string | null;
-  due_date: string;
-  status: string;
-  task_type?: string | null;
-  visible_after?: string;
-}
-
 interface SwipeableInternshipViewProps {
-  sessionData: InternshipSession;
-  onOpenTaskDetails?: (task: InternshipTask) => void;
+  sessionData: {
+    id: string;
+    title: string;
+    description: string;
+    start_date: string;
+    created_at: string;
+    job_title: string;
+    industry: string;
+  };
+  onOpenTaskDetails: (taskId: string) => void;
 }
 
 export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: SwipeableInternshipViewProps) {
@@ -100,7 +63,7 @@ export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: Swip
     "Tasks", 
     "Calendar", 
     "Messages", 
-    "Resources", 
+    "Company", 
     "Feedback", 
     "Achievements",
     "Metrics"
@@ -246,13 +209,13 @@ export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: Swip
         return <CalendarView events={events} tasks={visibleTasks} sessionId={sessionData.id} updateTaskStatus={updateTaskStatus} />;
       case 3: // Messages
         return <MessagingPanel sessionId={sessionData.id} />;
-      case 4: // Resources
-        return <ResourceHub resources={resources} sessionId={sessionData.id} />;
+      case 4: // Company Info
+        return <CompanyInfoCard sessionId={sessionData.id} />;
       case 5: // Feedback
         return <FeedbackCenter sessionData={sessionData} tasks={visibleTasks} />;
       case 6: // Achievements
         return <GamificationPanel sessionData={sessionData} tasks={visibleTasks} />;
-      case 7: // Metrics - New tab
+      case 7: // Metrics
         return <InternshipMetricsDashboard sessionId={sessionData.id} tasks={visibleTasks} />;
       default:
         return <div>Select a tab</div>;
@@ -383,8 +346,8 @@ function getTabIcon(index: number) {
       return <Calendar className="h-4 w-4" />;
     case 3: // Messages
       return <MessageSquare className="h-4 w-4" />;
-    case 4: // Resources
-      return <ExternalLink className="h-4 w-4" />;
+    case 4: // Company
+      return <Building className="h-4 w-4" />;
     case 5: // Feedback
       return <MessageSquare className="h-4 w-4" />;
     case 6: // Achievements

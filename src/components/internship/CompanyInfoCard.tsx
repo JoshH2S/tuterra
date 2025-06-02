@@ -1,220 +1,493 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, MapPin, Users, FileCheck, Target, ShoppingBag } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+
+// Use the Database types
+type CompanyProfile = Database['public']['Tables']['internship_company_profiles']['Row'];
+type CompanyDetails = Database['public']['Tables']['internship_company_details']['Row'];
 
 interface CompanyInfoCardProps {
   sessionId: string;
 }
 
-interface CompanyProfile {
-  company_name: string;
-  company_overview: string | null;
-  company_mission: string | null;
-  team_structure: string | null;
-  company_values: string | null;
-  clients_or_products: string | null;
-  headquarters_location: string | null;
-  supervisor_name: string | null;
-  background_story: string | null;
-}
-
 export function CompanyInfoCard({ sessionId }: CompanyInfoCardProps) {
-  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
+  const [generatingProfile, setGeneratingProfile] = useState(false);
+
+  const fetchCompanyData = async () => {
+    try {
+      console.log("🔍 Fetching company data for session:", sessionId);
+      setError(null);
+
+      // Try to fetch both profile and details in parallel
+      const [profileResult, detailsResult] = await Promise.allSettled([
+        // Use different approach to avoid 406 errors
+        supabase
+          .from('internship_company_profiles')
+          .select()
+          .eq('session_id', sessionId)
+          .limit(1),
+        supabase
+          .from('internship_company_details')
+          .select()
+          .eq('session_id', sessionId)
+          .limit(1)
+      ]);
+
+      console.log("📊 Profile result:", profileResult);
+      console.log("📊 Details result:", detailsResult);
+
+      let profileData = null;
+      let detailsData = null;
+
+      // Handle profile result
+      if (profileResult.status === 'fulfilled' && profileResult.value.data) {
+        const profiles = profileResult.value.data;
+        if (profiles.length > 0) {
+          profileData = profiles[0];
+          setCompanyProfile(profileData);
+          console.log("✅ Company profile found:", profileData);
+        } else {
+          console.log("ℹ️ No company profile found");
+        }
+      } else if (profileResult.status === 'rejected') {
+        console.error("❌ Profile fetch failed:", profileResult.reason);
+      }
+
+      // Handle details result
+      if (detailsResult.status === 'fulfilled' && detailsResult.value.data) {
+        const details = detailsResult.value.data;
+        if (details.length > 0) {
+          detailsData = details[0];
+          setCompanyDetails(detailsData);
+          console.log("✅ Company details found:", detailsData);
+        } else {
+          console.log("ℹ️ No company details found");
+        }
+      } else if (detailsResult.status === 'rejected') {
+        console.error("❌ Details fetch failed:", detailsResult.reason);
+      }
+
+      // Validate data consistency if both exist
+      if (profileData && detailsData) {
+        const consistencyIssues = [];
+        
+        // Check company name consistency
+        if (profileData.company_name !== detailsData.name) {
+          consistencyIssues.push(`Company name mismatch: Profile says "${profileData.company_name}", Details say "${detailsData.name}"`);
+        }
+        
+        // Check industry consistency
+        if (profileData.industry !== detailsData.industry) {
+          consistencyIssues.push(`Industry mismatch: Profile says "${profileData.industry}", Details say "${detailsData.industry}"`);
+        }
+        
+        // Check mission consistency (if both exist)
+        if (profileData.company_mission && detailsData.mission && 
+            profileData.company_mission !== detailsData.mission) {
+          consistencyIssues.push(`Mission statement mismatch detected`);
+        }
+        
+        if (consistencyIssues.length > 0) {
+          console.warn("⚠️ Company data consistency issues detected:", consistencyIssues);
+          // Still display the data but log the issues
+        } else {
+          console.log("✅ Company data is consistent across both tables");
+        }
+      }
+
+      // If no data exists, show option to generate
+      if ((!profileData && profileResult.status === 'fulfilled') && 
+          (!detailsData && detailsResult.status === 'fulfilled')) {
+        console.log("📝 No company data found, will show generation option");
+        setError("no_data");
+      }
+
+    } catch (err) {
+      console.error("❌ Error fetching company data:", err);
+      setError("Failed to fetch company information");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateCompanyProfile = async () => {
+    setGeneratingProfile(true);
+    setError(null);
+    
+    try {
+      console.log("🚀 Generating company profile for session:", sessionId);
+      
+      // Get session info to determine job title and industry
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('internship_sessions')
+        .select('job_title, industry')
+        .eq('id', sessionId)
+        .limit(1);
+
+      if (sessionError) {
+        throw new Error(`Failed to get session info: ${sessionError.message}`);
+      }
+
+      if (!sessionData || sessionData.length === 0) {
+        throw new Error("Session not found");
+      }
+
+      const { job_title, industry } = sessionData[0];
+      
+      if (!job_title || !industry) {
+        throw new Error("Session missing job title or industry information");
+      }
+
+      // Call the edge function with error handling for 404
+      const { data, error } = await supabase.functions.invoke('generate-company-profile', {
+        body: {
+          session_id: sessionId,
+          job_title,
+          industry
+        }
+      });
+
+      if (error) {
+        console.error("❌ Error calling edge function:", error);
+        if (error.message.includes('404') || error.message.includes('Failed to send a request')) {
+          throw new Error("Company profile generation service is not available. Please contact support.");
+        }
+        throw error;
+      }
+
+      console.log("✅ Company profile generated:", data);
+      
+      // Refresh the data
+      await fetchCompanyData();
+      
+    } catch (err) {
+      console.error("❌ Error generating company profile:", err);
+      setError(err instanceof Error ? err.message : "Failed to generate company profile");
+    } finally {
+      setGeneratingProfile(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchCompanyProfile() {
-      if (!sessionId) return;
-      
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const { data, error } = await supabase
-          .from("internship_company_profiles")
-          .select("*")
-          .eq("session_id", sessionId)
-          .limit(1)
-          .single();
-        
-        if (error) throw error;
-        
-        if (data) {
-          setCompanyProfile(data);
-        } else {
-          // If no company profile exists yet, trigger the generation function
-          const { data: generatedData, error: functionError } = await supabase.functions.invoke('generate-company-profile', {
-            body: {
-              session_id: sessionId,
-              // Fetch job title and industry from the session
-              ...(await fetchSessionInfo(sessionId))
-            }
-          });
-          
-          if (functionError) throw functionError;
-          
-          if (generatedData && generatedData.data) {
-            setCompanyProfile(generatedData.data);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching company profile:", err);
-        setError("Failed to load company information");
-      } finally {
-        setIsLoading(false);
-      }
+    if (sessionId) {
+      fetchCompanyData();
     }
-    
-    async function fetchSessionInfo(sessionId: string) {
-      const { data, error } = await supabase
-        .from("internship_sessions")
-        .select("job_title, industry")
-        .eq("id", sessionId)
-        .limit(1)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching session info:", error);
-        return { job_title: "", industry: "" };
-      }
-      
-      return data;
-    }
-    
-    fetchCompanyProfile();
   }, [sessionId]);
-  
-  if (isLoading) {
+
+  if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-8 w-3/4 mb-2" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Company Information</CardTitle>
-          <CardDescription>Error loading company details</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{error}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  if (!companyProfile) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Company Information</CardTitle>
-          <CardDescription>Company details unavailable</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No company information is available for this internship.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  // Parse comma-separated values into arrays
-  const teamStructure = companyProfile.team_structure?.split(',').map(item => item.trim()) || [];
-  const companyValues = companyProfile.company_values?.split(',').map(item => item.trim()) || [];
-  
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{companyProfile.company_name}</CardTitle>
-        <CardDescription>{companyProfile.company_overview}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {companyProfile.company_mission && (
-            <div className="flex items-start gap-2">
-              <Target className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-sm">Mission</p>
-                <p className="text-sm text-muted-foreground">{companyProfile.company_mission}</p>
-              </div>
-            </div>
-          )}
-          
-          {teamStructure.length > 0 && (
-            <div className="flex items-start gap-2">
-              <Users className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-sm">Team Structure</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {teamStructure.map((team, index) => (
-                    <Badge key={index} variant="secondary" className="font-normal">
-                      {team}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {companyValues.length > 0 && (
-            <div className="flex items-start gap-2">
-              <FileCheck className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-sm">Company Values</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {companyValues.map((value, index) => (
-                    <Badge key={index} variant="outline" className="font-normal">
-                      {value}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {companyProfile.clients_or_products && (
-            <div className="flex items-start gap-2">
-              <ShoppingBag className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-sm">Products & Clients</p>
-                <p className="text-sm text-muted-foreground">{companyProfile.clients_or_products}</p>
-              </div>
-            </div>
-          )}
-          
-          {companyProfile.headquarters_location && (
-            <div className="flex items-start gap-2">
-              <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-sm">Headquarters</p>
-                <p className="text-sm text-muted-foreground">{companyProfile.headquarters_location}</p>
-              </div>
-            </div>
-          )}
-          
-          {companyProfile.background_story && (
-            <div className="mt-4 pt-4 border-t">
-              <p className="text-sm">{companyProfile.background_story}</p>
-            </div>
-          )}
+      <Card className="p-6">
+        <div className="flex items-center justify-center">
+          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="ml-2">Loading company information...</span>
         </div>
-      </CardContent>
-    </Card>
+      </Card>
+    );
+  }
+
+  if (error === "no_data") {
+    return (
+      <Card className="p-6">
+        <div className="text-center space-y-4">
+          <h3 className="text-lg font-medium">No Company Information Available</h3>
+          <p className="text-gray-600">
+            No company profile has been generated for this internship session yet.
+          </p>
+          <button
+            onClick={generateCompanyProfile}
+            disabled={generatingProfile}
+            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50"
+          >
+            {generatingProfile ? "Generating..." : "Generate Company Profile"}
+          </button>
+        </div>
+      </Card>
+    );
+  }
+
+  if (error && error !== "no_data") {
+    return (
+      <Card className="p-6">
+        <div className="text-center space-y-4">
+          <h3 className="text-lg font-medium text-red-600">Error</h3>
+          <p className="text-gray-600">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              fetchCompanyData();
+            }}
+            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+          >
+            Retry
+          </button>
+        </div>
+      </Card>
+    );
+  }
+
+  // Show available data
+  return (
+    <div className="space-y-6">
+      {companyProfile && (
+        <div className="space-y-6">
+          {/* Company Header */}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold">{companyProfile.company_name}</h2>
+                  {companyProfile.company_tagline && (
+                    <p className="text-lg text-primary italic">"{companyProfile.company_tagline}"</p>
+                  )}
+                </div>
+                {companyProfile.company_logo_url && (
+                  <img 
+                    src={companyProfile.company_logo_url} 
+                    alt={`${companyProfile.company_name} logo`}
+                    className="h-16 w-auto"
+                  />
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                <div>
+                  <span className="font-medium">Industry:</span> {companyProfile.industry}
+                </div>
+                <div>
+                  <span className="font-medium">Founded:</span> {companyProfile.founded_year}
+                </div>
+                <div>
+                  <span className="font-medium">Size:</span> {companyProfile.company_size}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Company Overview */}
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold mb-4">About {companyProfile.company_name}</h3>
+            <div className="space-y-4">
+              <p className="text-gray-700 leading-relaxed">{companyProfile.company_overview}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-primary mb-2">Mission</h4>
+                  <p className="text-gray-700">{companyProfile.company_mission}</p>
+                </div>
+                {companyProfile.company_vision && (
+                  <div>
+                    <h4 className="font-semibold text-primary mb-2">Vision</h4>
+                    <p className="text-gray-700">{companyProfile.company_vision}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {/* Leadership */}
+          {companyProfile.ceo_name && (
+            <Card className="p-6">
+              <h3 className="text-xl font-semibold mb-4">Leadership</h3>
+              <div className="space-y-4">
+                <div className="border-l-4 border-primary pl-4">
+                  <h4 className="font-semibold">{companyProfile.ceo_name}</h4>
+                  <p className="text-sm text-gray-600 mb-2">Chief Executive Officer</p>
+                  {companyProfile.ceo_bio && (
+                    <p className="text-gray-700">{companyProfile.ceo_bio}</p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Organization Structure */}
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold mb-4">Organization</h3>
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-semibold text-primary mb-2">Team Structure</h4>
+                <p className="text-gray-700">{companyProfile.team_structure}</p>
+              </div>
+              
+              {companyProfile.departments && Array.isArray(companyProfile.departments) && companyProfile.departments.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-primary mb-2">Key Departments</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {companyProfile.departments.map((dept, index) => (
+                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                        {dept}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {companyProfile.team_members && Array.isArray(companyProfile.team_members) && companyProfile.team_members.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-primary mb-3">Team Members</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {companyProfile.team_members.map((member: any, index) => (
+                      <div key={index} className="border rounded-lg p-3">
+                        <h5 className="font-medium">{member.name}</h5>
+                        <p className="text-sm text-gray-600">{member.role}</p>
+                        <p className="text-sm text-gray-500">{member.department}</p>
+                        <p className="text-sm text-blue-600">{member.email}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Your Internship */}
+          <Card className="p-6 border-2 border-primary/20 bg-primary/5">
+            <h3 className="text-xl font-semibold mb-4 text-primary">Your Internship</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold mb-2">Department</h4>
+                  <p className="text-gray-700">{companyProfile.intern_department || "General Operations"}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">Supervisor</h4>
+                  <p className="text-gray-700">{companyProfile.supervisor_name}</p>
+                </div>
+              </div>
+              
+              {companyProfile.sample_projects && Array.isArray(companyProfile.sample_projects) && companyProfile.sample_projects.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2">Sample Projects</h4>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700">
+                    {companyProfile.sample_projects.map((project, index) => (
+                      <li key={index}>{project}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {companyProfile.intern_expectations && Array.isArray(companyProfile.intern_expectations) && companyProfile.intern_expectations.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2">What We're Looking For</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {companyProfile.intern_expectations.map((expectation, index) => (
+                      <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                        {expectation}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Business Information */}
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold mb-4">Business Information</h3>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-primary mb-2">Core Values</h4>
+                  <p className="text-gray-700">{companyProfile.company_values}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-primary mb-2">Target Market</h4>
+                  <p className="text-gray-700">{companyProfile.target_market || "Various industry segments"}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-primary mb-2">Products & Services</h4>
+                <p className="text-gray-700">{companyProfile.clients_or_products}</p>
+              </div>
+              
+              {companyProfile.notable_clients && Array.isArray(companyProfile.notable_clients) && companyProfile.notable_clients.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-primary mb-2">Notable Clients</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {companyProfile.notable_clients.map((client, index) => (
+                      <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
+                        {client}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Tools & Technology */}
+          {companyProfile.tools_technologies && Array.isArray(companyProfile.tools_technologies) && companyProfile.tools_technologies.length > 0 && (
+            <Card className="p-6">
+              <h3 className="text-xl font-semibold mb-4">Tools & Technology</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {companyProfile.tools_technologies.map((tool, index) => (
+                  <div key={index} className="text-center p-3 border rounded-lg hover:bg-gray-50">
+                    <span className="text-sm font-medium">{tool}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Company Story */}
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold mb-4">Our Story</h3>
+            <div className="space-y-4">
+              <p className="text-gray-700 leading-relaxed">{companyProfile.background_story}</p>
+              <div className="text-sm text-gray-500">
+                📍 Headquarters: {companyProfile.headquarters_location}
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {companyDetails && !companyProfile && (
+        <Card className="p-6">
+          <h2 className="text-xl font-bold mb-4">Company Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-semibold">Founded</h3>
+              <p className="text-gray-700">{companyDetails.founded_year}</p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold">Company Size</h3>
+              <p className="text-gray-700">{companyDetails.size}</p>
+            </div>
+            
+            {companyDetails.vision && (
+              <div className="md:col-span-2">
+                <h3 className="font-semibold">Vision</h3>
+                <p className="text-gray-700">{companyDetails.vision}</p>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {!companyProfile && !companyDetails && (
+        <Card className="p-6">
+          <div className="text-center space-y-4">
+            <h3 className="text-lg font-medium">No Company Information Available</h3>
+            <p className="text-gray-600">
+              Company information is being prepared for this internship session.
+            </p>
+            <button
+              onClick={generateCompanyProfile}
+              disabled={generatingProfile}
+              className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50"
+            >
+              {generatingProfile ? "Generating..." : "Generate Company Profile"}
+            </button>
+          </div>
+        </Card>
+      )}
+    </div>
   );
 } 

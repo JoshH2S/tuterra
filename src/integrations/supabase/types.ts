@@ -12,29 +12,29 @@ export type Database = {
       activity_logs: {
         Row: {
           activity_type: string
-          course_id: string | null
+          course_id: string
           created_at: string
           description: string
           id: string
-          metadata: Json | null
+          metadata: Json
           student_id: string
         }
         Insert: {
           activity_type: string
-          course_id?: string | null
+          course_id: string
           created_at?: string
           description: string
           id?: string
-          metadata?: Json | null
+          metadata?: Json
           student_id: string
         }
         Update: {
           activity_type?: string
-          course_id?: string | null
+          course_id?: string
           created_at?: string
           description?: string
           id?: string
-          metadata?: Json | null
+          metadata?: Json
           student_id?: string
         }
         Relationships: []
@@ -2451,65 +2451,153 @@ export type Database = {
       },
       internship_company_profiles: {
         Row: {
-          id: string;
-          session_id: string;
-          company_name: string;
-          industry: string;
-          company_overview: string | null;
-          company_mission: string | null;
-          team_structure: string | null;
-          company_values: string | null;
-          clients_or_products: string | null;
-          headquarters_location: string | null;
-          company_logo_url: string | null;
-          supervisor_name: string | null;
-          background_story: string | null;
-          created_at: string;
-          updated_at: string;
-        };
+          id: string
+          session_id: string
+          company_name: string
+          industry: string
+          company_overview: string
+          company_mission: string
+          company_vision: string | null
+          team_structure: string
+          company_values: string
+          clients_or_products: string
+          headquarters_location: string
+          company_logo_url: string | null
+          supervisor_name: string
+          background_story: string
+          company_size: string | null
+          founded_year: string | null
+          ceo_name: string | null
+          ceo_bio: string | null
+          company_tagline: string | null
+          departments: string[] | null
+          team_members: Json | null
+          tools_technologies: string[] | null
+          target_market: string | null
+          notable_clients: string[] | null
+          intern_department: string | null
+          sample_projects: string[] | null
+          intern_expectations: string[] | null
+          created_at: string
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          session_id: string;
-          company_name: string;
-          industry: string;
-          company_overview?: string | null;
-          company_mission?: string | null;
-          team_structure?: string | null;
-          company_values?: string | null;
-          clients_or_products?: string | null;
-          headquarters_location?: string | null;
-          company_logo_url?: string | null;
-          supervisor_name?: string | null;
-          background_story?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
+          id?: string
+          session_id: string
+          company_name: string
+          industry: string
+          company_overview: string
+          company_mission: string
+          company_vision?: string | null
+          team_structure: string
+          company_values: string
+          clients_or_products: string
+          headquarters_location: string
+          company_logo_url?: string | null
+          supervisor_name: string
+          background_story: string
+          company_size?: string | null
+          founded_year?: string | null
+          ceo_name?: string | null
+          ceo_bio?: string | null
+          company_tagline?: string | null
+          departments?: string[] | null
+          team_members?: Json | null
+          tools_technologies?: string[] | null
+          target_market?: string | null
+          notable_clients?: string[] | null
+          intern_department?: string | null
+          sample_projects?: string[] | null
+          intern_expectations?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          session_id?: string;
-          company_name?: string;
-          industry?: string;
-          company_overview?: string | null;
-          company_mission?: string | null;
-          team_structure?: string | null;
-          company_values?: string | null;
-          clients_or_products?: string | null;
-          headquarters_location?: string | null;
-          company_logo_url?: string | null;
-          supervisor_name?: string | null;
-          background_story?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
+          id?: string
+          session_id?: string
+          company_name?: string
+          industry?: string
+          company_overview?: string
+          company_mission?: string
+          company_vision?: string | null
+          team_structure?: string
+          company_values?: string
+          clients_or_products?: string
+          headquarters_location?: string
+          company_logo_url?: string | null
+          supervisor_name?: string
+          background_story?: string
+          company_size?: string | null
+          founded_year?: string | null
+          ceo_name?: string | null
+          ceo_bio?: string | null
+          company_tagline?: string | null
+          departments?: string[] | null
+          team_members?: Json | null
+          tools_technologies?: string[] | null
+          target_market?: string | null
+          notable_clients?: string[] | null
+          intern_department?: string | null
+          sample_projects?: string[] | null
+          intern_expectations?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      },
+      internship_company_details: {
+        Row: {
+          id: string
+          session_id: string
+          name: string
+          industry: string
+          description: string | null
+          mission: string | null
+          vision: string | null
+          values: Json | null
+          founded_year: number | null
+          size: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          name: string
+          industry: string
+          description?: string | null
+          mission?: string | null
+          vision?: string | null
+          values?: Json | null
+          founded_year?: number | null
+          size?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          name?: string
+          industry?: string
+          description?: string | null
+          mission?: string | null
+          vision?: string | null
+          values?: Json | null
+          founded_year?: number | null
+          size?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "internship_company_profiles_session_id_fkey";
-            columns: ["session_id"];
-            referencedRelation: "internship_sessions";
-            referencedColumns: ["id"];
+            foreignKeyName: "internship_company_details_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
           }
-        ];
-      },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
