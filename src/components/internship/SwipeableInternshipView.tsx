@@ -7,7 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { WelcomePanel } from "./WelcomePanel";
 import { TaskOverview } from "./TaskOverview";
 import { CalendarView } from "./CalendarView";
-import { MessagingPanel } from "./MessagingPanel";
+import { EmailMessagingPanel } from "./EmailMessagingPanel";
 import { FeedbackCenter } from "./FeedbackCenter";
 import { GamificationPanel } from "./GamificationPanel";
 import { MobileInternshipHeader } from "./MobileInternshipHeader";
@@ -17,23 +17,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CompanyInfoCard } from "./CompanyInfoCard";
-
-// Task submission interface
-export interface TaskSubmission {
-  id: string;
-  response_text: string;
-  created_at: string;
-  feedback_text?: string | null;
-  feedback_provided_at?: string | null;
-  quality_rating?: number | null;
-  timeliness_rating?: number | null;
-  collaboration_rating?: number | null;
-  file_url?: string | null;
-  file_name?: string | null;
-  file_type?: string | null;
-  file_size?: number | null;
-  content_type?: 'text' | 'file' | 'both' | null;
-}
+import { InternshipTask, InternshipEvent, InternshipResource, TaskSubmission } from "@/types/internship";
+import { AchievementsDisplay } from "./AchievementsDisplay";
 
 interface SwipeableInternshipViewProps {
   sessionData: {
@@ -89,7 +74,7 @@ export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: Swip
         const now = new Date();
         const allTasks = (taskData || []).map(task => {
           const dueDate = new Date(task.due_date);
-          let status = task.status as InternshipTask["status"]; // Cast to the correct type
+          let status = task.status;
           
           if (status !== 'completed' && dueDate < now) {
             status = 'overdue';
@@ -116,7 +101,22 @@ export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: Swip
           .eq("session_id", sessionData.id);
         
         if (eventError) throw eventError;
-        setEvents((eventData || []) as InternshipEvent[]);
+        
+        // Map database fields to interface fields
+        const mappedEvents = (eventData || []).map(event => {
+          const eventAny = event as any;
+          return {
+            id: eventAny.id,
+            session_id: eventAny.session_id,
+            title: eventAny.title,
+            description: eventAny.description || '', // Handle missing description
+            event_date: eventAny.date,
+            event_type: eventAny.type,
+            created_at: eventAny.created_at || new Date().toISOString() // Handle missing created_at
+          } as InternshipEvent;
+        });
+        
+        setEvents(mappedEvents);
         
         // Fetch resources
         const { data: resourceData, error: resourceError } = await supabase
@@ -125,7 +125,19 @@ export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: Swip
           .eq("session_id", sessionData.id);
         
         if (resourceError) throw resourceError;
-        setResources(resourceData || []);
+        
+        // Map database fields to interface fields
+        const mappedResources = (resourceData || []).map(resource => ({
+          id: resource.id,
+          session_id: resource.session_id,
+          title: resource.title,
+          description: '', // Default empty description
+          url: resource.link,
+          resource_type: resource.type,
+          created_at: new Date().toISOString() // Default created_at
+        })) as InternshipResource[];
+        
+        setResources(mappedResources);
         
       } catch (error) {
         console.error("Error fetching internship data:", error);
@@ -200,25 +212,37 @@ export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: Swip
       );
     }
     
+    // Create a full session data object for components that need it
+    const fullSessionData = {
+      id: sessionData.id,
+      user_id: '', // This would need to be passed from parent if needed
+      job_title: sessionData.job_title,
+      industry: sessionData.industry,
+      job_description: sessionData.description,
+      current_phase: 1, // Default value
+      created_at: sessionData.created_at,
+      start_date: sessionData.start_date,
+    };
+
     switch (activeIndex) {
-      case 0: // Overview
-        return <WelcomePanel sessionData={sessionData} tasks={visibleTasks} startDate={startDate} events={events} onOpenTaskDetails={onOpenTaskDetails} />;
-      case 1: // Tasks
-        return <TaskOverview tasks={visibleTasks} updateTaskStatus={updateTaskStatus} allTasks={tasks} />;
-      case 2: // Calendar
-        return <CalendarView events={events} tasks={visibleTasks} sessionId={sessionData.id} updateTaskStatus={updateTaskStatus} />;
-      case 3: // Messages
-        return <MessagingPanel sessionId={sessionData.id} />;
-      case 4: // Company Info
+      case 0:
+        return <WelcomePanel sessionData={fullSessionData} tasks={visibleTasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
+      case 1:
+        return <TaskOverview tasks={visibleTasks} onUpdateTaskStatus={updateTaskStatus} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
+      case 2:
+        return <CalendarView events={events} tasks={visibleTasks} startDate={startDate} />;
+      case 3:
+        return <EmailMessagingPanel sessionId={sessionData.id} />;
+      case 4:
         return <CompanyInfoCard sessionId={sessionData.id} />;
-      case 5: // Feedback
-        return <FeedbackCenter sessionData={sessionData} tasks={visibleTasks} />;
-      case 6: // Achievements
-        return <GamificationPanel sessionData={sessionData} tasks={visibleTasks} />;
-      case 7: // Metrics
-        return <InternshipMetricsDashboard sessionId={sessionData.id} tasks={visibleTasks} />;
+      case 5:
+        return <FeedbackCenter sessionData={fullSessionData} tasks={visibleTasks} />;
+      case 6:
+        return <AchievementsDisplay />;
+      case 7:
+        return <GamificationPanel sessionData={fullSessionData} tasks={visibleTasks} />;
       default:
-        return <div>Select a tab</div>;
+        return <InternshipMetricsDashboard sessionId={fullSessionData.id} tasks={visibleTasks} />;
     }
   };
 

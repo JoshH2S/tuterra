@@ -2,19 +2,21 @@ import { ModernCard } from "@/components/ui/modern-card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, AlertCircle, Clock, ChevronRight, LockKeyhole, Calendar, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { InternshipTask } from "./SwipeableInternshipView";
+import { InternshipTask } from "@/types/internship";
 import { format, isPast, isFuture, addDays } from "date-fns";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { formatInUserTimezone, formatDeadlineWithContext } from "@/utils/dateUtils";
 
 interface TaskOverviewProps {
   tasks: InternshipTask[];
-  updateTaskStatus: (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => Promise<void>;
+  onUpdateTaskStatus: (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => Promise<void>;
+  onOpenTaskDetails?: (task: InternshipTask) => void;
   allTasks?: InternshipTask[]; // All tasks including those not yet visible
   compact?: boolean; // Add compact mode option
 }
 
-export function TaskOverview({ tasks, updateTaskStatus, allTasks = [], compact = false }: TaskOverviewProps) {
+export function TaskOverview({ tasks, onUpdateTaskStatus, onOpenTaskDetails, allTasks = [], compact = false }: TaskOverviewProps) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   
   const getStatusIcon = (status: string) => {
@@ -45,12 +47,12 @@ export function TaskOverview({ tasks, updateTaskStatus, allTasks = [], compact =
   
   const handleTaskAction = (task: InternshipTask) => {
     if (task.status === 'not_started') {
-      updateTaskStatus(task.id, 'in_progress');
+      onUpdateTaskStatus(task.id, 'in_progress');
     } else if (task.status === 'in_progress' || task.status === 'overdue') {
-      updateTaskStatus(task.id, 'completed');
+      onUpdateTaskStatus(task.id, 'completed');
     } else if (task.status === 'completed') {
       // Re-open task if previously completed
-      updateTaskStatus(task.id, 'in_progress');
+      onUpdateTaskStatus(task.id, 'in_progress');
     }
   };
   
@@ -124,7 +126,7 @@ export function TaskOverview({ tasks, updateTaskStatus, allTasks = [], compact =
                 </div>
                 <div className="p-1.5 flex justify-between items-center border-t">
                   <span className="text-muted-foreground text-[10px]">
-                    Due: {format(new Date(task.due_date), 'MMM d')}
+                    Due: {formatInUserTimezone(task.due_date, 'MMM d')}
                   </span>
                   <Button 
                     variant="ghost" 
@@ -181,7 +183,7 @@ export function TaskOverview({ tasks, updateTaskStatus, allTasks = [], compact =
                               <p className="font-medium">{task.title}</p>
                               <div className="flex items-center gap-1.5 mt-1">
                                 <span className="text-[10px] text-muted-foreground">
-                                  Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
+                                  Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy \'at\' h:mm a')}
                                 </span>
                                 <Badge className={`${getStatusBadgeColor(task.status)} text-[10px] h-4 px-1.5 whitespace-nowrap`}>
                                   {task.status === 'not_started' ? 'Not Started' : 
@@ -275,7 +277,7 @@ export function TaskOverview({ tasks, updateTaskStatus, allTasks = [], compact =
                     
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="text-xs text-muted-foreground">
-                        Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
+                        Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy \'at\' h:mm a')}
                       </div>
                       <Button 
                         variant="outline" 
@@ -327,7 +329,7 @@ export function TaskOverview({ tasks, updateTaskStatus, allTasks = [], compact =
                     
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="text-xs text-muted-foreground">
-                        Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
+                        Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy \'at\' h:mm a')}
                       </div>
                       <Button 
                         variant="outline" 

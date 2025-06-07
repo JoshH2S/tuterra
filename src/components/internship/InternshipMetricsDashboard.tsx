@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { InternshipTask } from "@/pages/VirtualInternshipDashboard";
+import { Badge } from "@/components/ui/badge";
+import { InternshipTask } from "@/types/internship";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { differenceInDays, format, parseISO } from 'date-fns';

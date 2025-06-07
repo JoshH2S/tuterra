@@ -80,30 +80,38 @@ export function InternshipBanner({ sessionId, industry = "general" }: Internship
   useEffect(() => {
     async function fetchBannerSettings() {
       try {
-        // Type assertion to specify the table structure
+        // ✅ Use regular query instead of .single() to avoid 406 errors
         const { data, error } = await supabase
           .from("internship_settings")
           .select("banner_url")
           .eq("session_id", sessionId)
-          .single();
+          .limit(1);
 
-        if (error && error.code !== "PGRST116") {
-          // PGRST116 is "not found" - we'll just use the default in that case
+        if (error) {
           console.error("Error fetching banner settings:", error);
+          // Set default banner on error
+          const defaultBanner = getDefaultBanner();
+          setBanner(defaultBanner);
+          setSelectedBanner(defaultBanner);
           return;
         }
 
-        if (data?.banner_url) {
-          setBanner(data.banner_url);
-          setSelectedBanner(data.banner_url);
+        // ✅ Handle empty results (no 406 error)
+        if (data && data.length > 0 && data[0]?.banner_url) {
+          setBanner(data[0].banner_url);
+          setSelectedBanner(data[0].banner_url);
         } else {
-          // Set default banner based on industry
+          // Set default banner when no settings exist
           const defaultBanner = getDefaultBanner();
           setBanner(defaultBanner);
           setSelectedBanner(defaultBanner);
         }
       } catch (error) {
         console.error("Error fetching banner:", error);
+        // Fallback to default banner
+        const defaultBanner = getDefaultBanner();
+        setBanner(defaultBanner);
+        setSelectedBanner(defaultBanner);
       }
     }
 
@@ -189,18 +197,19 @@ export function InternshipBanner({ sessionId, industry = "general" }: Internship
 
     setIsSaving(true);
     try {
-      // Check if entry exists
+      // ✅ Check if entry exists using .limit(1) instead of .single()
       const { data: existingData, error: checkError } = await supabase
         .from("internship_settings")
         .select("id")
         .eq("session_id", sessionId)
-        .single();
+        .limit(1);
 
-      if (checkError && checkError.code !== "PGRST116") {
-        throw checkError;
+      if (checkError) {
+        console.error("Error checking existing settings:", checkError);
+        // Continue with insert attempt on error
       }
 
-      if (existingData?.id) {
+      if (existingData && existingData.length > 0) {
         // Update existing
         const { error } = await supabase
           .from("internship_settings")

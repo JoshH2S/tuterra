@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
-import { format } from "date-fns";
+import { format } from "https://esm.sh/date-fns@2.30.0";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -204,42 +204,37 @@ serve(async (req) => {
       });
     }
 
-    // Generate company profile using the dedicated function
-    try {
-      console.log("Generating company profile for session", sessionData.id);
-      
-      // Call the company profile generation function
-      const companyProfileResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-company-profile`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
-        },
-        body: JSON.stringify({
-          session_id: sessionData.id,
-          job_title,
-          industry
-        })
-      });
-      
-      if (!companyProfileResponse.ok) {
-        console.error("Company profile generation failed:", await companyProfileResponse.text());
-        // Continue execution - we don't want to fail the entire process if company profile generation fails
-      } else {
-        const companyProfileResult = await companyProfileResponse.json();
-        console.log("Company profile generated successfully:", companyProfileResult.message);
-      }
-    } catch (companyProfileError) {
-      console.error("Error generating company profile:", companyProfileError);
-      // Continue execution - this is non-critical
-    }
+    console.log(`✅ Internship session created with ID: ${sessionData.id}`);
 
     // Generate internship content with OpenAI
     const prompt = `Generate a ${duration_weeks}-week virtual internship program for a ${job_title} in the ${industry} industry. 
     Job description: ${job_description}
     
+    CRITICAL DATE INFORMATION:
+    - Internship Start Date: ${format(safeParseDate(start_date), 'yyyy-MM-dd')} (${format(safeParseDate(start_date), 'EEEE')})
+    - Internship End Date: ${format(new Date(safeParseDate(start_date).getTime() + (duration_weeks * 7 * 24 * 60 * 60 * 1000)), 'yyyy-MM-dd')} (${format(new Date(safeParseDate(start_date).getTime() + (duration_weeks * 7 * 24 * 60 * 60 * 1000)), 'EEEE')})
+    - Duration: ${duration_weeks} weeks
+    - Total Tasks: ${duration_weeks * 2} tasks (2 per week maximum)
+    
+    DUE DATE CALCULATION RULES:
+    1. Distribute tasks evenly: 2 tasks per week across ${duration_weeks} weeks
+    2. Week 1: Tasks due between ${format(safeParseDate(start_date), 'yyyy-MM-dd')} and ${format(new Date(safeParseDate(start_date).getTime() + 6 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}
+    3. Week 2: Tasks due between ${format(new Date(safeParseDate(start_date).getTime() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')} and ${format(new Date(safeParseDate(start_date).getTime() + 13 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}
+    4. Continue this pattern for all ${duration_weeks} weeks
+    5. Prefer Tuesday/Friday for due dates (gives good spacing)
+    6. All dates must be between ${format(safeParseDate(start_date), 'yyyy-MM-dd')} and ${format(new Date(safeParseDate(start_date).getTime() + (duration_weeks * 7 * 24 * 60 * 60 * 1000)), 'yyyy-MM-dd')}
+    7. Format: YYYY-MM-DD (no time component needed)
+    
+    EXAMPLE TASK STRUCTURE:
+    {
+      "title": "Market Research Analysis",
+      "description": "Conduct comprehensive market research...",
+      "due_date": "${format(new Date(safeParseDate(start_date).getTime() + 4 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}", // Example: 5th day
+      "task_order": 1
+    }
+    
     Include:
-    - Weekly task titles and detailed descriptions
+    - Weekly task titles and detailed descriptions with calculated due dates
     - Simulated messages from a supervisor and team
     - Key calendar events (meetings, deadlines, milestones)
     
@@ -260,7 +255,7 @@ serve(async (req) => {
        - Getting started checklist
     
     3. Tools Glossary:
-       - Industry-specific tools and technologies relevant to the ${job_title} role
+       - Industry-specific tools and technologies relevant to the ${job_title}
        - Brief description and use case for each tool
        - Links to learning resources for these tools
     
@@ -421,7 +416,13 @@ serve(async (req) => {
       const startDateObj = safeParseDate(start_date);
 
       // Validate and redistribute tasks if needed
-      const validatedTasks = validateAndDistributeTasks(tasks, duration_weeks, start_date);
+      let validatedTasks = validateAndDistributeTasks(tasks, duration_weeks, start_date);
+
+      // Validate and fix AI-generated dates
+      if (validatedTasks.length) {
+        console.log(`Validating dates for ${validatedTasks.length} tasks`);
+        validatedTasks = validateAIGeneratedDates(validatedTasks, start_date, duration_weeks);
+      }
 
       // Insert tasks with improved error handling
       if (validatedTasks.length) {
@@ -446,8 +447,16 @@ serve(async (req) => {
           if (!dueDate) {
             const weekOffset = Math.floor(i / 2); // 2 tasks per week
             const calculatedDate = new Date(startDateObj);
-            calculatedDate.setDate(calculatedDate.getDate() + (weekOffset * 7) + 5); // Add weeks + 5 days
+            calculatedDate.setDate(calculatedDate.getDate() + (weekOffset * 7) + 5); // Add weeks + 5 days (Friday)
+            
+            // Set to end of business day (11:59 PM) to give users full day to complete
+            calculatedDate.setHours(23, 59, 59, 999);
             dueDate = calculatedDate.toISOString();
+          } else {
+            // If due date was provided, ensure it's also set to end of day
+            const providedDate = new Date(dueDate);
+            providedDate.setHours(23, 59, 59, 999);
+            dueDate = providedDate.toISOString();
           }
           
           const taskOrder = t.task_order || i + 1;
@@ -668,6 +677,23 @@ serve(async (req) => {
         try {
           const companyDetails = parsed.company_details;
           
+          // Ensure we're not storing placeholder values in a completed profile
+          const hasPlaceholderValues = (
+            companyDetails.name.includes("Generating...") ||
+            companyDetails.industry === "Creating company industry..." ||
+            companyDetails.description === "Creating company description..." ||
+            companyDetails.mission === "Generating company mission..." ||
+            companyDetails.vision === "Generating company vision..." ||
+            companyDetails.values.includes("Generating...") ||
+            companyDetails.founded_year === "Calculating company year..." ||
+            companyDetails.size === "Calculating company size..."
+          );
+
+          if (hasPlaceholderValues) {
+            console.warn("Generated company details contain placeholder values, treating as incomplete");
+            throw new Error("Generated company details contain placeholder values");
+          }
+          
           const { error: companyError } = await supabase
             .from("internship_company_details")
             .insert({
@@ -690,39 +716,10 @@ serve(async (req) => {
         }
       }
 
-      // Auto-generate comprehensive company profile for immersive experience
-      console.log('🏢 Auto-generating comprehensive company profile...');
-      try {
-        const companyProfileResponse = await fetch(`${supabaseUrl}/functions/v1/generate-company-profile`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceRoleKey}`,
-          },
-          body: JSON.stringify({
-            session_id: sessionId,
-            job_title,
-            industry
-          })
-        });
-
-        if (companyProfileResponse.ok) {
-          const companyResult = await companyProfileResponse.json();
-          console.log('✅ Company profile auto-generated successfully:', companyResult.message);
-        } else {
-          const errorText = await companyProfileResponse.text();
-          console.warn('⚠️ Company profile auto-generation failed:', errorText);
-          // Don't fail the whole request if company profile generation fails
-        }
-      } catch (companyError) {
-        console.warn('⚠️ Company profile auto-generation error:', companyError);
-        // Don't fail the whole request if company profile generation fails
-      }
-
       return new Response(JSON.stringify({ 
         success: true, 
         sessionId,
-        message: "Internship session created successfully with AI-generated content and company profile"
+        message: "Internship session created successfully with AI-generated content"
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -756,7 +753,10 @@ serve(async (req) => {
           // Calculate due date (distribute evenly across the internship)
           const weekOffset = Math.floor(i / tasksPerWeek);
           const dueDate = new Date(startDateObj);
-          dueDate.setDate(dueDate.getDate() + (weekOffset * 7) + 5); // End of each week
+          dueDate.setDate(dueDate.getDate() + (weekOffset * 7) + 5); // End of each week (Friday)
+          
+          // Set to end of business day (11:59 PM)
+          dueDate.setHours(23, 59, 59, 999);
           
           genericTasks.push({
             session_id: sessionId,
@@ -966,4 +966,45 @@ function validateAndDistributeTasks(tasks: any[], durationWeeks: number, startDa
   
   console.log(`Task validation complete. Final count: ${redistributedTasks.length} tasks`);
   return redistributedTasks;
+}
+
+// Add this function after parsing the AI response but before inserting tasks
+function validateAIGeneratedDates(tasks: any[], startDate: string, durationWeeks: number) {
+  const startDateObj = safeParseDate(startDate);
+  const endDateObj = new Date(startDateObj);
+  endDateObj.setDate(startDateObj.getDate() + (durationWeeks * 7));
+  
+  return tasks.map((task, index) => {
+    let isValidDate = false;
+    
+    if (task.due_date) {
+      try {
+        const taskDate = new Date(task.due_date);
+        isValidDate = !isNaN(taskDate.getTime()) && 
+                     taskDate >= startDateObj && 
+                     taskDate <= endDateObj;
+      } catch (e) {
+        isValidDate = false;
+      }
+    }
+    
+    // If AI didn't generate a valid date, calculate one
+    if (!isValidDate) {
+      console.log(`Fixing invalid date for task: ${task.title}`);
+      const taskOrder = task.task_order || index + 1;
+      const weekNumber = Math.ceil(taskOrder / 2);
+      
+      // Calculate Friday of the appropriate week
+      const weekStart = new Date(startDateObj);
+      weekStart.setDate(startDateObj.getDate() + ((weekNumber - 1) * 7));
+      
+      const friday = new Date(weekStart);
+      const daysToFriday = (5 - weekStart.getDay() + 7) % 7;
+      friday.setDate(weekStart.getDate() + daysToFriday);
+      
+      task.due_date = format(friday, 'yyyy-MM-dd');
+    }
+    
+    return task;
+  });
 }

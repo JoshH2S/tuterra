@@ -57,8 +57,8 @@ export const navigationItems: NavigationItem[] = [
   },
   { 
     icon: Briefcase, 
-    label: "Virtual Internship", 
-    path: "/dashboard/virtual-internship" 
+    label: "Virtual Internships", 
+    path: "/dashboard/virtual-internship/overview" 
   },
   { 
     icon: UserRoundCog, 

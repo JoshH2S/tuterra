@@ -1,6 +1,5 @@
 import { PremiumCard } from "@/components/ui/premium-card";
-import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
-import { InternshipTask } from "./SwipeableInternshipView";
+import { InternshipSession, InternshipTask } from "@/types/internship";
 import { AchievementsDisplay } from "./AchievementsDisplay";
 import { ActivityStreakDisplay } from "./ActivityStreakDisplay";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,12 +26,7 @@ export function GamificationPanel({ sessionData, tasks }: GamificationPanelProps
       // For each completed task, check for "fast learner" achievement
       tasks.forEach(task => {
         if (task.status === 'completed' && task.submission) {
-          checkTaskCompletionAchievements(
-            user.id,
-            task.id,
-            task.due_date,
-            task.submission.created_at
-          );
+          checkTaskCompletionAchievements(user.id);
         }
       });
       
@@ -52,7 +46,7 @@ export function GamificationPanel({ sessionData, tasks }: GamificationPanelProps
         
         {/* Streak tracker */}
         <div className="mt-5">
-          <ActivityStreakDisplay />
+          <ActivityStreakDisplay sessionId={sessionData.id} />
         </div>
       </div>
     </PremiumCard>

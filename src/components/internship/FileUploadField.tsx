@@ -59,16 +59,14 @@ export function FileUploadField({
       const filePath = `task-submissions/${sessionId}/${taskId}/${fileName}`;
       
       // Upload the file
-      const { error: uploadError, data } = await supabase.storage
-        .from('user-uploads')
+      const { data, error } = await supabase.storage
+        .from("task-submissions")
         .upload(filePath, selectedFile, {
-          upsert: true,
-          onUploadProgress: (progress) => {
-            setUploadProgress((progress.loaded / progress.total) * 100);
-          }
+          cacheControl: '3600',
+          upsert: false
         });
       
-      if (uploadError) throw uploadError;
+      if (error) throw error;
       
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage

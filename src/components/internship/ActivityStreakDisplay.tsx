@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Flame, Calendar, Trophy, Clock, Briefcase } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Flame, Calendar, Trophy, Clock, Briefcase, RotateCcw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO } from "date-fns";
 import { LoadingSpinner } from "@/components/ui/loading-states";
+import { resetVirtualInternshipStreak, recalculateVirtualInternshipStreak, updateVirtualInternshipStreak } from "@/services/achievements";
+import { useToast } from "@/hooks/use-toast";
 
 interface ActivityStreakDisplayProps {
   className?: string;
+  sessionId?: string;
 }
 
 interface ActivityStreak {
@@ -16,11 +20,14 @@ interface ActivityStreak {
   last_active_date: string | null;
 }
 
-export function ActivityStreakDisplay({ className = "" }: ActivityStreakDisplayProps) {
+export function ActivityStreakDisplay({ className = "", sessionId }: ActivityStreakDisplayProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [streakData, setStreakData] = useState<ActivityStreak | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState<boolean>(false);
+  const [loggingVisit, setLoggingVisit] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchActivityStreak() {
@@ -85,6 +92,88 @@ export function ActivityStreakDisplay({ className = "" }: ActivityStreakDisplayP
 
     fetchActivityStreak();
   }, [user]);
+
+  const handleResetStreak = async () => {
+    if (!user) return;
+    
+    setResetting(true);
+    try {
+      await resetVirtualInternshipStreak(user.id);
+      
+      // Immediately set streak data to zeros after successful reset
+      setStreakData({
+        current_streak: 0,
+        longest_streak: 0,
+        last_active_date: null
+      });
+
+      // Force a re-fetch after a short delay to ensure database is updated
+      setTimeout(async () => {
+        const { data, error } = await supabase
+          .from('user_activity_streaks')
+          .select('current_streak, longest_streak, last_active_date')
+          .eq('user_id', user.id)
+          .limit(1);
+        
+        if (!error && (!data || data.length === 0)) {
+          // Confirm that the data was actually deleted
+          setStreakData({
+            current_streak: 0,
+            longest_streak: 0,
+            last_active_date: null
+          });
+        }
+      }, 500);
+      
+      toast({
+        title: "Streak Reset",
+        description: "Your virtual internship streak has been reset. Visit again tomorrow to start a new streak!",
+      });
+    } catch (err) {
+      console.error('Error resetting streak:', err);
+      toast({
+        title: "Error",
+        description: "Failed to reset streak. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const handleLogTodaysVisit = async () => {
+    if (!user) return;
+    
+    setLoggingVisit(true);
+    try {
+      await updateVirtualInternshipStreak(user.id, sessionId);
+      
+      // Refresh the data
+      const { data, error } = await supabase
+        .from('user_activity_streaks')
+        .select('current_streak, longest_streak, last_active_date')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (!error && data && data.length > 0) {
+        setStreakData(data[0]);
+      }
+      
+      toast({
+        title: "Visit Logged!",
+        description: "Your daily virtual internship visit has been recorded. Keep up the great work!",
+      });
+    } catch (err) {
+      console.error('Error logging visit:', err);
+      toast({
+        title: "Error",
+        description: "Failed to log today's visit. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoggingVisit(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -173,20 +262,41 @@ export function ActivityStreakDisplay({ className = "" }: ActivityStreakDisplayP
         )}
         
         {/* Progress indicator for weekly milestone */}
-        {(streakData?.current_streak || 0) > 0 && (streakData?.current_streak || 0) < 7 && (
-          <div className="mt-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-muted-foreground">Progress to 7-day streak</span>
-              <span className="text-xs font-medium">{streakData?.current_streak || 0}/7</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
+        {(streakData?.current_streak || 0) < 7 && (
+          <div className="mt-3 w-full bg-muted rounded-full h-1.5">
               <div 
-                className="bg-primary h-2 rounded-full transition-all duration-300"
-                style={{ width: `${((streakData?.current_streak || 0) / 7) * 100}%` }}
-              />
-            </div>
+              className="bg-gradient-to-r from-amber-400 to-amber-600 h-1.5 rounded-full transition-all duration-300" 
+              style={{ 
+                width: `${((streakData?.current_streak || 0) / 7) * 100}%` 
+              }}
+            ></div>
           </div>
         )}
+        
+        {/* Debugging: Reset button */}
+        <div className="mt-4 pt-2 border-t border-muted space-y-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleLogTodaysVisit}
+            disabled={loggingVisit}
+            className="w-full text-xs gap-1"
+          >
+            <Briefcase className="h-3 w-3" />
+            {loggingVisit ? "Logging Visit..." : "Log Today's Visit"}
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResetStreak}
+            disabled={resetting}
+            className="w-full text-xs gap-1"
+          >
+            <RotateCcw className="h-3 w-3" />
+            {resetting ? "Resetting..." : "Reset Streak (Debug)"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

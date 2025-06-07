@@ -1,9 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { InternshipTask, InternshipEvent } from "./SwipeableInternshipView";
-import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
+import { InternshipSession, InternshipTask } from "@/types/internship";
 import { Progress } from "@/components/ui/progress";
-import { CalendarClock, CheckCircle2, Clock, AlertCircle, ChevronRight, Briefcase, Plus, ExternalLink } from "lucide-react";
+import { CalendarClock, CheckCircle2, Clock, AlertCircle, ChevronRight, Briefcase, Plus, ExternalLink, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +14,6 @@ interface WelcomePanelProps {
   sessionData: InternshipSession;
   tasks: InternshipTask[];
   startDate: string; // Changed from optional to required since we provide a fallback
-  events?: InternshipEvent[];
   onOpenTaskDetails?: (task: InternshipTask) => void;
 }
 
@@ -23,7 +21,6 @@ export function WelcomePanel({
   sessionData, 
   tasks, 
   startDate, 
-  events = [],
   onOpenTaskDetails 
 }: WelcomePanelProps) {
   const navigate = useNavigate();
@@ -151,7 +148,7 @@ export function WelcomePanel({
             
             {/* Activity Streak */}
             <div className="md:border-l md:pl-6">
-              <ActivityStreakDisplay />
+              <ActivityStreakDisplay sessionId={sessionData.id} />
             </div>
           </div>
         </CardContent>
@@ -203,9 +200,17 @@ export function WelcomePanel({
                       <div>
                         <p className="text-sm font-medium">{task.title}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs text-muted-foreground">
-                            Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
-                          </span>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>Due: {format(new Date(task.due_date), 'MMM d, h:mm a')}</span>
+                            </div>
+                            {task.task_type && (
+                              <div className="capitalize text-xs font-medium">
+                                {task.task_type.replace('_', ' ')}
+                              </div>
+                            )}
+                          </div>
                           {getStatusBadge(task.status)}
                         </div>
                       </div>
@@ -264,9 +269,17 @@ export function WelcomePanel({
                           {task.description}
                         </p>
                         <div className="flex items-center gap-1.5 mt-2">
-                          <span className="text-xs text-muted-foreground">
-                            Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
-                          </span>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>Due: {format(new Date(task.due_date), 'MMM d, h:mm a')}</span>
+                            </div>
+                            {task.task_type && (
+                              <div className="capitalize text-xs font-medium">
+                                {task.task_type.replace('_', ' ')}
+                              </div>
+                            )}
+                          </div>
                           {getStatusBadge(task.status)}
                         </div>
                       </div>

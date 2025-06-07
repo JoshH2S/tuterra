@@ -10,6 +10,7 @@ interface CompanyDetailsProps {
 
 interface CompanyInfo {
   id: string;
+  session_id: string;
   name: string;
   industry: string;
   description: string;
@@ -18,6 +19,8 @@ interface CompanyInfo {
   values: string[];
   founded_year: string;
   size: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export function CompanyDetails({ sessionId }: CompanyDetailsProps) {
@@ -29,17 +32,33 @@ export function CompanyDetails({ sessionId }: CompanyDetailsProps) {
       setLoading(true);
       try {
         const { data, error } = await supabase
-          .from("internship_company_details")
+          .from("internship_company_profiles")
           .select("*")
           .eq("session_id", sessionId)
           .single();
 
-        if (error) {
-          console.error("Error fetching company details:", error);
+        if (error && error.code !== 'PGRST116') {
           throw error;
         }
 
-        setCompanyInfo(data as CompanyInfo);
+        if (data) {
+          // Map database fields to interface fields
+          const companyData: CompanyInfo = {
+            id: data.id,
+            session_id: data.session_id,
+            name: data.company_name,
+            industry: data.industry,
+            description: data.company_overview,
+            mission: data.company_mission,
+            vision: data.company_vision || '',
+            values: data.company_values ? [data.company_values] : [],
+            founded_year: data.founded_year?.toString() || '',
+            size: data.company_size || '',
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          };
+          setCompanyInfo(companyData);
+        }
       } catch (error) {
         console.error("Failed to load company details:", error);
       } finally {

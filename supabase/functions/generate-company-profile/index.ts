@@ -1,11 +1,31 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
 // Define the request structure
 interface CompanyProfileRequest {
   session_id: string;
   job_title: string;
   industry: string;
+}
+
+// Define the company details structure
+interface CompanyDetails {
+  id: string;
+  session_id: string;
+  name: string;
+  industry: string;
+  description: string;
+  mission: string;
+  vision: string;
+  values: string[] | string;
+  founded_year: string | number;
+  size: string;
 }
 
 // Define the comprehensive company profile structure
@@ -42,14 +62,24 @@ interface ComprehensiveCompanyProfile {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     // Get the authorization header from the request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header provided' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({
+        error: 'No authorization header provided'
+      }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
     }
 
     // Create a Supabase client with the service key
@@ -58,54 +88,138 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse the request body
-    const requestData: CompanyProfileRequest = await req.json();
+    const requestData = await req.json();
     const { session_id, job_title, industry } = requestData;
 
     if (!session_id || !job_title || !industry) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({
+        error: 'Missing required fields'
+      }), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
     }
 
     // Check if a profile already exists for this session
     const { data: existingProfile, error: profileError } = await supabase
       .from('internship_company_profiles')
-      .select('id')
+      .select('id, profile_status')
       .eq('session_id', session_id)
       .limit(1);
 
     if (profileError) {
       console.error('Error checking existing profile:', profileError);
-      return new Response(
-        JSON.stringify({ error: 'Error checking for existing company profile' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({
+        error: 'Error checking for existing company profile'
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
     }
+
+    // Create or update pending profile record with placeholder values
+    let profileId;
+    const pendingProfileData = {
+      session_id,
+      industry,
+      profile_status: 'pending',
+      company_name: `${industry} Company (Generating...)`,
+      company_overview: 'Company profile is being generated...',
+      company_mission: 'Generating company mission...',
+      company_vision: 'Generating company vision...',
+      team_structure: 'Generating team structure...',
+      company_values: 'Generating company values...',
+      clients_or_products: 'Generating products and services...',
+      headquarters_location: 'Determining headquarters location...',
+      supervisor_name: 'Assigning supervisor...',
+      background_story: 'Crafting company history...',
+      company_size: 'Calculating company size...',
+      founded_year: '2000',
+      ceo_name: 'Appointing CEO...',
+      ceo_bio: 'Writing CEO biography...',
+      company_tagline: 'Creating company tagline...',
+      departments: [],
+      team_members: [],
+      tools_technologies: [],
+      target_market: 'Analyzing target market...',
+      notable_clients: [],
+      intern_department: 'Selecting intern department...',
+      sample_projects: [],
+      intern_expectations: []
+    };
 
     if (existingProfile && existingProfile.length > 0) {
-      // Return the existing profile instead of generating a new one
-      const { data: profile, error: fetchError } = await supabase
+      const profile = existingProfile[0];
+      
+      if (profile.profile_status === 'completed') {
+        const { data: fullProfile, error: fetchError } = await supabase
+          .from('internship_company_profiles')
+          .select('*')
+          .eq('id', profile.id)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching existing profile:', fetchError);
+        } else {
+          return new Response(JSON.stringify({ 
+            data: fullProfile, 
+            message: "Existing completed company profile retrieved",
+            status: 'completed' 
+          }), { 
+            status: 200, 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders 
+            } 
+          });
+        }
+      }
+      
+      // If profile exists but is pending or error, update it
+      console.log(`Found existing profile with status: ${profile.profile_status}, updating to pending...`);
+      const { data: updatedProfile, error: updateError } = await supabase
         .from('internship_company_profiles')
-        .select('*')
-        .eq('id', existingProfile[0].id)
+        .update(pendingProfileData)
+        .eq('id', profile.id)
+        .select('id')
         .single();
 
-      if (fetchError) {
-        return new Response(
-          JSON.stringify({ error: 'Error fetching existing company profile' }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
+      if (updateError) {
+        console.error('Error updating profile to pending:', updateError);
+        throw new Error('Failed to update profile status');
       }
+      profileId = updatedProfile.id;
+    } else {
+      // Create new pending profile
+      const { data: pendingProfile, error: pendingError } = await supabase
+        .from('internship_company_profiles')
+        .insert(pendingProfileData)
+        .select('id')
+        .single();
 
-      return new Response(
-        JSON.stringify({ data: profile, message: "Existing company profile retrieved" }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
+      if (pendingError) {
+        console.error('Error creating pending profile:', pendingError);
+        throw new Error('Failed to create pending profile');
+      }
+      profileId = pendingProfile.id;
     }
+
+    console.log(`Created/updated pending profile with ID: ${profileId}`);
 
     // Check if company_details already exist from internship creation
     console.log('Checking for existing company details...');
+    let baseCompanyInfo = null;
+    let retryCount = 0;
+    const maxRetries = 8;  // Will check for up to 40 seconds
+    const retryDelay = 5000;  // 5 second delay between checks
+
+    while (retryCount < maxRetries) {
     const { data: existingDetails, error: detailsError } = await supabase
       .from('internship_company_details')
       .select('*')
@@ -114,14 +228,27 @@ serve(async (req) => {
 
     if (detailsError) {
       console.error('Error checking existing company details:', detailsError);
-    }
-
-    let baseCompanyInfo = null;
-    if (existingDetails && existingDetails.length > 0) {
+      } else if (existingDetails && existingDetails.length > 0) {
       baseCompanyInfo = existingDetails[0];
-      console.log('Found existing company details:', baseCompanyInfo);
+        console.log('Found existing company details on attempt', retryCount + 1);
+        break;
+      }
+
+      // If no details found and not last retry, wait and try again
+      if (retryCount < maxRetries - 1) {
+        const timeWaited = retryCount * retryDelay / 1000;
+        const timeLeft = (maxRetries - retryCount - 1) * retryDelay / 1000;
+        console.log(`No company details yet (waited ${timeWaited}s). Retry ${retryCount + 1}/${maxRetries}. Will keep trying for ${timeLeft}s more...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+      retryCount++;
     }
 
+    if (!baseCompanyInfo) {
+      console.log(`No company details found after ${maxRetries} attempts (${(maxRetries * retryDelay) / 1000}s total wait time)`);
+    }
+
+    try {
     // Create the prompt for the AI - use existing company info if available
     let prompt;
     if (baseCompanyInfo) {
@@ -206,6 +333,8 @@ serve(async (req) => {
       `;
     }
 
+      console.log('Calling OpenAI API...');
+
     // Call the OpenAI API for completion
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -214,32 +343,33 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4", // Fixed model name
+          model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that generates realistic company profiles for virtual internships. Respond with valid JSON only."
+              content: "You are a helpful assistant that generates realistic company profiles for virtual internships. You MUST respond with valid JSON only - no explanations, no markdown formatting, no code blocks. Return only the raw JSON object."
           },
           {
             role: "user",
-            content: prompt
+              content: prompt + "\n\nIMPORTANT: Respond with ONLY valid JSON. Do not include any explanations, markdown formatting, or code blocks. The response must be a single JSON object that can be parsed directly."
           }
         ],
         temperature: 0.7,
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
+          max_tokens: 2000 // Limit response size
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: { message: "Failed to parse error response" } }));
       console.error("OpenAI API error:", errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || "Unknown error"}`);
+        throw new Error(`OpenAI API error: ${errorData.error?.message || "Request failed"}`);
     }
 
     const aiResponse = await response.json();
     let generatedProfile;
     try {
-      generatedProfile = JSON.parse(aiResponse.choices[0].message.content) as ComprehensiveCompanyProfile;
+        generatedProfile = JSON.parse(aiResponse.choices[0].message.content);
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError);
       throw new Error("Failed to parse company profile data");
@@ -250,11 +380,27 @@ serve(async (req) => {
       throw new Error("Generated profile missing required fields");
     }
 
-    // Store the generated profile in Supabase
+    // Ensure we're not storing placeholder values in a completed profile
+    const hasPlaceholderValues = (
+      generatedProfile.company_name.includes("Generating...") ||
+      generatedProfile.company_tagline === "Creating company tagline..." ||
+      generatedProfile.company_size === "Calculating company size..." ||
+      generatedProfile.company_vision === "Generating company vision..." ||
+      generatedProfile.ceo_name === "Appointing CEO..." ||
+      generatedProfile.intern_department === "Selecting intern department..."
+    );
+
+    if (hasPlaceholderValues) {
+      console.warn("Generated profile contains placeholder values, treating as incomplete");
+      throw new Error("Generated profile contains placeholder values");
+    }
+
+    console.log('Successfully generated profile, updating database...');
+
+    // Update the profile with the generated data and mark as completed
     const { data: savedProfile, error: saveError } = await supabase
       .from('internship_company_profiles')
-      .insert({
-        session_id,
+        .update({
         industry,
         company_name: generatedProfile.company_name,
         company_overview: generatedProfile.company_overview,
@@ -279,22 +425,32 @@ serve(async (req) => {
         notable_clients: generatedProfile.notable_clients,
         intern_department: generatedProfile.intern_department,
         sample_projects: generatedProfile.sample_projects,
-        intern_expectations: generatedProfile.intern_expectations
+          intern_expectations: generatedProfile.intern_expectations,
+          profile_status: 'completed',
+          error_message: null
       })
+        .eq('id', profileId)
       .select('*')
       .single();
 
     if (saveError) {
       console.error("Error saving company profile:", saveError);
-      return new Response(
-        JSON.stringify({ error: 'Error saving company profile' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+        throw new Error('Error saving company profile to database');
     }
 
     // If no existing company_details, create them to maintain consistency
     let detailsInserted = false;
     if (!baseCompanyInfo) {
+        // Double-check one last time before creating details
+        const { data: finalCheck } = await supabase
+          .from('internship_company_details')
+          .select('*')
+          .eq('session_id', session_id)
+          .limit(1);
+
+        if (finalCheck && finalCheck.length > 0) {
+          console.log('Company details were created while generating profile, skipping creation');
+        } else {
       console.log('Creating company_details to match the generated profile...');
       const { error: detailsError } = await supabase
         .from('internship_company_details')
@@ -304,10 +460,10 @@ serve(async (req) => {
           industry,
           description: generatedProfile.company_overview,
           mission: generatedProfile.company_mission,
-          vision: "To become a leading force in innovation and excellence",
+              vision: generatedProfile.company_vision || "To become a leading force in innovation and excellence",
           values: JSON.stringify(generatedProfile.company_values.split(',').map(v => v.trim())),
-          founded_year: new Date().getFullYear() - Math.floor(Math.random() * 20 + 5), // Random founding year between 5-25 years ago
-          size: `${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 900 + 1000)} employees` // Random company size
+              founded_year: generatedProfile.founded_year || new Date().getFullYear() - Math.floor(Math.random() * 20 + 5),
+              size: generatedProfile.company_size || `${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 900 + 1000)} employees`
         });
 
       if (detailsError) {
@@ -316,28 +472,55 @@ serve(async (req) => {
       } else {
         detailsInserted = true;
       }
-    } else {
-      // Update existing company_details if needed to maintain consistency
-      console.log('Existing company details found, ensuring consistency...');
-      if (baseCompanyInfo.name !== generatedProfile.company_name) {
-        console.warn(`Company name mismatch detected! Details: ${baseCompanyInfo.name}, Profile: ${generatedProfile.company_name}`);
+        }
       }
-    }
 
-    return new Response(
-      JSON.stringify({ 
+      console.log(`✅ Company profile generation completed successfully for session ${session_id}`);
+
+      return new Response(JSON.stringify({ 
         data: savedProfile, 
         message: baseCompanyInfo ? "Company profile generated based on existing company details" : "Company profile generated successfully",
         details_saved: detailsInserted,
-        used_existing_company: !!baseCompanyInfo
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+        used_existing_company: !!baseCompanyInfo,
+        status: 'completed'
+      }), { 
+        status: 200, 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders 
+        } 
+      });
+
+    } catch (generationError) {
+      console.error("Error during profile generation:", generationError);
+      
+      // Update profile status to error
+      const { error: errorUpdateError } = await supabase
+        .from('internship_company_profiles')
+        .update({
+          profile_status: 'error',
+          error_message: generationError.message || 'Unknown error during profile generation'
+        })
+        .eq('id', profileId);
+
+      if (errorUpdateError) {
+        console.error("Error updating profile error status:", errorUpdateError);
+      }
+
+      throw generationError; // Re-throw to be caught by outer catch block
+    }
+
   } catch (error) {
     console.error("Unexpected error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ 
+      error: error.message || "An unexpected error occurred",
+      status: 'error'
+    }), { 
+      status: 500, 
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders 
+      } 
+    });
   }
 }); 

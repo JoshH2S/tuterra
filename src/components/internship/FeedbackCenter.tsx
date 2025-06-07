@@ -5,8 +5,7 @@ import { LoadingSpinner } from "@/components/ui/loading-states";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { InternshipTask } from "./SwipeableInternshipView";
-import { InternshipSession } from "@/pages/VirtualInternshipDashboard";
+import { InternshipTask, InternshipSession } from "@/types/internship";
 import { FeedbackViewer } from "./FeedbackViewer";
 import { useAuth } from "@/hooks/useAuth";
 

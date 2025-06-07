@@ -11,105 +11,70 @@ interface CompanyInfoCardProps {
   sessionId: string;
 }
 
+type ProfileStatus = 'pending' | 'completed' | 'error' | 'not_found';
+
 export function CompanyInfoCard({ sessionId }: CompanyInfoCardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus>('not_found');
   const [generatingProfile, setGeneratingProfile] = useState(false);
 
   const fetchCompanyData = async () => {
+    if (!sessionId) return;
+    
+    setLoading(true);
+    setError(null);
+    
     try {
       console.log("🔍 Fetching company data for session:", sessionId);
-      setError(null);
-
-      // Try to fetch both profile and details in parallel
+      
+      // Fetch both company profile and company details in parallel
       const [profileResult, detailsResult] = await Promise.allSettled([
-        // Use different approach to avoid 406 errors
         supabase
           .from('internship_company_profiles')
-          .select()
+          .select('*')
           .eq('session_id', sessionId)
           .limit(1),
         supabase
           .from('internship_company_details')
-          .select()
+          .select('*')
           .eq('session_id', sessionId)
           .limit(1)
       ]);
-
-      console.log("📊 Profile result:", profileResult);
-      console.log("📊 Details result:", detailsResult);
-
+      
       let profileData = null;
       let detailsData = null;
-
-      // Handle profile result
-      if (profileResult.status === 'fulfilled' && profileResult.value.data) {
-        const profiles = profileResult.value.data;
-        if (profiles.length > 0) {
-          profileData = profiles[0];
-          setCompanyProfile(profileData);
-          console.log("✅ Company profile found:", profileData);
-        } else {
-          console.log("ℹ️ No company profile found");
-        }
+      
+      if (profileResult.status === 'fulfilled' && profileResult.value.data && profileResult.value.data.length > 0) {
+        profileData = profileResult.value.data[0];
+        console.log("✅ Company profile found with status:", profileData.profile_status);
+        setProfileStatus(profileData.profile_status as ProfileStatus || 'completed');
       } else if (profileResult.status === 'rejected') {
-        console.error("❌ Profile fetch failed:", profileResult.reason);
+        console.warn("Failed to fetch company profile:", profileResult.reason);
       }
-
-      // Handle details result
-      if (detailsResult.status === 'fulfilled' && detailsResult.value.data) {
-        const details = detailsResult.value.data;
-        if (details.length > 0) {
-          detailsData = details[0];
-          setCompanyDetails(detailsData);
-          console.log("✅ Company details found:", detailsData);
-        } else {
-          console.log("ℹ️ No company details found");
-        }
+      
+      if (detailsResult.status === 'fulfilled' && detailsResult.value.data && detailsResult.value.data.length > 0) {
+        detailsData = detailsResult.value.data[0];
+        console.log("✅ Company details found");
       } else if (detailsResult.status === 'rejected') {
-        console.error("❌ Details fetch failed:", detailsResult.reason);
+        console.warn("Failed to fetch company details:", detailsResult.reason);
       }
-
-      // Validate data consistency if both exist
-      if (profileData && detailsData) {
-        const consistencyIssues = [];
-        
-        // Check company name consistency
-        if (profileData.company_name !== detailsData.name) {
-          consistencyIssues.push(`Company name mismatch: Profile says "${profileData.company_name}", Details say "${detailsData.name}"`);
-        }
-        
-        // Check industry consistency
-        if (profileData.industry !== detailsData.industry) {
-          consistencyIssues.push(`Industry mismatch: Profile says "${profileData.industry}", Details say "${detailsData.industry}"`);
-        }
-        
-        // Check mission consistency (if both exist)
-        if (profileData.company_mission && detailsData.mission && 
-            profileData.company_mission !== detailsData.mission) {
-          consistencyIssues.push(`Mission statement mismatch detected`);
-        }
-        
-        if (consistencyIssues.length > 0) {
-          console.warn("⚠️ Company data consistency issues detected:", consistencyIssues);
-          // Still display the data but log the issues
-        } else {
-          console.log("✅ Company data is consistent across both tables");
-        }
-      }
-
-      // If no data exists, show option to generate
-      if ((!profileData && profileResult.status === 'fulfilled') && 
-          (!detailsData && detailsResult.status === 'fulfilled')) {
-        console.log("📝 No company data found, will show generation option");
-        setError("no_data");
+      
+      setCompanyProfile(profileData);
+      setCompanyDetails(detailsData);
+      
+      // Determine overall status
+      if (!profileData && !detailsData) {
+        console.log("📝 No company data found");
+        setProfileStatus('not_found');
       }
 
     } catch (err) {
       console.error("❌ Error fetching company data:", err);
       setError("Failed to fetch company information");
+      setProfileStatus('error');
     } finally {
       setLoading(false);
     }
@@ -118,9 +83,10 @@ export function CompanyInfoCard({ sessionId }: CompanyInfoCardProps) {
   const generateCompanyProfile = async () => {
     setGeneratingProfile(true);
     setError(null);
+    setProfileStatus('pending');
     
     try {
-      console.log("🚀 Generating company profile for session:", sessionId);
+      console.log("🚀 Starting company profile generation for session:", sessionId);
       
       // Get session info to determine job title and industry
       const { data: sessionData, error: sessionError } = await supabase
@@ -130,20 +96,26 @@ export function CompanyInfoCard({ sessionId }: CompanyInfoCardProps) {
         .limit(1);
 
       if (sessionError) {
+        console.error("❌ Failed to get session info:", sessionError);
         throw new Error(`Failed to get session info: ${sessionError.message}`);
       }
 
       if (!sessionData || sessionData.length === 0) {
+        console.error("❌ Session not found");
         throw new Error("Session not found");
       }
 
       const { job_title, industry } = sessionData[0];
       
       if (!job_title || !industry) {
+        console.error("❌ Session missing required fields:", { job_title, industry });
         throw new Error("Session missing job title or industry information");
       }
 
-      // Call the edge function with error handling for 404
+      console.log("📋 Session info retrieved:", { job_title, industry, sessionId });
+
+      // Call the edge function with detailed logging
+      console.log("📞 Calling generate-company-profile edge function...");
       const { data, error } = await supabase.functions.invoke('generate-company-profile', {
         body: {
           session_id: sessionId,
@@ -153,29 +125,84 @@ export function CompanyInfoCard({ sessionId }: CompanyInfoCardProps) {
       });
 
       if (error) {
-        console.error("❌ Error calling edge function:", error);
-        if (error.message.includes('404') || error.message.includes('Failed to send a request')) {
-          throw new Error("Company profile generation service is not available. Please contact support.");
-        }
+        console.error("❌ Edge function error:", error);
+        setProfileStatus('error');
         throw error;
       }
 
-      console.log("✅ Company profile generated:", data);
+      console.log("✅ Edge function response:", data);
       
-      // Refresh the data
-      await fetchCompanyData();
+      // If we get a pending status from the response, start polling
+      if (data && data.status === 'pending') {
+        console.log("📋 Profile generation started, polling for completion...");
+        setProfileStatus('pending');
+        startPolling();
+      } else {
+        // If completed immediately, refresh data
+        await fetchCompanyData();
+      }
       
     } catch (err) {
-      console.error("❌ Error generating company profile:", err);
+      console.error("❌ Company profile generation failed:", err);
       setError(err instanceof Error ? err.message : "Failed to generate company profile");
+      setProfileStatus('error');
     } finally {
       setGeneratingProfile(false);
     }
   };
 
+  const startPolling = () => {
+    console.log("🔄 Starting polling for profile completion...");
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data: profileData } = await supabase
+          .from('internship_company_profiles')
+          .select('*')
+          .eq('session_id', sessionId)
+          .limit(1);
+
+        if (profileData && profileData.length > 0) {
+          console.log("✅ Profile generation completed!");
+          clearInterval(pollInterval);
+          await fetchCompanyData();
+        }
+      } catch (pollError) {
+        console.error("❌ Polling error:", pollError);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    // Clear polling after 2 minutes max
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      console.log("⏰ Polling timeout reached");
+    }, 120000);
+  };
+
   useEffect(() => {
     if (sessionId) {
       fetchCompanyData();
+      
+      // Set up real-time subscription for profile changes
+      const subscription = supabase
+        .channel('company_profiles')
+        .on('postgres_changes', 
+          { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'internship_company_profiles',
+            filter: `session_id=eq.${sessionId}`
+          },
+          (payload) => {
+            console.log("🔄 Real-time profile update:", payload);
+            fetchCompanyData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
     }
   }, [sessionId]);
 
@@ -190,7 +217,49 @@ export function CompanyInfoCard({ sessionId }: CompanyInfoCardProps) {
     );
   }
 
-  if (error === "no_data") {
+  // Show pending state
+  if (profileStatus === 'pending') {
+    return (
+      <Card className="p-6 border-blue-200">
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <h3 className="text-lg font-medium text-blue-600">Generating Company Profile</h3>
+          <p className="text-gray-600">
+            Creating a comprehensive company profile for your internship experience...
+          </p>
+          <div className="bg-blue-50 p-3 rounded text-sm text-blue-700">
+            This typically takes 30-60 seconds. The page will update automatically when complete.
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (profileStatus === 'error' || error) {
+    return (
+      <Card className="p-6 border-red-200">
+        <div className="text-center space-y-4">
+          <h3 className="text-lg font-medium text-red-600">Company Profile Generation Failed</h3>
+          <p className="text-gray-600">
+            {error || "An error occurred while generating the company profile."}
+          </p>
+          <button
+            onClick={generateCompanyProfile}
+            disabled={generatingProfile}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+          >
+            {generatingProfile ? "Retrying..." : "🔄 Retry Generation"}
+          </button>
+        </div>
+      </Card>
+    );
+  }
+
+  // Show generation option if no data
+  if (profileStatus === 'not_found') {
     return (
       <Card className="p-6">
         <div className="text-center space-y-4">
@@ -203,28 +272,11 @@ export function CompanyInfoCard({ sessionId }: CompanyInfoCardProps) {
             disabled={generatingProfile}
             className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50"
           >
-            {generatingProfile ? "Generating..." : "Generate Company Profile"}
+            {generatingProfile ? "Starting Generation..." : "🚀 Generate Company Profile"}
           </button>
-        </div>
-      </Card>
-    );
-  }
-
-  if (error && error !== "no_data") {
-    return (
-      <Card className="p-6">
-        <div className="text-center space-y-4">
-          <h3 className="text-lg font-medium text-red-600">Error</h3>
-          <p className="text-gray-600">{error}</p>
-          <button
-            onClick={() => {
-              setError(null);
-              fetchCompanyData();
-            }}
-            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
-          >
-            Retry
-          </button>
+          <p className="text-xs text-gray-400">
+            This will create a comprehensive company profile for your internship experience.
+          </p>
         </div>
       </Card>
     );

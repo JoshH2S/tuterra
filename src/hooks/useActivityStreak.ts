@@ -115,7 +115,7 @@ export function useActivityStreak() {
  * Hook specifically for tracking virtual internship daily login streaks
  * This tracks consecutive days a user visits the virtual internship dashboard
  */
-export function useVirtualInternshipStreak() {
+export function useVirtualInternshipStreak(sessionId?: string) {
   const { user } = useAuth();
   const [streakData, setStreakData] = useState<ActivityStreak | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -126,7 +126,7 @@ export function useVirtualInternshipStreak() {
     if (!user) return null;
     
     try {
-      await updateVirtualInternshipStreak(user.id);
+      await updateVirtualInternshipStreak(user.id, sessionId);
       // After updating, fetch the latest data
       await fetchStreak();
       return streakData;
@@ -181,10 +181,10 @@ export function useVirtualInternshipStreak() {
     }
   };
 
-  // Auto-update streak when hook is used (e.g., when user visits virtual internship page)
+  // Only fetch streak data on load, don't auto-update to give user control
   useEffect(() => {
     if (user) {
-      updateStreak();
+      fetchStreak();
     } else {
       setLoading(false);
     }

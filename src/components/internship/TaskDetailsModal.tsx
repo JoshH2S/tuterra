@@ -5,14 +5,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
-import { isPast } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Clock, AlertTriangle, CheckCircle2, Link, FileText } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Clock, AlertTriangle, CheckCircle2, Link, FileText, Calendar, Upload, Plus, X, Download, ExternalLink, BookOpen, Target, CheckCircle } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUploadField } from "./FileUploadField";
-import { InternshipSession, InternshipTask } from "./SwipeableInternshipView";
+import { InternshipSession, InternshipTask } from "@/types/internship";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
@@ -97,7 +99,14 @@ export function TaskDetailsModal({
     size: number;
   } | null>(null);
   
-  const isPastDeadline = task ? isPast(new Date(task.due_date)) : false;
+  // Helper function to check if a task is overdue (timezone-aware)
+  const isTaskOverdue = (dueDate: string): boolean => {
+    const now = new Date();
+    const due = new Date(dueDate);
+    return now.getTime() > due.getTime();
+  };
+  
+  const isPastDeadline = task ? isTaskOverdue(task.due_date) : false;
   
   // Fetch detailed task content when modal opens
   useEffect(() => {

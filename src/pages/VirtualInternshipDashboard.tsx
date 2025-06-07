@@ -1,73 +1,30 @@
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { SwipeableInternshipView } from "@/components/internship/SwipeableInternshipView";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Briefcase, PlusCircle, Calendar, ExternalLink, MessageSquare, Award, BarChart, History, CheckCircle, FileCheck, Wifi, WifiOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useAISupervisor } from "@/hooks/useAISupervisor";
+import { InternshipSession, InternshipTask, TaskSubmission } from "@/types/internship";
+import { SwipeableInternshipView } from "@/components/internship/SwipeableInternshipView";
+import { TaskDetailsModal } from "@/components/internship/TaskDetailsModal";
+import { useInternshipRealtime } from "@/hooks/useInternshipRealtime";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import { useToast } from "@/hooks/use-toast";
-import { Json } from "@/integrations/supabase/types";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { isTaskOverdue, formatInUserTimezone, getRelativeDeadlineText } from "@/utils/dateUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { Briefcase, PlusCircle, Calendar, ExternalLink, MessageSquare, Award, BarChart, History, CheckCircle, FileCheck, Wifi, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format, isPast } from "date-fns";
-import { TaskDetailsModal } from "@/components/internship/TaskDetailsModal";
 import { TaskFeedbackDialog } from "@/components/internship/TaskFeedbackDialog";
 import { FeedbackHistoryDialog } from "@/components/internship/FeedbackHistoryDialog";
-import { AchievementsDisplay } from "@/components/internship/AchievementsDisplay";
-import { ActivityStreakDisplay } from "@/components/internship/ActivityStreakDisplay";
-import { useVirtualInternshipStreak } from "@/hooks/useActivityStreak";
 import { TaskOverview } from "@/components/internship/TaskOverview";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { useInternshipRealtime } from "@/hooks/useInternshipRealtime";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { InternshipBanner } from "@/components/internship/InternshipBanner";
-import { CompanyInfoCard } from "@/components/internship/CompanyInfoCard";
-
-// Update the interface to match what comes from the database
-export interface InternshipSession {
-  id: string;
-  user_id: string;
-  job_title: string;
-  industry: string;
-  job_description: string;
-  duration_weeks?: number; // Optional since it might not be in the database response
-  start_date?: string; // Optional since it might not be in the database response
-  current_phase: number;
-  created_at: string;
-  questions?: Json;
-  is_completed?: boolean; // Add is_completed field
-}
-
-// Interface for task data from Supabase
-export interface InternshipTask {
-  id: string;
-  session_id: string;
-  title: string;
-  description: string;
-  instructions?: string | null;
-  due_date: string;
-  status: string;
-  task_order: number;
-  task_type?: string | null;
-  created_at: string;
-  submission?: TaskSubmission | null;
-  visible_after?: string | null;
-}
-
-// Interface for task submission data
-interface TaskSubmission {
-  id: string;
-  response_text: string;
-  created_at: string;
-  feedback_text?: string | null;
-  feedback_provided_at?: string | null;
-  quality_rating?: number | null;
-  timeliness_rating?: number | null;
-  collaboration_rating?: number | null;
-}
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { InternshipWelcomeScreen } from "@/components/internship/InternshipWelcomeScreen";
+import { CompanyProfileService } from "@/services/companyProfileService";
 
 export default function VirtualInternshipDashboard() {
   const navigate = useNavigate();
@@ -76,6 +33,20 @@ export default function VirtualInternshipDashboard() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId');
+  
+  // Redirect to overview page if no sessionId is provided
+  useEffect(() => {
+    if (!sessionId) {
+      navigate("/dashboard/virtual-internship/overview", { replace: true });
+      return;
+    }
+  }, [sessionId, navigate]);
+  
+  // If no sessionId, don't render anything (will redirect)
+  if (!sessionId) {
+    return null;
+  }
+  
   const [hasInternships, setHasInternships] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [internshipSession, setInternshipSession] = useState<InternshipSession | null>(null);
@@ -93,8 +64,19 @@ export default function VirtualInternshipDashboard() {
   const [allTasks, setAllTasks] = useState<InternshipTask[]>([]);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
 
-  // Track virtual internship daily login streak
-  const { streakData: virtualInternshipStreak } = useVirtualInternshipStreak();
+  // ✅ Company profile state
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
+  const [companyProfileChecked, setCompanyProfileChecked] = useState(false);
+  const [companyName, setCompanyName] = useState<string>("");
+
+  // ✅ Track dashboard visits to prevent duplicates
+  const dashboardVisitRecorded = useRef(false);
+
+  // Initialize AI Supervisor
+  const aiSupervisor = useAISupervisor({
+    sessionId: internshipSession?.id || null,
+    enabled: !!internshipSession && !!user
+  });
 
   // Define fetchTasks as a useCallback function
   const fetchTasks = useCallback(async (sessionId: string) => {
@@ -150,7 +132,7 @@ export default function VirtualInternshipDashboard() {
             id: submission.id,
             response_text: submission.response_text,
             created_at: submission.created_at,
-            feedback_text: submission.feedback_text || null,
+            overall_assessment: submission.overall_assessment || null,
             feedback_provided_at: submission.feedback_provided_at || null,
             quality_rating: submission.quality_rating || null,
             timeliness_rating: submission.timeliness_rating || null,
@@ -159,12 +141,12 @@ export default function VirtualInternshipDashboard() {
         }
         
         // Determine task status
-        const isPastDueDate = isPast(new Date(task.due_date));
+        const isPastDueDate = isTaskOverdue(task.due_date);
         let updatedStatus = task.status;
         
         // If there's a submission, mark as "submitted" or "feedback pending/received"
         if (typedSubmission) {
-          updatedStatus = typedSubmission.feedback_text ? "feedback_received" : "feedback_pending";
+          updatedStatus = typedSubmission.overall_assessment ? "feedback_received" : "feedback_pending";
         } 
         // If past due date and no submission, mark as overdue
         else if (isPastDueDate && task.status !== "completed") {
@@ -181,7 +163,7 @@ export default function VirtualInternshipDashboard() {
       
       // Also process all tasks with status updates for the preview
       const processedAllTasks = allTasks.map(task => {
-        const isPastDueDate = isPast(new Date(task.due_date));
+        const isPastDueDate = isTaskOverdue(task.due_date);
         let updatedStatus = task.status;
         
         if (isPastDueDate && task.status !== "completed") {
@@ -208,6 +190,46 @@ export default function VirtualInternshipDashboard() {
     }
   }, [user, toast]);
 
+  // Function to fetch company name
+  const fetchCompanyName = useCallback(async (sessionId: string) => {
+    try {
+      // First try to get from company profiles (more detailed)
+      const { data: profileData, error: profileError } = await supabase
+        .from('internship_company_profiles')
+        .select('company_name')
+        .eq('session_id', sessionId)
+        .eq('profile_status', 'completed')
+        .limit(1);
+
+      if (!profileError && profileData && profileData.length > 0) {
+        setCompanyName(profileData[0].company_name);
+        return;
+      }
+
+      // Fallback to company details (basic info)
+      const { data: detailsData, error: detailsError } = await supabase
+        .from('internship_company_details')
+        .select('name')
+        .eq('session_id', sessionId)
+        .limit(1);
+
+      if (!detailsError && detailsData && detailsData.length > 0) {
+        setCompanyName(detailsData[0].name);
+        return;
+      }
+
+      // Final fallback to industry-based name
+      const industry = internshipSession?.industry || "Technology";
+      setCompanyName(`${industry} Corporation`);
+
+    } catch (error) {
+      console.error('Error fetching company name:', error);
+      // Fallback to industry-based name
+      const industry = internshipSession?.industry || "Technology";
+      setCompanyName(`${industry} Corporation`);
+    }
+  }, [internshipSession?.industry]);
+
   // Function to update task status (used by TaskOverview component)
   const handleUpdateTaskStatus = useCallback(async (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => {
     if (!user || !internshipSession) return;
@@ -220,6 +242,11 @@ export default function VirtualInternshipDashboard() {
         .eq("id", taskId);
         
       if (error) throw error;
+      
+      // Trigger AI Supervisor task status tracking
+      if (aiSupervisor.isEnabled) {
+        aiSupervisor.onTaskStatusChanged(taskId, status);
+      }
       
       // Refresh tasks to get updated state
       await fetchTasks(internshipSession.id);
@@ -239,7 +266,7 @@ export default function VirtualInternshipDashboard() {
         variant: "destructive",
       });
     }
-  }, [user, internshipSession, toast, fetchTasks]);
+  }, [user, internshipSession, toast, fetchTasks, aiSupervisor]);
   
   // Callback functions for real-time updates
   const handleTasksUpdate = useCallback(() => {
@@ -280,6 +307,25 @@ export default function VirtualInternshipDashboard() {
   useEffect(() => {
     setRealtimeConnected(connected);
   }, [connected]);
+
+  // ✅ Reset dashboard visit tracking when session changes
+  useEffect(() => {
+    dashboardVisitRecorded.current = false;
+  }, [sessionId]);
+
+  // Track dashboard visits for AI Supervisor
+  useEffect(() => {
+    // ✅ Only track visit once when fully initialized AND supervisor state is loaded
+    if (internshipSession?.id && 
+        aiSupervisor.isEnabled && 
+        aiSupervisor.initialized && 
+        aiSupervisor.supervisorState?.isInitialized &&  // ✅ Ensure state is loaded
+        !dashboardVisitRecorded.current) {
+      console.log('Recording dashboard visit for session:', internshipSession.id);
+      aiSupervisor.onDashboardVisit();
+      dashboardVisitRecorded.current = true;
+    }
+  }, [internshipSession?.id, aiSupervisor.isEnabled, aiSupervisor.initialized, aiSupervisor.supervisorState?.isInitialized]); // ✅ Add state dependency
 
   useEffect(() => {
     // Show a welcome toast if redirected from internship creation
@@ -324,6 +370,18 @@ export default function VirtualInternshipDashboard() {
 
             // Fetch tasks for this session
             await fetchTasks(completeSessionData.id);
+            
+            // ✅ Fetch company name
+            await fetchCompanyName(completeSessionData.id);
+            
+            // ✅ Check if company profile needs generation
+            if (!companyProfileChecked) {
+              const status = await CompanyProfileService.checkProfileStatus(completeSessionData.id);
+              if (!status.isComplete && !status.isGenerating) {
+                setShowWelcomeScreen(true);
+              }
+              setCompanyProfileChecked(true);
+            }
           } else {
             setHasInternships(false);
           }
@@ -354,6 +412,18 @@ export default function VirtualInternshipDashboard() {
 
             // Fetch tasks for this session
             await fetchTasks(completeSessionData.id);
+            
+            // ✅ Fetch company name
+            await fetchCompanyName(completeSessionData.id);
+            
+            // ✅ Check if company profile needs generation
+            if (!companyProfileChecked) {
+              const status = await CompanyProfileService.checkProfileStatus(completeSessionData.id);
+              if (!status.isComplete && !status.isGenerating) {
+                setShowWelcomeScreen(true);
+              }
+              setCompanyProfileChecked(true);
+            }
           } else {
             setHasInternships(false);
           }
@@ -372,7 +442,7 @@ export default function VirtualInternshipDashboard() {
     }
     
     fetchInternshipData();
-  }, [user, sessionId, toast, fetchTasks]);
+  }, [user, sessionId, toast, fetchTasks, fetchCompanyName]);
 
   // Helper function to get status badge style
   const getStatusBadgeStyle = (status: string) => {
@@ -444,8 +514,8 @@ export default function VirtualInternshipDashboard() {
   useEffect(() => {
     if (tasks.length > 0) {
       const hasAnyFeedback = tasks.some(task => 
-        task.submission?.feedback_text !== null && 
-        task.submission?.feedback_text !== undefined
+        task.submission?.overall_assessment !== null && 
+        task.submission?.overall_assessment !== undefined
       );
       setHasFeedbackItems(hasAnyFeedback);
     }
@@ -463,6 +533,22 @@ export default function VirtualInternshipDashboard() {
       setCanSubmitFinal(completed >= Math.ceil(total * 0.75));
     }
   }, [tasks]);
+
+  // ✅ Show welcome screen if company profile needs generation
+  if (showWelcomeScreen && internshipSession) {
+    return (
+      <InternshipWelcomeScreen
+        sessionId={internshipSession.id}
+        jobTitle={internshipSession.job_title}
+        industry={internshipSession.industry}
+        onComplete={() => {
+          setShowWelcomeScreen(false);
+          // ✅ Refresh company name after profile generation
+          fetchCompanyName(internshipSession.id);
+        }}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -588,7 +674,7 @@ export default function VirtualInternshipDashboard() {
             {user?.user_metadata?.first_name} {user?.user_metadata?.last_name}
           </h2>
           <div className="text-sm text-muted-foreground">
-            Intern at <span className="font-medium text-primary">Acme {internshipSession?.industry || "Technology"}</span>
+            Intern at <span className="font-medium text-primary">{companyName || `${internshipSession?.industry || "Technology"} Corporation`}</span>
           </div>
           <div className="mt-2 flex flex-wrap justify-center sm:justify-start items-center gap-2">
             <Badge variant="outline" className="bg-background">
@@ -652,7 +738,23 @@ export default function VirtualInternshipDashboard() {
       
       {/* Navigation tabs */}
       <div className="mb-6">
-        <SwipeableInternshipView sessionData={internshipSession!} onOpenTaskDetails={handleOpenTaskDetails} />
+        <SwipeableInternshipView 
+          sessionData={{
+            id: internshipSession!.id,
+            title: internshipSession!.job_title,
+            description: internshipSession!.job_description || "Virtual internship experience",
+            start_date: internshipSession!.start_date || internshipSession!.created_at,
+            created_at: internshipSession!.created_at,
+            job_title: internshipSession!.job_title,
+            industry: internshipSession!.industry
+          }} 
+          onOpenTaskDetails={(taskId: string) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+              handleOpenTaskDetails(task);
+            }
+          }} 
+        />
       </div>
       
       {/* Conditional final project card */}
@@ -680,31 +782,6 @@ export default function VirtualInternshipDashboard() {
           </Card>
         </section>
       )}
-      
-      {/* Additional Dashboard Sections with better spacing */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="md:col-span-2">
-          {/* Achievements Section */}
-          <Card className="shadow-sm bg-white h-full">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium flex items-center gap-2">
-                <Award className="h-4 w-4" />
-                Achievements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AchievementsDisplay className="mb-0" />
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div>
-          {/* Company Information */}
-          {internshipSession && (
-            <CompanyInfoCard sessionId={internshipSession.id} />
-          )}
-        </div>
-      </div>
       
       {/* Exit Actions Section */}
       {internshipSession && (
@@ -772,6 +849,8 @@ export default function VirtualInternshipDashboard() {
           onClose={() => setIsTaskModalOpen(false)}
           task={selectedTask}
           userId={user.id}
+          sessionData={internshipSession!}
+          tasks={tasks}
           onSubmissionComplete={handleTaskSubmissionComplete}
         />
       )}
