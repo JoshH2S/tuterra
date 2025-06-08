@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Clock, AlertTriangle, CheckCircle2, Link, FileText, Calendar, Upload, Plus, X, Download, ExternalLink, BookOpen, Target, CheckCircle } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle2, Link, FileText, Calendar, Upload, Plus, X, Download, ExternalLink, BookOpen, Target, CheckCircle, Star } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUploadField } from "./FileUploadField";
@@ -15,6 +15,7 @@ import { InternshipSession, InternshipTask } from "@/types/internship";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 
 interface TaskDetailsModalProps {
   isOpen: boolean;
@@ -98,6 +99,19 @@ export function TaskDetailsModal({
     type: string;
     size: number;
   } | null>(null);
+  
+  // New states for feedback handling
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    feedback_text: string;
+    quality_rating: number;
+    timeliness_rating: number;
+    collaboration_rating: number;
+    overall_assessment: string;
+    feedback_provided_at: string;
+  } | null>(null);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   
   // Helper function to check if a task is overdue (timezone-aware)
   const isTaskOverdue = (dueDate: string): boolean => {
@@ -268,8 +282,36 @@ export function TaskDetailsModal({
     }
     
     setIsSubmitting(true);
+    setFeedbackError(null);
     
     try {
+      // Log the data being submitted
+      console.log("Submitting task with data:", {
+        session_id: task.session_id,
+        task_id: task.id,
+        user_id: userId,
+        response_text: response ? "Text provided" : "No text",
+        file_url: fileData?.url || null,
+        file_name: fileData?.name || null,
+        file_type: fileData?.type || null,
+        file_size: fileData?.size || null,
+        content_type: submissionType
+      });
+      
+      // First, check if the user exists
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      if (userError) {
+        console.error("User validation error:", userError);
+        throw new Error(`User validation failed: ${userError.message}`);
+      }
+      
+      console.log("User validation successful, user exists:", userData);
+      
       // Save submission to Supabase
       const { data: submissionData, error: submissionError } = await supabase
         .from("internship_task_submissions")
@@ -282,22 +324,36 @@ export function TaskDetailsModal({
           file_name: fileData?.name || null,
           file_type: fileData?.type || null,
           file_size: fileData?.size || null,
-          content_type: submissionType
+          content_type: submissionType,
+          status: 'feedback_pending'
         })
         .select("id")
         .limit(1);
       
-      if (submissionError) throw submissionError;
+      if (submissionError) {
+        console.error("Submission error details:", {
+          code: submissionError.code,
+          message: submissionError.message,
+          details: submissionError.details,
+          hint: submissionError.hint
+        });
+        throw submissionError;
+      }
+      
+      console.log("Submission successful:", submissionData);
       
       // Get the submission ID from the result
       // Use type assertion to tell TypeScript the expected structure
       type SubmissionResult = { id: string };
       const submissions = submissionData as SubmissionResult[] | null;
-      const submissionId = submissions && submissions.length > 0 ? submissions[0].id : null;
+      const newSubmissionId = submissions && submissions.length > 0 ? submissions[0].id : null;
       
-      if (!submissionId) {
+      if (!newSubmissionId) {
         throw new Error("Failed to get submission ID");
       }
+      
+      // Store the submission ID for future reference
+      setSubmissionId(newSubmissionId);
       
       // Update task status to submitted
       const { error: updateError } = await supabase
@@ -306,6 +362,13 @@ export function TaskDetailsModal({
         .eq("id", task.id);
       
       if (updateError) throw updateError;
+      
+      // Show success state first
+      setShowSuccess(true);
+      setIsSubmitting(false);
+      
+      // Start feedback generation process
+      setIsFeedbackLoading(true);
       
       // Trigger the AI feedback Edge Function
       try {
@@ -316,35 +379,75 @@ export function TaskDetailsModal({
           .eq("id", task.session_id)
           .limit(1);
           
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error("Error fetching session data:", sessionError);
+          throw new Error(`Failed to fetch session data: ${sessionError.message}`);
+        }
         
         const sessionInfo = sessionData && sessionData.length > 0 ? sessionData[0] : null;
-        if (!sessionInfo) throw new Error("Session data not found");
+        if (!sessionInfo) {
+          console.error("Session data not found for session_id:", task.session_id);
+          throw new Error("Session data not found");
+        }
         
+        const jobTitle = sessionInfo.job_title || "Intern";
+        const industry = sessionInfo.industry || "Technology";
+        
+        // Log what we're about to send to the function
+        console.log("Sending to generate-internship-feedback:", {
+          submission_id: newSubmissionId,
+          task_id: task.id,
+          submission_text: fileData 
+            ? `${response}\n\nFile Submission: ${fileData.name} (${fileData.url})` 
+            : response,
+          task_description: task.description,
+          task_instructions: taskDetails?.instructions || task.instructions,
+          job_title: jobTitle,
+          industry: industry
+        });
+        
+        // Get user's current session for auth token
+        const { data: authData } = await supabase.auth.getSession();
+        const accessToken = authData?.session?.access_token;
+
         // Call the Edge Function to generate feedback
-        const { error: functionError } = await supabase.functions.invoke('generate-internship-feedback', {
+        const { data: feedbackData, error: functionError } = await supabase.functions.invoke('generate-internship-feedback', {
           body: {
-            submission_id: submissionId,
+            submission_id: newSubmissionId,
             task_id: task.id,
-            submission_text: response,
+            submission_text: fileData 
+              ? `${response}\n\nFile Submission: ${fileData.name} (${fileData.url})` 
+              : response,
             task_description: task.description,
             task_instructions: taskDetails?.instructions || task.instructions,
-            job_title: sessionInfo.job_title,
-            industry: sessionInfo.industry
+            job_title: jobTitle,
+            industry: industry
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`
           }
         });
         
         if (functionError) {
           console.error("Error generating AI feedback:", functionError);
-          // Continue even if feedback generation fails
+          const errorMessage = typeof functionError === 'object' 
+            ? JSON.stringify(functionError)
+            : String(functionError);
+          setFeedbackError(`Failed to generate feedback: ${errorMessage}`);
+          return;
         }
+        
+        console.log("Feedback generation response:", feedbackData);
+        
+        // Poll for feedback until it's available
+        await checkForFeedback(newSubmissionId);
+        
       } catch (feedbackError) {
         console.error("Error in feedback generation process:", feedbackError);
-        // Continue even if feedback generation fails - don't block the user
+        setFeedbackError("An error occurred while generating feedback. Please check the dashboard later for your feedback.");
+      } finally {
+        setIsFeedbackLoading(false);
       }
-      
-      // Show success state
-      setShowSuccess(true);
       
       // Notify parent component that submission is complete
       onSubmissionComplete?.();
@@ -356,8 +459,59 @@ export function TaskDetailsModal({
         description: "There was an error submitting your task. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  // Function to poll for feedback
+  const checkForFeedback = async (submissionId: string, attempts = 0) => {
+    if (attempts > 30) { // Give up after 30 attempts (5 minutes at 10-second intervals)
+      setFeedbackError("Feedback generation is taking longer than expected. Please check back later.");
+      return;
+    }
+    
+    try {
+      // First check the main submissions table for ratings
+      const { data: submissionData, error: submissionError } = await supabase
+        .from("internship_task_submissions")
+        .select("quality_rating, timeliness_rating, collaboration_rating, overall_assessment, feedback_provided_at")
+        .eq("id", submissionId)
+        .single();
+        
+      if (submissionError) throw submissionError;
+      
+      // Then check for detailed feedback text in the feedback_details table
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from("internship_feedback_details")
+        .select("specific_comments, generation_status")
+        .eq("submission_id", submissionId)
+        .single();
+      
+      if (feedbackError && feedbackError.code !== 'PGRST116') {
+        console.error("Error fetching feedback details:", feedbackError);
+      }
+      
+      // Only proceed if we have feedback ratings and text
+      if (submissionData?.quality_rating && feedbackData?.specific_comments) {
+        // Feedback is available
+        setFeedback({
+          feedback_text: feedbackData.specific_comments,
+          quality_rating: submissionData.quality_rating || 0,
+          timeliness_rating: submissionData.timeliness_rating || 0,
+          collaboration_rating: submissionData.collaboration_rating || 0,
+          overall_assessment: submissionData.overall_assessment || "Pending",
+          feedback_provided_at: submissionData.feedback_provided_at || new Date().toISOString()
+        });
+        return;
+      }
+      
+      // Wait 10 seconds before trying again
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      await checkForFeedback(submissionId, attempts + 1);
+      
+    } catch (error) {
+      console.error("Error checking for feedback:", error);
+      setFeedbackError("Error retrieving feedback. Please check back later.");
     }
   };
   
@@ -368,6 +522,10 @@ export function TaskDetailsModal({
       setResponse("");
       setShowSuccess(false);
       setActiveTab("overview");
+      setFeedback(null);
+      setFeedbackError(null);
+      setIsFeedbackLoading(false);
+      setSubmissionId(null);
     }, 300);
   };
   
@@ -382,23 +540,115 @@ export function TaskDetailsModal({
     }
   };
   
+  // Helper function to render rating
+  const renderRating = (label: string, rating: number) => {
+    return (
+      <div className="mb-3">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-sm font-medium">{label}</span>
+          <div className="flex items-center">
+            <span className="text-sm font-bold mr-1">{rating}/10</span>
+            <Star className="h-4 w-4 text-amber-500" fill={rating > 5 ? "currentColor" : "none"} />
+          </div>
+        </div>
+        <Progress value={rating * 10} className="h-2" />
+      </div>
+    );
+  };
+  
   if (!task) return null;
   
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseAndReset}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         {showSuccess ? (
-          // Success view
-          <div className="py-6 flex flex-col items-center text-center">
-            <div className="bg-green-100 p-3 rounded-full mb-4">
-              <CheckCircle2 className="h-10 w-10 text-green-600" />
+          feedback ? (
+            // Feedback view
+            <div className="py-4">
+              <DialogHeader>
+                <DialogTitle className="text-xl mb-2">Your Feedback</DialogTitle>
+                <DialogDescription>
+                  Here's the feedback for your task submission
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 mt-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg">Performance Ratings</CardTitle>
+                      <Badge className={`${
+                        feedback.overall_assessment === 'Excellent' ? 'bg-green-100 text-green-800' :
+                        feedback.overall_assessment === 'Good' ? 'bg-blue-100 text-blue-800' :
+                        feedback.overall_assessment === 'Satisfactory' ? 'bg-amber-100 text-amber-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {feedback.overall_assessment}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderRating("Quality", feedback.quality_rating)}
+                    {renderRating("Timeliness", feedback.timeliness_rating)}
+                    {renderRating("Collaboration", feedback.collaboration_rating)}
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Feedback</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose prose-sm max-w-none">
+                      <div className="whitespace-pre-line">{feedback.feedback_text}</div>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground mt-4 text-right">
+                      Feedback provided on {format(new Date(feedback.feedback_provided_at), "MMMM d, yyyy")}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <DialogFooter className="mt-6">
+                <Button onClick={handleCloseAndReset}>Return to Dashboard</Button>
+              </DialogFooter>
             </div>
-            <DialogTitle className="text-xl mb-2">Task Submitted Successfully!</DialogTitle>
-            <DialogDescription className="mb-6">
-              Your work has been submitted. You'll receive feedback from your mentor soon.
-            </DialogDescription>
-            <Button onClick={handleCloseAndReset}>Return to Dashboard</Button>
-          </div>
+          ) : isFeedbackLoading ? (
+            // Loading feedback view
+            <div className="py-6 flex flex-col items-center text-center">
+              <div className="mb-4">
+                <LoadingSpinner size="large" />
+              </div>
+              <DialogTitle className="text-xl mb-2">Generating Feedback...</DialogTitle>
+              <DialogDescription className="mb-6">
+                We're analyzing your submission and generating personalized feedback. This may take a minute or two.
+              </DialogDescription>
+            </div>
+          ) : feedbackError ? (
+            // Error view
+            <div className="py-6 flex flex-col items-center text-center">
+              <div className="bg-red-100 p-3 rounded-full mb-4">
+                <AlertTriangle className="h-10 w-10 text-red-600" />
+              </div>
+              <DialogTitle className="text-xl mb-2">Feedback Generation Error</DialogTitle>
+              <DialogDescription className="mb-6">
+                {feedbackError}
+              </DialogDescription>
+              <Button onClick={handleCloseAndReset}>Return to Dashboard</Button>
+            </div>
+          ) : (
+            // Success view (while waiting for feedback to start)
+            <div className="py-6 flex flex-col items-center text-center">
+              <div className="bg-green-100 p-3 rounded-full mb-4">
+                <CheckCircle2 className="h-10 w-10 text-green-600" />
+              </div>
+              <DialogTitle className="text-xl mb-2">Task Submitted Successfully!</DialogTitle>
+              <DialogDescription className="mb-6">
+                Your work has been submitted. Preparing to generate feedback...
+              </DialogDescription>
+            </div>
+          )
         ) : (
           // Task details and submission form
           <>

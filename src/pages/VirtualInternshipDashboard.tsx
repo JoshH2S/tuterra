@@ -378,7 +378,9 @@ export default function VirtualInternshipDashboard() {
             if (!companyProfileChecked) {
               const status = await CompanyProfileService.checkProfileStatus(completeSessionData.id);
               if (!status.isComplete && !status.isGenerating) {
-                setShowWelcomeScreen(true);
+                // Redirect to welcome screen instead of showing it directly
+                navigate(`/dashboard/virtual-internship/welcome/${completeSessionData.id}`);
+                return; // Stop execution to prevent further processing
               }
               setCompanyProfileChecked(true);
             }
@@ -420,7 +422,9 @@ export default function VirtualInternshipDashboard() {
             if (!companyProfileChecked) {
               const status = await CompanyProfileService.checkProfileStatus(completeSessionData.id);
               if (!status.isComplete && !status.isGenerating) {
-                setShowWelcomeScreen(true);
+                // Redirect to welcome screen instead of showing it directly
+                navigate(`/dashboard/virtual-internship/welcome/${completeSessionData.id}`);
+                return; // Stop execution to prevent further processing
               }
               setCompanyProfileChecked(true);
             }
@@ -442,7 +446,7 @@ export default function VirtualInternshipDashboard() {
     }
     
     fetchInternshipData();
-  }, [user, sessionId, toast, fetchTasks, fetchCompanyName]);
+  }, [user, sessionId, toast, fetchTasks, fetchCompanyName, navigate]);
 
   // Helper function to get status badge style
   const getStatusBadgeStyle = (status: string) => {
@@ -534,20 +538,11 @@ export default function VirtualInternshipDashboard() {
     }
   }, [tasks]);
 
-  // ✅ Show welcome screen if company profile needs generation
+  // ✅ Show welcome screen if company profile needs generation - REPLACE THIS BLOCK
   if (showWelcomeScreen && internshipSession) {
-    return (
-      <InternshipWelcomeScreen
-        sessionId={internshipSession.id}
-        jobTitle={internshipSession.job_title}
-        industry={internshipSession.industry}
-        onComplete={() => {
-          setShowWelcomeScreen(false);
-          // ✅ Refresh company name after profile generation
-          fetchCompanyName(internshipSession.id);
-        }}
-      />
-    );
+    // Redirect to welcome screen instead of showing it directly
+    navigate(`/dashboard/virtual-internship/welcome/${internshipSession.id}`);
+    return null; // Return null while navigating
   }
 
   if (loading) {

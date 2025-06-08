@@ -53,10 +53,18 @@ export function FileUploadField({
     setUploadProgress(0);
     
     try {
-      // Create a unique file path
+      // Create a unique file path - simplified path structure
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `task-submissions/${sessionId}/${taskId}/${fileName}`;
+      const fileName = `${userId}_${taskId}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      
+      console.log("Attempting to upload file:", {
+        bucket: "task-submissions",
+        filePath,
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        userId
+      });
       
       // Upload the file
       const { data, error } = await supabase.storage
@@ -66,12 +74,19 @@ export function FileUploadField({
           upsert: false
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase storage error:", error);
+        throw error;
+      }
       
-      // Get the public URL
+      console.log("File uploaded successfully:", data);
+      
+      // Get the public URL - use the same bucket name as the upload
       const { data: { publicUrl } } = supabase.storage
-        .from('user-uploads')
+        .from('task-submissions')
         .getPublicUrl(filePath);
+      
+      console.log("Generated public URL:", publicUrl);
       
       onFileUpload({
         url: publicUrl,
@@ -82,7 +97,14 @@ export function FileUploadField({
       
     } catch (error: any) {
       console.error("Error uploading file:", error);
-      setError(error.message || "Failed to upload file");
+      
+      // More detailed error information
+      if (error.statusCode) {
+        setError(`Error ${error.statusCode}: ${error.message || "Unknown error"}`);
+      } else {
+        setError(error.message || "Failed to upload file");
+      }
+      
       setFile(null);
     } finally {
       setUploading(false);

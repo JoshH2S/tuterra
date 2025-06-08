@@ -100,11 +100,11 @@ export function InternshipWelcomeScreen({
 
   if (isGenerating) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-md">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-              <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-50 flex items-center justify-center">
+              <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
             </div>
             <CardTitle className="text-xl">Setting Up Your Internship</CardTitle>
             <CardDescription>
@@ -114,8 +114,8 @@ export function InternshipWelcomeScreen({
           <CardContent className="space-y-4">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-2">{generationStep}</p>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full transition-all duration-500 animate-pulse w-3/4"></div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div className="bg-amber-500 h-2 rounded-full transition-all duration-500 animate-pulse w-3/4"></div>
               </div>
             </div>
             <div className="text-xs text-gray-500 text-center">
@@ -129,10 +129,10 @@ export function InternshipWelcomeScreen({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-md">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
             <CardTitle className="text-xl">Setup Error</CardTitle>
@@ -145,7 +145,7 @@ export function InternshipWelcomeScreen({
               <p className="text-sm text-red-700">{error}</p>
             </div>
             <div className="flex space-x-2">
-              <Button onClick={handleRetry} className="flex-1">
+              <Button onClick={handleRetry} className="flex-1 bg-amber-500 hover:bg-amber-600">
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Try Again
               </Button>
@@ -164,11 +164,11 @@ export function InternshipWelcomeScreen({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl shadow-md">
         <CardHeader className="text-center pb-8">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-blue-100 flex items-center justify-center">
-            <Building2 className="w-10 h-10 text-blue-600" />
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-50 flex items-center justify-center">
+            <Building2 className="w-10 h-10 text-amber-500" />
           </div>
           <CardTitle className="text-3xl font-bold mb-2">
             Welcome to Your Virtual Internship!
@@ -182,8 +182,8 @@ export function InternshipWelcomeScreen({
         <CardContent className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-full bg-green-100 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 mx-auto rounded-full bg-amber-50 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-amber-500" />
               </div>
               <h3 className="font-semibold">Realistic Company</h3>
               <p className="text-sm text-gray-600">
@@ -192,8 +192,8 @@ export function InternshipWelcomeScreen({
             </div>
             
             <div className="text-center space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-full bg-purple-100 flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 mx-auto rounded-full bg-amber-50 flex items-center justify-center">
+                <Users className="w-6 h-6 text-amber-500" />
               </div>
               <h3 className="font-semibold">Team Collaboration</h3>
               <p className="text-sm text-gray-600">
@@ -202,8 +202,8 @@ export function InternshipWelcomeScreen({
             </div>
             
             <div className="text-center space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-full bg-orange-100 flex items-center justify-center">
-                <Target className="w-6 h-6 text-orange-600" />
+              <div className="w-12 h-12 mx-auto rounded-full bg-amber-50 flex items-center justify-center">
+                <Target className="w-6 h-6 text-amber-500" />
               </div>
               <h3 className="font-semibold">Real Projects</h3>
               <p className="text-sm text-gray-600">
@@ -212,12 +212,12 @@ export function InternshipWelcomeScreen({
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
             <div className="flex items-start space-x-3">
-              <Clock className="w-6 h-6 text-blue-600 mt-0.5" />
+              <Clock className="w-6 h-6 text-amber-500 mt-0.5" />
               <div>
-                <h4 className="font-semibold text-blue-900 mb-2">What happens next?</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
+                <h4 className="font-semibold text-gray-900 mb-2">What happens next?</h4>
+                <ul className="text-sm text-gray-700 space-y-1">
                   <li>• We'll create your personalized company environment</li>
                   <li>• You'll meet your supervisor and team members</li>
                   <li>• Your first tasks and resources will be ready</li>
@@ -231,7 +231,7 @@ export function InternshipWelcomeScreen({
             <Button 
               onClick={handleStartInternship}
               size="lg"
-              className="px-8 py-3 text-lg"
+              className="px-8 py-3 text-lg bg-amber-500 hover:bg-amber-600"
             >
               Start My Internship
               <ArrowRight className="w-5 h-5 ml-2" />
