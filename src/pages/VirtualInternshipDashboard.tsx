@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useAISupervisor } from "@/hooks/useAISupervisor";
 import { InternshipSession, InternshipTask, TaskSubmission } from "@/types/internship";
-import { SwipeableInternshipView } from "@/components/internship/SwipeableInternshipView";
+import { SwipeableInternshipView, SwipeableInternshipViewRef } from "@/components/internship/SwipeableInternshipView";
 import { TaskDetailsModal } from "@/components/internship/TaskDetailsModal";
 import { useInternshipRealtime } from "@/hooks/useInternshipRealtime";
 import { LoadingSpinner } from "@/components/ui/loading-states";
@@ -77,6 +77,9 @@ export default function VirtualInternshipDashboard() {
     sessionId: internshipSession?.id || null,
     enabled: !!internshipSession && !!user
   });
+
+  // Create a ref for the SwipeableInternshipView component
+  const internshipViewRef = useRef<SwipeableInternshipViewRef>(null);
 
   // Define fetchTasks as a useCallback function
   const fetchTasks = useCallback(async (sessionId: string) => {
@@ -501,10 +504,16 @@ export default function VirtualInternshipDashboard() {
   };
 
   // Function to handle task submission completion
-  const handleTaskSubmissionComplete = () => {
+  const handleTaskSubmissionComplete = (showFeedback?: boolean) => {
     // Refresh tasks to get updated status
     if (internshipSession) {
       fetchTasks(internshipSession.id);
+      
+      // If showFeedback is true, navigate to the feedback tab in the SwipeableInternshipView
+      if (showFeedback && internshipViewRef.current) {
+        // The feedback tab index is 5 as seen in the renderTabContent function in SwipeableInternshipView
+        internshipViewRef.current.setActiveTabIndex(5);
+      }
     }
   };
 
@@ -734,6 +743,7 @@ export default function VirtualInternshipDashboard() {
       {/* Navigation tabs */}
       <div className="mb-6">
         <SwipeableInternshipView 
+          ref={internshipViewRef}
           sessionData={{
             id: internshipSession!.id,
             title: internshipSession!.job_title,

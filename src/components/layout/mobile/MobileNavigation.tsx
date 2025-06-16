@@ -24,10 +24,14 @@ export function MobileNavigation() {
     if (isMobile) window.scrollTo(0, 0);
   }, [location.pathname, isMobile]);
 
-  // Check if current route is a virtual internship page
+  // Check if current route is a virtual internship page (exclude overview pages)
   const isVirtualInternshipPage = 
-    location.pathname.includes("/dashboard/virtual-internship") || 
-    location.pathname.includes("/dashboard/internship");
+    (location.pathname.includes("/dashboard/virtual-internship") && 
+     !location.pathname.includes("/overview") && 
+     !location.pathname.includes("/internships")) || 
+    (location.pathname.includes("/dashboard/internship") && 
+     !location.pathname.includes("/overview") && 
+     !location.pathname.includes("/internships"));
 
   // Don't show on desktop, landing page, or virtual internship pages
   const isLandingPage = location.pathname === "/";

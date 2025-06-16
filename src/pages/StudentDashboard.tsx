@@ -1,4 +1,3 @@
-
 import { useStudentDashboard } from "@/hooks/useStudentDashboard";
 import { useStudentAnalytics } from "@/hooks/useStudentAnalytics";
 import { useStudySessions, StudySession } from "@/hooks/useStudySessions";
@@ -13,6 +12,7 @@ import { StrengthsAndAreas } from "@/components/dashboard/StrengthsAndAreas";
 import { StudyCalendar } from "@/components/dashboard/StudyCalendar";
 import { InsightsSection } from "@/components/dashboard/InsightsSection";
 import { MobileDashboard } from "@/components/dashboard/MobileDashboard";
+import { FeatureCards } from "@/components/dashboard/FeatureCards";
 
 export default function StudentDashboard() {
   const { courses, performance, isLoading } = useStudentDashboard();
@@ -69,8 +69,11 @@ export default function StudentDashboard() {
         description="Track your progress and performance across all your courses" 
       />
 
-      <div className="space-y-4 sm:space-y-6">
-        {/* News Feed at the top */}
+      {/* Feature Cards Section - Only shown on desktop */}
+      {!isMobile && <FeatureCards />}
+
+      <div className="space-y-4 sm:space-y-6 mt-10">
+        {/* News Feed */}
         <NewsFeed courses={courses} />
 
         {isMobile ? (

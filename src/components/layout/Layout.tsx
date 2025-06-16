@@ -21,10 +21,14 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
   const isMobile = useIsMobile();
   const location = useLocation();
 
-  // Check if current route is a virtual internship page
+  // Check if current route is a virtual internship page (exclude the overview page)
   const isVirtualInternshipPage = 
-    location.pathname.includes("/dashboard/virtual-internship") || 
-    location.pathname.includes("/dashboard/internship");
+    (location.pathname.includes("/dashboard/virtual-internship") && 
+     !location.pathname.includes("/overview") && 
+     !location.pathname.includes("/internships")) || 
+    (location.pathname.includes("/dashboard/internship") && 
+     !location.pathname.includes("/overview") && 
+     !location.pathname.includes("/internships"));
 
   // Hide sidebar and header on specific routes
   const hideSidebar = isLandingPage || 

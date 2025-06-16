@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksList } from "./TasksList";
 import { StudyCalendar } from "./StudyCalendar";
@@ -7,6 +6,7 @@ import { InsightsSection } from "./InsightsSection";
 import { StudySession } from "@/hooks/useStudySessions";
 import { StudentCourse } from "@/types/student";
 import { CoursePerformanceCard } from "./CoursePerformanceCard";
+import { FeatureCards } from "./FeatureCards";
 
 interface MobileDashboardProps {
   performance: any[];
@@ -29,6 +29,8 @@ export function MobileDashboard({
 }: MobileDashboardProps) {
   return (
     <div className="space-y-6">
+      <FeatureCards />
+      
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid grid-cols-3 h-auto">
           <TabsTrigger value="overview" className="py-2.5">Overview</TabsTrigger>

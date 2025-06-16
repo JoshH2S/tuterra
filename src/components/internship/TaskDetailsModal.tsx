@@ -24,7 +24,7 @@ interface TaskDetailsModalProps {
   userId: string;
   sessionData: InternshipSession;
   tasks: InternshipTask[];
-  onSubmissionComplete?: () => void;
+  onSubmissionComplete?: (showFeedback: boolean) => void;
 }
 
 interface TaskDetail {
@@ -259,6 +259,74 @@ export function TaskDetailsModal({
     };
   };
   
+  // New simplified function to start feedback generation
+  const startFeedbackGeneration = async (submissionId: string) => {
+    try {
+      // Log that we're starting feedback generation
+      console.log("Starting feedback generation for submission:", submissionId);
+      
+      // Get session data needed for the Edge Function
+      const { data: sessionData, error: sessionError } = await supabase
+        .from("internship_sessions")
+        .select("job_title, industry")
+        .eq("id", task.session_id)
+        .limit(1);
+        
+      if (sessionError) {
+        console.error("Error fetching session data:", sessionError);
+        throw new Error(`Failed to fetch session data: ${sessionError.message}`);
+      }
+      
+      const sessionInfo = sessionData && sessionData.length > 0 ? sessionData[0] : null;
+      if (!sessionInfo) {
+        console.error("Session data not found for session_id:", task.session_id);
+        throw new Error("Session data not found");
+      }
+      
+      const jobTitle = sessionInfo.job_title || "Intern";
+      const industry = sessionInfo.industry || "Technology";
+      
+      // Get user's current session for auth token
+      const { data: authData } = await supabase.auth.getSession();
+      const accessToken = authData?.session?.access_token;
+      
+      // Call the Edge Function to generate feedback
+      console.log("Calling Edge Function to generate feedback");
+      const { data: feedbackData, error: functionError } = await supabase.functions.invoke('generate-internship-feedback', {
+        body: {
+          submission_id: submissionId,
+          task_id: task.id,
+          submission_text: fileData 
+            ? `${response}\n\nFile Submission: ${fileData.name} (${fileData.url})` 
+            : response,
+          task_description: task.description,
+          task_instructions: taskDetails?.instructions || task.instructions,
+          job_title: jobTitle,
+          industry: industry
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      
+      if (functionError) {
+        console.error("Error generating AI feedback:", functionError);
+        throw new Error(`Failed to generate feedback: ${JSON.stringify(functionError)}`);
+      }
+      
+      console.log("Feedback generation triggered successfully:", feedbackData);
+      
+      // Start polling for feedback
+      await checkForFeedback(submissionId);
+      
+    } catch (error) {
+      console.error("Error in feedback generation:", error);
+      setFeedbackError(`An error occurred: ${error instanceof Error ? error.message : String(error)}`);
+      setIsFeedbackLoading(false);
+    }
+  };
+  
+  // Updated handleSubmit function that uses the new startFeedbackGeneration function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!task) return;
@@ -363,103 +431,29 @@ export function TaskDetailsModal({
       
       if (updateError) throw updateError;
       
-      // Show success state first
+      // Show success state
       setShowSuccess(true);
       setIsSubmitting(false);
       
       // Start feedback generation process
+      console.log("=== STARTING FEEDBACK GENERATION ===");
       setIsFeedbackLoading(true);
       
-      // Trigger the AI feedback Edge Function
-      try {
-        // Fetch job title and industry from the session
-        const { data: sessionData, error: sessionError } = await supabase
-          .from("internship_sessions")
-          .select("job_title, industry")
-          .eq("id", task.session_id)
-          .limit(1);
-          
-        if (sessionError) {
-          console.error("Error fetching session data:", sessionError);
-          throw new Error(`Failed to fetch session data: ${sessionError.message}`);
-        }
-        
-        const sessionInfo = sessionData && sessionData.length > 0 ? sessionData[0] : null;
-        if (!sessionInfo) {
-          console.error("Session data not found for session_id:", task.session_id);
-          throw new Error("Session data not found");
-        }
-        
-        const jobTitle = sessionInfo.job_title || "Intern";
-        const industry = sessionInfo.industry || "Technology";
-        
-        // Log what we're about to send to the function
-        console.log("Sending to generate-internship-feedback:", {
-          submission_id: newSubmissionId,
-          task_id: task.id,
-          submission_text: fileData 
-            ? `${response}\n\nFile Submission: ${fileData.name} (${fileData.url})` 
-            : response,
-          task_description: task.description,
-          task_instructions: taskDetails?.instructions || task.instructions,
-          job_title: jobTitle,
-          industry: industry
-        });
-        
-        // Get user's current session for auth token
-        const { data: authData } = await supabase.auth.getSession();
-        const accessToken = authData?.session?.access_token;
-
-        // Call the Edge Function to generate feedback
-        const { data: feedbackData, error: functionError } = await supabase.functions.invoke('generate-internship-feedback', {
-          body: {
-            submission_id: newSubmissionId,
-            task_id: task.id,
-            submission_text: fileData 
-              ? `${response}\n\nFile Submission: ${fileData.name} (${fileData.url})` 
-              : response,
-            task_description: task.description,
-            task_instructions: taskDetails?.instructions || task.instructions,
-            job_title: jobTitle,
-            industry: industry
-          },
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        });
-        
-        if (functionError) {
-          console.error("Error generating AI feedback:", functionError);
-          const errorMessage = typeof functionError === 'object' 
-            ? JSON.stringify(functionError)
-            : String(functionError);
-          setFeedbackError(`Failed to generate feedback: ${errorMessage}`);
-          return;
-        }
-        
-        console.log("Feedback generation response:", feedbackData);
-        
-        // Poll for feedback until it's available
-        await checkForFeedback(newSubmissionId);
-        
-      } catch (feedbackError) {
-        console.error("Error in feedback generation process:", feedbackError);
-        setFeedbackError("An error occurred while generating feedback. Please check the dashboard later for your feedback.");
-      } finally {
-        setIsFeedbackLoading(false);
-      }
+      // Use the simplified feedback generation function
+      await startFeedbackGeneration(newSubmissionId);
       
-      // Notify parent component that submission is complete
-      onSubmissionComplete?.();
+      // Notify parent component
+      onSubmissionComplete?.(true);
       
     } catch (error) {
       console.error("Error submitting task:", error);
       toast({
         title: "Submission Failed",
-        description: "There was an error submitting your task. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error submitting your task. Please try again.",
         variant: "destructive",
       });
       setIsSubmitting(false);
+      setIsFeedbackLoading(false);
     }
   };
   
@@ -471,6 +465,20 @@ export function TaskDetailsModal({
     }
     
     try {
+      // Define types for our database responses
+      type SubmissionData = {
+        quality_rating: number | null;
+        timeliness_rating: number | null;
+        collaboration_rating: number | null;
+        overall_assessment: string | null;
+        feedback_provided_at: string | null;
+      };
+      
+      type FeedbackData = {
+        specific_comments: string | null;
+        generation_status: string | null;
+      };
+
       // First check the main submissions table for ratings
       const { data: submissionData, error: submissionError } = await supabase
         .from("internship_task_submissions")
@@ -487,21 +495,53 @@ export function TaskDetailsModal({
         .eq("submission_id", submissionId)
         .single();
       
-      if (feedbackError && feedbackError.code !== 'PGRST116') {
-        console.error("Error fetching feedback details:", feedbackError);
+      // Log what we're getting from the database to help with debugging
+      console.log("Feedback polling - submission data:", submissionData);
+      console.log("Feedback polling - feedback data:", feedbackData);
+      
+      // Safely cast the data to our types
+      const typedSubmissionData = submissionData as SubmissionData;
+      const typedFeedbackData = feedbackData as FeedbackData | null;
+      
+      // Properly type the submission data to avoid TypeScript errors
+      if (typedSubmissionData) {
+        // Case 1: We have complete feedback with ratings and text
+        if (
+          typedSubmissionData.quality_rating && 
+          typedFeedbackData?.specific_comments
+        ) {
+          // Feedback is fully available
+          setFeedback({
+            feedback_text: typedFeedbackData.specific_comments,
+            quality_rating: typedSubmissionData.quality_rating || 0,
+            timeliness_rating: typedSubmissionData.timeliness_rating || 0,
+            collaboration_rating: typedSubmissionData.collaboration_rating || 0,
+            overall_assessment: typedSubmissionData.overall_assessment || "Pending",
+            feedback_provided_at: typedSubmissionData.feedback_provided_at || new Date().toISOString()
+          });
+          return;
+        }
+        
+        // Case 2: We have feedback in submission but quality rating is available
+        if (typedSubmissionData.quality_rating) {
+          // We have ratings but not detailed text, create a fallback feedback
+          setFeedback({
+            feedback_text: "Your submission has been reviewed. Detailed feedback will be available shortly.",
+            quality_rating: typedSubmissionData.quality_rating || 0,
+            timeliness_rating: typedSubmissionData.timeliness_rating || 0,
+            collaboration_rating: typedSubmissionData.collaboration_rating || 0,
+            overall_assessment: typedSubmissionData.overall_assessment || "Pending",
+            feedback_provided_at: typedSubmissionData.feedback_provided_at || new Date().toISOString()
+          });
+          return;
+        }
       }
       
-      // Only proceed if we have feedback ratings and text
-      if (submissionData?.quality_rating && feedbackData?.specific_comments) {
-        // Feedback is available
-        setFeedback({
-          feedback_text: feedbackData.specific_comments,
-          quality_rating: submissionData.quality_rating || 0,
-          timeliness_rating: submissionData.timeliness_rating || 0,
-          collaboration_rating: submissionData.collaboration_rating || 0,
-          overall_assessment: submissionData.overall_assessment || "Pending",
-          feedback_provided_at: submissionData.feedback_provided_at || new Date().toISOString()
-        });
+      // Case 3: After 10 attempts (100 seconds), give the option to view feedback later
+      if (attempts >= 10) {
+        setFeedbackError(
+          "Feedback generation is still in progress. You can close this dialog and check your feedback in the dashboard later."
+        );
         return;
       }
       
@@ -511,12 +551,20 @@ export function TaskDetailsModal({
       
     } catch (error) {
       console.error("Error checking for feedback:", error);
-      setFeedbackError("Error retrieving feedback. Please check back later.");
+      setFeedbackError("Error retrieving feedback. Please check back later in the dashboard feedback tab.");
     }
   };
   
   const handleCloseAndReset = () => {
     onClose();
+    
+    // If we have feedback or feedback is taking too long, redirect to dashboard feedback tab
+    if (feedback || feedbackError) {
+      // Navigate to the dashboard feedback tab
+      // This assumes you have a way to navigate or set the active tab in the parent component
+      onSubmissionComplete?.(true); // Pass true to indicate we should show the feedback tab
+    }
+    
     // Reset state after modal is closed
     setTimeout(() => {
       setResponse("");

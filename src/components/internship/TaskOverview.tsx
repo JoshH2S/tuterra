@@ -14,9 +14,17 @@ interface TaskOverviewProps {
   onOpenTaskDetails?: (task: InternshipTask) => void;
   allTasks?: InternshipTask[]; // All tasks including those not yet visible
   compact?: boolean; // Add compact mode option
+  maxDisplayCount?: number; // Maximum number of tasks to display
 }
 
-export function TaskOverview({ tasks, onUpdateTaskStatus, onOpenTaskDetails, allTasks = [], compact = false }: TaskOverviewProps) {
+export function TaskOverview({ 
+  tasks, 
+  onUpdateTaskStatus, 
+  onOpenTaskDetails, 
+  allTasks = [], 
+  compact = false,
+  maxDisplayCount
+}: TaskOverviewProps) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   
   const getStatusIcon = (status: string) => {
@@ -103,12 +111,15 @@ export function TaskOverview({ tasks, onUpdateTaskStatus, onOpenTaskDetails, all
     return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
   });
 
-  // Display only the first 2 tasks in compact mode and in regular mode
-  const displayTasks = compact 
-    ? sortedTasks.filter(t => t.status !== 'completed').slice(0, 2) 
-    : sortedTasks.slice(0, 2);
+  // Determine how many tasks to display
+  const tasksToDisplay = maxDisplayCount || (compact ? 3 : 2);
   
-  // Compact layout for sidebar
+  // Display tasks based on mode and count
+  const displayTasks = compact 
+    ? sortedTasks.filter(t => t.status !== 'completed').slice(0, tasksToDisplay) 
+    : sortedTasks.slice(0, tasksToDisplay);
+  
+  // Compact layout for sidebar or dashboard
   if (compact) {
     return (
       <div className="space-y-2">
@@ -119,12 +130,16 @@ export function TaskOverview({ tasks, onUpdateTaskStatus, onOpenTaskDetails, all
         ) : (
           <>
             {displayTasks.map((task) => (
-              <div key={task.id} className="border rounded-md overflow-hidden text-xs">
-                <div className="flex items-center p-1.5 gap-1.5 bg-muted/20">
+              <div 
+                key={task.id} 
+                className="border rounded-md overflow-hidden text-xs cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => onOpenTaskDetails && onOpenTaskDetails(task)}
+              >
+                <div className="flex items-center p-2 gap-1.5 bg-muted/20">
                   {getStatusIcon(task.status)}
                   <span className="font-medium truncate">{task.title}</span>
                 </div>
-                <div className="p-1.5 flex justify-between items-center border-t">
+                <div className="p-2 flex justify-between items-center border-t">
                   <span className="text-muted-foreground text-[10px]">
                     Due: {formatInUserTimezone(task.due_date, 'MMM d')}
                   </span>
@@ -132,7 +147,10 @@ export function TaskOverview({ tasks, onUpdateTaskStatus, onOpenTaskDetails, all
                     variant="ghost" 
                     size="sm"
                     className="h-6 px-1.5 text-[10px]"
-                    onClick={() => handleTaskAction(task)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTaskAction(task);
+                    }}
                   >
                     {task.status === 'not_started' ? 'Start' : 
                      task.status === 'in_progress' || task.status === 'overdue' ? 'Complete' : 
@@ -158,7 +176,7 @@ export function TaskOverview({ tasks, onUpdateTaskStatus, onOpenTaskDetails, all
             <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
               <DialogContent className="sm:max-w-[550px]">
                 <DialogHeader>
-                  <DialogTitle>All Tasks</DialogTitle>
+                  <DialogTitle>All Tasks ({tasks.length})</DialogTitle>
                   <DialogDescription>
                     Complete these tasks to progress in your internship
                   </DialogDescription>

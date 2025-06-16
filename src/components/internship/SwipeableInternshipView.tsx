@@ -1,16 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { format } from "date-fns";
 import { ChevronLeft, ChevronRight, BarChart2, Briefcase, FileCheck, Calendar, MessageSquare, Award, CheckCircle, Building } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WelcomePanel } from "./WelcomePanel";
+import { DashboardOverviewPanel } from "./DashboardOverviewPanel";
 import { TaskOverview } from "./TaskOverview";
 import { CalendarView } from "./CalendarView";
 import { EmailMessagingPanel } from "./EmailMessagingPanel";
 import { FeedbackCenter } from "./FeedbackCenter";
 import { GamificationPanel } from "./GamificationPanel";
-import { MobileInternshipHeader } from "./MobileInternshipHeader";
+import { InternshipMobileHeader } from "./InternshipMobileHeader";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InternshipMetricsDashboard } from "./InternshipMetricsDashboard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,7 +34,13 @@ interface SwipeableInternshipViewProps {
   onOpenTaskDetails: (taskId: string) => void;
 }
 
-export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: SwipeableInternshipViewProps) {
+// Define the ref interface
+export interface SwipeableInternshipViewRef {
+  setActiveTabIndex: (index: number) => void;
+}
+
+export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, SwipeableInternshipViewProps>(
+  ({ sessionData, onOpenTaskDetails }, ref) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -226,7 +233,7 @@ export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: Swip
 
     switch (activeIndex) {
       case 0:
-        return <WelcomePanel sessionData={fullSessionData} tasks={visibleTasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
+        return <DashboardOverviewPanel sessionData={fullSessionData} tasks={visibleTasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
       case 1:
         return <TaskOverview tasks={visibleTasks} onUpdateTaskStatus={updateTaskStatus} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
       case 2:
@@ -242,143 +249,110 @@ export function SwipeableInternshipView({ sessionData, onOpenTaskDetails }: Swip
       case 7:
         return <GamificationPanel sessionData={fullSessionData} tasks={visibleTasks} />;
       default:
-        return <InternshipMetricsDashboard sessionId={fullSessionData.id} tasks={visibleTasks} />;
+        return null;
     }
   };
-
-  if (isMobile) {
-    // Mobile version remains the same with improved tab navigation
-    return (
-      <div className="flex flex-col h-full space-y-4">
-        {/* Title card */}
-        <Card className="shadow-sm bg-white">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium flex items-center gap-1.5">
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                {sessionData.job_title}
-              </h2>
-              <Badge variant="outline" className="text-xs h-5 px-1.5 font-normal">
-                {sessionData.industry}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Horizontal tabbed navigation */}
-        <div className="relative border rounded-md overflow-hidden shadow-sm bg-white">
-          <Tabs value={tabs[activeIndex].toLowerCase()}>
-            <div className="overflow-x-auto scrollbar-none">
-              <TabsList className="w-max flex rounded-none bg-muted/40">
-                {tabs.map((tab, index) => (
-                  <TabsTrigger
-                    key={tab}
-                    className="min-w-[5rem] data-[state=active]:bg-background data-[state=active]:shadow-none rounded-none"
-                    onClick={() => setActiveIndex(index)}
-                    value={tab.toLowerCase()}
-                  >
-                    <span className="flex items-center gap-1">
-                      {getTabIcon(index)}
-                      <span className="whitespace-nowrap text-xs">{tab}</span>
-                    </span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
-          </Tabs>
-        </div>
-        
-        {/* Main content */}
-        <Card className="flex-1 shadow-sm bg-white">
-          <CardContent className="p-3 md:p-4 h-full overflow-auto">
-            {renderTabContent()}
-          </CardContent>
-        </Card>
-        
-        {/* Navigation controls */}
-        <div className="flex justify-between items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handlePrevious}
-            disabled={activeIndex === 0}
-            className="h-8 px-2"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            <span className="text-xs">Previous</span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleNext}
-            disabled={activeIndex === tabs.length - 1}
-            className="h-8 px-2"
-          >
-            <span className="text-xs">Next</span>
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop version with horizontal tabs
+  
+  // Expose method to set active tab index via ref
+  useImperativeHandle(ref, () => ({
+    setActiveTabIndex: (index: number) => {
+      if (index >= 0 && index < tabs.length) {
+        setActiveIndex(index);
+      }
+    }
+  }));
+  
+  // Set active tab through imperative handle
+  const handleTabClick = (index: number) => {
+    setActiveIndex(index);
+  };
+  
   return (
-    <div className="w-full">
-      <Card className="shadow-sm bg-white overflow-hidden">
-        <CardContent className="p-0">
-          <Tabs value={tabs[activeIndex].toLowerCase()} className="w-full">
-            <div className="border-b">
-              <TabsList className="w-full flex justify-start p-0 bg-transparent rounded-none">
+    <div className="bg-white border rounded-md shadow-sm overflow-hidden">
+      {/* Mobile header bar */}
+      {isMobile && (
+        <InternshipMobileHeader 
+          title={sessionData.job_title} 
+          industry={sessionData.industry}
+          activeIndex={activeIndex}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          maxIndex={tabs.length - 1}
+        />
+      )}
+      
+      {/* Desktop tabs */}
+      {!isMobile && (
+        <div className="border-b px-1">
+          <div className="flex items-center justify-between">
+            <Tabs defaultValue={tabs[activeIndex].toLowerCase()} onValueChange={(value) => {
+              const index = tabs.findIndex(tab => tab.toLowerCase() === value);
+              if (index !== -1) {
+                setActiveIndex(index);
+              }
+            }}>
+              <TabsList className="h-10 py-1">
                 {tabs.map((tab, index) => (
-                  <TabsTrigger
-                    key={tab}
-                    className={`
-                      flex items-center gap-2 px-4 py-3 text-sm rounded-none border-b-2 transition-all
-                      data-[state=active]:border-b-primary data-[state=active]:text-primary font-medium
-                      data-[state=inactive]:border-b-transparent data-[state=inactive]:hover:bg-muted/20
-                    `}
-                    onClick={() => setActiveIndex(index)}
+                  <TabsTrigger 
+                    key={tab} 
                     value={tab.toLowerCase()}
+                    className="text-sm px-3 py-1.5 data-[state=active]:bg-primary/10"
                   >
-                    {getTabIcon(index)}
-                    <span>{tab}</span>
+                    <div className="flex items-center gap-1.5">
+                      {getTabIcon(index)}
+                      {tab}
+                    </div>
                   </TabsTrigger>
                 ))}
               </TabsList>
-            </div>
+            </Tabs>
             
-            <div className="p-4">
-              {renderTabContent()}
+            <div className="flex items-center gap-2 pr-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                disabled={activeIndex === 0}
+                onClick={handlePrevious}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                disabled={activeIndex === tabs.length - 1}
+                onClick={handleNext}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-          </Tabs>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      )}
+      
+      {/* Tab content */}
+      <div className="p-5">
+        {renderTabContent()}
+      </div>
     </div>
   );
-}
+});
 
-// Add helper function to get icons for tabs at the bottom of the file
+SwipeableInternshipView.displayName = "SwipeableInternshipView";
+
+// Helper function to get icon for tab
 function getTabIcon(index: number) {
-  switch (index) {
-    case 0: // Overview
-      return <Briefcase className="h-4 w-4" />;
-    case 1: // Tasks
-      return <FileCheck className="h-4 w-4" />;
-    case 2: // Calendar
-      return <Calendar className="h-4 w-4" />;
-    case 3: // Messages
-      return <MessageSquare className="h-4 w-4" />;
-    case 4: // Company
-      return <Building className="h-4 w-4" />;
-    case 5: // Feedback
-      return <MessageSquare className="h-4 w-4" />;
-    case 6: // Achievements
-      return <Award className="h-4 w-4" />;
-    case 7: // Metrics
-      return <BarChart2 className="h-4 w-4" />;
-    default:
-      return <Briefcase className="h-4 w-4" />;
-  }
+  const icons = [
+    <Briefcase key="overview" className="h-4 w-4" />,
+    <FileCheck key="tasks" className="h-4 w-4" />,
+    <Calendar key="calendar" className="h-4 w-4" />,
+    <MessageSquare key="messages" className="h-4 w-4" />,
+    <Building key="company" className="h-4 w-4" />,
+    <CheckCircle key="feedback" className="h-4 w-4" />,
+    <Award key="achievements" className="h-4 w-4" />,
+    <BarChart2 key="metrics" className="h-4 w-4" />
+  ];
+  
+  return icons[index] || <Briefcase className="h-4 w-4" />;
 }
