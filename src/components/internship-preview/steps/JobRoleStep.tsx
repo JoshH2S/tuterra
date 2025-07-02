@@ -1,3 +1,4 @@
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +15,12 @@ export function JobRoleStep({ value, onChange }: JobRoleStepProps) {
     <div className="space-y-6">
       <div className="text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Briefcase className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <Briefcase className="h-5 md:h-6 w-5 md:w-6 text-blue-600" />
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
             Do you have a specific job role in mind?
           </h2>
         </div>
-        <p className="text-gray-600">
+        <p className="text-sm md:text-base text-gray-600">
           This helps us tailor your internship experience (optional)
         </p>
       </div>
@@ -39,7 +40,7 @@ export function JobRoleStep({ value, onChange }: JobRoleStepProps) {
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="e.g., Marketing Analyst, Software Engineer, Data Scientist..."
-            className="mt-2"
+            className="mt-2 text-sm md:text-base"
           />
         </div>
 
@@ -50,7 +51,7 @@ export function JobRoleStep({ value, onChange }: JobRoleStepProps) {
               <h4 className="text-sm font-medium text-blue-900 mb-1">
                 Why specify a job role?
               </h4>
-              <p className="text-sm text-blue-800">
+              <p className="text-xs md:text-sm text-blue-800">
                 Providing a specific role helps us create more targeted tasks, realistic responsibilities, 
                 and industry-appropriate challenges for your virtual internship experience.
               </p>
@@ -66,9 +67,9 @@ export function JobRoleStep({ value, onChange }: JobRoleStepProps) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <span className="text-sm font-medium text-green-900">Target Role:</span>
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 w-fit">
               {value}
             </Badge>
           </div>
@@ -90,4 +91,4 @@ export function JobRoleStep({ value, onChange }: JobRoleStepProps) {
       )}
     </div>
   );
-} 
+}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { InternshipPreviewForm } from "@/components/internship-preview/InternshipPreviewForm";
@@ -100,11 +101,11 @@ export default function InternshipPreview() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-4 md:py-6">
           <div className="text-center">
             {/* Tuterra Logo */}
             <motion.div
-              className="mb-6"
+              className="mb-4 md:mb-6"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -112,12 +113,12 @@ export default function InternshipPreview() {
               <img 
                 src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png" 
                 alt="Tuterra Logo" 
-                className="h-16 w-auto object-contain mx-auto" 
+                className="h-12 md:h-16 w-auto object-contain mx-auto" 
               />
             </motion.div>
             
             <motion.h1 
-              className="text-4xl font-bold text-gray-900 mb-2"
+              className="text-2xl md:text-4xl font-bold text-gray-900 mb-2"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
@@ -125,7 +126,7 @@ export default function InternshipPreview() {
               Virtual Internship Preview
             </motion.h1>
             <motion.p 
-              className="text-lg text-gray-600 max-w-2xl mx-auto"
+              className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-2"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -139,38 +140,42 @@ export default function InternshipPreview() {
       {/* Benefits Section */}
       {currentStep === 'form' && (
         <motion.div 
-          className="container mx-auto px-4 py-8"
+          className="container mx-auto px-4 py-6 md:py-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
             <Card className="bg-white border shadow-sm">
-              <CardContent className="p-4 text-center">
-                <Building2 className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Realistic Company</h3>
-                <p className="text-xs text-gray-600">AI-generated company profile</p>
+              <CardContent className="p-3 md:p-4 text-center">
+                <Building2 className="h-6 md:h-8 w-6 md:w-8 text-blue-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-xs md:text-sm">Realistic Company</h3>
+                <p className="text-xs text-gray-600 hidden md:block">AI-generated company profile</p>
+                <p className="text-xs text-gray-600 md:hidden">AI company profile</p>
               </CardContent>
             </Card>
             <Card className="bg-white border shadow-sm">
-              <CardContent className="p-4 text-center">
-                <Users className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Virtual Supervisor</h3>
-                <p className="text-xs text-gray-600">Dedicated mentor & feedback</p>
+              <CardContent className="p-3 md:p-4 text-center">
+                <Users className="h-6 md:h-8 w-6 md:w-8 text-green-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-xs md:text-sm">Virtual Supervisor</h3>
+                <p className="text-xs text-gray-600 hidden md:block">Dedicated mentor & feedback</p>
+                <p className="text-xs text-gray-600 md:hidden">Mentor & feedback</p>
               </CardContent>
             </Card>
             <Card className="bg-white border shadow-sm">
-              <CardContent className="p-4 text-center">
-                <Target className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Structured Tasks</h3>
-                <p className="text-xs text-gray-600">Progressive skill building</p>
+              <CardContent className="p-3 md:p-4 text-center">
+                <Target className="h-6 md:h-8 w-6 md:w-8 text-purple-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-xs md:text-sm">Structured Tasks</h3>
+                <p className="text-xs text-gray-600 hidden md:block">Progressive skill building</p>
+                <p className="text-xs text-gray-600 md:hidden">Skill building</p>
               </CardContent>
             </Card>
             <Card className="bg-white border shadow-sm">
-              <CardContent className="p-4 text-center">
-                <Clock className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-sm">Flexible Duration</h3>
-                <p className="text-xs text-gray-600">6-12 weeks, your choice</p>
+              <CardContent className="p-3 md:p-4 text-center">
+                <Clock className="h-6 md:h-8 w-6 md:w-8 text-orange-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-xs md:text-sm">Flexible Duration</h3>
+                <p className="text-xs text-gray-600 hidden md:block">6-12 weeks, your choice</p>
+                <p className="text-xs text-gray-600 md:hidden">6-12 weeks</p>
               </CardContent>
             </Card>
           </div>
@@ -178,7 +183,7 @@ export default function InternshipPreview() {
       )}
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 pb-12">
+      <div className="container mx-auto px-4 pb-8 md:pb-12">
         <div className="max-w-4xl mx-auto">
           <AnimatePresence mode="wait">
             {currentStep === 'form' && (
@@ -213,14 +218,14 @@ export default function InternshipPreview() {
       </div>
 
       {/* Footer */}
-      <div className="bg-white border-t mt-12">
-        <div className="container mx-auto px-4 py-6">
+      <div className="bg-white border-t mt-8 md:mt-12">
+        <div className="container mx-auto px-4 py-4 md:py-6">
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Ready to start your virtual internship journey?{" "}
               <button 
                 onClick={() => setIsSignupModalOpen(true)}
-                className="text-blue-600 hover:text-blue-700 font-medium underline cursor-pointer"
+                className="text-blue-600 hover:text-blue-700 font-medium underline cursor-pointer touch-manipulation"
               >
                 Sign up for free
               </button>
@@ -236,4 +241,4 @@ export default function InternshipPreview() {
       />
     </div>
   );
-} 
+}

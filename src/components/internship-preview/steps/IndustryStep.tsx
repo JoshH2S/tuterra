@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -48,10 +49,10 @@ export function IndustryStep({ value, onChange }: IndustryStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
           Which industry are you exploring a career in?
         </h2>
-        <p className="text-gray-600">
+        <p className="text-sm md:text-base text-gray-600">
           Select from popular industries or enter your own
         </p>
       </div>
@@ -63,12 +64,12 @@ export function IndustryStep({ value, onChange }: IndustryStepProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
             {POPULAR_INDUSTRIES.map((industry) => (
               <Button
                 key={industry}
                 variant={value === industry ? "default" : "outline"}
-                className={`h-auto p-3 text-sm font-medium transition-all ${
+                className={`h-auto p-3 text-xs md:text-sm font-medium transition-all touch-manipulation ${
                   value === industry 
                     ? "" 
                     : "hover:bg-gray-50 hover:border-gray-300"
@@ -84,7 +85,7 @@ export function IndustryStep({ value, onChange }: IndustryStepProps) {
             <Button
               variant="ghost"
               onClick={handleShowCustomInput}
-              className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+              className="text-gray-600 hover:text-gray-700 hover:bg-gray-50 text-sm touch-manipulation"
             >
               Don't see your industry? Enter it manually
             </Button>
@@ -106,7 +107,7 @@ export function IndustryStep({ value, onChange }: IndustryStepProps) {
               value={customIndustry}
               onChange={(e) => handleCustomIndustryChange(e.target.value)}
               placeholder="e.g., Renewable Energy, Biotechnology, Real Estate..."
-              className="mt-2"
+              className="mt-2 text-sm md:text-base"
               autoFocus
             />
           </div>
@@ -119,7 +120,7 @@ export function IndustryStep({ value, onChange }: IndustryStepProps) {
                 setCustomIndustry("");
                 onChange("");
               }}
-              className="flex-1"
+              className="flex-1 touch-manipulation"
             >
               Back to Popular Industries
             </Button>
@@ -134,9 +135,9 @@ export function IndustryStep({ value, onChange }: IndustryStepProps) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <span className="text-sm font-medium text-amber-900">Selected Industry:</span>
-            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+            <Badge variant="secondary" className="bg-amber-100 text-amber-800 w-fit">
               {value}
             </Badge>
           </div>
@@ -144,4 +145,4 @@ export function IndustryStep({ value, onChange }: IndustryStepProps) {
       )}
     </div>
   );
-} 
+}

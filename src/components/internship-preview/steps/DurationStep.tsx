@@ -1,3 +1,4 @@
+
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,18 +24,18 @@ export function DurationStep({ value, onChange }: DurationStepProps) {
     <div className="space-y-6">
       <div className="text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Clock className="h-6 w-6 text-amber-600" />
-          <h2 className="text-2xl font-semibold text-gray-900">
+          <Clock className="h-5 md:h-6 w-5 md:w-6 text-amber-600" />
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
             How long would you like your internship to last?
           </h2>
         </div>
-        <p className="text-gray-600">
+        <p className="text-sm md:text-base text-gray-600">
           Choose the duration that fits your schedule and learning goals
         </p>
       </div>
 
       <motion.div 
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -47,7 +48,7 @@ export function DurationStep({ value, onChange }: DurationStepProps) {
           >
             <Button
               variant={value === option.weeks ? "default" : "outline"}
-              className={`w-full h-auto p-6 flex flex-col items-start text-left transition-all ${
+              className={`w-full h-auto p-4 md:p-6 flex flex-col items-start text-left transition-all touch-manipulation ${
                 value === option.weeks 
                   ? "" 
                   : "hover:bg-gray-50 hover:border-gray-300"
@@ -55,7 +56,7 @@ export function DurationStep({ value, onChange }: DurationStepProps) {
               onClick={() => onChange(option.weeks)}
             >
               <div className="flex items-center justify-between w-full mb-2">
-                <h3 className="text-lg font-semibold">{option.label}</h3>
+                <h3 className="text-base md:text-lg font-semibold">{option.label}</h3>
                 {option.ideal === "Most popular" && (
                   <Badge 
                     variant="secondary" 
@@ -65,16 +66,16 @@ export function DurationStep({ value, onChange }: DurationStepProps) {
                   </Badge>
                 )}
               </div>
-              <p className="text-sm mb-3 text-gray-600">
+              <p className="text-xs md:text-sm mb-3 text-gray-600">
                 {option.description}
               </p>
               <div className="space-y-2 w-full">
-                <div className="flex items-center gap-2 text-sm">
-                  <Target className="h-4 w-4" />
+                <div className="flex items-center gap-2 text-xs md:text-sm">
+                  <Target className="h-3 md:h-4 w-3 md:w-4" />
                   <span>{option.tasks} total tasks (2 per week)</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4" />
+                <div className="flex items-center gap-2 text-xs md:text-sm">
+                  <Calendar className="h-3 md:h-4 w-3 md:w-4" />
                   <span>Ideal for: {option.ideal}</span>
                 </div>
               </div>
@@ -85,31 +86,31 @@ export function DurationStep({ value, onChange }: DurationStepProps) {
 
       {selectedOption && (
         <motion.div 
-          className="bg-green-50 p-6 rounded-lg border border-green-200"
+          className="bg-green-50 p-4 md:p-6 rounded-lg border border-green-200"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <h4 className="text-lg font-semibold text-green-900 mb-3">
+          <h4 className="text-base md:text-lg font-semibold text-green-900 mb-3">
             Your {selectedOption.weeks}-Week Internship Preview
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-green-600" />
+              <Clock className="h-4 w-4 text-green-600 flex-shrink-0" />
               <div>
                 <div className="font-medium text-green-900">Duration</div>
                 <div className="text-green-700">{selectedOption.weeks} weeks</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-green-600" />
+              <Target className="h-4 w-4 text-green-600 flex-shrink-0" />
               <div>
                 <div className="font-medium text-green-900">Total Tasks</div>
                 <div className="text-green-700">{selectedOption.tasks} tasks</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-green-600" />
+              <Calendar className="h-4 w-4 text-green-600 flex-shrink-0" />
               <div>
                 <div className="font-medium text-green-900">Schedule</div>
                 <div className="text-green-700">2 tasks per week</div>
@@ -117,7 +118,7 @@ export function DurationStep({ value, onChange }: DurationStepProps) {
             </div>
           </div>
           <div className="mt-4 p-3 bg-green-100 rounded-md">
-            <p className="text-sm text-green-800">
+            <p className="text-xs md:text-sm text-green-800">
               <strong>What to expect:</strong> Your internship will include a realistic company profile, 
               virtual supervisor, weekly feedback, and a final capstone project with presentation.
             </p>
@@ -132,7 +133,7 @@ export function DurationStep({ value, onChange }: DurationStepProps) {
             <h4 className="text-sm font-medium text-amber-900 mb-1">
               Flexible Scheduling
             </h4>
-            <p className="text-sm text-amber-800">
+            <p className="text-xs md:text-sm text-amber-800">
               All Tuterra internships are self-paced. You can complete tasks on your own schedule, 
               with suggested deadlines to keep you on track.
             </p>
@@ -141,4 +142,4 @@ export function DurationStep({ value, onChange }: DurationStepProps) {
       </div>
     </div>
   );
-} 
+}
