@@ -250,7 +250,7 @@ export default function InternshipPreview() {
       />
 
       {/* Custom styles for step 4 button sizing */}
-      <style>{`
+      <style jsx>{`
         /* Target the step 4 navigation buttons specifically */
         .step-navigation-buttons {
           display: flex;
