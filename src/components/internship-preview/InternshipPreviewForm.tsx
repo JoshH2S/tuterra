@@ -39,17 +39,12 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
     onStepChange?.(currentStep);
   }, [currentStep, onStepChange]);
 
-  // Scroll to form center when step changes
+  // Scroll to top when step changes
   useEffect(() => {
-    if (formRef.current) {
-      const rect = formRef.current.getBoundingClientRect();
-      const centerY = rect.top + window.pageYOffset + (rect.height / 2) - (window.innerHeight / 2);
-      
-      window.scrollTo({
-        top: Math.max(0, centerY),
-        behavior: 'smooth'
-      });
-    }
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   }, [currentStep]);
 
   const updateFormData = (data: Partial<InternshipPreviewData>) => {
@@ -419,13 +414,13 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
             variant="outline"
             onClick={handlePrevious}
             disabled={currentStep === 1 || isGenerating}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 ${currentStep === totalSteps ? 'text-sm px-3 py-2' : ''}`}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className={`${currentStep === totalSteps ? 'h-3 w-3' : 'h-4 w-4'}`} />
             Previous
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${currentStep === totalSteps ? 'mx-8' : ''}`}>
             {Array.from({ length: totalSteps }, (_, i) => (
               <div
                 key={i}
@@ -449,18 +444,18 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
             <Button
               onClick={testButtonClick}
               disabled={!canProceedToNext() || isGenerating}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm px-3 py-2"
               onMouseEnter={() => console.log('=== GENERATE BUTTON HOVER ===', 'Disabled:', !canProceedToNext() || isGenerating, 'Can proceed:', canProceedToNext(), 'Is generating:', isGenerating)}
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span className="text-sm">Generating...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" />
-                  Generate Preview
+                  <Sparkles className="h-3 w-3" />
+                  <span className="text-sm">Generate Preview</span>
                 </>
               )}
             </Button>
