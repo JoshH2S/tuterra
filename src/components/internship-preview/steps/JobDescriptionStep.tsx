@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -95,7 +94,7 @@ export function JobDescriptionStep({
             <Switch
               checked={useExperienceBasedTailoring}
               onCheckedChange={(checked) => onChange({ useExperienceBasedTailoring: checked })}
-              className="shrink-0"
+              className="shrink-0 h-5 w-9 sm:h-6 sm:w-11 [&>span]:h-4 [&>span]:w-4 [&>span]:data-[state=checked]:translate-x-4 sm:[&>span]:h-5 sm:[&>span]:w-5 sm:[&>span]:data-[state=checked]:translate-x-5"
             />
           </div>
         </div>
