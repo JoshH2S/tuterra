@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { InternshipPreviewForm } from "@/components/internship-preview/InternshipPreviewForm";
@@ -249,6 +248,55 @@ export default function InternshipPreview() {
         isOpen={isSignupModalOpen}
         onClose={() => setIsSignupModalOpen(false)}
       />
+
+      {/* Custom styles for step 4 button sizing */}
+      <style jsx>{`
+        /* Target the step 4 navigation buttons specifically */
+        .step-navigation-buttons {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 1rem;
+          margin-top: 2rem;
+        }
+        
+        .step-navigation-buttons button {
+          min-width: 120px !important;
+          height: 44px !important;
+          padding: 8px 16px !important;
+          font-size: 14px !important;
+          white-space: nowrap !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        
+        /* Responsive adjustments for mobile */
+        @media (max-width: 640px) {
+          .step-navigation-buttons {
+            gap: 0.75rem;
+          }
+          
+          .step-navigation-buttons button {
+            min-width: 100px !important;
+            height: 40px !important;
+            padding: 6px 12px !important;
+            font-size: 13px !important;
+          }
+        }
+        
+        /* Ensure proper spacing with step indicators */
+        .step-indicators {
+          margin: 0 1rem;
+          flex-shrink: 0;
+        }
+        
+        @media (max-width: 640px) {
+          .step-indicators {
+            margin: 0 0.5rem;
+          }
+        }
+      `}</style>
     </div>
   );
 }
