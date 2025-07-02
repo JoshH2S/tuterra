@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ export function InternshipPreviewForm({ onComplete }: InternshipPreviewFormProps
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState<Partial<InternshipPreviewData>>({});
   const [currentAttempt, setCurrentAttempt] = useState(0);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
@@ -31,6 +32,19 @@ export function InternshipPreviewForm({ onComplete }: InternshipPreviewFormProps
     "Experience & Background",
     "Internship Duration"
   ];
+
+  // Scroll to form center when step changes
+  useEffect(() => {
+    if (formRef.current) {
+      const rect = formRef.current.getBoundingClientRect();
+      const centerY = rect.top + window.pageYOffset + (rect.height / 2) - (window.innerHeight / 2);
+      
+      window.scrollTo({
+        top: Math.max(0, centerY),
+        behavior: 'smooth'
+      });
+    }
+  }, [currentStep]);
 
   const updateFormData = (data: Partial<InternshipPreviewData>) => {
     setFormData(prev => ({ ...prev, ...data }));
@@ -327,7 +341,7 @@ export function InternshipPreviewForm({ onComplete }: InternshipPreviewFormProps
   };
 
   return (
-    <Card className="relative bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+    <Card ref={formRef} className="relative bg-white/80 backdrop-blur-sm border-0 shadow-lg">
       {/* Loading Overlay */}
       {isGenerating && (
         <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
@@ -449,4 +463,4 @@ export function InternshipPreviewForm({ onComplete }: InternshipPreviewFormProps
       </CardContent>
     </Card>
   );
-} 
+}
