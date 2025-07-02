@@ -30,6 +30,9 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
      !location.pathname.includes("/overview") && 
      !location.pathname.includes("/internships"));
 
+  // Check if current route is the internship preview page
+  const isInternshipPreviewPage = location.pathname === "/internship-preview";
+
   // Hide sidebar and header on specific routes
   const hideSidebar = isLandingPage || 
     location.pathname === "/about" || 
@@ -41,14 +44,18 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
     location.pathname === "/onboarding" ||
     location.pathname === "/onboarding-redirect" ||
     location.pathname === "/verify-email" ||
-    isVirtualInternshipPage;
+    isVirtualInternshipPage ||
+    isInternshipPreviewPage;
 
   // Show Header1 on specific routes where the sidebar is hidden but we need navigation
   const showPublicHeader = location.pathname === "/about" || 
     location.pathname === "/contact";
 
+  // Determine background color - white for internship preview, gray for others
+  const backgroundClass = isInternshipPreviewPage ? "bg-white" : "bg-gray-50";
+
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden bg-gray-50">
+    <div className={cn("min-h-screen flex flex-col w-full max-w-full overflow-x-hidden", backgroundClass)}>
       <SkipToContent />
       {showPublicHeader && <Header1 />}
       
@@ -56,7 +63,8 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
         {!hideSidebar && <MainSidebar />}
         <div 
           className={cn(
-            "flex-1 flex flex-col transition-all duration-300 ease-in-out w-full bg-gray-50",
+            "flex-1 flex flex-col transition-all duration-300 ease-in-out w-full",
+            backgroundClass,
             !hideSidebar && !isMobile && "ml-[200px]"
           )}
         >

@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import OnboardingPage from "@/pages/OnboardingPage";
@@ -23,6 +22,7 @@ import SubscriptionCanceled from "@/pages/SubscriptionCanceled";
 import Contact from "@/pages/Contact";
 import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
 import OnboardingRedirect from "@/pages/OnboardingRedirect";
+import InternshipPreview from "@/pages/InternshipPreview";
 
 export const AppRoutes = () => {
   return (
@@ -38,6 +38,7 @@ export const AppRoutes = () => {
       <Route path="/terms-of-use" element={<TermsOfUse />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/internship-preview" element={<InternshipPreview />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard/*" element={

@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       achievement_definitions: {
@@ -158,6 +133,88 @@ export type Database = {
           user_tier?: string
         }
         Relationships: []
+      }
+      assessment_question_responses: {
+        Row: {
+          ai_analysis: Json | null
+          created_at: string | null
+          feedback: string | null
+          id: string
+          question_index: number
+          question_type: string
+          result_id: string
+          score: number | null
+          user_response: Json
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          question_index: number
+          question_type: string
+          result_id: string
+          score?: number | null
+          user_response: Json
+        }
+        Update: {
+          ai_analysis?: Json | null
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          question_index?: number
+          question_type?: string
+          result_id?: string
+          score?: number | null
+          user_response?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_question_responses_result_id_fkey"
+            columns: ["result_id"]
+            isOneToOne: false
+            referencedRelation: "skill_assessment_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_scenarios: {
+        Row: {
+          assessment_id: string
+          background_context: Json | null
+          created_at: string | null
+          id: string
+          scenario_content: string
+          scenario_title: string
+          supporting_materials: Json | null
+        }
+        Insert: {
+          assessment_id: string
+          background_context?: Json | null
+          created_at?: string | null
+          id?: string
+          scenario_content: string
+          scenario_title: string
+          supporting_materials?: Json | null
+        }
+        Update: {
+          assessment_id?: string
+          background_context?: Json | null
+          created_at?: string | null
+          id?: string
+          scenario_content?: string
+          scenario_title?: string
+          supporting_materials?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_scenarios_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "skill_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       assignment_submissions: {
         Row: {
@@ -1478,6 +1535,7 @@ export type Database = {
           content_type: string | null
           created_at: string | null
           feedback_provided_at: string | null
+          feedback_text: string | null
           file_name: string | null
           file_size: number | null
           file_type: string | null
@@ -1487,6 +1545,7 @@ export type Database = {
           quality_rating: number | null
           response_text: string
           session_id: string
+          status: string | null
           task_id: string
           timeliness_rating: number | null
           user_id: string
@@ -1496,6 +1555,7 @@ export type Database = {
           content_type?: string | null
           created_at?: string | null
           feedback_provided_at?: string | null
+          feedback_text?: string | null
           file_name?: string | null
           file_size?: number | null
           file_type?: string | null
@@ -1505,6 +1565,7 @@ export type Database = {
           quality_rating?: number | null
           response_text: string
           session_id: string
+          status?: string | null
           task_id: string
           timeliness_rating?: number | null
           user_id: string
@@ -1514,6 +1575,7 @@ export type Database = {
           content_type?: string | null
           created_at?: string | null
           feedback_provided_at?: string | null
+          feedback_text?: string | null
           file_name?: string | null
           file_size?: number | null
           file_type?: string | null
@@ -1523,6 +1585,7 @@ export type Database = {
           quality_rating?: number | null
           response_text?: string
           session_id?: string
+          status?: string | null
           task_id?: string
           timeliness_rating?: number | null
           user_id?: string
@@ -2606,43 +2669,55 @@ export type Database = {
       }
       skill_assessment_results: {
         Row: {
+          ai_feedback: Json | null
           answers: Json | null
           assessment_id: string
           completed_at: string | null
           created_at: string
           detailed_results: Json | null
           id: string
+          improvement_suggestions: Json | null
           level: string | null
+          response_analysis: Json | null
           score: number
           skill_scores: Json | null
+          strengths_identified: Json | null
           tier: string | null
           time_spent: number | null
           user_id: string
         }
         Insert: {
+          ai_feedback?: Json | null
           answers?: Json | null
           assessment_id: string
           completed_at?: string | null
           created_at?: string
           detailed_results?: Json | null
           id?: string
+          improvement_suggestions?: Json | null
           level?: string | null
+          response_analysis?: Json | null
           score: number
           skill_scores?: Json | null
+          strengths_identified?: Json | null
           tier?: string | null
           time_spent?: number | null
           user_id: string
         }
         Update: {
+          ai_feedback?: Json | null
           answers?: Json | null
           assessment_id?: string
           completed_at?: string | null
           created_at?: string
           detailed_results?: Json | null
           id?: string
+          improvement_suggestions?: Json | null
           level?: string | null
+          response_analysis?: Json | null
           score?: number
           skill_scores?: Json | null
+          strengths_identified?: Json | null
           tier?: string | null
           time_spent?: number | null
           user_id?: string
@@ -2659,6 +2734,7 @@ export type Database = {
       }
       skill_assessments: {
         Row: {
+          assessment_type: string | null
           created_at: string
           creator_id: string
           description: string | null
@@ -2673,6 +2749,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assessment_type?: string | null
           created_at?: string
           creator_id: string
           description?: string | null
@@ -2687,6 +2764,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assessment_type?: string | null
           created_at?: string
           creator_id?: string
           description?: string | null
@@ -3340,6 +3418,36 @@ export type Database = {
           },
         ]
       }
+      virtual_internship_waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          email_consent: boolean
+          id: string
+          name: string
+          signed_up_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          email_consent?: boolean
+          id?: string
+          name: string
+          signed_up_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          email_consent?: boolean
+          id?: string
+          name?: string
+          signed_up_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       welcome_section_config: {
         Row: {
           created_at: string
@@ -3663,9 +3771,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       content_type: ["chapter", "section", "definition", "formula", "example"],
@@ -3687,4 +3792,3 @@ export const Constants = {
     },
   },
 } as const
-
