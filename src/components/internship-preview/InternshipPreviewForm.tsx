@@ -13,10 +13,9 @@ import { InternshipPreviewData, InternshipPreviewResponse } from "@/pages/Intern
 
 interface InternshipPreviewFormProps {
   onComplete: (data: InternshipPreviewData, results: InternshipPreviewResponse) => void;
-  onStepChange?: (step: number) => void;
 }
 
-export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPreviewFormProps) {
+export function InternshipPreviewForm({ onComplete }: InternshipPreviewFormProps) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -34,31 +33,18 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
     "Internship Duration"
   ];
 
-  // Notify parent of step changes and scroll to top for steps 2+
+  // Scroll to form center when step changes
   useEffect(() => {
-    if (onStepChange) {
-      onStepChange(currentStep);
-    }
-
-    // Only scroll to center for step 1, scroll to top for steps 2+
-    if (currentStep === 1) {
-      if (formRef.current) {
-        const rect = formRef.current.getBoundingClientRect();
-        const centerY = rect.top + window.pageYOffset + (rect.height / 2) - (window.innerHeight / 2);
-        
-        window.scrollTo({
-          top: Math.max(0, centerY),
-          behavior: 'smooth'
-        });
-      }
-    } else {
-      // For steps 2+, scroll to top of page
+    if (formRef.current) {
+      const rect = formRef.current.getBoundingClientRect();
+      const centerY = rect.top + window.pageYOffset + (rect.height / 2) - (window.innerHeight / 2);
+      
       window.scrollTo({
-        top: 0,
+        top: Math.max(0, centerY),
         behavior: 'smooth'
       });
     }
-  }, [currentStep, onStepChange]);
+  }, [currentStep]);
 
   const updateFormData = (data: Partial<InternshipPreviewData>) => {
     setFormData(prev => ({ ...prev, ...data }));

@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Header1 } from "@/components/ui/header";
+
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { InternshipPreviewForm } from "@/components/internship-preview/InternshipPreviewForm";
 import { InternshipPreviewResults } from "@/components/internship-preview/InternshipPreviewResults";
 import { VirtualInternshipSignupModal } from "@/components/internship-preview/VirtualInternshipSignupModal";
 import { Card, CardContent } from "@/components/ui/card";
-import { Briefcase, Users, Calendar, BookOpen, Sparkles, Zap, Target, Trophy } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Building2, Users, Clock, Target } from "lucide-react";
 
 export interface InternshipPreviewData {
   industry: string;
@@ -59,172 +61,183 @@ export interface InternshipPreviewResponse {
 }
 
 export default function InternshipPreview() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [previewData, setPreviewData] = useState<InternshipPreviewData | null>(null);
-  const [results, setResults] = useState<InternshipPreviewResponse | null>(null);
-  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'form' | 'results'>('form');
+  const [previewData, setPreviewData] = useState<InternshipPreviewResponse | null>(null);
+  const [formData, setFormData] = useState<InternshipPreviewData | null>(null);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
 
-  const handleFormComplete = (data: InternshipPreviewData, previewResults: InternshipPreviewResponse) => {
-    setPreviewData(data);
-    setResults(previewResults);
+  // Debug modal state changes
+  useEffect(() => {
+    console.log('🔄 Modal state changed:', { isSignupModalOpen });
+  }, [isSignupModalOpen]);
+
+  // Listen for custom event to open the signup modal
+  useEffect(() => {
+    const handleOpenSignup = () => {
+      console.log('📨 Received openVirtualInternshipSignup event - opening modal');
+      setIsSignupModalOpen(true);
+    };
+
+    console.log('🎧 Setting up event listener for openVirtualInternshipSignup');
+    window.addEventListener('openVirtualInternshipSignup', handleOpenSignup);
+    return () => {
+      console.log('🧹 Cleaning up event listener for openVirtualInternshipSignup');
+      window.removeEventListener('openVirtualInternshipSignup', handleOpenSignup);
+    };
+  }, []);
+
+  const handleFormComplete = (data: InternshipPreviewData, results: InternshipPreviewResponse) => {
+    setFormData(data);
+    setPreviewData(results);
+    setCurrentStep('results');
   };
 
-  const handleGetCurrentStep = (step: number) => {
-    setCurrentStep(step);
+  const handleBackToForm = () => {
+    setCurrentStep('form');
+    setPreviewData(null);
   };
-
-  const featureCards = [
-    {
-      icon: <Briefcase className="h-6 w-6 text-blue-600" />,
-      title: "Realistic Company",
-      description: "Work for a virtual company with authentic projects and deadlines"
-    },
-    {
-      icon: <Users className="h-6 w-6 text-green-600" />,
-      title: "Virtual Supervisor",
-      description: "Get guidance and feedback from an AI supervisor throughout your internship"
-    },
-    {
-      icon: <Calendar className="h-6 w-6 text-purple-600" />,
-      title: "Structured Timeline",
-      description: "6-12 week program with progressive tasks and milestones"
-    },
-    {
-      icon: <BookOpen className="h-6 w-6 text-orange-600" />,
-      title: "Real Skills",
-      description: "Build portfolio-worthy projects that employers actually want to see"
-    }
-  ];
-
-  if (results && previewData) {
-    return <InternshipPreviewResults results={results} formData={previewData} />;
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Header - Always show */}
-      <Header1 />
-      
-      {/* Conditional content based on step */}
-      {currentStep === 1 ? (
-        // Step 1: Show full landing page layout
-        <div className="pt-20">
-          {/* Hero Section */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800 text-white">
-            <div className="absolute inset-0 bg-black/20"></div>
-            <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-24">
-              <div className="text-center space-y-8">
-                <div className="flex justify-center mb-6">
-                  <div className="relative">
-                    <div className="absolute -inset-4 bg-white/20 rounded-full animate-pulse"></div>
-                    <Sparkles className="h-16 w-16 text-yellow-300 relative z-10" />
-                  </div>
-                </div>
-                
-                <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                  Virtual Internship Preview
-                </h1>
-                
-                <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
-                  Experience what it's like to work at a real company. Get a personalized preview 
-                  of your virtual internship before you commit.
-                </p>
-                
-                <div className="flex flex-wrap justify-center gap-4 text-sm md:text-base">
-                  <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
-                    <Zap className="h-4 w-4" />
-                    <span>2-minute setup</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
-                    <Target className="h-4 w-4" />
-                    <span>Personalized experience</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
-                    <Trophy className="h-4 w-4" />
-                    <span>Real-world projects</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature Cards */}
-          <div className="py-16 bg-white/50">
-            <div className="max-w-7xl mx-auto px-4">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                  What You'll Experience
-                </h2>
-                <p className="text-lg text-gray-600">
-                  Get a taste of professional work life with these key features
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {featureCards.map((card, index) => (
-                  <Card key={index} className="text-center p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white/80 backdrop-blur-sm border-0">
-                    <CardContent className="space-y-4">
-                      <div className="flex justify-center">
-                        <div className="p-3 bg-gray-50 rounded-full">
-                          {card.icon}
-                        </div>
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {card.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {card.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Form Section */}
-          <div className="py-16">
-            <div className="max-w-4xl mx-auto px-4">
-              <InternshipPreviewForm 
-                onComplete={handleFormComplete} 
-                onStepChange={handleGetCurrentStep}
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
+        <div className="container mx-auto px-4 py-4 md:py-6">
+          <div className="text-center">
+            {/* Tuterra Logo */}
+            <motion.div
+              className="mb-4 md:mb-6"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <img 
+                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png" 
+                alt="Tuterra Logo" 
+                className="h-12 md:h-16 w-auto object-contain mx-auto" 
               />
-            </div>
+            </motion.div>
+            
+            <motion.h1 
+              className="text-2xl md:text-4xl font-bold text-gray-900 mb-2"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              Virtual Internship Preview
+            </motion.h1>
+            <motion.p 
+              className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-2"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              Experience what a Tuterra virtual internship would look like for your career goals
+            </motion.p>
           </div>
         </div>
-      ) : (
-        // Steps 2+: Show simplified layout with form at top
-        <div className="pt-20">
-          {/* Simple header for steps 2+ */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-8">
-            <div className="max-w-4xl mx-auto px-4 text-center">
-              <div className="flex justify-center mb-4">
-                <Sparkles className="h-8 w-8 text-yellow-300" />
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold">
-                Virtual Internship Preview
-              </h1>
-              <p className="text-blue-100 mt-2">
-                Complete your setup to see your personalized internship experience
-              </p>
-            </div>
-          </div>
+      </div>
 
-          {/* Form at top */}
-          <div className="py-8">
-            <div className="max-w-4xl mx-auto px-4">
-              <InternshipPreviewForm 
-                onComplete={handleFormComplete} 
-                onStepChange={handleGetCurrentStep}
-              />
-            </div>
+      {/* Benefits Section */}
+      {currentStep === 'form' && (
+        <motion.div 
+          className="container mx-auto px-4 py-6 md:py-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+            <Card className="bg-white border shadow-sm">
+              <CardContent className="p-3 md:p-4 text-center">
+                <Building2 className="h-6 md:h-8 w-6 md:w-8 text-blue-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-xs md:text-sm">Realistic Company</h3>
+                <p className="text-xs text-gray-600 hidden md:block">AI-generated company profile</p>
+                <p className="text-xs text-gray-600 md:hidden">AI company profile</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border shadow-sm">
+              <CardContent className="p-3 md:p-4 text-center">
+                <Users className="h-6 md:h-8 w-6 md:w-8 text-green-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-xs md:text-sm">Virtual Supervisor</h3>
+                <p className="text-xs text-gray-600 hidden md:block">Dedicated mentor & feedback</p>
+                <p className="text-xs text-gray-600 md:hidden">Mentor & feedback</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border shadow-sm">
+              <CardContent className="p-3 md:p-4 text-center">
+                <Target className="h-6 md:h-8 w-6 md:w-8 text-purple-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-xs md:text-sm">Structured Tasks</h3>
+                <p className="text-xs text-gray-600 hidden md:block">Progressive skill building</p>
+                <p className="text-xs text-gray-600 md:hidden">Skill building</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border shadow-sm">
+              <CardContent className="p-3 md:p-4 text-center">
+                <Clock className="h-6 md:h-8 w-6 md:w-8 text-orange-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-xs md:text-sm">Flexible Duration</h3>
+                <p className="text-xs text-gray-600 hidden md:block">6-12 weeks, your choice</p>
+                <p className="text-xs text-gray-600 md:hidden">6-12 weeks</p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
+        </motion.div>
       )}
 
+      {/* Main Content */}
+      <div className="container mx-auto px-4 pb-8 md:pb-12">
+        <div className="max-w-4xl mx-auto">
+          <AnimatePresence mode="wait">
+            {currentStep === 'form' && (
+              <motion.div
+                key="form"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4 }}
+              >
+                <InternshipPreviewForm onComplete={handleFormComplete} />
+              </motion.div>
+            )}
+            
+            {currentStep === 'results' && previewData && formData && (
+              <motion.div
+                key="results"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.4 }}
+              >
+                <InternshipPreviewResults 
+                  data={previewData} 
+                  formData={formData}
+                  onBackToForm={handleBackToForm} 
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-white border-t mt-8 md:mt-12">
+        <div className="container mx-auto px-4 py-4 md:py-6">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Ready to start your virtual internship journey?{" "}
+              <button 
+                onClick={() => setIsSignupModalOpen(true)}
+                className="text-blue-600 hover:text-blue-700 font-medium underline cursor-pointer touch-manipulation"
+              >
+                Sign up for free
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Virtual Internship Signup Modal */}
       <VirtualInternshipSignupModal 
-        open={showSignupModal} 
-        onOpenChange={setShowSignupModal} 
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
       />
     </div>
   );
