@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AISupervisorService } from "@/services/aiSupervisor";
 import { LoadingSpinner } from "@/components/ui/loading-states";
+import { SupervisorMessage } from "@/types/internship"; // Import the correct type
 
 interface Message {
   id: string;
@@ -85,9 +86,9 @@ export function EnhancedMessagingPanel({ sessionId }: EnhancedMessagingPanelProp
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
 
-      // Combine and sort messages
+      // Combine and sort messages - properly handle SupervisorMessage type
       const allMessages: Message[] = [
-        ...(supervisorMessages || []).map(msg => ({
+        ...(supervisorMessages || []).map((msg: SupervisorMessage) => ({
           id: msg.id,
           content: msg.message_content,
           sender_type: 'supervisor' as const,
@@ -101,10 +102,10 @@ export function EnhancedMessagingPanel({ sessionId }: EnhancedMessagingPanelProp
         })),
         ...(regularMessages || []).map(msg => ({
           id: msg.id,
-          content: msg.body || msg.content || '', // Use 'body' from the actual schema, fallback to content
+          content: msg.body || msg.content || '',
           sender_type: msg.sender_name === 'You' ? 'user' as const : 'supervisor' as const,
           sender_name: msg.sender_name || 'Unknown',
-          created_at: msg.timestamp || msg.sent_at || msg.created_at
+          created_at: msg.created_at || msg.timestamp || msg.sent_at
         }))
       ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
