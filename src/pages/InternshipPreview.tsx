@@ -65,6 +65,7 @@ export default function InternshipPreview() {
   const [previewData, setPreviewData] = useState<InternshipPreviewResponse | null>(null);
   const [formData, setFormData] = useState<InternshipPreviewData | null>(null);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [formStep, setFormStep] = useState(1);
 
   // Debug modal state changes
   useEffect(() => {
@@ -97,48 +98,54 @@ export default function InternshipPreview() {
     setPreviewData(null);
   };
 
+  const handleStepChange = (step: number) => {
+    setFormStep(step);
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
-        <div className="container mx-auto px-4 py-4 md:py-6">
-          <div className="text-center">
-            {/* Tuterra Logo */}
-            <motion.div
-              className="mb-4 md:mb-6"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <img 
-                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png" 
-                alt="Tuterra Logo" 
-                className="h-12 md:h-16 w-auto object-contain mx-auto" 
-              />
-            </motion.div>
-            
-            <motion.h1 
-              className="text-2xl md:text-4xl font-bold text-gray-900 mb-2"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
-              Virtual Internship Preview
-            </motion.h1>
-            <motion.p 
-              className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-2"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              Experience what a Tuterra virtual internship would look like for your career goals
-            </motion.p>
+      {/* Header - only show on step 1 */}
+      {formStep === 1 && currentStep === 'form' && (
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
+          <div className="container mx-auto px-4 py-4 md:py-6">
+            <div className="text-center">
+              {/* Tuterra Logo */}
+              <motion.div
+                className="mb-4 md:mb-6"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <img 
+                  src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png" 
+                  alt="Tuterra Logo" 
+                  className="h-12 md:h-16 w-auto object-contain mx-auto" 
+                />
+              </motion.div>
+              
+              <motion.h1 
+                className="text-2xl md:text-4xl font-bold text-gray-900 mb-2"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+              >
+                Virtual Internship Preview
+              </motion.h1>
+              <motion.p 
+                className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-2"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Experience what a Tuterra virtual internship would look like for your career goals
+              </motion.p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Benefits Section */}
-      {currentStep === 'form' && (
+      {/* Benefits Section - only show on step 1 */}
+      {formStep === 1 && currentStep === 'form' && (
         <motion.div 
           className="container mx-auto px-4 py-6 md:py-8"
           initial={{ opacity: 0, y: 20 }}
@@ -194,7 +201,10 @@ export default function InternshipPreview() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.4 }}
               >
-                <InternshipPreviewForm onComplete={handleFormComplete} />
+                <InternshipPreviewForm 
+                  onComplete={handleFormComplete} 
+                  onStepChange={handleStepChange}
+                />
               </motion.div>
             )}
             

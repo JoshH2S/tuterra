@@ -13,9 +13,10 @@ import { InternshipPreviewData, InternshipPreviewResponse } from "@/pages/Intern
 
 interface InternshipPreviewFormProps {
   onComplete: (data: InternshipPreviewData, results: InternshipPreviewResponse) => void;
+  onStepChange?: (step: number) => void;
 }
 
-export function InternshipPreviewForm({ onComplete }: InternshipPreviewFormProps) {
+export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPreviewFormProps) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -32,6 +33,11 @@ export function InternshipPreviewForm({ onComplete }: InternshipPreviewFormProps
     "Experience & Background",
     "Internship Duration"
   ];
+
+  // Notify parent of step changes
+  useEffect(() => {
+    onStepChange?.(currentStep);
+  }, [currentStep, onStepChange]);
 
   // Scroll to form center when step changes
   useEffect(() => {
