@@ -46,9 +46,14 @@ export function InternshipMetricsDashboard({ sessionId, tasks }: MetricsDashboar
   useEffect(() => {
     if (!tasks.length) return;
     
-    const completed = tasks.filter(task => task.status === 'completed');
-    const overdue = tasks.filter(task => task.status === 'overdue');
-    const inProgress = tasks.filter(task => task.status === 'in_progress');
+    // Update the task filtering logic to handle the optional feedback_text property
+    const tasksWithFeedback = tasks.filter(task => 
+      task.submission?.overall_assessment || task.submission?.feedback_text
+    );
+    
+    const completed = tasksWithFeedback.filter(task => task.status === 'completed');
+    const overdue = tasksWithFeedback.filter(task => task.status === 'overdue');
+    const inProgress = tasksWithFeedback.filter(task => task.status === 'in_progress');
     
     // Calculate average completion time
     let totalCompletionDays = 0;
@@ -286,4 +291,4 @@ export function InternshipMetricsDashboard({ sessionId, tasks }: MetricsDashboar
       </div>
     </div>
   );
-} 
+}

@@ -16,6 +16,9 @@ interface InternshipMessage {
   sender_avatar_url: string | null;
   subject: string;
   body: string;
+  content: string;
+  sender: string;
+  sent_at: string;
   related_task_id: string | null;
   related_task_title?: string | null;
   timestamp: string;
@@ -110,9 +113,8 @@ export function MessagingPanel({ sessionId }: MessagingPanelProps) {
         }
       }
       
-      // If any messages are in the old format (from old table structure), 
-      // normalize them to the new format
-      processedMessages = processedMessages.map(message => {
+      // Normalize messages to the InternshipMessage format
+      const normalizedMessages: InternshipMessage[] = processedMessages.map(message => {
         // Cast to any to handle potential old structure fields
         const msg = message as any;
         return {
@@ -122,6 +124,9 @@ export function MessagingPanel({ sessionId }: MessagingPanelProps) {
           sender_avatar_url: msg.sender_avatar_url || null,
           subject: msg.subject || "No Subject",
           body: msg.body || msg.content || "",
+          content: msg.content || msg.body || "", // Add content property
+          sender: msg.sender || msg.sender_name || "Team Member", // Add sender property
+          sent_at: msg.sent_at || msg.timestamp || msg.created_at, // Add sent_at property
           related_task_id: msg.related_task_id || null,
           related_task_title: msg.related_task_title || null,
           timestamp: msg.timestamp || msg.sent_at || msg.created_at,
@@ -131,17 +136,23 @@ export function MessagingPanel({ sessionId }: MessagingPanelProps) {
       });
       
       // If no messages exist, use welcome messages
-      if (processedMessages.length === 0) {
-        processedMessages = WELCOME_MESSAGES.map(msg => ({
+      if (normalizedMessages.length === 0) {
+        const welcomeMessages: InternshipMessage[] = WELCOME_MESSAGES.map(msg => ({
           ...msg,
           session_id: sessionId,
           sender_avatar_url: null,
+          content: msg.body || "", // Add content property
+          sender: msg.sender_name || "Team Member", // Add sender property
+          sent_at: msg.timestamp || new Date().toISOString(), // Add sent_at property
           related_task_id: null,
-          related_task_title: null
+          related_task_title: null,
+          created_at: msg.timestamp || new Date().toISOString()
         })) as InternshipMessage[];
+        
+        setMessages(welcomeMessages);
+      } else {
+        setMessages(normalizedMessages);
       }
-      
-      setMessages(processedMessages);
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast({
@@ -151,13 +162,19 @@ export function MessagingPanel({ sessionId }: MessagingPanelProps) {
       });
       
       // Fall back to welcome messages on error
-      setMessages(WELCOME_MESSAGES.map(msg => ({
+      const fallbackMessages: InternshipMessage[] = WELCOME_MESSAGES.map(msg => ({
         ...msg,
         session_id: sessionId,
         sender_avatar_url: null,
+        content: msg.body || "", // Add content property
+        sender: msg.sender_name || "Team Member", // Add sender property
+        sent_at: msg.timestamp || new Date().toISOString(), // Add sent_at property
         related_task_id: null,
-        related_task_title: null
-      })) as InternshipMessage[]);
+        related_task_title: null,
+        created_at: msg.timestamp || new Date().toISOString()
+      })) as InternshipMessage[];
+      
+      setMessages(fallbackMessages);
     } finally {
       setLoading(false);
     }

@@ -95,15 +95,15 @@ export function EnhancedMessagingPanel({ sessionId }: EnhancedMessagingPanelProp
           sender_role: msg.sender_persona?.role || 'Internship Coordinator',
           sender_department: msg.sender_persona?.department || 'Human Resources',
           sender_avatar_style: msg.sender_persona?.avatar_style || 'professional',
-          created_at: msg.sent_at || msg.scheduled_for,
+          created_at: msg.sent_at || msg.scheduled_for || msg.created_at,
           message_type: msg.message_type,
           context_data: msg.context_data
         })),
         ...(regularMessages || []).map(msg => ({
           id: msg.id,
-          content: msg.body || msg.content, // Use 'body' from the actual schema, fallback to content
+          content: msg.body || msg.content || '', // Use 'body' from the actual schema, fallback to content
           sender_type: msg.sender_name === 'You' ? 'user' as const : 'supervisor' as const,
-          sender_name: msg.sender_name,
+          sender_name: msg.sender_name || 'Unknown',
           created_at: msg.timestamp || msg.sent_at || msg.created_at
         }))
       ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -353,4 +353,4 @@ export function EnhancedMessagingPanel({ sessionId }: EnhancedMessagingPanelProp
       </CardContent>
     </Card>
   );
-} 
+}

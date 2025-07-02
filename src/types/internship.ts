@@ -41,11 +41,7 @@ export interface TaskSubmission {
   quality_rating?: number | null;
   timeliness_rating?: number | null;
   collaboration_rating?: number | null;
-  file_url?: string | null;
-  file_name?: string | null;
-  file_type?: string | null;
-  file_size?: number | null;
-  content_type?: 'text' | 'file' | 'both' | null;
+  feedback_text?: string | null;
 }
 
 // Event interface
@@ -85,3 +81,39 @@ export interface CompanyInfo {
   created_at: string;
   updated_at: string;
 } 
+
+export interface SupervisorMessage {
+  id: string;
+  session_id: string;
+  user_id: string;
+  message_type: string;
+  message_content: string;
+  status: string;
+  sent_at: string | null;
+  scheduled_for: string | null;
+  created_at: string;
+  context_data?: any;
+  sender_persona?: {
+    name: string;
+    role: string;
+    department: string;
+    avatar_style: string;
+  };
+}
+
+export interface InternshipMessage {
+  id: string;
+  session_id: string;
+  sender_name: string;
+  sender_avatar_url: string | null;
+  subject: string;
+  body: string;
+  content: string;
+  sender: string;
+  sent_at: string;
+  related_task_id: string | null;
+  related_task_title?: string | null;
+  timestamp: string;
+  is_read: boolean;
+  created_at: string;
+}
