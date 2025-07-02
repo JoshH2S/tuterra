@@ -41,10 +41,23 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
 
   // Scroll to top when step changes
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    // Add a small delay to ensure content is rendered before scrolling
+    const scrollTimer = setTimeout(() => {
+      // Scroll to the form container specifically, or window top if form ref not available
+      if (formRef.current) {
+        formRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      } else {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }
+    }, 100); // Small delay to ensure DOM is updated
+
+    return () => clearTimeout(scrollTimer);
   }, [currentStep]);
 
   const updateFormData = (data: Partial<InternshipPreviewData>) => {
@@ -97,12 +110,42 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
   const handleNext = () => {
     if (canProceedToNext() && currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1);
+      
+      // Additional immediate scroll to ensure it works
+      setTimeout(() => {
+        if (formRef.current) {
+          formRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        } else {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }, 150);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
+      
+      // Additional immediate scroll to ensure it works
+      setTimeout(() => {
+        if (formRef.current) {
+          formRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        } else {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }, 150);
     }
   };
 
