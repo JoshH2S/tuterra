@@ -39,13 +39,18 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
     onStepChange?.(currentStep);
   }, [currentStep, onStepChange]);
 
-  // Scroll to top only when the first step loads
+  // Scroll to top when step changes
   useEffect(() => {
-    // Only scroll to top for the first step
-    if (currentStep === 1) {
-      // Add a small delay to ensure content is rendered before scrolling
-      const scrollTimer = setTimeout(() => {
-        // Scroll to the form container specifically, or window top if form ref not available
+    // Add a small delay to ensure content is rendered before scrolling
+    const scrollTimer = setTimeout(() => {
+      // For step 1, scroll to the very top of the page to show header/benefits
+      if (currentStep === 1) {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      } else {
+        // For other steps, scroll to the form container specifically
         if (formRef.current) {
           formRef.current.scrollIntoView({
             behavior: 'smooth',
@@ -57,10 +62,10 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
             behavior: 'smooth'
           });
         }
-      }, 100); // Small delay to ensure DOM is updated
+      }
+    }, 100); // Small delay to ensure DOM is updated
 
-      return () => clearTimeout(scrollTimer);
-    }
+    return () => clearTimeout(scrollTimer);
   }, [currentStep]);
 
   const updateFormData = (data: Partial<InternshipPreviewData>) => {
@@ -116,16 +121,26 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
       
       // Additional immediate scroll to ensure it works
       setTimeout(() => {
-        if (formRef.current) {
-          formRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
-        } else {
+        const nextStep = currentStep + 1;
+        // For step 1, scroll to the very top of the page
+        if (nextStep === 1) {
           window.scrollTo({
             top: 0,
             behavior: 'smooth'
           });
+        } else {
+          // For other steps, scroll to the form container
+          if (formRef.current) {
+            formRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          } else {
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+          }
         }
       }, 150);
     }
@@ -137,16 +152,26 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
       
       // Additional immediate scroll to ensure it works
       setTimeout(() => {
-        if (formRef.current) {
-          formRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
-        } else {
+        const prevStep = currentStep - 1;
+        // For step 1, scroll to the very top of the page
+        if (prevStep === 1) {
           window.scrollTo({
             top: 0,
             behavior: 'smooth'
           });
+        } else {
+          // For other steps, scroll to the form container
+          if (formRef.current) {
+            formRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          } else {
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+          }
         }
       }, 150);
     }
