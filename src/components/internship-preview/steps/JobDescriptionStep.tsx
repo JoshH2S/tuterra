@@ -94,7 +94,7 @@ export function JobDescriptionStep({
             <Switch
               checked={useExperienceBasedTailoring}
               onCheckedChange={(checked) => onChange({ useExperienceBasedTailoring: checked })}
-              className="shrink-0 h-5 w-9 sm:h-6 sm:w-11 [&>span]:h-4 [&>span]:w-4 [&>span]:data-[state=checked]:translate-x-4 sm:[&>span]:h-5 sm:[&>span]:w-5 sm:[&>span]:data-[state=checked]:translate-x-5"
+              className="shrink-0 h-4 w-7 sm:h-5 sm:w-9 md:h-6 md:w-11 [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-3 sm:[&>span]:h-4 sm:[&>span]:w-4 sm:[&>span]:data-[state=checked]:translate-x-4 md:[&>span]:h-5 md:[&>span]:w-5 md:[&>span]:data-[state=checked]:translate-x-5"
             />
           </div>
         </div>
