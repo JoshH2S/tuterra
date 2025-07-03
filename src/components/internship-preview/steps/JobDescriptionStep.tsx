@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { motion } from "framer-motion";
 import { Plus, X, BookOpen, Briefcase, Target, Award, Wrench } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface JobDescriptionStepProps {
   jobDescription: string;
@@ -81,23 +81,46 @@ export function JobDescriptionStep({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Toggle between approaches - Simplified switch usage */}
+        {/* Segmented Control for approach selection */}
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex-1">
+          <div className="flex flex-col gap-4">
+            <div>
               <h4 className="text-sm font-medium text-blue-900 mb-1">
-                Experience-Based Tailoring
+                Choose Your Approach
               </h4>
               <p className="text-xs md:text-sm text-blue-800">
-                Share your background for a highly customized internship experience
+                Select how you'd like us to customize your internship experience
               </p>
             </div>
-            {/* Removed the custom sizing classes - let the component handle responsive sizing */}
-            <Switch
-              checked={useExperienceBasedTailoring}
-              onCheckedChange={(checked) => onChange({ useExperienceBasedTailoring: checked })}
-              className="shrink-0"
-            />
+            
+            <div className="inline-flex rounded-full bg-gray-200 p-1 self-start">
+              <button
+                type="button"
+                onClick={() => onChange({ useExperienceBasedTailoring: true })}
+                className={cn(
+                  "px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 touch-manipulation",
+                  "sm:px-4 sm:py-2",
+                  useExperienceBasedTailoring
+                    ? "bg-white shadow-sm text-blue-700"
+                    : "text-gray-600 hover:bg-gray-100"
+                )}
+              >
+                By Experience
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({ useExperienceBasedTailoring: false })}
+                className={cn(
+                  "px-3 py-2 rounded-full text-sm font-medium transition-all duration-200 touch-manipulation",
+                  "sm:px-4 sm:py-2",
+                  !useExperienceBasedTailoring
+                    ? "bg-white shadow-sm text-blue-700"
+                    : "text-gray-600 hover:bg-gray-100"
+                )}
+              >
+                By Job Description
+              </button>
+            </div>
           </div>
         </div>
 
