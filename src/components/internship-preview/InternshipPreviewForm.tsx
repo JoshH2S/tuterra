@@ -39,25 +39,28 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
     onStepChange?.(currentStep);
   }, [currentStep, onStepChange]);
 
-  // Scroll to top when step changes
+  // Scroll to top only when the first step loads
   useEffect(() => {
-    // Add a small delay to ensure content is rendered before scrolling
-    const scrollTimer = setTimeout(() => {
-      // Scroll to the form container specifically, or window top if form ref not available
-      if (formRef.current) {
-        formRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      } else {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      }
-    }, 100); // Small delay to ensure DOM is updated
+    // Only scroll to top for the first step
+    if (currentStep === 1) {
+      // Add a small delay to ensure content is rendered before scrolling
+      const scrollTimer = setTimeout(() => {
+        // Scroll to the form container specifically, or window top if form ref not available
+        if (formRef.current) {
+          formRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        } else {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }, 100); // Small delay to ensure DOM is updated
 
-    return () => clearTimeout(scrollTimer);
+      return () => clearTimeout(scrollTimer);
+    }
   }, [currentStep]);
 
   const updateFormData = (data: Partial<InternshipPreviewData>) => {
