@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,18 @@ export function InternshipPreviewResults({ data, formData, onBackToForm }: Inter
   }, {} as Record<number, typeof tasks>);
 
   const weeks = Object.keys(tasksByWeek).map(Number).sort((a, b) => a - b);
+
+  // Scroll to top when results page first loads
+  useEffect(() => {
+    const scrollTimer = setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }, 100); // Small delay to ensure content is rendered
+
+    return () => clearTimeout(scrollTimer);
+  }, []);
 
   return (
     <div className="space-y-8">
