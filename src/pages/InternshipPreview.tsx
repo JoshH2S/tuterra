@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { InternshipPreviewForm } from "@/components/internship-preview/InternshipPreviewForm";
@@ -250,7 +251,7 @@ export default function InternshipPreview() {
       />
 
       {/* Custom styles for step 4 button sizing */}
-      <style jsx>{`
+      <style>{`
         /* Target the step 4 navigation buttons specifically */
         .step-navigation-buttons {
           display: flex;
