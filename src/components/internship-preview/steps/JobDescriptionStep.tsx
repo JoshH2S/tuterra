@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -80,7 +81,7 @@ export function JobDescriptionStep({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Toggle between approaches */}
+        {/* Toggle between approaches - Simplified switch usage */}
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex-1">
@@ -91,10 +92,11 @@ export function JobDescriptionStep({
                 Share your background for a highly customized internship experience
               </p>
             </div>
+            {/* Removed the custom sizing classes - let the component handle responsive sizing */}
             <Switch
               checked={useExperienceBasedTailoring}
               onCheckedChange={(checked) => onChange({ useExperienceBasedTailoring: checked })}
-              className="shrink-0 h-4 w-7 sm:h-5 sm:w-9 md:h-6 md:w-11 [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-3 sm:[&>span]:h-4 sm:[&>span]:w-4 sm:[&>span]:data-[state=checked]:translate-x-4 md:[&>span]:h-5 md:[&>span]:w-5 md:[&>span]:data-[state=checked]:translate-x-5"
+              className="shrink-0"
             />
           </div>
         </div>
