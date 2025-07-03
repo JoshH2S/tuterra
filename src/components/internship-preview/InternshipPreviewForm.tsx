@@ -385,10 +385,10 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
   };
 
   return (
-    <Card ref={formRef} className="relative bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-      {/* Loading Overlay */}
+    <>
+      {/* Loading Overlay - Fixed positioning to center on viewport */}
       {isGenerating && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-lg flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="text-center space-y-4 max-w-md mx-auto p-8">
             <div className="relative">
               <div className="w-16 h-16 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto"></div>
@@ -426,92 +426,143 @@ export function InternshipPreviewForm({ onComplete, onStepChange }: InternshipPr
         </div>
       )}
 
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <CardTitle className="text-xl font-semibold">
-            Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}
-          </CardTitle>
-          <div className="text-sm text-gray-500">
-            {Math.round(progress)}% Complete
+      <Card ref={formRef} className="relative bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between mb-4">
+            <CardTitle className="text-xl font-semibold">
+              Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}
+            </CardTitle>
+            <div className="text-sm text-gray-500">
+              {Math.round(progress)}% Complete
+            </div>
           </div>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </CardHeader>
+          <Progress value={progress} className="h-2" />
+        </CardHeader>
 
-      <CardContent className="pt-0">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="min-h-[300px]"
-          >
-            {renderStep()}
-          </motion.div>
-        </AnimatePresence>
+        <CardContent className="pt-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="min-h-[300px]"
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
 
-        <div className="flex justify-between items-center mt-8 pt-6 border-t">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1 || isGenerating}
-            className={`flex items-center gap-2 ${
+          <div className="flex justify-between items-center mt-8 pt-6 border-t">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 1 || isGenerating}
+              className={`flex items-center gap-2 ${
+                currentStep === totalSteps 
+                  ? 'text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-3 min-w-[90px] sm:min-w-[110px]' 
+                  : ''
+              }`}
+            >
+              <ArrowLeft className={`${currentStep === totalSteps ? 'h-3 w-3 sm:h-4 sm:w-4' : 'h-4 w-4'}`} />
+              <span className="whitespace-nowrap">Previous</span>
+            </Button>
+
+            <div className={`flex items-center gap-2 ${
               currentStep === totalSteps 
-                ? 'text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-3 min-w-[90px] sm:min-w-[110px]' 
+                ? 'mx-4 sm:mx-8 md:mx-12' 
                 : ''
-            }`}
-          >
-            <ArrowLeft className={`${currentStep === totalSteps ? 'h-3 w-3 sm:h-4 sm:w-4' : 'h-4 w-4'}`} />
-            <span className="whitespace-nowrap">Previous</span>
-          </Button>
+            }`}>
+              {Array.from({ length: totalSteps }, (_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    i + 1 <= currentStep ? 'bg-amber-600' : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
 
-          <div className={`flex items-center gap-2 ${
-            currentStep === totalSteps 
-              ? 'mx-4 sm:mx-8 md:mx-12' 
-              : ''
-          }`}>
-            {Array.from({ length: totalSteps }, (_, i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  i + 1 <= currentStep ? 'bg-amber-600' : 'bg-gray-300'
-                }`}
-              />
-            ))}
+            {currentStep < totalSteps ? (
+              <Button
+                onClick={handleNext}
+                disabled={!canProceedToNext() || isGenerating}
+                className="flex items-center gap-2"
+              >
+                Next
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                onClick={testButtonClick}
+                disabled={!canProceedToNext() || isGenerating}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-3 min-w-[130px] sm:min-w-[160px]"
+                onMouseEnter={() => console.log('=== GENERATE BUTTON HOVER ===', 'Disabled:', !canProceedToNext() || isGenerating, 'Can proceed:', canProceedToNext(), 'Is generating:', isGenerating)}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                    <span className="whitespace-nowrap">Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="whitespace-nowrap">Generate Preview</span>
+                  </>
+                )}
+              </Button>
+            )}
           </div>
+        </CardContent>
+      </Card>
 
-          {currentStep < totalSteps ? (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceedToNext() || isGenerating}
-              className="flex items-center gap-2"
-            >
-              Next
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button
-              onClick={testButtonClick}
-              disabled={!canProceedToNext() || isGenerating}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm sm:text-base px-4 py-2 sm:px-6 sm:py-3 min-w-[130px] sm:min-w-[160px]"
-              onMouseEnter={() => console.log('=== GENERATE BUTTON HOVER ===', 'Disabled:', !canProceedToNext() || isGenerating, 'Can proceed:', canProceedToNext(), 'Is generating:', isGenerating)}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                  <span className="whitespace-nowrap">Generating...</span>
-                </>
-              ) : (
-                <>
-                  <span className="whitespace-nowrap">Generate Preview</span>
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      {/* Custom styles for step 4 button sizing */}
+      <style>{`
+        /* Target the step 4 navigation buttons specifically */
+        .step-navigation-buttons {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 1rem;
+          margin-top: 2rem;
+        }
+        
+        .step-navigation-buttons button {
+          min-width: 120px !important;
+          height: 44px !important;
+          padding: 8px 16px !important;
+          font-size: 14px !important;
+          white-space: nowrap !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        
+        /* Responsive adjustments for mobile */
+        @media (max-width: 640px) {
+          .step-navigation-buttons {
+            gap: 0.75rem;
+          }
+          
+          .step-navigation-buttons button {
+            min-width: 100px !important;
+            height: 40px !important;
+            padding: 6px 12px !important;
+            font-size: 13px !important;
+          }
+        }
+        
+        /* Ensure proper spacing with step indicators */
+        .step-indicators {
+          margin: 0 1rem;
+          flex-shrink: 0;
+        }
+        
+        @media (max-width: 640px) {
+          .step-indicators {
+            margin: 0.5rem;
+          }
+        }
+      `}</style>
+    </>
   );
 }
