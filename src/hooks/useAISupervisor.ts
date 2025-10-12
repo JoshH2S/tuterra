@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "./useAuth";
 import { AISupervisorService } from "@/services/aiSupervisor";
 import { useToast } from "./use-toast";
+import { debounce } from "../utils/debounce";
 
 interface UseAISupervisorProps {
   sessionId: string | null;
@@ -16,6 +17,31 @@ interface SupervisorState {
   supervisorName: string;
 }
 
+interface MessageNotification {
+  type: 'onboarding' | 'check_in' | 'team_introduction' | 'feedback_followup' | 'general';
+  title: string;
+  description: string;
+  duration?: number;
+  priority?: 'low' | 'medium' | 'high';
+}
+
+// Constants
+const MAX_RETRIES = 2;
+const NOTIFICATION_COOLDOWN = 5000;
+const DASHBOARD_VISIT_DEBOUNCE = 1000;
+const ANALYSIS_INTERVAL = 10 * 60 * 1000; // 10 minutes
+const MIN_ANALYSIS_GAP = 2 * 60 * 1000;   // 2 minutes minimum between analyses
+
+interface InitializationState {
+  dashboardVisitRecorded: boolean;
+  onboardingTriggered: boolean;
+  supervisorInitialized: boolean;
+  retryAttempts: number;
+  lastAnalysisTime: number;
+  pendingCheckIns: Set<string>;
+  lastNotificationTimes: Record<string, number>;
+}
+
 export function useAISupervisor({ sessionId, enabled = true }: UseAISupervisorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -23,17 +49,126 @@ export function useAISupervisor({ sessionId, enabled = true }: UseAISupervisorPr
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Enhanced initialization tracking
+  const initializationRef = useRef<InitializationState>({
+    dashboardVisitRecorded: false,
+    onboardingTriggered: false,
+    supervisorInitialized: false,
+    retryAttempts: 0,
+    lastAnalysisTime: 0,
+    pendingCheckIns: new Set(),
+    lastNotificationTimes: {}
+  });
 
-  // Initialize supervisor on component mount
-  const initializeSupervisor = useCallback(async () => {
-    if (!sessionId || sessionId === 'undefined' || !user?.id || user.id === 'undefined' || !enabled) {
-      console.log('Skipping supervisor initialization:', { sessionId, userId: user?.id, enabled });
+  // Track pending operations for cleanup
+  const pendingOperations = useRef<Array<NodeJS.Timeout>>([]);
+
+  // Helper to clean up pending operations
+  const cleanupPendingOperations = useCallback(() => {
+    pendingOperations.current.forEach(clearTimeout);
+    pendingOperations.current = [];
+  }, []);
+
+  // Enhanced session validation
+  const isValidSession = useCallback(() => {
+    if (!sessionId || !user?.id || !enabled) return false;
+
+    const isValidId = (id: string) => {
+      return id.trim() !== '' && 
+             id !== 'undefined' && 
+             id !== 'null' &&
+             id.length > 0;
+    };
+
+    return isValidId(sessionId) && isValidId(user.id);
+  }, [sessionId, user?.id, enabled]);
+
+  // Enhanced notification system with rate limiting and priority
+  const showMessageNotification = useCallback((messageType: string, context?: any) => {
+    const now = Date.now();
+    const lastNotification = initializationRef.current.lastNotificationTimes[messageType];
+    
+    // Check notification cooldown
+    if (lastNotification && (now - lastNotification) < NOTIFICATION_COOLDOWN) {
+      console.log('Skipping notification - too recent:', messageType);
+      return;
+    }
+
+    const notifications: Record<string, MessageNotification> = {
+      onboarding: {
+        type: 'onboarding',
+        title: "Welcome to Your Internship!",
+        description: `Your supervisor ${supervisorState?.supervisorName || 'has'} sent you a welcome message. Check the Messages tab to get started.`,
+        duration: 6000,
+        priority: 'high'
+      },
+      check_in: {
+        type: 'check_in',
+        title: "Check-in from Supervisor",
+        description: "Your supervisor wants to check on your progress. View the message in the Messages tab.",
+        duration: 4000,
+        priority: 'medium'
+      },
+      team_introduction: {
+        type: 'team_introduction',
+        title: "Team Introduction",
+        description: "A team member has introduced themselves! Check your messages to connect with your colleagues.",
+        duration: 5000,
+        priority: 'medium'
+      },
+      feedback_followup: {
+        type: 'feedback_followup',
+        title: "Feedback Follow-up",
+        description: "Your supervisor has provided additional feedback on your recent submission.",
+        duration: 4000,
+        priority: 'high'
+      },
+      general: {
+        type: 'general',
+        title: "New Message",
+        description: "You have a new message from your internship team.",
+        duration: 3000,
+        priority: 'low'
+      }
+    };
+
+    const notification = notifications[messageType] || notifications.general;
+    
+    try {
+      // Update notification history before showing
+      initializationRef.current.lastNotificationTimes[messageType] = now;
+      
+      toast({
+        title: notification.title,
+        description: notification.description,
+        duration: notification.duration,
+        // Add any custom styling based on priority
+        className: `priority-${notification.priority}`
+      });
+    } catch (error) {
+      console.error('Failed to show notification:', error);
+      // Remove from history if failed
+      delete initializationRef.current.lastNotificationTimes[messageType];
+    }
+  }, [toast, supervisorState?.supervisorName]);
+
+  // Initialize supervisor with retry logic
+  const initializeSupervisor = useCallback(async (retryCount = 0) => {
+    if (!isValidSession()) {
+      console.log('Skipping supervisor initialization - invalid session');
+      return;
+    }
+
+    if (initializationRef.current.supervisorInitialized) {
       return;
     }
 
     setLoading(true);
+    setError(null);
+    
     try {
-      const state = await AISupervisorService.initializeSupervisor(sessionId, user.id);
+      const state = await AISupervisorService.initializeSupervisor(sessionId!, user!.id);
       setSupervisorState({
         isInitialized: true,
         onboardingCompleted: state.onboarding_completed,
@@ -42,78 +177,93 @@ export function useAISupervisor({ sessionId, enabled = true }: UseAISupervisorPr
         supervisorName: state.supervisor_name
       });
       setInitialized(true);
+      initializationRef.current.supervisorInitialized = true;
+      initializationRef.current.retryAttempts = 0;
     } catch (error) {
       console.error('Error initializing supervisor:', error);
-      if (enabled) {
-        setError(error instanceof Error ? error.message : 'Failed to initialize supervisor');
+      
+      if (retryCount < MAX_RETRIES) {
+        const timeout = setTimeout(() => {
+          initializeSupervisor(retryCount + 1);
+        }, Math.pow(2, retryCount) * 1000);
+        pendingOperations.current.push(timeout);
+      } else {
+        if (enabled) {
+          setError(error instanceof Error ? error.message : 'Failed to initialize supervisor');
+        }
+        initializationRef.current.retryAttempts = 0;
       }
     } finally {
       setLoading(false);
     }
-  }, [sessionId, user, enabled]);
+  }, [sessionId, user, enabled, isValidSession]);
 
-  // Trigger onboarding if needed
-  const triggerOnboardingIfNeeded = useCallback(async () => {
-    if (!sessionId || sessionId === 'undefined' || !user?.id || user.id === 'undefined' || !enabled || !supervisorState) {
+  // Enhanced onboarding trigger with retry logic
+  const triggerOnboardingIfNeeded = useCallback(async (retryCount = 0) => {
+    if (!isValidSession() || !supervisorState || initializationRef.current.onboardingTriggered) {
       return;
     }
 
-    // Only trigger if not already onboarded and we haven't already triggered
     if (!supervisorState.onboardingCompleted) {
       try {
-        // Check if there's already an onboarding message to avoid duplicates
-        const existingMessages = await AISupervisorService.getSupervisorMessages(sessionId, user.id);
+        const existingMessages = await AISupervisorService.getSupervisorMessages(sessionId!, user!.id);
         const hasOnboardingMessage = existingMessages.some(msg => msg.message_type === 'onboarding');
         
         if (hasOnboardingMessage) {
-          console.log('Onboarding message already exists, skipping trigger');
-          // Update local state to reflect completion
-          setSupervisorState(prev => prev ? {
-            ...prev,
-            onboardingCompleted: true
-          } : null);
+          console.log('Onboarding message already exists');
+          setSupervisorState(prev => prev ? { ...prev, onboardingCompleted: true } : null);
+          initializationRef.current.onboardingTriggered = true;
           return;
         }
         
         console.log('Triggering onboarding for session:', sessionId);
-        await AISupervisorService.triggerOnboarding(sessionId, user.id);
+        await AISupervisorService.triggerOnboarding(sessionId!, user!.id);
         
-        // Show user notification
-        toast({
-          title: "Welcome Message",
-          description: "Your supervisor has sent you a welcome message! Check the Messages tab.",
-          duration: 5000,
-        });
+        showMessageNotification('onboarding');
 
-        // Update state
         setSupervisorState(prev => prev ? {
           ...prev,
           onboardingCompleted: true,
           totalInteractions: prev.totalInteractions + 1
         } : null);
 
-        // Schedule team introductions after supervisor onboarding (only once)
-        setTimeout(async () => {
+        initializationRef.current.onboardingTriggered = true;
+
+        // Schedule team introductions with retry logic
+        const scheduleTeamIntros = async (retryCount = 0) => {
           try {
-            const shouldScheduleTeam = await AISupervisorService.shouldScheduleTeamIntroductions(sessionId, user.id);
+            const shouldScheduleTeam = await AISupervisorService.shouldScheduleTeamIntroductions(sessionId!, user!.id);
             if (shouldScheduleTeam) {
-              await AISupervisorService.scheduleTeamIntroductions(sessionId, user.id);
-              toast({
-                title: "Team introductions scheduled",
-                description: "Your colleagues will be reaching out to introduce themselves!",
-                duration: 4000,
-              });
+              await AISupervisorService.scheduleTeamIntroductions(sessionId!, user!.id);
+              showMessageNotification('team_introduction');
             }
           } catch (error) {
             console.error('Error scheduling team introductions:', error);
+            if (retryCount < MAX_RETRIES) {
+              const timeout = setTimeout(() => {
+                scheduleTeamIntros(retryCount + 1);
+              }, Math.pow(2, retryCount) * 1000);
+              pendingOperations.current.push(timeout);
+            }
           }
-        }, 2000);
+        };
+
+        const timeout = setTimeout(() => scheduleTeamIntros(), 2000);
+        pendingOperations.current.push(timeout);
 
       } catch (error) {
         console.error('Error triggering onboarding:', error);
+        if (retryCount < MAX_RETRIES) {
+          const timeout = setTimeout(() => {
+            triggerOnboardingIfNeeded(retryCount + 1);
+          }, Math.pow(2, retryCount) * 1000);
+          pendingOperations.current.push(timeout);
+        } else {
+          initializationRef.current.onboardingTriggered = false;
+        }
       }
     }
-  }, [sessionId, user, enabled, supervisorState, toast]);
+  }, [sessionId, user, enabled, supervisorState, showMessageNotification, isValidSession]);
 
   // Trigger check-in
   const triggerCheckIn = useCallback(async (taskId?: string) => {
@@ -182,44 +332,160 @@ export function useAISupervisor({ sessionId, enabled = true }: UseAISupervisorPr
     }
   }, [sessionId, user, enabled, triggerCheckIn]);
 
-  // Record user interaction
-  const recordInteraction = useCallback(async (interactionType: string, context: any = {}) => {
-    if (!sessionId || sessionId === 'undefined' || !user?.id || user.id === 'undefined' || !enabled) {
+  // Enhanced interaction recording with retry
+  const recordInteraction = useCallback(async (interactionType: string, context: any = {}, retryCount = 0) => {
+    if (!isValidSession()) {
       return;
     }
 
     try {
-      await AISupervisorService.recordInteraction(sessionId, user.id, interactionType, context);
+      await AISupervisorService.recordInteraction(sessionId!, user!.id, interactionType, context);
     } catch (error) {
       console.error('Error recording interaction:', error);
+      if (retryCount < MAX_RETRIES) {
+        const timeout = setTimeout(() => {
+          recordInteraction(interactionType, context, retryCount + 1);
+        }, Math.pow(2, retryCount) * 1000);
+        pendingOperations.current.push(timeout);
+      }
     }
-  }, [sessionId, user, enabled]);
+  }, [sessionId, user, enabled, isValidSession]);
 
-  // Initialize supervisor when dependencies change
+  // Message queue for handling incoming messages
+  const messageQueue = useRef<Array<{ type: string; context: any }>>([]);
+  const isProcessingQueue = useRef(false);
+
+  const processMessageQueue = useCallback(async () => {
+    if (isProcessingQueue.current || messageQueue.current.length === 0) {
+      return;
+    }
+
+    isProcessingQueue.current = true;
+    
+    try {
+      while (messageQueue.current.length > 0) {
+        const message = messageQueue.current.shift();
+        if (message) {
+          await new Promise(resolve => setTimeout(resolve, 500)); // Delay between messages
+          showMessageNotification(message.type, message.context);
+        }
+      }
+    } finally {
+      isProcessingQueue.current = false;
+    }
+  }, [showMessageNotification]);
+
+  // Enhanced message handler with queue
+  const handleIncomingMessage = useCallback((messageType: string, context?: any) => {
+    console.log('New message received:', messageType, context);
+    messageQueue.current.push({ type: messageType, context });
+    processMessageQueue();
+  }, [processMessageQueue]);
+
+  // Debounced dashboard visit recording
+  const debouncedRecordDashboardVisit = useCallback(
+    debounce(() => {
+      if (!isValidSession() || 
+          !supervisorState?.isInitialized || 
+          initializationRef.current.dashboardVisitRecorded) {
+        return;
+      }
+
+      console.log('Recording dashboard visit for session:', sessionId);
+      recordInteraction('dashboard_visit', { timestamp: new Date().toISOString() });
+      initializationRef.current.dashboardVisitRecorded = true;
+    }, DASHBOARD_VISIT_DEBOUNCE),
+    [sessionId, supervisorState?.isInitialized, isValidSession, recordInteraction]
+  );
+
+  // Reset state when session changes
+  useEffect(() => {
+    cleanupPendingOperations();
+    initializationRef.current = {
+      dashboardVisitRecorded: false,
+      onboardingTriggered: false,
+      supervisorInitialized: false,
+      retryAttempts: 0,
+      lastAnalysisTime: 0,
+      pendingCheckIns: new Set(),
+      lastNotificationTimes: {}
+    };
+    messageQueue.current = [];
+    isProcessingQueue.current = false;
+  }, [sessionId, cleanupPendingOperations]);
+
+  // Initialize supervisor
   useEffect(() => {
     initializeSupervisor();
   }, [initializeSupervisor]);
 
   // Trigger onboarding after initialization
   useEffect(() => {
-    if (supervisorState?.isInitialized) {
-      // Delay onboarding trigger slightly to ensure UI is ready
-      setTimeout(() => {
+    if (supervisorState?.isInitialized && !initializationRef.current.onboardingTriggered) {
+      const timer = setTimeout(() => {
         triggerOnboardingIfNeeded();
-      }, 1000);
+      }, 500);
+      pendingOperations.current.push(timer);
+      return () => clearTimeout(timer);
     }
   }, [supervisorState?.isInitialized, triggerOnboardingIfNeeded]);
 
-  // Auto-analyze progress periodically (every 5 minutes)
+  // Cleanup on unmount
   useEffect(() => {
-    if (!enabled || !supervisorState?.onboardingCompleted) return;
+    return () => {
+      cleanupPendingOperations();
+    };
+  }, [cleanupPendingOperations]);
 
-    const interval = setInterval(() => {
-      analyzeProgressAndSuggestCheckIn();
-    }, 5 * 60 * 1000); // 5 minutes
+  // CONSOLIDATED: Single effect for all periodic operations
+  useEffect(() => {
+    if (!enabled || !supervisorState?.onboardingCompleted || !initialized) {
+      console.log('Periodic analysis disabled - prerequisites not met');
+      return;
+    }
 
-    return () => clearInterval(interval);
-  }, [enabled, supervisorState?.onboardingCompleted, analyzeProgressAndSuggestCheckIn]);
+    console.log('Setting up consolidated periodic analysis');
+    
+    const runPeriodicTasks = async () => {
+      const now = Date.now();
+      const timeSinceLastAnalysis = now - initializationRef.current.lastAnalysisTime;
+      
+      if (timeSinceLastAnalysis < MIN_ANALYSIS_GAP) {
+        console.log('Skipping analysis - too soon since last run');
+        return;
+      }
+
+      console.log('Running periodic analysis tasks');
+      initializationRef.current.lastAnalysisTime = now;
+
+      try {
+        // Run core analysis
+        await analyzeProgressAndSuggestCheckIn();
+        
+        // Process any scheduled messages
+        await AISupervisorService.processScheduledMessages();
+        
+        // Occasionally check team interactions (30% chance)
+        if (Math.random() < 0.3) {
+          await AISupervisorService.analyzeAndScheduleTeamInteractions(sessionId!, user!.id);
+        }
+      } catch (error) {
+        console.error('Error in periodic tasks:', error);
+      }
+    };
+
+    // Initial run after a short delay
+    const initialTimeout = setTimeout(runPeriodicTasks, 1000);
+    
+    // Set up interval for subsequent runs
+    const interval = setInterval(runPeriodicTasks, ANALYSIS_INTERVAL);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+      console.log('Cleaned up periodic analysis');
+    };
+  }, [enabled, supervisorState?.onboardingCompleted, initialized, sessionId, user?.id]);
 
   // Event handlers for common interactions
   const onTaskSubmitted = useCallback((submissionId: string, feedbackData?: any) => {
@@ -235,8 +501,8 @@ export function useAISupervisor({ sessionId, enabled = true }: UseAISupervisorPr
   }, [recordInteraction]);
 
   const onDashboardVisit = useCallback(() => {
-    recordInteraction('dashboard_visit', { timestamp: new Date().toISOString() });
-  }, [recordInteraction]);
+    debouncedRecordDashboardVisit();
+  }, [debouncedRecordDashboardVisit]);
 
   const onTaskDeadlineApproaching = useCallback((taskId: string, daysUntilDue: number) => {
     if (daysUntilDue <= 2) {
@@ -245,53 +511,6 @@ export function useAISupervisor({ sessionId, enabled = true }: UseAISupervisorPr
       triggerCheckIn(taskId);
     }
   }, [recordInteraction, triggerCheckIn]);
-
-  // Periodic progress analysis and team interaction scheduling
-  useEffect(() => {
-    if (!enabled || !sessionId || sessionId === 'undefined' || !user?.id || user.id === 'undefined' || !initialized || !supervisorState?.onboardingCompleted) {
-      return;
-    }
-
-    const analyzeProgress = async () => {
-      try {
-        if (!sessionId || sessionId === 'undefined' || !user?.id || user.id === 'undefined') {
-          console.log('Skipping analysis - invalid session or user');
-          return;
-        }
-
-        const hoursSinceLastInteraction = supervisorState?.lastCheckIn 
-          ? (Date.now() - new Date(supervisorState.lastCheckIn).getTime()) / (1000 * 60 * 60)
-          : 999;
-
-        if (hoursSinceLastInteraction < 4) {
-          console.log('Skipping progress analysis - too recent');
-          return;
-        }
-
-        console.log('Running periodic progress analysis');
-        
-        const analysis = await AISupervisorService.analyzeProgressAndSuggestCheckIns(sessionId, user.id);
-        
-        if (analysis.shouldCheckIn) {
-          console.log('Triggering check-in based on analysis:', analysis.reason);
-          await AISupervisorService.triggerCheckIn(sessionId, user.id, analysis.taskId);
-        }
-
-        if (hoursSinceLastInteraction > 12) {
-          await AISupervisorService.analyzeAndScheduleTeamInteractions(sessionId, user.id);
-        }
-
-        await AISupervisorService.processTeamMessages();
-
-      } catch (error) {
-        console.error('Error in progress analysis:', error);
-      }
-    };
-
-    const interval = setInterval(analyzeProgress, 15 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [enabled, sessionId, user, initialized, supervisorState?.onboardingCompleted, supervisorState?.lastCheckIn]);
 
   return {
     // State
@@ -314,6 +533,7 @@ export function useAISupervisor({ sessionId, enabled = true }: UseAISupervisorPr
     
     // Utilities
     isEnabled: enabled && !!supervisorState?.isInitialized,
-    isOnboarded: supervisorState?.onboardingCompleted || false
+    isOnboarded: supervisorState?.onboardingCompleted || false,
+    isValidSession
   };
 } 

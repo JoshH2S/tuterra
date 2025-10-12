@@ -5,6 +5,7 @@ import { ActivityStreakDisplay } from "./ActivityStreakDisplay";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { checkTaskCompletionAchievements, checkTeamPlayerAchievement, updateActivityStreak } from "@/services/achievements";
+import { useToast } from "@/hooks/use-toast";
 
 interface GamificationPanelProps {
   sessionData: InternshipSession;
@@ -13,29 +14,58 @@ interface GamificationPanelProps {
 
 export function GamificationPanel({ sessionData, tasks }: GamificationPanelProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Check for achievements whenever tasks change
   useEffect(() => {
     if (!user || tasks.length === 0) return;
 
     // Update activity streak for visiting the page
-    updateActivityStreak(user.id);
-    
-    // Check for achievements based on tasks
-    const checkAchievements = async () => {
-      // For each completed task, check for "fast learner" achievement
-      tasks.forEach(task => {
-        if (task.status === 'completed' && task.submission) {
-          checkTaskCompletionAchievements(user.id);
+    const updateAchievements = async () => {
+      try {
+        // Update activity streak
+        await updateActivityStreak(user.id);
+
+        // Check for achievements based on tasks
+        const completedTasks = tasks.filter(task => 
+          task.status === 'completed' || 
+          task.status === 'feedback_pending' || 
+          task.status === 'feedback_received'
+        );
+        
+        if (completedTasks.length > 0) {
+          // Check for task completion achievements
+          await checkTaskCompletionAchievements(user.id);
+          
+          // Check for team player achievement
+          await checkTeamPlayerAchievement(user.id);
+
+          // Check for early completion (fast learner achievement)
+          const earlyCompletions = completedTasks.filter(task => {
+            const dueDate = new Date(task.due_date);
+            const completedDate = task.submission?.created_at 
+              ? new Date(task.submission.created_at)
+              : new Date();
+            return completedDate < dueDate;
+          });
+
+          if (earlyCompletions.length > 0) {
+            console.log('Early completion detected - fast_learner achievement may be triggered');
+          }
         }
-      });
-      
-      // Check for team player achievement
-      await checkTeamPlayerAchievement(user.id);
+
+      } catch (error) {
+        console.error('Error updating achievements:', error);
+        toast({
+          title: "Achievement Update Error",
+          description: "There was an error updating your achievements. Please try again later.",
+          variant: "destructive",
+        });
+      }
     };
-    
-    checkAchievements();
-  }, [user, tasks]);
+
+    updateAchievements();
+  }, [user, tasks, toast]);
 
   return (
     <PremiumCard>

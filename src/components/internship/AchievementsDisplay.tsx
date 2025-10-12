@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import { useAuth } from "@/hooks/useAuth";
 import { AchievementCard } from "./AchievementCard";
-import { fetchAchievementsWithProgress, getUserAchievementStats, Achievement } from "@/services/achievements";
+import { fetchAchievementsWithProgress, Achievement } from "@/services/achievements";
 
 interface AchievementsDisplayProps {
   className?: string;
@@ -32,83 +32,41 @@ export function AchievementsDisplay({ className = "" }: AchievementsDisplayProps
   });
   const [loading, setLoading] = useState(true);
 
-  // Default achievements that match the existing system
-  const defaultAchievements = [
-    {
-      id: 'fast_learner',
-      key: 'fast_learner',
-      type: 'completion',
-      title: 'Fast Learner',
-      description: 'Completed first assignment ahead of schedule',
-      icon: '🚀',
-      requirements: { type: 'early_completion' },
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'team_player',
-      key: 'team_player', 
-      type: 'engagement',
-      title: 'Team Player',
-      description: 'Collaborated on 5+ team projects',
-      icon: '🤝',
-      requirements: { type: 'collaboration', count: 5 },
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'data_wizard',
-      key: 'data_wizard',
-      type: 'performance',
-      title: 'Data Wizard', 
-      description: 'Mastered advanced data analysis tools',
-      icon: '📊',
-      requirements: { type: 'skill_mastery', skill: 'data_analysis' },
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'innovation_champion',
-      key: 'innovation_champion',
-      type: 'milestone',
-      title: 'Innovation Champion',
-      description: 'Proposed creative solution that was implemented',
-      icon: '💡',
-      requirements: { type: 'innovation' },
-      created_at: new Date().toISOString()
-    }
-  ];
-
   useEffect(() => {
     async function loadAchievements() {
       if (!user?.id) {
-        // Still show locked achievements even without user
-        setAchievements(defaultAchievements.map(a => ({ ...a, isUnlocked: false })));
-        setStats({
-          totalEarned: 0,
-          totalAvailable: defaultAchievements.length,
-          categoryBreakdown: {}
-        });
         setLoading(false);
         return;
       }
 
-      setLoading(true);
-      
-      // For now, just show the achievements as locked until database is properly set up
-      // This ensures the UI always displays something
-      const achievementsWithProgress = defaultAchievements.map(achievement => ({
-        ...achievement,
-        isUnlocked: false, // Will be set to true when real data is available
-        earnedAt: undefined,
-        metadata: undefined
-      }));
+      try {
+        setLoading(true);
+        
+        // Fetch achievements with progress
+        const achievementsWithProgress = await fetchAchievementsWithProgress(user.id);
+        
+        // Calculate stats
+        const totalAvailable = achievementsWithProgress.length;
+        const unlockedAchievements = achievementsWithProgress.filter(a => a.isUnlocked);
+        const totalEarned = unlockedAchievements.length;
+        
+        // Calculate category breakdown
+        const categoryBreakdown = unlockedAchievements.reduce((acc, achievement) => {
+          acc[achievement.type] = (acc[achievement.type] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
 
-      setAchievements(achievementsWithProgress);
-      setStats({
-        totalEarned: 0,
-        totalAvailable: defaultAchievements.length,
-        categoryBreakdown: {}
-      });
-      
-      setLoading(false);
+        setAchievements(achievementsWithProgress);
+        setStats({
+          totalEarned,
+          totalAvailable,
+          categoryBreakdown
+        });
+      } catch (error) {
+        console.error('Error loading achievements:', error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadAchievements();

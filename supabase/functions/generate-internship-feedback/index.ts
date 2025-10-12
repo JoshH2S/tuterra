@@ -276,7 +276,16 @@ Company Values: ${companyProfile.company_values || ''}
       }
     }
 
-    // Create the system prompt
+    // Get available skills for this analysis
+    const { data: availableSkills } = await supabaseAdmin
+      .from("skills")
+      .select("id, name, description, category");
+
+    const skillsContext = availableSkills ? availableSkills.map(skill => 
+      `${skill.name}: ${skill.description} (Category: ${skill.category})`
+    ).join('\n') : '';
+
+    // Create the enhanced system prompt with skills analysis
     const systemPrompt = `
 You are a professional mentor providing feedback on an intern's work. 
 ${companyContext ? 'Use the following company information as context:' : ''}
@@ -285,7 +294,10 @@ ${companyContext}
 Job Title: ${finalJobTitle}
 Industry: ${finalIndustry}
 
-Please analyze the submission for a ${finalJobTitle} intern task. You need to provide detailed, constructive feedback that is helpful for the intern's professional development.
+Available Skills to Evaluate:
+${skillsContext}
+
+Please analyze the submission for a ${finalJobTitle} intern task. You need to provide detailed, constructive feedback AND identify which skills were demonstrated.
 
 Provide the feedback in the following JSON format:
 {
@@ -293,14 +305,33 @@ Provide the feedback in the following JSON format:
   "quality_rating": <number between 1-10>,
   "timeliness_rating": <number between 1-10>,
   "collaboration_rating": <number between 1-10>,
-  "overall_assessment": "<one of: Excellent, Good, Satisfactory, Needs Improvement>"
+  "overall_assessment": "<one of: Excellent, Good, Satisfactory, Needs Improvement>",
+  "skills_demonstrated": [
+    {
+      "skill_name": "Technical Writing",
+      "proficiency_score": 7.5,
+      "xp_earned": 18,
+      "evidence_quality": "high",
+      "specific_examples": ["Clear methodology section", "Professional tone throughout"],
+      "improvement_suggestions": ["Could add more specific examples", "Consider using bullet points for clarity"]
+    }
+  ]
 }
+
+For skills_demonstrated:
+- Only include skills that are clearly evident in the submission
+- proficiency_score: 1-10 scale of how well the skill was demonstrated
+- xp_earned: 10-25 XP based on quality of demonstration (higher for better examples)
+- evidence_quality: "high", "medium", or "low" based on how well this submission showcases the skill
+- specific_examples: 2-3 concrete examples from the submission
+- improvement_suggestions: 1-2 actionable ways to improve this skill
 
 Your feedback should:
 1. Be supportive and encouraging
 2. Provide specific insights on strengths
 3. Give actionable suggestions for improvement
 4. Relate to industry standards for a ${finalJobTitle} in the ${finalIndustry} field
+5. Accurately identify and assess demonstrated skills
 `;
 
     const userContent = `
@@ -350,6 +381,8 @@ ${finalSubmissionText}
       let timelinessRating = 0;
       let collaborationRating = 0;
       let overallAssessment = "";
+      let skillsData = {};
+      let skillsAnalysis = {};
 
       try {
         // Parse the JSON response directly since we're enforcing JSON format
@@ -360,7 +393,37 @@ ${finalSubmissionText}
         collaborationRating = feedbackData.collaboration_rating || 0;
         overallAssessment = feedbackData.overall_assessment || "";
         
-        console.log("Successfully parsed feedback data");
+        // Process skills data
+        if (feedbackData.skills_demonstrated && Array.isArray(feedbackData.skills_demonstrated)) {
+          const skillsMap = {};
+          const skillsAnalysisMap = {};
+          
+          for (const skill of feedbackData.skills_demonstrated) {
+            // Find skill ID by name
+            const skillRecord = availableSkills?.find(s => s.name === skill.skill_name);
+            if (skillRecord) {
+              skillsMap[skillRecord.id] = {
+                xp_earned: Math.max(10, Math.min(25, skill.xp_earned || 15)),
+                proficiency_score: Math.max(1, Math.min(10, skill.proficiency_score || 5))
+              };
+              
+              skillsAnalysisMap[skillRecord.id] = {
+                skill_name: skill.skill_name,
+                evidence_quality: skill.evidence_quality || 'medium',
+                specific_examples: skill.specific_examples || [],
+                improvement_suggestions: skill.improvement_suggestions || []
+              };
+            }
+          }
+          
+          skillsData = skillsMap;
+          skillsAnalysis = skillsAnalysisMap;
+        }
+        
+        console.log("Successfully parsed feedback data with skills:", {
+          skillsCount: Object.keys(skillsData).length,
+          totalXP: Object.values(skillsData).reduce((sum, skill) => sum + (skill.xp_earned || 0), 0)
+        });
       } catch (error) {
         console.error("Error parsing AI response:", error);
         console.error("Raw response:", responseText);
@@ -376,6 +439,8 @@ ${finalSubmissionText}
           timeliness_rating: timelinessRating,
           collaboration_rating: collaborationRating,
           overall_assessment: overallAssessment,
+          skills_earned: skillsData,
+          skill_analysis: skillsAnalysis,
           status: "feedback_received"
         })
         .eq("id", submission_id);
@@ -392,6 +457,30 @@ ${finalSubmissionText}
             } 
           }
         );
+      }
+
+      // Update user skill progress for each demonstrated skill
+      if (Object.keys(skillsData).length > 0) {
+        console.log("Updating skill progress for user:", { userId: user_id, skills: Object.keys(skillsData) });
+        
+        for (const [skillId, skillProgress] of Object.entries(skillsData)) {
+          try {
+            const { error: skillUpdateError } = await supabaseAdmin.rpc('update_user_skill_progress', {
+              p_user_id: user_id,
+              p_skill_id: skillId,
+              p_xp_gained: skillProgress.xp_earned,
+              p_submission_id: submission_id
+            });
+
+            if (skillUpdateError) {
+              console.error("Error updating skill progress:", skillUpdateError);
+            } else {
+              console.log(`Updated skill ${skillId} with ${skillProgress.xp_earned} XP`);
+            }
+          } catch (skillError) {
+            console.error("Error in skill progress update:", skillError);
+          }
+        }
       }
 
       // Store the detailed feedback text in the internship_feedback_details table

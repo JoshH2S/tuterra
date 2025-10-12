@@ -380,38 +380,27 @@ export function TaskDetailsModal({
       
       console.log("User validation successful, user exists:", userData);
       
-      // Save submission to Supabase
+      // Create the submission
       const { data: submissionData, error: submissionError } = await supabase
-        .from("internship_task_submissions")
-        .insert({
-          session_id: task.session_id,
-          task_id: task.id,
-          user_id: userId,
-          response_text: response,
-          file_url: fileData?.url || null,
-          file_name: fileData?.name || null,
-          file_type: fileData?.type || null,
-          file_size: fileData?.size || null,
-          content_type: submissionType,
-          status: 'feedback_pending'
-        })
-        .select("id")
-        .limit(1);
+        .from('internship_task_submissions')
+        .insert([
+          {
+            task_id: task.id,
+            user_id: userId,
+            response_text: response,
+            file_url: fileData?.url || null,
+            file_name: fileData?.name || null,
+            file_type: fileData?.type || null,
+            file_size: fileData?.size || null,
+            content_type: submissionType,
+            session_id: task.session_id
+          }
+        ])
+        .select()
+        .single();
+
+      if (submissionError) throw submissionError;
       
-      if (submissionError) {
-        console.error("Submission error details:", {
-          code: submissionError.code,
-          message: submissionError.message,
-          details: submissionError.details,
-          hint: submissionError.hint
-        });
-        throw submissionError;
-      }
-      
-      console.log("Submission successful:", submissionData);
-      
-      // Get the submission ID from the result
-      // Use type assertion to tell TypeScript the expected structure
       type SubmissionResult = { id: string };
       const submissions = submissionData as SubmissionResult[] | null;
       const newSubmissionId = submissions && submissions.length > 0 ? submissions[0].id : null;
@@ -423,10 +412,10 @@ export function TaskDetailsModal({
       // Store the submission ID for future reference
       setSubmissionId(newSubmissionId);
       
-      // Update task status to submitted
+      // Update task status to completed
       const { error: updateError } = await supabase
         .from("internship_tasks")
-        .update({ status: "feedback_pending" })
+        .update({ status: "completed" })
         .eq("id", task.id);
       
       if (updateError) throw updateError;

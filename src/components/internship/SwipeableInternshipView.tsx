@@ -1,16 +1,19 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight, BarChart2, Briefcase, FileCheck, Calendar, MessageSquare, Award, CheckCircle, Building } from "lucide-react";
+import { ChevronLeft, ChevronRight, BarChart2, Briefcase, FileCheck, Calendar, MessageSquare, Award, CheckCircle, Building, Target, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
 import { WelcomePanel } from "./WelcomePanel";
 import { DashboardOverviewPanel } from "./DashboardOverviewPanel";
 import { TaskOverview } from "./TaskOverview";
 import { CalendarView } from "./CalendarView";
 import { EmailMessagingPanel } from "./EmailMessagingPanel";
 import { FeedbackCenter } from "./FeedbackCenter";
-import { GamificationPanel } from "./GamificationPanel";
+import { SkillsDashboard } from "./skills/SkillsDashboard";
+import { FinalProjectForm } from "./FinalProjectForm";
+import { CareerPortfolioProject } from "./CareerPortfolioProject";
 import { InternshipMobileHeader } from "./InternshipMobileHeader";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InternshipMetricsDashboard } from "./InternshipMetricsDashboard";
@@ -44,11 +47,14 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
   const [activeIndex, setActiveIndex] = useState(0);
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<InternshipTask[]>([]);
   const [visibleTasks, setVisibleTasks] = useState<InternshipTask[]>([]);
   const [events, setEvents] = useState<InternshipEvent[]>([]);
   const [resources, setResources] = useState<InternshipResource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [canSubmitFinal, setCanSubmitFinal] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const tabs = [
     "Overview", 
@@ -57,8 +63,8 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
     "Messages", 
     "Company", 
     "Feedback", 
-    "Achievements",
-    "Metrics"
+    "Skills",
+    "Final Project"
   ];
   
   // Define the start date, defaulting to created_at if not available
@@ -100,6 +106,20 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
         
         setTasks(allTasks);
         setVisibleTasks(visibleTasksFiltered);
+        
+        // Check completion eligibility (75% of tasks completed)
+        const completedTasks = allTasks.filter(task => task.status === 'completed').length;
+        const completionRate = allTasks.length > 0 ? completedTasks / allTasks.length : 0;
+        setCanSubmitFinal(completionRate >= 0.75);
+
+        // Check if internship is already completed
+        const { data: sessionStatus } = await supabase
+          .from("internship_sessions")
+          .select("is_completed")
+          .eq("id", sessionData.id)
+          .single();
+        
+        setIsCompleted(sessionStatus?.is_completed || false);
         
         // Fetch events
         const { data: eventData, error: eventError } = await supabase
@@ -174,11 +194,18 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
       if (error) throw error;
       
       // Update the local state
-      setTasks(prevTasks => 
-        prevTasks.map(task => 
+      setTasks(prevTasks => {
+        const updatedTasks = prevTasks.map(task => 
           task.id === taskId ? { ...task, status } : task
-        )
-      );
+        );
+        
+        // Recalculate completion eligibility
+        const completedTasks = updatedTasks.filter(task => task.status === 'completed').length;
+        const completionRate = updatedTasks.length > 0 ? completedTasks / updatedTasks.length : 0;
+        setCanSubmitFinal(completionRate >= 0.75);
+        
+        return updatedTasks;
+      });
       
       // Show success message
       toast({
@@ -245,9 +272,73 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
       case 5:
         return <FeedbackCenter sessionData={fullSessionData} tasks={visibleTasks} />;
       case 6:
-        return <AchievementsDisplay />;
+        return <SkillsDashboard sessionId={sessionData.id} userId={user?.id || ''} />;
       case 7:
-        return <GamificationPanel sessionData={fullSessionData} tasks={visibleTasks} />;
+        return (
+          <div className="space-y-6">
+            {!canSubmitFinal && !isCompleted && (
+              <Card className="border-amber-200 bg-amber-50/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-5 w-5 text-amber-600" />
+                    <div>
+                      <h3 className="font-medium text-amber-800">Complete More Tasks</h3>
+                      <p className="text-sm text-amber-700">
+                        You need to complete at least 75% of your assigned tasks before submitting your final project.
+                      </p>
+                      <p className="text-xs text-amber-600 mt-1">
+                        Progress: {tasks.filter(t => t.status === 'completed').length}/{tasks.length} tasks completed
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {isCompleted && (
+              <Card className="border-green-200 bg-green-50/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <div>
+                      <h3 className="font-medium text-green-800">Internship Completed!</h3>
+                      <p className="text-sm text-green-700">
+                        Congratulations! You've successfully completed your virtual internship.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {canSubmitFinal && !isCompleted && (
+              <CareerPortfolioProject 
+                sessionId={sessionData.id} 
+                userId={user?.id || ''} 
+                jobTitle={sessionData.job_title}
+                industry={sessionData.industry}
+                completedTasks={tasks.filter(t => t.status === 'completed')}
+              />
+            )}
+            
+            {isCompleted && (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <GraduationCap className="h-12 w-12 text-primary mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Final Project Submitted</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Your final project has been successfully submitted. You can now generate your certificate and download your performance report.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline" size="sm">
+                      View Completion Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
       default:
         return null;
     }
@@ -301,6 +392,26 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
                     <div className="flex items-center gap-1.5">
                       {getTabIcon(index)}
                       {tab}
+                      {/* Show indicator for Final Project tab */}
+                      {index === 7 && (
+                        <>
+                          {isCompleted && (
+                            <Badge variant="default" className="text-xs px-1.5 py-0 bg-green-500 text-white">
+                              ✓
+                            </Badge>
+                          )}
+                          {!isCompleted && canSubmitFinal && (
+                            <Badge variant="default" className="text-xs px-1.5 py-0 bg-green-500 text-white">
+                              Ready
+                            </Badge>
+                          )}
+                          {!isCompleted && !canSubmitFinal && (
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                              Locked
+                            </Badge>
+                          )}
+                        </>
+                      )}
                     </div>
                   </TabsTrigger>
                 ))}
@@ -350,8 +461,8 @@ function getTabIcon(index: number) {
     <MessageSquare key="messages" className="h-4 w-4" />,
     <Building key="company" className="h-4 w-4" />,
     <CheckCircle key="feedback" className="h-4 w-4" />,
-    <Award key="achievements" className="h-4 w-4" />,
-    <BarChart2 key="metrics" className="h-4 w-4" />
+    <Target key="skills" className="h-4 w-4" />,
+    <GraduationCap key="final-project" className="h-4 w-4" />
   ];
   
   return icons[index] || <Briefcase className="h-4 w-4" />;

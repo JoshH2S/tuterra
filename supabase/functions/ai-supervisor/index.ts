@@ -6,979 +6,714 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// ============================================================================
+// MVP Configuration
+// ============================================================================
+const CONFIG = {
+  AI_TIMEOUT_MS: 9000,
+  AI_MODEL: 'gpt-4o-mini',
+  AI_MAX_TOKENS: 180,
+  AI_TEMPERATURE: 0.5,
+  DAILY_CAPS: {
+    max_check_ins_per_day: 1,
+    max_outbound_per_day: 3
+  }
+}
+
 interface SupervisorRequest {
-  action: 'onboarding' | 'check_in' | 'feedback_followup' | 'schedule_reminder' | 'process_scheduled' | 'schedule_team_introductions' | 'schedule_team_interaction' | 'process_team_messages';
+  action: 'onboarding' | 'check_in' | 'feedback_followup' | 'reminder' | 'user_message_response';
   session_id: string;
   user_id: string;
   context?: {
     task_id?: string;
     submission_id?: string;
     feedback_data?: any;
-    task_progress?: any;
-    custom_context?: any;
-    interaction_type?: string;
-    team_member?: any;
+    user_message_id?: string;
+    user_message_content?: string;
+    user_message_subject?: string;
+    thread_id?: string;
   };
 }
 
 interface SupervisorContext {
-  user_name: string;
-  company_name: string;
+  session_id: string;
+  user_id: string;
+  user_first_name: string;
   job_title: string;
   industry: string;
-  duration_weeks: number;
-  tasks: any[];
-  completed_tasks: number;
-  current_task?: any;
-  activity_streak: number;
-  last_interaction?: string;
+  company_name: string;
   supervisor_state: any;
 }
 
 serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('📩 AI Supervisor request received:', req.method)
-    
     const body = await req.text()
-    console.log('📋 Raw request body:', body)
-    
     if (!body || body.trim() === '') {
-      console.error('❌ Empty request body')
-      return new Response(JSON.stringify({
-        error: 'Empty request body'
-      }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      return new Response(JSON.stringify({ error: 'Empty request body' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
 
-    let requestData: SupervisorRequest
-    try {
-      requestData = JSON.parse(body)
-      console.log('✅ Parsed request data:', requestData)
-    } catch (parseError) {
-      console.error('❌ JSON parse error:', parseError)
-      return new Response(JSON.stringify({
-        error: 'Invalid JSON in request body'
-      }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      })
-    }
-
+    const requestData: SupervisorRequest = JSON.parse(body)
     const { action, session_id, user_id, context = {} } = requestData
 
-    // Enhanced parameter validation
-    if (!action) {
-      console.error('❌ Missing action parameter')
-      return new Response(JSON.stringify({
-        error: 'Missing action parameter'
-      }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    if (!action || !session_id || !user_id) {
+      return new Response(JSON.stringify({ error: 'Missing required parameters' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
 
-    if (!session_id || session_id === 'undefined' || session_id === 'null') {
-      console.error('❌ Invalid session_id:', session_id)
-      return new Response(JSON.stringify({
-        error: 'Invalid session_id provided'
-      }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      })
-    }
+    console.log(`🎯 Action: ${action} | Session: ${session_id} | User: ${user_id}`)
 
-    if (!user_id || user_id === 'undefined' || user_id === 'null') {
-      console.error('❌ Invalid user_id:', user_id)
-      return new Response(JSON.stringify({
-        error: 'Invalid user_id provided'
-      }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      })
-    }
-
-    console.log(`🎯 Processing action: ${action} for session: ${session_id}, user: ${user_id}`)
-
-    const supabaseClient = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get comprehensive context for this user/session
-    const supervisorContext = await gatherSupervisorContext(supabaseClient, session_id, user_id)
+    const ctx = await gatherMinimalContext(supabase, session_id, user_id)
 
     let result;
     switch (action) {
-      case 'onboarding':
-        result = await handleOnboarding(supabaseClient, supervisorContext, context)
-        break
-      case 'check_in':
-        result = await handleCheckIn(supabaseClient, supervisorContext, context)
-        break
-      case 'feedback_followup':
-        result = await handleFeedbackFollowup(supabaseClient, supervisorContext, context)
-        break
-      case 'schedule_reminder':
-        result = await scheduleReminder(supabaseClient, supervisorContext, context)
-        break
-      case 'process_scheduled':
-        result = await processScheduledMessages(supabaseClient)
-        break
-      case 'schedule_team_introductions':
-        result = await scheduleTeamIntroductions(supabaseClient, supervisorContext, context)
-        break
-      case 'schedule_team_interaction':
-        result = await scheduleTeamInteraction(supabaseClient, supervisorContext, context)
-        break
-      case 'process_team_messages':
-        result = await processTeamMessages(supabaseClient)
-        break
-      default:
-        throw new Error(`Unknown action: ${action}`)
+      case 'onboarding': result = await handleOnboarding(supabase, ctx, context); break
+      case 'check_in': result = await handleCheckIn(supabase, ctx, context); break
+      case 'feedback_followup': result = await handleFeedbackFollowup(supabase, ctx, context); break
+      case 'reminder': result = await handleReminder(supabase, ctx, context); break
+      case 'user_message_response': result = await handleUserMessageResponse(supabase, ctx, context); break
+      default: throw new Error(`Unknown action: ${action}`)
     }
 
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
+    return new Response(JSON.stringify(result), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    })
   } catch (error) {
-    console.error('AI Supervisor error:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-    )
+    console.error('❌ Error:', error)
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    })
   }
 })
 
-async function gatherSupervisorContext(supabaseClient: any, sessionId: string, userId: string): Promise<SupervisorContext> {
+function mkIdem(action: string, sessionId: string, userId: string, extra = 'na'): string {
+  return `${action}:${sessionId}:${userId}:${extra}`;
+}
+
+function daysUntil(dateIso: string): number {
+  return Math.ceil((new Date(dateIso).getTime() - Date.now()) / 86_400_000);
+}
+
+function generateSubject(messageType: string, context?: any): string {
+  switch (messageType) {
+    case 'onboarding': return '🌟 Welcome to Your Virtual Internship!';
+    case 'check_in': return '📝 Check-in: How are things going?';
+    case 'feedback_followup': return '💬 Feedback on Your Recent Submission';
+    case 'reminder':
+      const days = context?.days_until_due;
+      if (days === 1) return '⏰ Reminder: Task Due Tomorrow';
+      if (days === 0) return '🚨 Reminder: Task Due Today';
+      return `⏰ Reminder: Task Due in ${days} Days`;
+    default: return 'Message from Internship Coordinator';
+  }
+}
+
+async function callOpenAI(messages: any[], max_tokens = CONFIG.AI_MAX_TOKENS, temperature = CONFIG.AI_TEMPERATURE): Promise<string | null> {
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), CONFIG.AI_TIMEOUT_MS);
+  
   try {
-    // ✅ Double-check parameters before making database queries
-    if (!sessionId || sessionId === 'undefined' || sessionId === 'null') {
-      throw new Error(`Invalid sessionId: ${sessionId}`)
-    }
-    if (!userId || userId === 'undefined' || userId === 'null') {
-      throw new Error(`Invalid userId: ${userId}`)
-    }
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ model: CONFIG.AI_MODEL, max_tokens, temperature, messages }),
+      signal: ctrl.signal
+    });
 
-    console.log('Gathering context for session:', sessionId, 'user:', userId)
+    clearTimeout(timeout);
+    if (!res.ok) return null;
 
-    // Get session data
-    const { data: sessionData } = await supabaseClient
-      .from('internship_sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .single()
+    const json = await res.json();
+    return json?.choices?.[0]?.message?.content?.trim() ?? null;
+  } catch (error) {
+    clearTimeout(timeout);
+    console.error('OpenAI failed:', error);
+    return null;
+  }
+}
 
-    // Get user data
-    const { data: userData } = await supabaseClient
-      .from('profiles')
-      .select('first_name, last_name')
-      .eq('id', userId)
-      .single()
+async function renderTemplateOrFallback(template: string, vars: Record<string, any>, fallback: string): Promise<string> {
+  let prompt = template ?? '';
+  for (const [k, v] of Object.entries(vars)) {
+    prompt = prompt.replace(new RegExp(`{${k}}`, 'g'), String(v ?? ''));
+  }
 
-    // Get company data with safe handling
-    const { data: companyData } = await supabaseClient
-      .from('internship_company_profiles')
-      .select('company_name')
-      .eq('session_id', sessionId)
-      .limit(1)
+  const content = await callOpenAI([
+    { role: 'system', content: 'You are Sarah Mitchell, internship coordinator. Write 110-160 words in plain text email format. Lists: use "1. " or "- ". FORBIDDEN characters: ** (bold), * (italic), __ (underline), ` (code), ## (headers). If you use any asterisks, underscores, backticks, or hashtags for formatting, the message will fail to send. No new facts beyond the context provided.' },
+    { role: 'user', content: prompt }
+  ], 180, 0.5);
 
-    // Get tasks
-    const { data: tasks } = await supabaseClient
-      .from('internship_tasks')
-      .select('*')
-      .eq('session_id', sessionId)
-      .order('task_order')
+  return content || fallback;
+}
 
-    // Get submissions
-    const { data: submissions } = await supabaseClient
-      .from('internship_task_submissions')
-      .select('task_id, created_at')
-      .eq('user_id', userId)
-      .eq('session_id', sessionId)
-
-    // Get supervisor state with safe handling
-    const { data: supervisorStateData } = await supabaseClient
-      .from('internship_supervisor_state')
-      .select('*')
-      .eq('session_id', sessionId)
-      .eq('user_id', userId)
-      .limit(1)
-
-    const supervisorState = supervisorStateData?.[0] || null
-
-    const completedTasks = submissions?.length || 0
-    const userName = userData ? `${userData.first_name} ${userData.last_name}` : 'there'
-    const companyName = companyData?.[0]?.company_name || 'the company'
+async function gatherMinimalContext(supabase: any, sessionId: string, userId: string): Promise<SupervisorContext> {
+  const [
+    { data: userData },
+    { data: sessionData },
+    { data: companyData },
+    { data: supervisorStateData }
+  ] = await Promise.all([
+    supabase.from('profiles').select('first_name').eq('id', userId).limit(1).single(),
+    supabase.from('internship_sessions').select('job_title, industry').eq('id', sessionId).limit(1).single(),
+    supabase.from('internship_company_profiles').select('company_name').eq('session_id', sessionId).limit(1),
+    supabase.from('internship_supervisor_state').select('*').eq('session_id', sessionId).eq('user_id', userId).limit(1)
+  ]);
 
     return {
-      user_name: userName,
-      company_name: companyName,
+    session_id: sessionId,
+    user_id: userId,
+    user_first_name: userData?.first_name || 'there',
       job_title: sessionData?.job_title || 'Intern',
       industry: sessionData?.industry || 'Technology',
-      duration_weeks: 4, // Default
-      tasks: tasks || [],
-      completed_tasks: completedTasks,
-      activity_streak: 5, // Mock for now
-      supervisor_state: supervisorState
-    }
-  } catch (error) {
-    console.error('Error gathering context:', error)
-    throw error
-  }
+    company_name: companyData?.[0]?.company_name || 'the company',
+    supervisor_state: supervisorStateData?.[0] || null
+  };
 }
 
-async function handleOnboarding(supabaseClient: any, context: SupervisorContext, requestContext: any) {
-  // Check if onboarding already completed
-  if (context.supervisor_state?.onboarding_completed) {
-    return { message: 'Onboarding already completed', skipped: true }
+async function getRelevantTask(supabase: any, sessionId: string, taskId?: string): Promise<any | null> {
+  if (taskId) {
+    const { data } = await supabase.from('internship_tasks').select('id, title, due_date, status').eq('id', taskId).single();
+    return data;
   }
 
-  // Get onboarding template
-  const { data: template } = await supabaseClient
-    .from('internship_supervisor_templates')
-    .select('*')
-    .eq('template_type', 'onboarding')
-    .eq('template_name', 'welcome_introduction')
-    .eq('active', true)
-    .single()
+  const { data } = await supabase.from('internship_tasks')
+    .select('id, title, due_date, status')
+    .eq('session_id', sessionId)
+    .neq('status', 'completed')
+    .order('due_date', { ascending: true })
+    .limit(1);
 
-  if (!template) {
-    throw new Error('Onboarding template not found')
-  }
+  return data?.[0] || null;
+}
 
-  // Extract key task areas from tasks
-  const taskAreas = context.tasks.slice(0, 3).map((task: any) => task.title).join(', ')
+async function checkDailyCaps(supabase: any, sessionId: string, userId: string, messageType: string): Promise<boolean> {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-  // Prepare template variables
-  const variables = {
-    company_name: context.company_name,
-    user_name: context.user_name.split(' ')[0], // First name only
-    job_title: context.job_title,
-    duration_weeks: context.duration_weeks,
-    industry: context.industry,
-    task_areas: taskAreas
-  }
-
-  // Generate message using AI
-  const messageContent = await generateSupervisorMessage(template.prompt_template, variables)
-
-  // Store the message
-  const { data: message } = await supabaseClient
+  const { data: todayMessages } = await supabase
     .from('internship_supervisor_messages')
-    .insert({
-      session_id: context.supervisor_state?.session_id,
-      user_id: context.supervisor_state?.user_id,
-      message_type: 'onboarding',
-      message_content: messageContent,
-      context_data: { variables },
-      scheduled_for: new Date().toISOString(),
-      status: 'sent',
-      sent_at: new Date().toISOString()
-    })
-    .select()
-    .single()
+    .select('id, message_type')
+    .eq('session_id', sessionId)
+    .eq('user_id', userId)
+    .eq('direction', 'outbound')
+    .gte('sent_at', todayStart.toISOString());
 
-  // Update supervisor state
-  await supabaseClient
-    .from('internship_supervisor_state')
-    .upsert({
-      session_id: context.supervisor_state?.session_id,
-      user_id: context.supervisor_state?.user_id,
-      onboarding_completed: true,
-      onboarding_completed_at: new Date().toISOString(),
-      total_interactions: (context.supervisor_state?.total_interactions || 0) + 1,
-      last_interaction_at: new Date().toISOString()
-    })
+  const totalToday = todayMessages?.length || 0;
+  const checkInsToday = todayMessages?.filter((m: any) => m.message_type === 'check_in').length || 0;
 
-  // Record interaction
-  await supabaseClient
-    .from('internship_supervisor_interactions')
-    .insert({
-      session_id: context.supervisor_state?.session_id,
-      user_id: context.supervisor_state?.user_id,
-      interaction_type: 'message_sent',
-      trigger_event: 'onboarding_trigger',
-      context_snapshot: { 
-        task_count: context.tasks.length,
-        completed_tasks: context.completed_tasks
-      },
-      message_id: message.id
-    })
-
-  return { 
-    message: 'Onboarding message generated and sent',
-    content: messageContent,
-    message_id: message.id
+  if (totalToday >= CONFIG.DAILY_CAPS.max_outbound_per_day) {
+    console.log(`Daily cap reached for user ${userId}`);
+    return false;
   }
+
+  if (messageType === 'check_in' && checkInsToday >= CONFIG.DAILY_CAPS.max_check_ins_per_day) {
+    console.log(`Check-in cap reached for user ${userId}`);
+    return false;
+  }
+
+  return true;
 }
 
-async function handleCheckIn(supabaseClient: any, context: SupervisorContext, requestContext: any) {
-  const { task_id } = requestContext
+async function handleOnboarding(supabase: any, context: SupervisorContext, requestContext: any) {
+  const startTime = Date.now();
+  const idem_key = mkIdem('onboarding', context.session_id, context.user_id);
 
-  // Find the specific task or use current active task
-  let targetTask = null
-  if (task_id) {
-    targetTask = context.tasks.find((task: any) => task.id === task_id)
-  } else {
-    // Find next incomplete task
-    targetTask = context.tasks.find((task: any) => task.status !== 'completed')
-  }
-
-  if (!targetTask) {
-    return { message: 'No suitable task found for check-in', skipped: true }
-  }
-
-  // Calculate days until due
-  const dueDate = new Date(targetTask.due_date)
-  const now = new Date()
-  const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-
-  // Get template
-  const { data: template } = await supabaseClient
-    .from('internship_supervisor_templates')
-    .select('*')
-    .eq('template_type', 'check_in')
-    .eq('template_name', 'task_progress_check')
-    .eq('active', true)
-    .single()
-
-  const variables = {
-    user_name: context.user_name.split(' ')[0],
-    task_title: targetTask.title,
-    completed_tasks: context.completed_tasks,
-    total_tasks: context.tasks.length,
-    due_date: dueDate.toLocaleDateString(),
-    task_status: targetTask.status,
-    days_until_due: daysUntilDue
-  }
-
-  const messageContent = await generateSupervisorMessage(template.prompt_template, variables)
-
-  // Store and send message
-  const { data: message } = await supabaseClient
-    .from('internship_supervisor_messages')
-    .insert({
-      session_id: context.supervisor_state?.session_id,
-      user_id: context.supervisor_state?.user_id,
-      message_type: 'check_in',
-      message_content: messageContent,
-      context_data: { variables, task_id: targetTask.id },
-      scheduled_for: new Date().toISOString(),
-      status: 'sent',
-      sent_at: new Date().toISOString()
-    })
-    .select()
-    .single()
-
-  // Update supervisor state
-  await supabaseClient
-    .from('internship_supervisor_state')
-    .upsert({
-      session_id: context.supervisor_state?.session_id,
-      user_id: context.supervisor_state?.user_id,
-      last_check_in_at: new Date().toISOString(),
-      total_interactions: (context.supervisor_state?.total_interactions || 0) + 1,
-      last_interaction_at: new Date().toISOString()
-    })
-
-  return { 
-    message: 'Check-in message generated and sent',
-    content: messageContent,
-    message_id: message.id
-  }
-}
-
-async function handleFeedbackFollowup(supabaseClient: any, context: SupervisorContext, requestContext: any) {
-  const { submission_id, feedback_data } = requestContext
-
-  // Get submission and task details
-  const { data: submission } = await supabaseClient
-    .from('internship_task_submissions')
-    .select(`
-      *,
-      internship_tasks (
-        id,
-        title
-      )
-    `)
-    .eq('id', submission_id)
-    .single()
-
-  if (!submission) {
-    throw new Error('Submission not found')
-  }
-
-  // Get template
-  const { data: template } = await supabaseClient
-    .from('internship_supervisor_templates')
-    .select('*')
-    .eq('template_type', 'feedback_followup')
-    .eq('template_name', 'post_feedback_message')
-    .eq('active', true)
-    .single()
-
-  // Create feedback summary from the actual feedback
-  const feedbackSummary = feedback_data?.feedback_text?.substring(0, 200) + '...' || 'Great work on this submission!'
-  const overallRating = feedback_data?.quality_rating || 8
-
-  const variables = {
-    user_name: context.user_name.split(' ')[0],
-    task_title: submission.internship_tasks.title,
-    feedback_summary: feedbackSummary,
-    overall_rating: overallRating
-  }
-
-  const messageContent = await generateSupervisorMessage(template.prompt_template, variables)
-
-  // Store message (schedule for a few minutes after feedback)
-  const scheduledFor = new Date(Date.now() + 2 * 60 * 1000) // 2 minutes delay
-
-  const { data: message } = await supabaseClient
-    .from('internship_supervisor_messages')
-    .insert({
-      session_id: context.supervisor_state?.session_id,
-      user_id: context.supervisor_state?.user_id,
-      message_type: 'feedback_followup',
-      message_content: messageContent,
-      context_data: { variables, submission_id, task_id: submission.task_id },
-      scheduled_for: scheduledFor.toISOString(),
-      status: 'pending'
-    })
-    .select()
-    .single()
-
-  return { 
-    message: 'Feedback followup scheduled',
-    content: messageContent,
-    message_id: message.id,
-    scheduled_for: scheduledFor
-  }
-}
-
-async function scheduleReminder(supabaseClient: any, context: SupervisorContext, requestContext: any) {
-  const upcomingTasks = context.tasks.filter((task: any) => {
-    const dueDate = new Date(task.due_date)
-    const now = new Date()
-    const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    
-    return daysUntilDue <= 2 && daysUntilDue > 0 && task.status !== 'completed'
-  })
-
-  const scheduledMessages: any[] = []
-
-  for (const task of upcomingTasks) {
-    // Check if we already sent a reminder for this task
-    const { data: existingReminder } = await supabaseClient
-      .from('internship_supervisor_messages')
-      .select('id')
-      .eq('message_type', 'reminder')
-      .eq('session_id', context.supervisor_state?.session_id)
-      .eq('user_id', context.supervisor_state?.user_id)
-      .contains('context_data', { task_id: task.id })
-
-    if (existingReminder && existingReminder.length > 0) {
-      continue // Skip if already reminded
+  try {
+    if (context.supervisor_state?.onboarding_completed) {
+      return { message: 'Onboarding already completed', skipped: true };
     }
 
-    const dueDate = new Date(task.due_date)
-    const daysUntilDue = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    
-    const { data: template } = await supabaseClient
+    const { data: template } = await supabase
       .from('internship_supervisor_templates')
-      .select('*')
-      .eq('template_type', 'reminder')
-      .eq('template_name', 'deadline_reminder')
-      .single()
+      .select('prompt_template')
+      .eq('template_type', 'onboarding')
+      .eq('template_name', 'welcome_introduction')
+      .eq('active', true)
+      .limit(1)
+      .single();
+
+    const templateText = template?.prompt_template || 
+      'Write a warm welcome message for {user_name} starting as a {job_title} at {company_name} in the {industry} industry.';
 
     const variables = {
-      user_name: context.user_name.split(' ')[0],
-      task_title: task.title,
-      deadline_timing: daysUntilDue === 1 ? 'tomorrow' : `in ${daysUntilDue} days`,
-      days_until_due: daysUntilDue,
-      task_status: task.status
-    }
+      user_name: context.user_first_name,
+      job_title: context.job_title,
+      company_name: context.company_name,
+      industry: context.industry
+    };
 
-    const messageContent = await generateSupervisorMessage(template.prompt_template, variables)
+    const fallback = `Hi ${context.user_first_name}! 👋
 
-    const { data: message } = await supabaseClient
-      .from('internship_supervisor_messages')
-      .insert({
-        session_id: context.supervisor_state?.session_id,
-        user_id: context.supervisor_state?.user_id,
-        message_type: 'reminder',
-        message_content: messageContent,
-        context_data: { variables, task_id: task.id },
-        scheduled_for: new Date().toISOString(),
-        status: 'pending'
-      })
-      .select()
-      .single()
+Welcome to your virtual ${context.job_title} internship at ${context.company_name}! I'm Sarah Mitchell, your internship coordinator, and I'm excited to work with you over the coming weeks.
 
-    scheduledMessages.push(message)
-  }
+You'll be gaining hands-on experience in the ${context.industry} industry through a series of practical tasks and projects. I'll be here to guide you, provide feedback, and make sure you're getting the most out of this experience.
 
-  return {
-    message: `Scheduled ${scheduledMessages.length} reminders`,
-    scheduled_messages: scheduledMessages
-  }
-}
-
-async function processScheduledMessages(supabaseClient: any) {
-  // Get all pending messages that should be sent now
-  const { data: pendingMessages } = await supabaseClient
-    .from('internship_supervisor_messages')
-    .select('*')
-    .eq('status', 'pending')
-    .lte('scheduled_for', new Date().toISOString())
-
-  const sentMessages: any[] = []
-
-  for (const message of pendingMessages || []) {
-    // Mark as sent
-    await supabaseClient
-      .from('internship_supervisor_messages')
-      .update({
-        status: 'sent',
-        sent_at: new Date().toISOString()
-      })
-      .eq('id', message.id)
-
-    // Update supervisor state
-    await supabaseClient
-      .from('internship_supervisor_state')
-      .update({
-        total_interactions: supabaseClient.raw('total_interactions + 1'),
-        last_interaction_at: new Date().toISOString()
-      })
-      .eq('session_id', message.session_id)
-      .eq('user_id', message.user_id)
-
-    sentMessages.push(message)
-  }
-
-  return {
-    message: `Processed ${sentMessages.length} scheduled messages`,
-    sent_messages: sentMessages
-  }
-}
-
-// Team Member Messaging Functions
-
-async function scheduleTeamIntroductions(supabaseClient: any, context: SupervisorContext, requestContext: any) {
-  try {
-    // Get team members from company profile
-    const { data: companyProfile } = await supabaseClient
-      .from('internship_company_profiles')
-      .select('team_members, company_name, intern_department')
-      .eq('session_id', context.supervisor_state?.session_id)
-      .single()
-
-    if (!companyProfile?.team_members || !Array.isArray(companyProfile.team_members)) {
-      return { message: 'No team members found in company profile', skipped: true }
-    }
-
-    const scheduledIntroductions: any[] = []
-
-    // Schedule introduction messages from different team members
-    for (let i = 0; i < Math.min(companyProfile.team_members.length, 3); i++) {
-      const teamMember = companyProfile.team_members[i]
-      
-      // Determine message timing (stagger over first few days)
-      const hoursOffset = 6 + (i * 8) + Math.random() * 4 // 6-18 hours, 14-26 hours, 22-34 hours
-      const scheduledFor = new Date(Date.now() + hoursOffset * 60 * 60 * 1000)
-
-      // Select appropriate template based on role
-      const isManager = /manager|director|lead|head/i.test(teamMember.role)
-      const templateType = isManager ? 'welcome_from_manager' : 'welcome_from_peer'
-
-      const { data: template } = await supabaseClient
-        .from('internship_team_message_templates')
-        .select('*')
-        .eq('template_name', templateType)
-        .eq('active', true)
-        .single()
-
-      if (template) {
-        // Schedule the team member introduction
-        const { data: scheduledMessage } = await supabaseClient
-          .from('internship_team_schedules')
-          .insert({
-            session_id: context.supervisor_state?.session_id,
-            user_id: context.supervisor_state?.user_id,
-            team_member_data: teamMember,
-            interaction_type: 'introduction',
-            scheduled_for: scheduledFor.toISOString(),
-            context_data: {
-              template_name: templateType,
-              company_name: companyProfile.company_name,
-              intern_department: companyProfile.intern_department
-            }
-          })
-          .select()
-          .single()
-
-        scheduledIntroductions.push(scheduledMessage)
-      }
-    }
-
-    return {
-      message: `Scheduled ${scheduledIntroductions.length} team member introductions`,
-      scheduled_introductions: scheduledIntroductions
-    }
-  } catch (error) {
-    console.error('Error scheduling team introductions:', error)
-    return { error: error.message }
-  }
-}
-
-async function scheduleTeamInteraction(supabaseClient: any, context: SupervisorContext, requestContext: any) {
-  try {
-    const { interaction_type, team_member } = requestContext
-
-    // Get team members from company profile if specific member not provided
-    let selectedTeamMember = team_member
-    if (!selectedTeamMember) {
-      const { data: companyProfile } = await supabaseClient
-        .from('internship_company_profiles')
-        .select('team_members')
-        .eq('session_id', context.supervisor_state?.session_id)
-        .single()
-
-      if (companyProfile?.team_members && Array.isArray(companyProfile.team_members)) {
-        // Select a random team member
-        selectedTeamMember = companyProfile.team_members[Math.floor(Math.random() * companyProfile.team_members.length)]
-      }
-    }
-
-    if (!selectedTeamMember) {
-      return { message: 'No team member available for interaction', skipped: true }
-    }
-
-    // Find appropriate template
-    const { data: templates } = await supabaseClient
-      .from('internship_team_message_templates')
-      .select('*')
-      .eq('template_type', interaction_type)
-      .eq('active', true)
-
-    let selectedTemplate = null
-    if (templates && templates.length > 0) {
-      // Match template to team member role
-      selectedTemplate = templates.find((t: any) => {
-        const pattern = new RegExp(t.sender_role_pattern, 'i')
-        return pattern.test(selectedTeamMember.role)
-      }) || templates[0] // Fallback to first template
-    }
-
-    if (!selectedTemplate) {
-      return { message: `No template found for interaction type: ${interaction_type}`, skipped: true }
-    }
-
-    // Schedule the interaction
-    const scheduledFor = new Date(Date.now() + Math.random() * 2 * 60 * 60 * 1000) // Random 0-2 hours
-
-    const { data: scheduledMessage } = await supabaseClient
-      .from('internship_team_schedules')
-      .insert({
-        session_id: context.supervisor_state?.session_id,
-        user_id: context.supervisor_state?.user_id,
-        team_member_data: selectedTeamMember,
-        interaction_type,
-        scheduled_for: scheduledFor.toISOString(),
-        context_data: {
-          template_name: selectedTemplate.template_name,
-          template_id: selectedTemplate.id
-        }
-      })
-      .select()
-      .single()
-
-    return {
-      message: `Scheduled ${interaction_type} from ${selectedTeamMember.name}`,
-      scheduled_message: scheduledMessage
-    }
-  } catch (error) {
-    console.error('Error scheduling team interaction:', error)
-    return { error: error.message }
-  }
-}
-
-async function processTeamMessages(supabaseClient: any) {
-  try {
-    // Get all pending team member messages that should be sent now
-    const { data: pendingMessages } = await supabaseClient
-      .from('internship_team_schedules')
-      .select('*')
-      .eq('status', 'pending')
-      .lte('scheduled_for', new Date().toISOString())
-
-    const sentMessages: any[] = []
-
-    for (const schedule of pendingMessages || []) {
-      try {
-        // Get the template
-        const templateName = schedule.context_data?.template_name
-        const { data: template } = await supabaseClient
-          .from('internship_team_message_templates')
-          .select('*')
-          .eq('template_name', templateName)
-          .single()
-
-        if (!template) {
-          console.error(`Template not found: ${templateName}`)
-          continue
-        }
-
-        // Gather context for message generation
-        const messageContext = await gatherTeamMessageContext(supabaseClient, schedule)
-        
-        // Generate the message content
-        const messageContent = await generateTeamMemberMessage(template.prompt_template, messageContext)
-
-        // Store the message with team member persona
-        const { data: message } = await supabaseClient
-          .from('internship_supervisor_messages')
-          .insert({
-            session_id: schedule.session_id,
-            user_id: schedule.user_id,
-            message_type: schedule.interaction_type,
-            message_content: messageContent,
-            context_data: schedule.context_data,
-            scheduled_for: schedule.scheduled_for,
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            sender_persona: {
-              name: schedule.team_member_data.name,
-              role: schedule.team_member_data.role,
-              department: schedule.team_member_data.department,
-              email: schedule.team_member_data.email,
-              avatar_style: determineAvatarStyle(schedule.team_member_data.role)
-            }
-          })
-          .select()
-          .single()
-
-        // Mark schedule as sent
-        await supabaseClient
-          .from('internship_team_schedules')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString()
-          })
-          .eq('id', schedule.id)
-
-        sentMessages.push(message)
-
-      } catch (messageError) {
-        console.error('Error processing team message:', messageError)
-        
-        // Mark schedule as failed
-        await supabaseClient
-          .from('internship_team_schedules')
-          .update({
-            status: 'failed',
-            context_data: { 
-              ...schedule.context_data, 
-              error: messageError.message 
-            }
-          })
-          .eq('id', schedule.id)
-      }
-    }
-
-    return {
-      message: `Processed ${sentMessages.length} team member messages`,
-      sent_messages: sentMessages
-    }
-  } catch (error) {
-    console.error('Error processing team messages:', error)
-    return { error: error.message }
-  }
-}
-
-async function gatherTeamMessageContext(supabaseClient: any, schedule: any) {
-  try {
-    // Get user info
-    const { data: userData } = await supabaseClient
-      .from('profiles')
-      .select('first_name, last_name')
-      .eq('id', schedule.user_id)
-      .single()
-
-    // Get session info
-    const { data: sessionData } = await supabaseClient
-      .from('internship_sessions')
-      .select('job_title, industry, created_at')
-      .eq('id', schedule.session_id)
-      .single()
-
-    // Get company info
-    const { data: companyData } = await supabaseClient
-      .from('internship_company_profiles')
-      .select('company_name, intern_department, sample_projects')
-      .eq('session_id', schedule.session_id)
-      .single()
-
-    // Get recent tasks
-    const { data: tasks } = await supabaseClient
-      .from('internship_tasks')
-      .select('title, status')
-      .eq('session_id', schedule.session_id)
-      .order('created_at', { ascending: false })
-      .limit(3)
-
-    const userName = userData ? `${userData.first_name} ${userData.last_name}` : 'there'
-    const daysSinceStart = userData ? Math.floor((Date.now() - new Date(sessionData.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
-
-    return {
-      user_name: userName.split(' ')[0], // First name only
-      sender_name: schedule.team_member_data.name,
-      sender_role: schedule.team_member_data.role,
-      sender_department: schedule.team_member_data.department,
-      company_name: companyData?.company_name || 'the company',
-      job_title: sessionData?.job_title || 'intern',
-      industry: sessionData?.industry || 'technology',
-      intern_department: companyData?.intern_department || 'Operations',
-      relevant_projects: companyData?.sample_projects?.slice(0, 2).join(', ') || 'various projects',
-      current_tasks: tasks?.map((t: any) => t.title).join(', ') || 'initial orientation tasks',
-      days_since_start: daysSinceStart,
-      recent_activities: tasks?.filter((t: any) => t.status !== 'not_started').map((t: any) => t.title).join(', ') || 'getting oriented'
-    }
-  } catch (error) {
-    console.error('Error gathering team message context:', error)
-    // Return fallback context
-    return {
-      user_name: 'there',
-      sender_name: schedule.team_member_data.name,
-      sender_role: schedule.team_member_data.role,
-      sender_department: schedule.team_member_data.department,
-      company_name: 'the company',
-      job_title: 'intern',
-      industry: 'technology'
-    }
-  }
-}
-
-function determineAvatarStyle(role: string): string {
-  if (/manager|director|ceo|president|vp/i.test(role)) {
-    return 'executive'
-  } else if (/engineer|developer|technical|architect/i.test(role)) {
-    return 'technical'
-  } else if (/designer|creative|marketing|brand/i.test(role)) {
-    return 'creative'
-  } else if (/sales|account|customer|business/i.test(role)) {
-    return 'business'
-  } else {
-    return 'professional'
-  }
-}
-
-async function generateTeamMemberMessage(template: string, variables: Record<string, any>): Promise<string> {
-  try {
-    // Replace template variables
-    let prompt = template
-    for (const [key, value] of Object.entries(variables)) {
-      prompt = prompt.replace(new RegExp(`{${key}}`, 'g'), String(value))
-    }
-
-    // Call OpenAI API
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are writing a workplace message as a specific team member. Keep the tone professional but personable, matching the sender\'s role and department culture. Write naturally as if you are that person.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 250,
-        temperature: 0.8
-      })
-    })
-
-    const result = await openAIResponse.json()
-    
-    if (!result.choices || !result.choices[0]) {
-      throw new Error('Failed to generate message from OpenAI')
-    }
-
-    return result.choices[0].message.content.trim()
-  } catch (error) {
-    console.error('Error generating team member message:', error)
-    
-    // Fallback to a basic message
-    const senderName = variables.sender_name || 'Team Member'
-    const userName = variables.user_name || 'there'
-    
-    return `Hi ${userName}! Welcome to the team. I'm ${senderName} and I'm excited to work with you during your internship. Looking forward to collaborating!
-
-Best regards,
-${senderName}`
-  }
-}
-
-async function generateSupervisorMessage(template: string, variables: Record<string, any>): Promise<string> {
-  try {
-    // Replace template variables
-    let prompt = template
-    for (const [key, value] of Object.entries(variables)) {
-      prompt = prompt.replace(new RegExp(`{${key}}`, 'g'), String(value))
-    }
-
-    // Call OpenAI API
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 300,
-        temperature: 0.7
-      })
-    })
-
-    const result = await openAIResponse.json()
-    
-    if (!result.choices || !result.choices[0]) {
-      throw new Error('Failed to generate message from OpenAI')
-    }
-
-    return result.choices[0].message.content.trim()
-  } catch (error) {
-    console.error('Error generating AI message:', error)
-    
-    // Fallback to a basic message if AI fails
-    const userName = variables.user_name || 'there'
-    return `Hi ${userName}! I hope your internship is going well. Let me know if you need any help or have questions about your current tasks. Keep up the great work!
+Feel free to reach out if you have any questions or need help with anything. Let's make this a great learning experience!
 
 Best regards,
 Sarah Mitchell
-Internship Coordinator`
+Internship Coordinator`;
+
+    const messageContent = await renderTemplateOrFallback(templateText, variables, fallback);
+    const subject = generateSubject('onboarding');
+
+    const { data: message, error } = await supabase
+      .from('internship_supervisor_messages')
+      .insert({
+        session_id: context.session_id,
+        user_id: context.user_id,
+        message_type: 'onboarding',
+        subject,
+        message_content: messageContent,
+        direction: 'outbound',
+        sender_type: 'supervisor',
+        context_data: { variables },
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        idem_key
+      })
+      .select()
+      .single();
+
+    if (error?.code === '23505') {
+      return { message: 'Onboarding already sent', skipped: true };
+    }
+    if (error) throw error;
+
+    await supabase.rpc('increment_interactions', { p_session: context.session_id, p_user: context.user_id, p_inc: 1 });
+    await supabase.from('internship_supervisor_state').upsert({
+      session_id: context.session_id,
+      user_id: context.user_id,
+        onboarding_completed: true,
+        onboarding_completed_at: new Date().toISOString(),
+        last_interaction_at: new Date().toISOString()
+      });
+
+    console.log(`✅ Onboarding sent in ${Date.now() - startTime}ms`);
+    return { message: 'Onboarding sent', message_id: message.id, duration_ms: Date.now() - startTime };
+  } catch (error) {
+    console.error('Onboarding error:', error);
+    throw error;
   }
-} 
+}
+
+async function handleCheckIn(supabase: any, context: SupervisorContext, requestContext: any) {
+  const startTime = Date.now();
+  const { task_id } = requestContext;
+
+  try {
+    const canSend = await checkDailyCaps(supabase, context.session_id, context.user_id, 'check_in');
+    if (!canSend) return { message: 'Daily cap reached', skipped: true };
+
+    const task = await getRelevantTask(supabase, context.session_id, task_id);
+    if (!task) return { message: 'No task found', skipped: true };
+
+    const idem_key = mkIdem('check_in', context.session_id, context.user_id, task.id);
+
+    const recentCutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const { data: recentCheckIn } = await supabase
+      .from('internship_supervisor_messages')
+      .select('id')
+      .eq('message_type', 'check_in')
+      .eq('session_id', context.session_id)
+      .eq('user_id', context.user_id)
+      .contains('context_data', { task_id: task.id })
+      .gte('sent_at', recentCutoff)
+      .limit(1);
+
+    if (recentCheckIn?.length > 0) {
+      return { message: 'Recent check-in exists', skipped: true };
+    }
+
+    const daysUntilDue = daysUntil(task.due_date);
+
+    const { data: template } = await supabase
+    .from('internship_supervisor_templates')
+      .select('prompt_template')
+    .eq('template_type', 'check_in')
+    .eq('template_name', 'task_progress_check')
+    .eq('active', true)
+      .limit(1)
+      .single();
+
+    const templateText = template?.prompt_template || 'Write a check-in for {user_name} about {task_title}.';
+    const variables = { user_name: context.user_first_name, task_title: task.title, days_until_due: daysUntilDue };
+
+    const fallback = `Hi ${context.user_first_name},
+
+I wanted to check in on your progress with "${task.title}". ${
+  daysUntilDue === 1 ? "This task is due tomorrow" :
+  daysUntilDue === 0 ? "This task is due today" :
+  daysUntilDue < 0 ? "This task is overdue" :
+  `This task is due in ${daysUntilDue} days`
+}.
+
+How are things going? Let me know if you need any support.
+
+Best regards,
+Sarah Mitchell`;
+
+    const messageContent = await renderTemplateOrFallback(templateText, variables, fallback);
+    const subject = generateSubject('check_in');
+
+    const { data: message, error } = await supabase
+    .from('internship_supervisor_messages')
+    .insert({
+        session_id: context.session_id,
+        user_id: context.user_id,
+      message_type: 'check_in',
+        subject,
+      message_content: messageContent,
+        direction: 'outbound',
+        sender_type: 'supervisor',
+        context_data: { variables, task_id: task.id },
+      status: 'sent',
+        sent_at: new Date().toISOString(),
+        idem_key
+    })
+    .select()
+      .single();
+
+    if (error?.code === '23505') return { message: 'Check-in already sent', skipped: true };
+    if (error) throw error;
+
+    await supabase.rpc('increment_interactions', { p_session: context.session_id, p_user: context.user_id, p_inc: 1 });
+    await supabase.from('internship_supervisor_state').update({
+      last_check_in_at: new Date().toISOString(),
+      last_interaction_at: new Date().toISOString()
+    }).eq('session_id', context.session_id).eq('user_id', context.user_id);
+
+    console.log(`✅ Check-in sent in ${Date.now() - startTime}ms`);
+    return { message: 'Check-in sent', message_id: message.id, duration_ms: Date.now() - startTime };
+  } catch (error) {
+    console.error('Check-in error:', error);
+    throw error;
+  }
+}
+
+async function handleFeedbackFollowup(supabase: any, context: SupervisorContext, requestContext: any) {
+  const startTime = Date.now();
+  const { submission_id, feedback_data } = requestContext;
+
+  try {
+    if (!submission_id) throw new Error('submission_id required');
+
+    const idem_key = mkIdem('feedback_followup', context.session_id, context.user_id, submission_id);
+
+    const { data: submission } = await supabase
+    .from('internship_task_submissions')
+      .select('task_id, internship_tasks(title)')
+    .eq('id', submission_id)
+      .single();
+
+    if (!submission) throw new Error('Submission not found');
+
+    const taskTitle = submission.internship_tasks?.title || 'your task';
+    const feedbackSummary = feedback_data?.feedback_text?.substring(0, 150) || 'Great work';
+
+    const { data: template } = await supabase
+    .from('internship_supervisor_templates')
+      .select('prompt_template')
+    .eq('template_type', 'feedback_followup')
+    .eq('template_name', 'post_feedback_message')
+    .eq('active', true)
+      .limit(1)
+      .single();
+
+    const templateText = template?.prompt_template || 'Write encouragement for {user_name} after {task_title}.';
+    const variables = { user_name: context.user_first_name, task_title: taskTitle, feedback_summary: feedbackSummary };
+
+    const fallback = `Hi ${context.user_first_name},
+
+Great job on completing "${taskTitle}"! ${feedbackSummary}
+
+Keep up the excellent progress!
+
+Best regards,
+Sarah Mitchell`;
+
+    const messageContent = await renderTemplateOrFallback(templateText, variables, fallback);
+    const subject = generateSubject('feedback_followup');
+
+    const { data: message, error } = await supabase
+      .from('internship_supervisor_messages')
+      .insert({
+        session_id: context.session_id,
+        user_id: context.user_id,
+        message_type: 'feedback_followup',
+        subject,
+        message_content: messageContent,
+        direction: 'outbound',
+        sender_type: 'supervisor',
+        context_data: { variables, submission_id, task_id: submission.task_id },
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        idem_key
+          })
+          .select()
+      .single();
+
+    if (error?.code === '23505') return { message: 'Feedback already sent', skipped: true };
+    if (error) throw error;
+
+    await supabase.rpc('increment_interactions', { p_session: context.session_id, p_user: context.user_id, p_inc: 1 });
+
+    console.log(`✅ Feedback followup sent in ${Date.now() - startTime}ms`);
+    return { message: 'Feedback followup sent', message_id: message.id, duration_ms: Date.now() - startTime };
+  } catch (error) {
+    console.error('Feedback followup error:', error);
+    throw error;
+  }
+}
+
+async function handleReminder(supabase: any, context: SupervisorContext, requestContext: any) {
+  const startTime = Date.now();
+  const { task_id } = requestContext;
+
+  try {
+    if (!task_id) throw new Error('task_id required');
+
+    const idem_key = mkIdem('reminder', context.session_id, context.user_id, task_id);
+
+    const task = await getRelevantTask(supabase, context.session_id, task_id);
+    if (!task) return { message: 'Task not found', skipped: true };
+    if (task.status === 'completed') return { message: 'Task completed', skipped: true };
+
+    const daysUntilDue = daysUntil(task.due_date);
+    if (daysUntilDue > 1 || daysUntilDue < -1) {
+      return { message: 'Not in reminder window', skipped: true };
+    }
+
+    const { data: template } = await supabase
+      .from('internship_supervisor_templates')
+      .select('prompt_template')
+      .eq('template_type', 'reminder')
+      .eq('template_name', 'deadline_reminder')
+      .eq('active', true)
+      .limit(1)
+      .single();
+
+    const deadlineTiming = daysUntilDue === 1 ? 'tomorrow' : daysUntilDue === 0 ? 'today' : 'soon';
+    const templateText = template?.prompt_template || 'Remind {user_name} about {task_title} due {deadline_timing}.';
+    const variables = { user_name: context.user_first_name, task_title: task.title, deadline_timing: deadlineTiming };
+
+    const fallback = `Hi ${context.user_first_name},
+
+This is a friendly reminder that "${task.title}" is due ${deadlineTiming}.
+
+Let me know if you need any support!
+
+Best regards,
+Sarah Mitchell`;
+
+    const messageContent = await renderTemplateOrFallback(templateText, variables, fallback);
+    const subject = generateSubject('reminder', { days_until_due: daysUntilDue });
+
+    const { data: message, error } = await supabase
+          .from('internship_supervisor_messages')
+          .insert({
+        session_id: context.session_id,
+        user_id: context.user_id,
+        message_type: 'reminder',
+        subject,
+            message_content: messageContent,
+        direction: 'outbound',
+        sender_type: 'supervisor',
+        context_data: { variables, task_id: task.id },
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+        idem_key
+          })
+          .select()
+      .single();
+
+    if (error?.code === '23505') return { message: 'Reminder already sent', skipped: true };
+    if (error) throw error;
+
+    await supabase.rpc('increment_interactions', { p_session: context.session_id, p_user: context.user_id, p_inc: 1 });
+
+    console.log(`✅ Reminder sent in ${Date.now() - startTime}ms`);
+    return { message: 'Reminder sent', message_id: message.id, duration_ms: Date.now() - startTime };
+  } catch (error) {
+    console.error('Reminder error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle user message response (auto-reply to student messages)
+ */
+async function handleUserMessageResponse(
+  supabase: any, 
+  context: SupervisorContext, 
+  requestContext: any
+) {
+  const startTime = Date.now();
+  const { 
+    user_message_id, 
+    user_message_content, 
+    user_message_subject,
+    task_id,
+    thread_id 
+  } = requestContext;
+
+  try {
+    if (!user_message_id || !user_message_content) {
+      throw new Error('user_message_id and user_message_content required');
+    }
+
+    // Create idempotency key based on user message
+    const idem_key = mkIdem('response', context.session_id, context.user_id, user_message_id);
+
+    // Get task context if provided (with detailed information)
+    let taskContext: any = null;
+    if (task_id) {
+      const { data: task } = await supabase
+        .from('internship_tasks')
+        .select(`
+          id, title, description, due_date, status, instructions,
+          task_details:internship_task_details(
+            background,
+            deliverables,
+            instructions,
+            success_criteria,
+            resources
+          )
+        `)
+        .eq('id', task_id)
+        .single();
+      
+      // Flatten task details for easier access
+      if (task?.task_details && task.task_details.length > 0) {
+        taskContext = {
+          ...task,
+          ...task.task_details[0]
+        };
+      } else {
+        taskContext = task;
+      }
+    }
+
+    // Get response template
+    const { data: template } = await supabase
+      .from('internship_supervisor_templates')
+      .select('prompt_template')
+      .eq('template_type', 'user_message_response')
+      .eq('template_name', 'contextual_response')
+      .eq('active', true)
+      .limit(1)
+      .single();
+
+    const templateText = template?.prompt_template || 
+      `You are Sarah Mitchell, an internship coordinator. A student named {user_name} sent you this message: "{user_message}". 
+       ${task_id ? 'They mentioned it relates to the task: "{task_title}". ' : ''}
+       Provide a helpful, encouraging response with specific guidance.`;
+
+    const variables = {
+      user_name: context.user_first_name,
+      user_message: user_message_content,
+      user_subject: user_message_subject,
+      task_title: taskContext?.title || 'N/A',
+      task_description: taskContext?.description || '',
+      task_background: taskContext?.background || '',
+      task_deliverables: taskContext?.deliverables || '',
+      task_instructions: taskContext?.instructions || '',
+      task_success_criteria: taskContext?.success_criteria || '',
+      task_due_date: taskContext?.due_date || '',
+      days_until_due: taskContext ? daysUntil(taskContext.due_date) : null
+    };
+
+    const fallbackMessage = `Hi ${context.user_first_name},
+
+Thank you for your message! I appreciate you reaching out.
+
+${taskContext ? 
+  `Regarding "${taskContext.title}" - this is an important task and I'm glad you're being proactive about it. ` : 
+  'I\'m here to help with any questions or concerns you might have. '
+}
+
+${user_message_content.toLowerCase().includes('question') ? 
+  'Great questions show you\'re thinking critically about the work. ' : 
+  'Your engagement with the internship is exactly what we like to see. '
+}
+
+Feel free to ask if you need any clarification or additional guidance. I'm here to support your success!
+
+Best regards,
+Sarah Mitchell
+Internship Coordinator`;
+
+    const messageContent = await renderTemplateOrFallback(
+      templateText,
+      variables,
+      fallbackMessage
+    );
+
+    // Generate response subject
+    const responseSubject = user_message_subject && user_message_subject.startsWith('Re:') 
+      ? user_message_subject 
+      : `Re: ${user_message_subject || 'Your Message'}`;
+
+    // Send response with idempotency
+    const { data: message, error } = await supabase
+      .from('internship_supervisor_messages')
+      .insert({
+        session_id: context.session_id,
+        user_id: context.user_id,
+        message_type: 'user_message_response',
+        subject: responseSubject,
+        message_content: messageContent,
+        direction: 'outbound',
+        sender_type: 'supervisor',
+        thread_id: thread_id || user_message_id,
+        context_data: { 
+          variables, 
+          responding_to: user_message_id,
+          task_id: task_id 
+        },
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        idem_key: idem_key
+      })
+      .select()
+      .single();
+
+    if (error?.code === '23505') {
+      return { message: 'Response already sent', skipped: true };
+    }
+    if (error) throw error;
+
+    await supabase.rpc('increment_interactions', {
+      p_session: context.session_id,
+      p_user: context.user_id,
+      p_inc: 1
+    });
+
+    console.log(`✅ User message response sent in ${Date.now() - startTime}ms`);
+
+    return {
+      message: 'Response generated and sent',
+      message_id: message.id,
+      duration_ms: Date.now() - startTime
+    };
+
+  } catch (error) {
+    console.error('Error in user message response handler:', error);
+    throw error;
+  }
+}
+

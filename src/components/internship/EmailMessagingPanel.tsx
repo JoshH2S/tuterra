@@ -3,10 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { 
   ArrowLeft, 
   Mail, 
@@ -18,24 +17,29 @@ import {
   Reply, 
   Forward,
   MoreVertical,
-  Clock,
   Send,
-  Paperclip,
   User,
-  Bot
+  Clock
 } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AISupervisorService } from "@/services/aiSupervisor";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface EmailMessage {
   id: string;
@@ -44,15 +48,13 @@ interface EmailMessage {
   sender_name: string;
   sender_role?: string;
   sender_department?: string;
-  sender_avatar_style?: string;
   sender_type: 'user' | 'supervisor' | 'system';
+  direction: 'outbound' | 'inbound';
   created_at: string;
   sent_at?: string;
   is_read: boolean;
-  is_starred?: boolean;
   message_type?: string;
-  context_data?: any;
-  attachments?: any[];
+  thread_id?: string;
 }
 
 interface EmailMessagingPanelProps {
@@ -72,67 +74,44 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
   const [sending, setSending] = useState(false);
 
   // Compose email state
-  const [composeSubject, setComposeSubject] = useState("");
   const [composeContent, setComposeContent] = useState("");
   
-  // Ref to track last message load time to prevent unnecessary reloads
-  const lastLoadTime = useRef<number>(0);
-  const loadingRef = useRef<boolean>(false);
-  const subscriptionRef = useRef<any>(null);
-  const processedMessageIds = useRef<Set<string>>(new Set());
+  // Task context state
+  const [selectedTaskId, setSelectedTaskId] = useState<string>("general");
+  const [availableTasks, setAvailableTasks] = useState<any[]>([]);
+  
+  // Polling interval ref
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
 
   const loadMessages = useCallback(async () => {
-    if (!user || loadingRef.current) return;
+    if (!user) return;
     
     setLoading(true);
-    loadingRef.current = true;
-    
     try {
-      // Get supervisor messages (including team member messages)
       const supervisorMessages = await AISupervisorService.getSupervisorMessages(sessionId, user.id);
       
-      // Get regular messages using the correct schema
-      const { data: regularMessages } = await supabase
-        .from('internship_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('timestamp', { ascending: false });
-
-      // Convert to email format with subjects
-      const emailMessages: EmailMessage[] = [
-        ...(supervisorMessages || []).map(msg => {
-          // Extract sender persona from the message if available  
+      // Convert to unified email format
+      const emailMessages: EmailMessage[] = supervisorMessages.map(msg => {
           const senderPersona = (msg as any).sender_persona;
-          const senderName = senderPersona?.name || 'Sarah Mitchell';
+        const senderName = msg.sender_type === 'user' ? 'You' : (senderPersona?.name || 'Sarah Mitchell');
           const senderRole = senderPersona?.role || 'Internship Coordinator';
           
           return {
             id: msg.id,
-            subject: generateSubjectFromContent(msg.message_content, msg.message_type),
-            content: formatSupervisorMessage(msg.message_content, senderName, senderRole),
+          subject: msg.subject || generateSubjectFromType(msg.message_type),
+          content: msg.message_content,
             sender_name: senderName,
-            sender_role: senderRole,
-            sender_department: senderPersona?.department || 'Human Resources',
-            sender_avatar_style: senderPersona?.avatar_style || 'professional',
-            sender_type: 'supervisor' as const,
-            created_at: msg.sent_at || msg.scheduled_for,
+          sender_role: msg.sender_type === 'supervisor' ? senderRole : undefined,
+          sender_department: senderPersona?.department,
+          sender_type: msg.sender_type,
+          direction: msg.direction,
+          created_at: msg.sent_at || new Date().toISOString(),
             sent_at: msg.sent_at,
-            is_read: false, // Default unread for supervisor messages
+          is_read: msg.is_read,
             message_type: msg.message_type,
-            context_data: msg.context_data
-          };
-        }),
-        ...(regularMessages || []).map(msg => ({
-          id: msg.id,
-          subject: msg.subject || 'Message from Intern',
-          content: msg.body || msg.content || '',
-          sender_name: msg.sender_name || 'You',
-          sender_type: msg.sender_name === 'You' ? 'user' as const : 'supervisor' as const,
-          created_at: msg.timestamp || msg.sent_at,
-          sent_at: msg.timestamp || msg.sent_at,
-          is_read: msg.is_read || false
-        }))
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          thread_id: (msg as any).thread_id
+        };
+      }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setMessages(emailMessages);
     } catch (error) {
@@ -144,169 +123,64 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
       });
     } finally {
       setLoading(false);
-      loadingRef.current = false;
     }
   }, [sessionId, user, toast]);
 
-  // Debounced load messages function
-  const debouncedLoadMessages = useCallback(() => {
-    const now = Date.now();
-    // Prevent loading if we just loaded recently (within 2 seconds)
-    if (now - lastLoadTime.current < 2000 || loadingRef.current) {
-      return;
-    }
-    
-    lastLoadTime.current = now;
-    
-    // Small delay to batch rapid calls
-    setTimeout(() => {
-      loadMessages();
-    }, 100);
-  }, [loadMessages]);
-
+  // Polling setup (MVP: 15-30s polling instead of realtime)
   useEffect(() => {
     if (sessionId && user) {
       loadMessages();
       
-      // Clean up existing subscription
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-      }
-      
-      // Set up real-time subscription for new messages with better filtering
-      subscriptionRef.current = supabase
-        .channel(`email_messages_${sessionId}_${Date.now()}`) // Unique channel name
-        .on('postgres_changes', 
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'internship_supervisor_messages',
-            filter: `session_id=eq.${sessionId}`
-          },
-          (payload) => {
-            console.log('New supervisor message received:', payload);
-            
-            // Check if we've already processed this message
-            if (processedMessageIds.current.has(payload.new.id)) {
-              console.log('Message already processed, skipping reload');
-              return;
-            }
-            
-            // Check if this message already exists in our local state
-            const messageExists = messages.some(msg => msg.id === payload.new.id);
-            if (messageExists) {
-              console.log('Message already exists, skipping reload');
-              processedMessageIds.current.add(payload.new.id);
-              return;
-            }
-            
-            // Only reload if this is actually a new message (sent in the last minute)
-            const messageTime = payload.new.sent_at || payload.new.created_at || new Date().toISOString();
-            const now = new Date();
-            const timeDiff = now.getTime() - new Date(messageTime).getTime();
-            
-            console.log('Message time diff (ms):', timeDiff);
-            
-            // Only reload for truly new messages (less than 1 minute old)
-            if (timeDiff < 60000 && timeDiff >= -5000) { // Allow 5 seconds of clock skew
-              console.log('Loading new message - time diff acceptable');
-              processedMessageIds.current.add(payload.new.id);
-              debouncedLoadMessages();
-              
-              // Show notification for new messages
-              toast({
-                title: "New message received",
-                description: `You have a new message from ${payload.new.sender_persona?.name || 'your supervisor'}`,
-              });
-            } else {
-              console.log('Skipping message reload - too old or future message', { 
-                timeDiff, 
-                messageTime, 
-                currentTime: now.toISOString() 
-              });
-              // Still add to processed set to avoid checking again
-              processedMessageIds.current.add(payload.new.id);
-            }
-          }
-        )
-        .on('postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public', 
-            table: 'internship_messages',
-            filter: `session_id=eq.${sessionId}`
-          },
-          (payload) => {
-            console.log('New user message received:', payload);
-            // Reload for new user messages (like replies)
-            debouncedLoadMessages();
-          }
-        )
-        .subscribe();
+      // Poll every 20 seconds
+      pollingInterval.current = setInterval(() => {
+        loadMessages();
+      }, 20000);
 
       return () => {
-        if (subscriptionRef.current) {
-          subscriptionRef.current.unsubscribe();
-          subscriptionRef.current = null;
+        if (pollingInterval.current) {
+          clearInterval(pollingInterval.current);
         }
       };
     }
-  }, [sessionId, user, loadMessages, debouncedLoadMessages, toast]);
+  }, [sessionId, user, loadMessages]);
 
-  const generateSubjectFromContent = (content: string, messageType?: string): string => {
-    // Generate email-like subjects based on content and type
-    const firstLine = content.split('\n')[0];
-    const preview = firstLine.length > 50 ? firstLine.substring(0, 50) + "..." : firstLine;
-
-    switch (messageType) {
-      case 'onboarding':
-        return '🌟 Welcome to Your Virtual Internship!';
-      case 'check_in':
-        return '📝 Check-in: How are things going?';
-      case 'feedback_followup':
-        return '💬 Feedback Follow-up';
-      case 'reminder':
-        return '⏰ Reminder: Upcoming Deadline';
-      case 'encouragement':
-        return '🎉 Great Progress Update!';
-      case 'milestone':
-        return '🏆 Milestone Achievement';
-      default:
-        if (preview.toLowerCase().includes('welcome')) {
-          return '👋 Welcome Message';
-        } else if (preview.toLowerCase().includes('task') || preview.toLowerCase().includes('assignment')) {
-          return '📋 New Task Assignment';
-        } else if (preview.toLowerCase().includes('deadline') || preview.toLowerCase().includes('due')) {
-          return '⏰ Deadline Reminder';
-        } else if (preview.toLowerCase().includes('feedback')) {
-          return '💭 Feedback Available';
-        } else if (preview.toLowerCase().includes('meeting')) {
-          return '📅 Meeting Invitation';
-        } else {
-          return preview;
-        }
+  // Load available tasks for context dropdown
+  useEffect(() => {
+    const loadTasks = async () => {
+      if (!user) return;
+      
+      const { data: tasks } = await supabase
+        .from('internship_tasks')
+        .select('id, title, status, due_date')
+        .eq('session_id', sessionId)
+        .neq('status', 'completed')
+        .order('due_date', { ascending: true });
+      
+      setAvailableTasks(tasks || []);
+    };
+    
+    if (sessionId && user) {
+      loadTasks();
     }
+  }, [sessionId, user]);
+
+  // Helper to calculate days until due
+  const daysUntil = (dateIso: string): number => {
+    const due = new Date(dateIso).getTime();
+    const now = Date.now();
+    return Math.ceil((due - now) / 86_400_000);
   };
 
-  const formatSupervisorMessage = (content: string, senderName: string, senderRole: string): string => {
-    // Add professional email formatting to supervisor messages
-    if (!content.includes('Best regards') && !content.includes('Best,') && !content.includes('Sincerely')) {
-      // Add professional closing if not already present
-      const lines = content.trim().split('\n');
-      const lastLine = lines[lines.length - 1].trim();
-      
-      // Check if it already has a professional ending
-      const hasEnding = lastLine.toLowerCase().includes('regards') || 
-                       lastLine.toLowerCase().includes('best') ||
-                       lastLine.toLowerCase().includes('sincerely') ||
-                       lastLine.endsWith(senderName);
-      
-      if (!hasEnding) {
-        return `${content.trim()}\n\nBest regards,\n${senderName}\n${senderRole}`;
-      }
+  const generateSubjectFromType = (messageType?: string): string => {
+    switch (messageType) {
+      case 'onboarding': return '🌟 Welcome to Your Virtual Internship!';
+      case 'check_in': return '📝 Check-in: How are things going?';
+      case 'feedback_followup': return '💬 Feedback on Your Recent Submission';
+      case 'reminder': return '⏰ Reminder: Upcoming Task Deadline';
+      case 'encouragement': return '🎉 Great Progress Update!';
+      case 'milestone': return '🏆 Milestone Achievement!';
+      default: return 'Message from Internship Coordinator';
     }
-    
-    return content;
   };
 
   const handleMessageClick = async (message: EmailMessage) => {
@@ -315,39 +189,15 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
     setIsReplying(false);
     setReplyText("");
 
-    // Mark as read if not already read
-    if (!message.is_read && message.sender_type !== 'user') {
-      await markAsRead(message.id);
-    }
-  };
-
-  const markAsRead = async (messageId: string) => {
-    try {
-      // Update in the appropriate table based on message source
-      const message = messages.find(m => m.id === messageId);
-      if (!message) return;
-
-      if (message.sender_type === 'supervisor' && message.message_type) {
-        // This is a supervisor message, update differently if needed
-        // For now, we'll just update local state
-      } else {
-        // Regular message
-        const { error } = await supabase
-          .from("internship_messages")
-          .update({ is_read: true })
-          .eq("id", messageId);
-          
-        if (error) throw error;
-      }
-      
+    // Mark as read if it's an unread outbound message (from supervisor to user)
+    if (!message.is_read && message.direction === 'outbound') {
+      await AISupervisorService.markMessageRead(message.id);
       // Update local state
       setMessages(prev => 
         prev.map(msg => 
-          msg.id === messageId ? { ...msg, is_read: true } : msg
+          msg.id === message.id ? { ...msg, is_read: true } : msg
         )
       );
-    } catch (error) {
-      console.error("Error marking message as read:", error);
     }
   };
 
@@ -356,56 +206,31 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
 
     setSending(true);
     try {
-      // Get user name for the message
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
-
-      const userName = userData ? `${userData.first_name} ${userData.last_name}` : 'You';
-
-      // Create reply subject
       const replySubject = selectedMessage.subject.startsWith('Re:') 
         ? selectedMessage.subject 
         : `Re: ${selectedMessage.subject}`;
 
-      // Save reply message
-      const { error } = await supabase
-        .from('internship_messages')
-        .insert({
-          session_id: sessionId,
-          sender: 'user',
-          sender_name: userName,
-          sender_avatar_url: user.user_metadata?.avatar_url || '',
-          subject: replySubject,
-          content: replyText.trim(),
-          body: replyText.trim(),
-          timestamp: new Date().toISOString(),
-          is_read: false
-        });
-
-      if (error) throw error;
-
-      // Record interaction
-      await AISupervisorService.recordInteraction(
+      await AISupervisorService.sendUserReply(
         sessionId,
         user.id,
-        'user_message_sent',
-        { 
-          message_content: replyText.trim(),
-          reply_to: selectedMessage.id,
-          original_subject: selectedMessage.subject
-        }
+        replySubject,
+        replyText.trim(),
+        selectedMessage.thread_id || selectedMessage.id,
+        selectedTaskId === "general" ? undefined : selectedTaskId || undefined
       );
 
       setReplyText("");
       setIsReplying(false);
-      await loadMessages();
+      setSelectedTaskId("general");
+      
+      // Wait for AI response, then reload
+      setTimeout(() => {
+        loadMessages();
+      }, 2000);
 
       toast({
         title: "Reply sent",
-        description: "Your reply has been sent successfully.",
+        description: "Your reply has been sent. Sarah will respond shortly!",
       });
       
     } catch (error) {
@@ -421,56 +246,36 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
   };
 
   const handleCompose = async () => {
-    if (!composeSubject.trim() || !composeContent.trim() || !user || sending) return;
+    if (!selectedTaskId || !composeContent.trim() || !user || sending) return;
 
     setSending(true);
     try {
-      // Get user name for the message
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
+      // Generate subject from selected task
+      const subject = selectedTaskId === "general" 
+        ? "General Question" 
+        : availableTasks.find(t => t.id === selectedTaskId)?.title || "Question about task";
 
-      const userName = userData ? `${userData.first_name} ${userData.last_name}` : 'You';
-
-      // Save new message
-      const { error } = await supabase
-        .from('internship_messages')
-        .insert({
-          session_id: sessionId,
-          sender: 'user',
-          sender_name: userName,
-          sender_avatar_url: user.user_metadata?.avatar_url || '',
-          subject: composeSubject.trim(),
-          content: composeContent.trim(),
-          body: composeContent.trim(),
-          timestamp: new Date().toISOString(),
-          is_read: false
-        });
-
-      if (error) throw error;
-
-      // Record interaction
-      await AISupervisorService.recordInteraction(
+      await AISupervisorService.sendUserReply(
         sessionId,
         user.id,
-        'user_message_sent',
-        { 
-          message_content: composeContent.trim(),
-          subject: composeSubject.trim(),
-          type: 'new_message'
-        }
+        subject,
+        composeContent.trim(),
+        undefined,
+        selectedTaskId === "general" ? undefined : selectedTaskId
       );
 
-      setComposeSubject("");
       setComposeContent("");
+      setSelectedTaskId("general");
       setView('inbox');
-      await loadMessages();
+      
+      // Wait for AI response, then reload
+      setTimeout(() => {
+        loadMessages();
+      }, 2000);
 
       toast({
         title: "Message sent",
-        description: "Your message has been sent successfully.",
+        description: "Your message has been sent. Sarah will respond shortly!",
       });
       
     } catch (error) {
@@ -501,7 +306,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
     if (senderType === 'user') {
       return 'bg-primary text-primary-foreground';
     } else {
-      // Use consistent colors for team members based on their name
+      // Consistent colors for supervisors/team members
       const colors = [
         'bg-blue-100 text-blue-700',
         'bg-green-100 text-green-700',
@@ -529,7 +334,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
     message.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const unreadCount = messages.filter(m => !m.is_read && m.sender_type !== 'user').length;
+  const unreadCount = messages.filter(m => !m.is_read && m.direction === 'outbound').length;
 
   // Inbox View
   if (view === 'inbox') {
@@ -591,7 +396,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
                   <div
                     key={message.id}
                     className={`p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
-                      !message.is_read && message.sender_type !== 'user' ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+                      !message.is_read && message.direction === 'outbound' ? 'bg-primary/5 border-l-4 border-l-primary' : ''
                     }`}
                     onClick={() => handleMessageClick(message)}
                   >
@@ -609,7 +414,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className={`text-sm font-medium ${!message.is_read && message.sender_type !== 'user' ? 'font-bold' : ''}`}>
+                            <span className={`text-sm font-medium ${!message.is_read && message.direction === 'outbound' ? 'font-bold' : ''}`}>
                               {message.sender_name}
                             </span>
                             {message.sender_role && (
@@ -622,7 +427,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
                             <span className="text-xs text-muted-foreground">
                               {formatMessageTime(message.created_at)}
                             </span>
-                            {!message.is_read && message.sender_type !== 'user' ? (
+                            {!message.is_read && message.direction === 'outbound' ? (
                               <MailOpen className="h-4 w-4 text-primary" />
                             ) : (
                               <Mail className="h-4 w-4 text-muted-foreground/50" />
@@ -630,7 +435,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
                           </div>
                         </div>
                         
-                        <div className={`text-sm mt-1 ${!message.is_read && message.sender_type !== 'user' ? 'font-semibold' : ''}`}>
+                        <div className={`text-sm mt-1 ${!message.is_read && message.direction === 'outbound' ? 'font-semibold' : ''}`}>
                           {message.subject}
                         </div>
                         
@@ -727,7 +532,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
             </div>
           </div>
 
-          {/* Message Content - Fixed height with proper scrolling */}
+          {/* Message Content */}
           <div className="flex-1 min-h-0 py-4">
             <ScrollArea className="h-full w-full">
               <div className="pr-4">
@@ -760,6 +565,30 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
                 <div className="text-sm font-medium">
                   Reply to: {selectedMessage.sender_name}
                 </div>
+                
+                {/* Task Context Dropdown */}
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Related Task (Optional)</label>
+                  <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select a task for context..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General Question</SelectItem>
+                      {availableTasks.map((task) => (
+                        <SelectItem key={task.id} value={task.id}>
+                          <div className="flex items-center gap-2">
+                            {task.title}
+                            {daysUntil(task.due_date) <= 3 && (
+                              <Clock className="h-3 w-3 text-orange-500" />
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <Textarea
                   placeholder="Type your reply..."
                   value={replyText}
@@ -781,6 +610,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
                     onClick={() => {
                       setIsReplying(false);
                       setReplyText("");
+                      setSelectedTaskId("general");
                     }}
                     size="sm"
                   >
@@ -815,14 +645,30 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col space-y-4">
+          {/* Subject/Related Task Dropdown */}
           <div>
             <label className="text-sm font-medium">Subject</label>
-            <Input
-              placeholder="Enter subject..."
-              value={composeSubject}
-              onChange={(e) => setComposeSubject(e.target.value)}
-              className="mt-1"
-            />
+            <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a task or general question..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">General Question</SelectItem>
+                {availableTasks.map((task) => (
+                  <SelectItem key={task.id} value={task.id}>
+                    <div className="flex items-center gap-2">
+                      {task.title}
+                      {daysUntil(task.due_date) <= 3 && (
+                        <Clock className="h-3 w-3 text-orange-500" />
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Help Sarah provide better guidance by linking your question to a specific task
+            </p>
           </div>
           
           <div className="flex-1 flex flex-col">
@@ -838,7 +684,7 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
           <div className="flex gap-2">
             <Button
               onClick={handleCompose}
-              disabled={!composeSubject.trim() || !composeContent.trim() || sending}
+              disabled={!selectedTaskId || !composeContent.trim() || sending}
               className="gap-2"
             >
               {sending ? <LoadingSpinner size="small" /> : <Send className="h-4 w-4" />}
@@ -847,8 +693,8 @@ export function EmailMessagingPanel({ sessionId }: EmailMessagingPanelProps) {
             <Button
               variant="outline"
               onClick={() => {
-                setComposeSubject("");
                 setComposeContent("");
+                setSelectedTaskId("general");
                 setView('inbox');
               }}
             >

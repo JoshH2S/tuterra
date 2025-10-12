@@ -7,6 +7,36 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       achievement_definitions: {
@@ -103,6 +133,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      app_config: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
       }
       assessment_analytics: {
         Row: {
@@ -1074,6 +1128,71 @@ export type Database = {
           },
         ]
       }
+      internship_messages_v2: {
+        Row: {
+          content: string
+          context_data: Json | null
+          created_at: string
+          id: string
+          message_id: string | null
+          sender_avatar_style: string | null
+          sender_department: string | null
+          sender_id: string | null
+          sender_name: string
+          sender_role: string | null
+          sender_type: string
+          sent_at: string
+          session_id: string
+          status: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          context_data?: Json | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          sender_avatar_style?: string | null
+          sender_department?: string | null
+          sender_id?: string | null
+          sender_name: string
+          sender_role?: string | null
+          sender_type: string
+          sent_at?: string
+          session_id: string
+          status?: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          context_data?: Json | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          sender_avatar_style?: string | null
+          sender_department?: string | null
+          sender_id?: string | null
+          sender_name?: string
+          sender_role?: string | null
+          sender_type?: string
+          sent_at?: string
+          session_id?: string
+          status?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_messages_v2_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internship_progress: {
         Row: {
           ai_feedback: string | null
@@ -1137,6 +1256,69 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "internship_resources_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      internship_responses: {
+        Row: {
+          auto_response_generated: boolean | null
+          content: string
+          created_at: string
+          escalation_reason: string | null
+          id: string
+          message_id: string
+          processed: boolean
+          processing_status: string | null
+          received_at: string
+          reply_to_name: string
+          reply_to_type: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          auto_response_generated?: boolean | null
+          content: string
+          created_at?: string
+          escalation_reason?: string | null
+          id?: string
+          message_id: string
+          processed?: boolean
+          processing_status?: string | null
+          received_at?: string
+          reply_to_name: string
+          reply_to_type: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          auto_response_generated?: boolean | null
+          content?: string
+          created_at?: string
+          escalation_reason?: string | null
+          id?: string
+          message_id?: string
+          processed?: boolean
+          processing_status?: string | null
+          received_at?: string
+          reply_to_name?: string
+          reply_to_type?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_responses_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "internship_messages_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internship_responses_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "internship_sessions"
@@ -3096,6 +3278,74 @@ export type Database = {
         }
         Relationships: []
       }
+      supervisor_lock_metrics: {
+        Row: {
+          duration_ms: number
+          error_details: string | null
+          id: number
+          lock_type: string
+          recorded_at: string
+          session_id: string
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          duration_ms: number
+          error_details?: string | null
+          id?: number
+          lock_type: string
+          recorded_at?: string
+          session_id: string
+          success: boolean
+          user_id: string
+        }
+        Update: {
+          duration_ms?: number
+          error_details?: string | null
+          id?: number
+          lock_type?: string
+          recorded_at?: string
+          session_id?: string
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      supervisor_locks: {
+        Row: {
+          acquired_at: string
+          expires_at: string
+          lock_key: string
+          lock_type: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          expires_at: string
+          lock_key: string
+          lock_type: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          expires_at?: string
+          lock_key?: string
+          lock_type?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_supervisor_locks_session"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       temp_files: {
         Row: {
           created_at: string
@@ -3468,6 +3718,35 @@ export type Database = {
       }
     }
     Views: {
+      response_processing_dashboard: {
+        Row: {
+          auto_response_generated: boolean | null
+          content: string | null
+          escalation_reason: string | null
+          id: string | null
+          original_sender: string | null
+          original_sent_at: string | null
+          original_subject: string | null
+          pending_minutes: number | null
+          processed: boolean | null
+          processing_status: string | null
+          received_at: string | null
+          reply_to_name: string | null
+          reply_to_type: string | null
+          response_time_hours: number | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_achievement_details: {
         Row: {
           achievement_key: string | null
@@ -3495,6 +3774,40 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      clean_expired_supervisor_locks: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_responses: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      get_app_config: {
+        Args: { config_key: string }
+        Returns: string
+      }
+      get_response_processing_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_pending: number
+          total_processed: number
+          total_escalated: number
+          total_failed: number
+          avg_processing_time_minutes: number
+          escalation_rate: number
+        }[]
+      }
+      get_session_response_stats: {
+        Args: { p_session_id: string }
+        Returns: {
+          session_id: string
+          total_messages: number
+          total_responses: number
+          response_rate: number
+          avg_response_time_hours: number
+          pending_responses: number
+        }[]
       }
       halfvec_avg: {
         Args: { "": number[] }
@@ -3583,6 +3896,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      migrate_supervisor_messages_to_v2: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       recalculate_virtual_internship_streak: {
         Args: { p_user_id: string }
         Returns: {
@@ -3590,6 +3907,17 @@ export type Database = {
           longest_streak: number
           last_active_date: string
         }[]
+      }
+      record_lock_metric: {
+        Args: {
+          p_lock_type: string
+          p_session_id: string
+          p_user_id: string
+          p_duration_ms: number
+          p_success: boolean
+          p_error_details?: string
+        }
+        Returns: undefined
       }
       sparsevec_out: {
         Args: { "": unknown }
@@ -3665,21 +3993,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -3697,14 +4029,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -3720,14 +4054,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -3743,14 +4079,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -3758,19 +4096,24 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       content_type: ["chapter", "section", "definition", "formula", "example"],

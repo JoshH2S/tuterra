@@ -53,14 +53,27 @@ export function TaskOverview({
     }
   };
   
-  const handleTaskAction = (task: InternshipTask) => {
-    if (task.status === 'not_started') {
-      onUpdateTaskStatus(task.id, 'in_progress');
-    } else if (task.status === 'in_progress' || task.status === 'overdue') {
-      onUpdateTaskStatus(task.id, 'completed');
-    } else if (task.status === 'completed') {
-      // Re-open task if previously completed
-      onUpdateTaskStatus(task.id, 'in_progress');
+  const handleTaskAction = async (task: InternshipTask) => {
+    try {
+      let newStatus: 'not_started' | 'in_progress' | 'completed';
+      
+      if (task.status === 'not_started') {
+        newStatus = 'in_progress';
+      } else if (task.status === 'in_progress' || task.status === 'overdue') {
+        newStatus = 'completed';
+      } else if (task.status === 'completed') {
+        // Re-open task if previously completed
+        newStatus = 'in_progress';
+      } else {
+        // Default to in_progress for any other status
+        newStatus = 'in_progress';
+      }
+      
+      await onUpdateTaskStatus(task.id, newStatus);
+      
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      // Let the parent component handle the error toast
     }
   };
   
