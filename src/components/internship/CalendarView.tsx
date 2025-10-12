@@ -19,6 +19,7 @@ interface CalendarViewProps {
   events: InternshipEvent[];
   tasks: InternshipTask[];
   startDate: string;
+  onOpenTaskDetails?: (task: InternshipTask) => void;
 }
 
 interface CalendarItem {
@@ -33,10 +34,18 @@ interface CalendarItem {
   isCompleted?: boolean;
 }
 
-export function CalendarView({ events, tasks, startDate }: CalendarViewProps) {
+export function CalendarView({ events, tasks, startDate, onOpenTaskDetails }: CalendarViewProps) {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  const openTaskFromCalendar = (taskId?: string) => {
+    if (!taskId || !onOpenTaskDetails) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      onOpenTaskDetails(task);
+    }
+  };
   
   // Convert events and task due dates to a unified format for display
   const calendarItems: CalendarItem[] = [
@@ -300,8 +309,9 @@ export function CalendarView({ events, tasks, startDate }: CalendarViewProps) {
                                 variant="ghost" 
                                 size="sm"
                                 className="h-7 px-2 text-xs"
+                                onClick={() => openTaskFromCalendar(item.taskId)}
                               >
-                                {item.isCompleted ? "Reopen" : "Complete"}
+                                Open
                                 <ChevronRight className="h-3 w-3 ml-1" />
                               </Button>
                             )}
@@ -411,6 +421,7 @@ export function CalendarView({ events, tasks, startDate }: CalendarViewProps) {
                                 variant="ghost" 
                                 size="sm"
                                 className="h-7 px-2 text-xs"
+                                onClick={() => handleTaskAction(item.taskId!, item.isCompleted || false)}
                               >
                                 {item.isCompleted ? "Reopen" : "Complete"}
                                 <ChevronRight className="h-3 w-3 ml-1" />

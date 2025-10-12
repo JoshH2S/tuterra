@@ -22,6 +22,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { LetterTemplateEditor } from "./LetterTemplateEditor";
 
 interface CareerPortfolioProjectProps {
   sessionId: string;
@@ -497,21 +498,12 @@ Sincerely,
                     </CardHeader>
                     <CardContent>
                       {company.companyName ? (
-                        <div>
-                          <label className="text-sm font-medium">
-                            Cover Letter for {company.companyName} - {company.position}
-                          </label>
-                          <Textarea
-                            placeholder={`Write a personalized cover letter for ${company.companyName}. Use the template above as a guide, but make it specific to this company and role. Reference your research about their values, current initiatives, and how your internship experience makes you a great fit.`}
-                            value={company.coverLetter}
-                            onChange={(e) => updateCompany(company.id, 'coverLetter', e.target.value)}
-                            className="min-h-[300px] mt-2"
-                          />
-                          <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
-                            <span>{company.coverLetter.length} characters</span>
-                            <span>Target: ~2000-3000 characters</span>
-                          </div>
-                        </div>
+                        <LetterTemplateEditor
+                          company={company}
+                          onUpdate={updateCompany}
+                          availableArtifacts={[]} // This would be populated with actual task artifacts
+                          completedTasks={completedTasks}
+                        />
                       ) : (
                         <div className="text-center py-8 text-muted-foreground">
                           Complete the company research first to write the cover letter

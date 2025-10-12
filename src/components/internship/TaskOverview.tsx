@@ -53,40 +53,15 @@ export function TaskOverview({
     }
   };
   
-  const handleTaskAction = async (task: InternshipTask) => {
-    try {
-      let newStatus: 'not_started' | 'in_progress' | 'completed';
-      
-      if (task.status === 'not_started') {
-        newStatus = 'in_progress';
-      } else if (task.status === 'in_progress' || task.status === 'overdue') {
-        newStatus = 'completed';
-      } else if (task.status === 'completed') {
-        // Re-open task if previously completed
-        newStatus = 'in_progress';
-      } else {
-        // Default to in_progress for any other status
-        newStatus = 'in_progress';
-      }
-      
-      await onUpdateTaskStatus(task.id, newStatus);
-      
-    } catch (error) {
-      console.error('Error updating task status:', error);
-      // Let the parent component handle the error toast
+  // Open task details rather than changing status from summary views
+  const openTaskDetails = (task: InternshipTask) => {
+    if (onOpenTaskDetails) {
+      onOpenTaskDetails(task);
     }
   };
   
-  const getActionButtonText = (status: string) => {
-    switch(status) {
-      case 'completed':
-        return "Reopen Task";
-      case 'overdue':
-      case 'in_progress':
-        return "Mark Complete";
-      default:
-        return "Start Task";
-    }
+  const getActionButtonText = (_status: string) => {
+    return "Open";
   };
   
   // Find the next upcoming task that's not yet visible
@@ -162,12 +137,10 @@ export function TaskOverview({
                     className="h-6 px-1.5 text-[10px]"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleTaskAction(task);
+                      openTaskDetails(task);
                     }}
                   >
-                    {task.status === 'not_started' ? 'Start' : 
-                     task.status === 'in_progress' || task.status === 'overdue' ? 'Complete' : 
-                     'Reopen'}
+                    {getActionButtonText(task.status)}
                   </Button>
                 </div>
               </div>
@@ -229,11 +202,9 @@ export function TaskOverview({
                             variant="ghost" 
                             size="sm"
                             className="h-6 px-1.5 text-[10px]"
-                            onClick={() => handleTaskAction(task)}
+                            onClick={() => openTaskDetails(task)}
                           >
-                            {task.status === 'not_started' ? 'Start' : 
-                             task.status === 'in_progress' || task.status === 'overdue' ? 'Complete' : 
-                             'Reopen'}
+                            {getActionButtonText(task.status)}
                           </Button>
                         </div>
                       </div>
@@ -310,15 +281,15 @@ export function TaskOverview({
                       <div className="text-xs text-muted-foreground">
                         Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy \'at\' h:mm a')}
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs h-8 px-3 touch-manipulation"
-                        onClick={() => handleTaskAction(task)}
-                      >
-                        {getActionButtonText(task.status)}
-                        <ChevronRight className="h-3 w-3 ml-1" />
-                      </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-xs h-8 px-3 touch-manipulation"
+                    onClick={() => openTaskDetails(task)}
+                  >
+                    {getActionButtonText(task.status)}
+                    <ChevronRight className="h-3 w-3 ml-1" />
+                  </Button>
                     </div>
                   </div>
                 </div>
@@ -366,7 +337,7 @@ export function TaskOverview({
                         variant="outline" 
                         size="sm"
                         className="text-xs h-8 px-3 touch-manipulation"
-                        onClick={() => handleTaskAction(task)}
+                        onClick={() => openTaskDetails(task)}
                       >
                         {getActionButtonText(task.status)}
                         <ChevronRight className="h-3 w-3 ml-1" />

@@ -1,13 +1,12 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Check, ArrowRight, Calendar, Award, Briefcase, FileCheck, AlertCircle, ChevronRight } from "lucide-react";
+import { Clock, Check, ArrowRight, Calendar, Award, Briefcase, FileCheck, AlertCircle } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { InternshipTask } from "@/types/internship";
 import { formatInUserTimezone } from "@/utils/dateUtils";
 import { useEffect, useState } from "react";
 import { InternshipProgressRadials } from "./InternshipProgressRadials";
-import { TaskOverview } from "./TaskOverview";
 import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardOverviewPanelProps {
@@ -79,10 +78,6 @@ export function DashboardOverviewPanel({
     .filter(task => task.status !== 'completed')
     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
     
-  // Empty update task function that returns a Promise
-  const handleUpdateTaskStatus = async (taskId: string, status: 'not_started' | 'in_progress' | 'completed'): Promise<void> => {
-    return Promise.resolve();
-  };
 
   return (
     <div className="space-y-6">
@@ -186,36 +181,7 @@ export function DashboardOverviewPanel({
         </CardContent>
       </Card>
 
-      {/* Current Tasks Section */}
-      <Card className="bg-white">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Check className="h-5 w-5 text-primary" />
-            Current Tasks
-          </CardTitle>
-          {tasks.length > 2 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-1 text-sm"
-              onClick={() => onOpenTaskDetails(upcomingTasks[0])}
-            >
-              View All
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          <TaskOverview 
-            tasks={tasks} 
-            onUpdateTaskStatus={handleUpdateTaskStatus} 
-            onOpenTaskDetails={onOpenTaskDetails} 
-            compact={true} 
-            allTasks={tasks}
-            maxDisplayCount={3}
-          />
-        </CardContent>
-      </Card>
+      {/* Current Tasks preview moved to Tasks tab */}
     </div>
   );
 } 

@@ -262,9 +262,20 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
       case 0:
         return <DashboardOverviewPanel sessionData={fullSessionData} tasks={visibleTasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
       case 1:
-        return <TaskOverview tasks={visibleTasks} onUpdateTaskStatus={updateTaskStatus} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
+        return (
+          <div className="p-6">
+            <TaskOverview 
+              tasks={visibleTasks} 
+              onUpdateTaskStatus={updateTaskStatus} 
+              onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} 
+              compact={true} 
+              allTasks={visibleTasks}
+              maxDisplayCount={5}
+            />
+          </div>
+        );
       case 2:
-        return <CalendarView events={events} tasks={visibleTasks} startDate={startDate} />;
+        return <CalendarView events={events} tasks={visibleTasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
       case 3:
         return <EmailMessagingPanel sessionId={sessionData.id} />;
       case 4:
