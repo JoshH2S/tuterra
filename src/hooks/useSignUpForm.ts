@@ -117,6 +117,7 @@ export const useSignUpForm = () => {
               first_name: firstName,
               last_name: lastName,
               user_type: "student",
+              subscription_tier: "premium",
             },
             emailRedirectTo: `${window.location.origin}/verify-email`
           },

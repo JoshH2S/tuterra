@@ -23,6 +23,8 @@ import Contact from "@/pages/Contact";
 import { ProfileSetup } from "@/components/onboarding/ProfileSetup";
 import OnboardingRedirect from "@/pages/OnboardingRedirect";
 import InternshipPreview from "@/pages/InternshipPreview";
+import CertificatePage from "@/pages/CertificatePage";
+import CertificateVerificationPage from "@/pages/CertificateVerificationPage";
 
 export const AppRoutes = () => {
   return (
@@ -39,6 +41,10 @@ export const AppRoutes = () => {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/internship-preview" element={<InternshipPreview />} />
+      
+      {/* Public Certificate Routes */}
+      <Route path="/certificates/:certificateId" element={<CertificatePage />} />
+      <Route path="/verify" element={<CertificateVerificationPage />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard/*" element={

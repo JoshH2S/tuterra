@@ -144,6 +144,8 @@ IMPORTANT CONSTRAINTS:
 3. All instructions must be completable with freely available online tools and resources.
 4. If you must reference an industry-specific tool, always include a free alternative (e.g., "Use Bloomberg Terminal or alternatively, Yahoo Finance").
 5. Make tasks realistic and professionally valuable without requiring access to fictional internal systems.
+6. DO NOT create tasks requiring multiple people or group coordination (no team projects, group meetings, or collaborative assignments).
+7. HOWEVER, DO encourage individual networking activities like attending industry events, conferences, webinars, or meetups where the intern participates alone and reports back.
 
 Generate realistic and detailed task content in the following JSON format:
 
@@ -155,8 +157,9 @@ Generate realistic and detailed task content in the following JSON format:
   "resources": [
     {
       "title": "Resource Title",
-      "description": "Brief description of what this resource provides",
-      "url": "https://example.com/resource" (optional)
+      "description": "Brief description of what this resource provides and where to find it",
+      "search_guidance": "What to search for and where to look (e.g., 'Search LinkedIn Learning for courses on financial modeling')",
+      "website": "https://example.com" (optional - only general website, not specific pages)
     }
   ]
 }
@@ -166,8 +169,12 @@ ADDITIONAL REQUIREMENTS:
 2. Each instruction step should be clear, actionable, and completable using freely available tools.
 3. Number the steps in the text (e.g., "Step 1: Do this first")
 4. Format deliverables and success_criteria as arrays of strings.
-5. Include at least 3 resources with links to free, publicly available tools or information sources relevant to the task.
-6. Always include a disclaimer resource explaining that if any premium tools are mentioned, free alternatives can be used.
+5. Include at least 3 resources with search guidance instead of specific article links.
+6. For resources, provide "search_guidance" that tells students what to search for and where to look (e.g., "Search Forbes.com for articles about 'financial statement analysis'" instead of linking to a specific Forbes article).
+7. If including a "website" field, only provide the general domain (e.g., "https://forbes.com" not "https://forbes.com/specific-article").
+8. Focus on teaching students HOW to find relevant information rather than giving them specific links that may become outdated.
+9. For networking/event tasks, include deliverables like: "Event attendance report", "Networking metrics summary", "LinkedIn post about the event", "Follow-up outreach to 1-2 contacts made".
+10. Encourage real-world professional development through individual participation in industry events, webinars, conferences, or networking meetups.
 
 Make the content realistic, professionally written, and appropriate for the industry and job role.
 Respond ONLY with the JSON object, no additional text before or after.

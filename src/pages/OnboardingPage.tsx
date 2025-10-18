@@ -23,19 +23,19 @@ const OnboardingPage = () => {
       // Show a toast to inform the user about the redirect
       toast({
         title: "Setup complete!",
-        description: "Redirecting you to the pricing page...",
+        description: "Redirecting you to the dashboard...",
       });
       
-      console.log("Onboarding complete, redirecting to pricing page");
+      console.log("Onboarding complete, redirecting to dashboard");
       // Add a small delay to ensure the toast is visible
       setTimeout(() => {
-        navigate("/pricing", { replace: true });
+        navigate("/dashboard", { replace: true });
       }, 1000);
     } catch (error) {
       console.error("Navigation error:", error);
       toast({
         title: "Error during navigation",
-        description: "Please try to navigate manually to the pricing page.",
+        description: "Please try to navigate manually to the dashboard.",
         variant: "destructive",
       });
       setIsRedirecting(false);

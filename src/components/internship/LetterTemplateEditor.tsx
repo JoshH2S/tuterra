@@ -9,7 +9,8 @@ import {
   ExternalLink,
   Plus,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Send
 } from "lucide-react";
 
 interface CompanyApplication {
@@ -20,6 +21,7 @@ interface CompanyApplication {
   researchNotes: string;
   coverLetter: string;
   completed: boolean;
+  applicationSent?: boolean;
 }
 
 
@@ -28,12 +30,16 @@ interface ArtifactReference {
   title: string;
   description: string;
   skillTags: string[];
-  url?: string;
+  taskId?: string;
+  submissionDate?: string;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 interface LetterTemplateEditorProps {
   company: CompanyApplication;
-  onUpdate: (field: keyof CompanyApplication, value: string) => void;
+  onUpdate: (field: keyof CompanyApplication, value: string | boolean) => void;
+  onSave?: (companyId: string, overrideData?: Partial<CompanyApplication>) => Promise<boolean>;
   availableArtifacts: ArtifactReference[];
   completedTasks: any[];
 }
@@ -41,18 +47,12 @@ interface LetterTemplateEditorProps {
 export function LetterTemplateEditor({ 
   company, 
   onUpdate, 
+  onSave,
   availableArtifacts,
   completedTasks 
 }: LetterTemplateEditorProps) {
   const [selectedArtifacts, setSelectedArtifacts] = useState<string[]>([]);
   const [showGuidance, setShowGuidance] = useState(true);
-  const [wordCounts, setWordCounts] = useState({ total: 0, target: { min: 300, max: 450 } });
-
-  // Update word count when letter changes
-  useEffect(() => {
-    const wordCount = company.coverLetter.split(/\s+/).filter(word => word.length > 0).length;
-    setWordCounts(prev => ({ ...prev, total: wordCount }));
-  }, [company.coverLetter]);
 
   const toggleArtifact = (artifactId: string) => {
     setSelectedArtifacts(prev => 
@@ -68,13 +68,6 @@ export function LetterTemplateEditor({
     onUpdate('coverLetter', newLetter);
   };
 
-  const getWordCountStatus = () => {
-    if (wordCounts.total < wordCounts.target.min) return { status: 'under', color: 'text-orange-600' };
-    if (wordCounts.total > wordCounts.target.max) return { status: 'over', color: 'text-red-600' };
-    return { status: 'good', color: 'text-green-600' };
-  };
-
-  const wordCountStatus = getWordCountStatus();
 
   return (
     <div className="space-y-6">
@@ -93,20 +86,6 @@ export function LetterTemplateEditor({
           >
             {showGuidance ? 'Hide' : 'Show'} Writing Tips
           </Button>
-          <div className="text-sm">
-            <span className={wordCountStatus.color}>
-              {wordCounts.total} words
-            </span>
-            <span className="text-muted-foreground">
-              {' '}/ {wordCounts.target.min}-{wordCounts.target.max} target
-            </span>
-          </div>
-          {wordCountStatus.status === 'good' && (
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          )}
-          {wordCountStatus.status !== 'good' && (
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-          )}
         </div>
       </div>
 
@@ -124,6 +103,63 @@ export function LetterTemplateEditor({
               onChange={(e) => onUpdate('coverLetter', e.target.value)}
               className="min-h-[400px] font-mono text-sm leading-relaxed"
             />
+            
+            {/* Application Status */}
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center space-x-3">
+                {company.applicationSent ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      console.log('Unmarking application as sent for company:', company.id);
+                      onUpdate('applicationSent', false);
+                      
+                      // Pass the new value directly to avoid state timing issues
+                      if (onSave) {
+                        console.log('Calling onSave to unmark sent for company:', company.id);
+                        const result = await onSave(company.id, { applicationSent: false });
+                        console.log('Unmark save result:', result);
+                      }
+                    }}
+                    className="flex items-center gap-2 text-green-600 border-green-200 bg-green-50 hover:bg-green-100"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Application Sent ✓
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      console.log('Marking application as sent for company:', company.id);
+                      onUpdate('applicationSent', true);
+                      
+                      // Pass the new value directly to avoid state timing issues
+                      if (onSave) {
+                        console.log('Calling onSave to mark sent for company:', company.id);
+                        const result = await onSave(company.id, { applicationSent: true });
+                        console.log('Mark sent save result:', result);
+                      }
+                    }}
+                    className="flex items-center gap-2 text-gray-600 border-gray-200 hover:bg-gray-50"
+                  >
+                    <Send className="h-4 w-4" />
+                    Mark as Sent
+                  </Button>
+                )}
+              </div>
+              
+              {company.applicationSent && (
+                <div className="flex items-center gap-1 text-sm text-green-600">
+                  <span className="text-xs">Status: Submitted</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="text-xs text-muted-foreground mt-2">
+              Click the button after you've sent your application to track your progress
+            </div>
           </div>
         </div>
 
@@ -306,7 +342,6 @@ export function LetterTemplateEditor({
                   </div>
                 </CardContent>
               </Card>
-            )}
 
             {/* General Writing Tips */}
             <Card className="bg-muted/20">
@@ -322,7 +357,7 @@ export function LetterTemplateEditor({
                   <li>• Use active voice and strong action verbs</li>
                   <li>• Reference 2-3 internship artifacts with concrete examples</li>
                   <li>• Show enthusiasm but remain professional</li>
-                  <li>• Aim for 300-450 words total</li>
+                  <li>• Tailor each letter to the specific company and role</li>
                 </ul>
               </CardContent>
             </Card>

@@ -21,16 +21,16 @@ export interface Subscription {
   stripeSubscriptionId?: string;
 }
 
-// Simplified version of useSubscription that returns a default free tier
+// Simplified version of useSubscription that returns a default premium tier
 export const useSubscription = () => {
   const { user } = useAuth();
   const [subscription] = useState<Subscription>({
-    tier: "free",
+    tier: "premium",
     features: {
-      smartNotes: false,
-      advancedModel: false,
-      learningPath: false,
-      streaming: false,
+      smartNotes: true,
+      advancedModel: true,
+      learningPath: true,
+      streaming: true,
     }
   });
   const [loading] = useState(false);

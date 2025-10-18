@@ -53,7 +53,9 @@ interface TaskUpdateData {
 interface Resource {
   title: string;
   description: string;
-  url?: string;
+  search_guidance?: string;
+  website?: string;
+  url?: string; // Keep for backward compatibility
 }
 
 // Add this helper function to parse JSON arrays from strings
@@ -816,19 +818,42 @@ export function TaskDetailsModal({
                                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                                   <Link className="h-4 w-4 text-primary" />
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                   <h5 className="font-medium text-sm">{resource.title}</h5>
                                   <p className="text-xs text-muted-foreground mt-1">
                                     {resource.description}
                                   </p>
-                                  {resource.url && (
+                                  {resource.search_guidance && (
+                                    <div className="mt-2 p-2 bg-blue-50 rounded-md border-l-2 border-blue-200">
+                                      <p className="text-xs text-blue-800 font-medium">
+                                        💡 How to find this resource:
+                                      </p>
+                                      <p className="text-xs text-blue-700 mt-1">
+                                        {resource.search_guidance}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {resource.website && (
+                                    <a 
+                                      href={resource.website} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-primary mt-2 inline-flex items-center gap-1 hover:underline"
+                                    >
+                                      Visit Website
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  )}
+                                  {/* Backward compatibility for old format */}
+                                  {resource.url && !resource.website && (
                                     <a 
                                       href={resource.url} 
                                       target="_blank" 
                                       rel="noopener noreferrer"
-                                      className="text-xs text-primary mt-2 inline-block hover:underline"
+                                      className="text-xs text-primary mt-2 inline-flex items-center gap-1 hover:underline"
                                     >
                                       Open Resource
+                                      <ExternalLink className="h-3 w-3" />
                                     </a>
                                   )}
                                 </div>

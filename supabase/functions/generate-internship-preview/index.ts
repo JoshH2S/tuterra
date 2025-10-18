@@ -149,12 +149,14 @@ function generatePrompt(request: InternshipPreviewRequest): string {
     CRITICAL VIRTUAL INTERNSHIP REQUIREMENTS:
     - Each task must be fully self-contained and completable within a simulated online environment
     - Tasks should involve written analysis, case studies, scenario-based responses, research reports, or strategic recommendations
-    - Avoid tasks requiring real-time collaboration, external meetings, physical presence, or system access
+    - DO NOT create tasks requiring multiple people or group coordination (no team projects, group meetings, or collaborative assignments)
     - Each task must be evaluatable through text input only (written submissions, analysis, reports)
     - Tasks should simulate real workplace challenges but be completable independently
     - Focus on analytical thinking, problem-solving, research, and written communication skills
     - Do not refer to a real company website or communication platforms
     - Provide sufficient context and background information within each task description
+    - HOWEVER, DO encourage individual networking activities like attending industry events, conferences, webinars, or meetups where the intern participates alone and reports back
+    - Include at least ONE networking/professional development task with deliverables like event attendance reports, networking metrics, LinkedIn posts, and follow-up outreach
     
     Task Examples by Type:
     - Market Research: "Analyze provided competitor data and write a 500-word market positioning report"
@@ -163,6 +165,7 @@ function generatePrompt(request: InternshipPreviewRequest): string {
     - Data Analysis: "Examine the sales data trends and identify 3 key insights with supporting evidence"
     - Problem Solving: "A client has reported the following issue... propose a step-by-step resolution plan"
     - Content Creation: "Write a blog post outline addressing common customer pain points in [industry]"
+    - Networking/Professional Development: "Attend a local industry event, conference, or webinar. Submit an event report, networking metrics summary, LinkedIn post about the experience, and follow-up outreach to 1-2 contacts made"
     
     Guidelines:
     - Create a believable company with realistic details

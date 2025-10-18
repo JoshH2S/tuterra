@@ -238,6 +238,13 @@ serve(async (req) => {
     - Simulated messages from a supervisor and team
     - Key calendar events (meetings, deadlines, milestones)
     
+    TASK REQUIREMENTS:
+    - Include at least ONE networking/professional development task that encourages attending real industry events, conferences, webinars, or meetups
+    - This networking task should have deliverables like: "Event attendance report", "Networking metrics summary", "LinkedIn post about the event", "Follow-up outreach to 1-2 contacts made"
+    - DO NOT create tasks requiring multiple people or group coordination (no team projects, group meetings, or collaborative assignments)
+    - All tasks must be completable by individual interns working independently
+    - Encourage real-world professional development through individual participation in external events
+    
     Also create a comprehensive set of resources for the intern, including:
     
     1. Company Information:

@@ -29,7 +29,7 @@ export const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     handleComplete
   } = useProfileSetup(() => {
     onComplete();
-    navigate("/pricing", { replace: true });
+    navigate("/dashboard", { replace: true });
   });
 
   return (

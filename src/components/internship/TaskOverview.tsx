@@ -131,17 +131,33 @@ export function TaskOverview({
                   <span className="text-muted-foreground text-[10px]">
                     Due: {formatInUserTimezone(task.due_date, 'MMM d')}
                   </span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="h-6 px-1.5 text-[10px]"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openTaskDetails(task);
-                    }}
-                  >
-                    {getActionButtonText(task.status)}
-                  </Button>
+                  <div className="flex gap-1">
+                    {/* Testing button to mark as complete */}
+                    {task.status !== 'completed' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-6 px-1 text-[10px] bg-green-50 hover:bg-green-100 text-green-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpdateTaskStatus(task.id, 'completed');
+                        }}
+                      >
+                        ✓
+                      </Button>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-6 px-1.5 text-[10px]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openTaskDetails(task);
+                      }}
+                    >
+                      {getActionButtonText(task.status)}
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -281,15 +297,31 @@ export function TaskOverview({
                       <div className="text-xs text-muted-foreground">
                         Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy \'at\' h:mm a')}
                       </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="text-xs h-8 px-3 touch-manipulation"
-                    onClick={() => openTaskDetails(task)}
-                  >
-                    {getActionButtonText(task.status)}
-                    <ChevronRight className="h-3 w-3 ml-1" />
-                  </Button>
+                      <div className="flex gap-2">
+                        {/* Testing button to mark as complete */}
+                        {task.status !== 'completed' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs h-8 px-2 bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onUpdateTaskStatus(task.id, 'completed');
+                            }}
+                          >
+                            ✓ Complete
+                          </Button>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="text-xs h-8 px-3 touch-manipulation"
+                          onClick={() => openTaskDetails(task)}
+                        >
+                          {getActionButtonText(task.status)}
+                          <ChevronRight className="h-3 w-3 ml-1" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

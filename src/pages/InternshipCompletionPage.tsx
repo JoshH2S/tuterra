@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Trophy, Download, ArrowLeft, CheckCircle, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
+import { useInternshipCompletion } from "@/hooks/useInternshipCompletion";
+import { CertificateService } from "@/services/certificateService";
 
 interface CompletionData {
   sessionId: string;
@@ -25,6 +27,12 @@ export default function InternshipCompletionPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [completionData, setCompletionData] = useState<CompletionData | null>(null);
+  
+  // Use the comprehensive completion hook for certificate data
+  const { completionData: fullCompletionData, fetchCompletionData: fetchFullCompletionData } = useInternshipCompletion(
+    sessionId || '', 
+    user?.id || ''
+  );
 
   useEffect(() => {
     // Redirect if no sessionId
@@ -111,14 +119,43 @@ export default function InternshipCompletionPage() {
     };
 
     fetchCompletionData();
-  }, [sessionId, user, navigate, toast]);
+    
+    // Also fetch comprehensive completion data for certificate
+    if (sessionId && user?.id) {
+      fetchFullCompletionData();
+    }
+  }, [sessionId, user, navigate, toast, fetchFullCompletionData]);
 
-  const handleDownloadCertificate = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Certificate generation will be available soon!",
-      variant: "default"
-    });
+  const handleViewCertificate = async () => {
+    if (!user || !completionData || !sessionId) {
+      toast({
+        title: "Unable to generate certificate",
+        description: "Please ensure you're logged in and the internship is completed.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Generate certificate and get URL
+      const certificateUrl = await CertificateService.generateAndGetUrl(sessionId, user.id);
+      
+      // Navigate to certificate page
+      window.open(certificateUrl, '_blank');
+
+      toast({
+        title: "Certificate Generated!",
+        description: "Your digital certificate has been created and opened in a new tab.",
+      });
+
+    } catch (error) {
+      console.error('Error generating certificate:', error);
+      toast({
+        title: "Error generating certificate",
+        description: "There was an issue creating your certificate. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
@@ -248,13 +285,13 @@ export default function InternshipCompletionPage() {
         <Button 
           className="flex items-center gap-2" 
           size="lg"
-          onClick={handleDownloadCertificate}
+          onClick={handleViewCertificate}
         >
-          <Download className="w-4 h-4" />
-          Download Certificate
+          <CheckCircle className="w-4 h-4" />
+          View Digital Certificate
         </Button>
         <p className="text-sm text-muted-foreground mt-2">
-          Coming soon - Download your certificate of completion
+          View and download your professional completion certificate
         </p>
       </div>
       

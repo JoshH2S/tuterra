@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { InternshipWelcomeScreen } from "@/components/internship/InternshipWelcomeScreen";
 import { CompanyProfileService } from "@/services/companyProfileService";
+import { PortfolioSubmissionDialog } from "@/components/internship/PortfolioSubmissionDialog";
 
 export default function VirtualInternshipDashboard() {
   const navigate = useNavigate();
@@ -554,6 +555,7 @@ export default function VirtualInternshipDashboard() {
     return null; // Return null while navigating
   }
 
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
@@ -586,11 +588,6 @@ export default function VirtualInternshipDashboard() {
     );
   }
 
-  const handleSubmitFinalProject = () => {
-    if (internshipSession) {
-      navigate(`/dashboard/virtual-internship/submit-final?sessionId=${internshipSession.id}`);
-    }
-  };
 
   // If the internship is completed, show a completion card
   if (internshipSession?.is_completed) {
@@ -779,9 +776,14 @@ export default function VirtualInternshipDashboard() {
                     </p>
                   </div>
           </div>
-                <Button onClick={handleSubmitFinalProject} size="sm" className="whitespace-nowrap">
-                  Submit Final Project
-                </Button>
+                <PortfolioSubmissionDialog
+                  sessionId={internshipSession.id}
+                  userId={user.id}
+                  onSubmissionComplete={() => {
+                    // Refresh the page to show completion status
+                    window.location.reload();
+                  }}
+                />
               </div>
             </CardContent>
           </Card>
@@ -800,17 +802,21 @@ export default function VirtualInternshipDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="p-3 border rounded-md bg-muted/20 hover:bg-muted/30 transition-colors">
+                <div className="p-3 border rounded-md bg-muted/20">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700">
                       <Award className="h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium">Generate Certificate</h3>
-                      <p className="text-xs text-muted-foreground">Available on completion</p>
+                      <h3 className="text-sm font-medium">Certificate Available</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {internshipSession?.is_completed 
+                          ? 'Visit completion page to download' 
+                          : 'Available after final submission'}
+                      </p>
                     </div>
                   </div>
-                      </div>
+                </div>
                 
                 <div className="p-3 border rounded-md bg-muted/20 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-3">

@@ -697,6 +697,56 @@ export type Database = {
           },
         ]
       }
+      internship_company_applications: {
+        Row: {
+          company_name: string
+          company_url: string | null
+          completed: boolean | null
+          cover_letter: string | null
+          created_at: string | null
+          id: string
+          position: string
+          research_notes: string | null
+          session_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          company_url?: string | null
+          completed?: boolean | null
+          cover_letter?: string | null
+          created_at?: string | null
+          id?: string
+          position: string
+          research_notes?: string | null
+          session_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          company_url?: string | null
+          completed?: boolean | null
+          cover_letter?: string | null
+          created_at?: string | null
+          id?: string
+          position?: string
+          research_notes?: string | null
+          session_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_company_applications_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internship_company_profiles: {
         Row: {
           background_story: string

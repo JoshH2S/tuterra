@@ -49,6 +49,7 @@ export default {
           blue: '#3498db',
           green: '#2ecc71',
         },
+        'primary-blue': '#3498db', // Tuterra's signature blue
         secondary: {
           DEFAULT: "#8B4513", // Saddle brown
           foreground: "#FFFFFF",

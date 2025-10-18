@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Briefcase, 
   Building, 
@@ -19,10 +20,16 @@ import {
   Package,
   ChevronDown,
   ChevronUp,
-  ExternalLink
+  ExternalLink,
+  Maximize2,
+  Save,
+  RotateCcw
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { LetterTemplateEditor } from "./LetterTemplateEditor";
+import { useTaskArtifacts } from "@/hooks/useTaskArtifacts";
+import { useCompanyApplications } from "@/hooks/useCompanyApplications";
+import { usePortfolioData } from "@/hooks/usePortfolioData";
 
 interface CareerPortfolioProjectProps {
   sessionId: string;
@@ -32,15 +39,6 @@ interface CareerPortfolioProjectProps {
   completedTasks: any[];
 }
 
-interface CompanyApplication {
-  id: string;
-  companyName: string;
-  position: string;
-  companyUrl: string;
-  researchNotes: string;
-  coverLetter: string;
-  completed: boolean;
-}
 
 export function CareerPortfolioProject({ 
   sessionId, 
@@ -50,31 +48,17 @@ export function CareerPortfolioProject({
   completedTasks 
 }: CareerPortfolioProjectProps) {
   const [activeTab, setActiveTab] = useState("overview");
-  const [reflectionEssay, setReflectionEssay] = useState("");
-  const [companies, setCompanies] = useState<CompanyApplication[]>([]);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  
+  // Fetch real task artifacts
+  const { artifacts, loading: artifactsLoading, error: artifactsError } = useTaskArtifacts(sessionId, userId);
+  
+  // Use company applications hook with manual save
+  const { companies, loading: companiesLoading, saving: companiesSaving, updateCompany, saveCompany } = useCompanyApplications(sessionId, userId);
+  
+  // Use portfolio data hook with autosave for reflection essay
+  const { portfolioData, loading: portfolioLoading, saving: portfolioSaving, updatePortfolioData, saveNow, reloadFromDatabase } = usePortfolioData(sessionId, userId);
 
-  // Initialize with empty company slots
-  useEffect(() => {
-    if (companies.length === 0) {
-      const initialCompanies: CompanyApplication[] = Array.from({ length: 5 }, (_, i) => ({
-        id: `company-${i + 1}`,
-        companyName: "",
-        position: "",
-        companyUrl: "",
-        researchNotes: "",
-        coverLetter: "",
-        completed: false
-      }));
-      setCompanies(initialCompanies);
-    }
-  }, [companies.length]);
-
-  const updateCompany = (id: string, field: keyof CompanyApplication, value: string | boolean) => {
-    setCompanies(prev => prev.map(company => 
-      company.id === id ? { ...company, [field]: value } : company
-    ));
-  };
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({
@@ -85,14 +69,25 @@ export function CareerPortfolioProject({
 
   const calculateProgress = () => {
     let completed = 0;
-    let total = 6; // 1 reflection + 5 companies
+    let total = 16; // 1 reflection + (5 companies × 3 components each: name+position, research notes, cover letter)
 
-    // Check reflection
-    if (reflectionEssay.length > 200) completed += 1;
+    // Check reflection essay (minimum 200 characters for substantial content)
+    if (portfolioData.reflectionEssay.trim().length > 200) completed += 1;
 
-    // Check companies
+    // Check companies - each company has 3 components
     companies.forEach(company => {
-      if (company.companyName && company.coverLetter.length > 200) {
+      // Company basic info (name + position)
+      if (company.companyName.trim() && company.position.trim()) {
+        completed += 1;
+      }
+      
+      // Research notes
+      if (company.researchNotes.trim().length > 0) {
+        completed += 1;
+      }
+      
+      // Cover letter and application sent (application sent is sufficient for completion)
+      if (company.applicationSent) {
         completed += 1;
       }
     });
@@ -101,6 +96,18 @@ export function CareerPortfolioProject({
   };
 
   const progress = calculateProgress();
+
+  // Show loading state
+  if (companiesLoading || portfolioLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your career portfolio...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const coverLetterTemplate = `[Your Name]
 [Your Address]
@@ -166,6 +173,12 @@ Sincerely,
               <CardTitle className="text-2xl flex items-center gap-2">
                 <Briefcase className="h-6 w-6 text-primary" />
                 Career Application Portfolio
+                {portfolioSaving && (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground font-normal">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-primary"></div>
+                    Saving...
+                  </div>
+                )}
               </CardTitle>
               <CardDescription className="text-base mt-2">
                 Transform your {jobTitle} internship into career-ready application materials
@@ -302,14 +315,41 @@ Sincerely,
 
               <Textarea
                 placeholder="Write your reflective essay here. Address the three prompts above and aim for 800-1200 words. This will be part of your final portfolio and demonstrates your self-awareness and professional growth..."
-                value={reflectionEssay}
-                onChange={(e) => setReflectionEssay(e.target.value)}
+                value={portfolioData.reflectionEssay}
+                onChange={(e) => updatePortfolioData('reflectionEssay', e.target.value)}
                 className="min-h-[400px]"
               />
               
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{reflectionEssay.length} characters</span>
-                <span>Target: 800-1200 words (~4000-6000 characters)</span>
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  <span>{portfolioData.reflectionEssay.length} characters {portfolioSaving && "• Saving..."}</span>
+                  <br />
+                  <span>Target: 800-1200 words (~4000-6000 characters)</span>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={saveNow}
+                    disabled={portfolioSaving || portfolioLoading}
+                    className="flex items-center gap-1"
+                  >
+                    <Save className="h-3 w-3" />
+                    Save Now
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={reloadFromDatabase}
+                    disabled={portfolioSaving || portfolioLoading}
+                    className="flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Reload Saved
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -428,13 +468,72 @@ Sincerely,
                       </div>
                       
                       <div>
-                        <label className="text-sm font-medium">Research Notes</label>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-medium">Research Notes</label>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => saveCompany(company.id, {})}
+                              disabled={companiesSaving}
+                              className="flex items-center gap-1"
+                            >
+                              <Save className="h-3 w-3" />
+                              Save
+                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                                  <Maximize2 className="h-3 w-3" />
+                                  Expand
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+                                <DialogHeader>
+                                  <DialogTitle>Research Notes - {company.companyName}</DialogTitle>
+                                  <DialogDescription>
+                                    Document your research about the company, role, and how you'll tailor your application
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="flex-1 overflow-hidden">
+                                  <Textarea
+                                    placeholder="Document your research: company values, recent news, culture insights, specific projects/initiatives, job requirements, employee backgrounds, etc."
+                                    value={company.researchNotes}
+                                    onChange={(e) => updateCompany(company.id, 'researchNotes', e.target.value)}
+                                    className="min-h-[400px] resize-none font-mono text-sm leading-relaxed"
+                                  />
+                                </div>
+                                <div className="flex justify-end pt-4">
+                                  <Button
+                                    onClick={() => saveCompany(company.id, {})}
+                                    disabled={companiesSaving}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Save className="h-3 w-3" />
+                                    Save Changes
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
                         <Textarea
-                          placeholder="Document your research: company values, recent news, culture insights, specific projects/initiatives, job requirements, employee backgrounds, etc."
+                          placeholder="Document your research: company values, recent news, culture insights..."
                           value={company.researchNotes}
                           onChange={(e) => updateCompany(company.id, 'researchNotes', e.target.value)}
-                          rows={4}
+                          rows={3}
+                          className="text-sm"
                         />
+                        <div className="flex items-center justify-between mt-1">
+                          <div className="text-xs text-muted-foreground">
+                            {company.researchNotes.length > 200 && (
+                              <span>{company.researchNotes.length} characters • Click "Expand" to view full content</span>
+                            )}
+                          </div>
+                          {companiesSaving && (
+                            <span className="text-xs text-muted-foreground">Saving...</span>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -500,8 +599,9 @@ Sincerely,
                       {company.companyName ? (
                         <LetterTemplateEditor
                           company={company}
-                          onUpdate={updateCompany}
-                          availableArtifacts={[]} // This would be populated with actual task artifacts
+                          onUpdate={(field, value) => updateCompany(company.id, field, value)}
+                          onSave={saveCompany}
+                          availableArtifacts={artifacts}
                           completedTasks={completedTasks}
                         />
                       ) : (
@@ -536,26 +636,38 @@ Sincerely,
                   <h4 className="font-medium mb-3">Portfolio Contents</h4>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      {reflectionEssay.length > 200 ? (
+                      {portfolioData.reflectionEssay.length > 200 ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       ) : (
                         <div className="h-4 w-4 border rounded-full" />
                       )}
                       <span className="text-sm">Reflective Essay</span>
                     </div>
-                    {companies.map((company, index) => (
-                      <div key={company.id} className="flex items-center gap-2">
-                        {company.companyName && company.coverLetter.length > 200 ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <div className="h-4 w-4 border rounded-full" />
-                        )}
-                        <span className="text-sm">
-                          Company #{index + 1} Application
-                          {company.companyName && ` (${company.companyName})`}
-                        </span>
-                      </div>
-                    ))}
+                    {companies.map((company, index) => {
+                      const hasContent = company.companyName && company.coverLetter.length > 200;
+                      const isApplicationSent = company.applicationSent || false;
+                      const isComplete = isApplicationSent;
+                      
+                      return (
+                        <div key={company.id} className="flex items-center gap-2">
+                          {isComplete ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <div className="h-4 w-4 border rounded-full" />
+                          )}
+                          <span className="text-sm">
+                            Company #{index + 1} Application
+                            {company.companyName && ` (${company.companyName})`}
+                            {isApplicationSent && (
+                              <span className="text-green-600 ml-2 text-xs font-medium">✓ Sent</span>
+                            )}
+                            {hasContent && !isApplicationSent && (
+                              <span className="text-amber-600 ml-2 text-xs">Ready to send</span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -576,12 +688,9 @@ Sincerely,
                 <div className="text-center py-8">
                   <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Portfolio Complete!</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Your career application portfolio is ready for submission.
+                  <p className="text-muted-foreground">
+                    Your career application portfolio is ready for submission. Use the "Submit Final Project" button below to complete your internship.
                   </p>
-                  <Button size="lg" className="bg-green-600 hover:bg-green-700">
-                    Submit Final Portfolio
-                  </Button>
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -592,10 +701,14 @@ Sincerely,
                   <div className="text-sm text-muted-foreground">
                     Missing: {progress < 100 && (
                       <span>
-                        {reflectionEssay.length <= 200 && "Reflective Essay"}
-                        {companies.filter(c => !c.companyName || c.coverLetter.length <= 200).length > 0 && 
-                          `, ${companies.filter(c => !c.companyName || c.coverLetter.length <= 200).length} Company Applications`
-                        }
+                        {portfolioData.reflectionEssay.length <= 200 && "Reflective Essay"}
+                        {(() => {
+                          const incompleteApps = companies.filter(c => 
+                            !c.applicationSent
+                          ).length;
+                          return incompleteApps > 0 && 
+                            `${portfolioData.reflectionEssay.length <= 200 ? ', ' : ''}${incompleteApps} Company Applications`;
+                        })()}
                       </span>
                     )}
                   </div>
