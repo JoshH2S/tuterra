@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { InterviewQuestion } from "@/types/interview";
 import { PremiumContentCard } from "@/components/ui/premium-card";
 import { AnimatePresence } from "framer-motion";
@@ -16,6 +17,8 @@ interface InterviewChatProps {
   onTypingComplete: () => void;
   isLastQuestion: boolean;
   jobTitle?: string;
+  currentQuestionIndex: number;
+  totalQuestions: number;
 }
 
 export const InterviewChat = ({
@@ -24,7 +27,9 @@ export const InterviewChat = ({
   typingEffect,
   onTypingComplete,
   isLastQuestion,
-  jobTitle = ""
+  jobTitle = "",
+  currentQuestionIndex,
+  totalQuestions
 }: InterviewChatProps) => {
   const [response, setResponse] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -80,20 +85,32 @@ export const InterviewChat = ({
   };
 
   const getCardTitle = () => {
+    const questionProgress = `Question ${currentQuestionIndex + 1} of ${totalQuestions}`;
     if (jobTitle) {
-      return `${jobTitle} Interview`;
+      return `${jobTitle} Interview - ${questionProgress}`;
     }
-    return "Interview Question";
+    return `Interview ${questionProgress}`;
   };
+
+  const progressPercentage = totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0;
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
       <PremiumContentCard 
         title={getCardTitle()}
         variant="glass"
-        className="mb-4 shadow-md"
+        className="mb-4 shadow-lg bg-white/95 backdrop-blur-md border border-white/20"
       >
         <div className="space-y-4">
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>Interview Progress</span>
+              <span>{Math.round(progressPercentage)}% Complete</span>
+            </div>
+            <Progress value={progressPercentage} className="h-2" />
+          </div>
+          
           <AnimatePresence mode="wait">
             <QuestionDisplay 
               currentQuestion={currentQuestion} 

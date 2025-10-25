@@ -3,14 +3,13 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
 import { useInterviewQuestions } from "@/hooks/interview/useInterviewQuestions";
 import { useInterviewGeneration } from "@/hooks/interview/useInterviewGeneration";
-import { InterviewForm } from "@/components/interview/InterviewForm";
+import { MultiStepInterviewForm, ExtendedInterviewFormData } from "@/components/interview/MultiStepInterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
 import { InterviewDebug } from "@/components/interview/InterviewDebug";
 import { Wifi, WifiOff, AlertCircle } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
-import { InterviewFormData } from "@/hooks/interview/utils/validation";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,6 +36,7 @@ const JobInterviewSimulator = () => {
     setCurrentSessionId,
     questions,
     setQuestions,
+    currentQuestionIndex,
     isGeneratingQuestions,
     setIsGeneratingQuestions,
     isInterviewInProgress,
@@ -131,7 +131,7 @@ const JobInterviewSimulator = () => {
   const sessionCreationErrors: string[] = [];
   const usedFallbackQuestions = false;
 
-  const handleFormSubmit = async (data: InterviewFormData) => {
+  const handleFormSubmit = async (data: ExtendedInterviewFormData) => {
     try {
       const result = await generateInterview({
         industry: data.industry,
@@ -213,43 +213,60 @@ const JobInterviewSimulator = () => {
 
   if (hasConnectionError && !errorState.hasError) {
     return (
-      <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
-        <InterviewLogo />
-        <Card className="p-6 mt-6 text-center">
-          <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
-          <h2 className="text-xl font-semibold mb-4">API Connection Error</h2>
-          <p className="mb-6">
-            We're having trouble connecting to our services. This might be due to API key authentication issues.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button onClick={() => window.location.reload()} variant="outline">Refresh Page</Button>
-            <Button onClick={handleStartNewInterview}>Start New Interview</Button>
-          </div>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-slate-50/60 to-blue-50/40" />
+        <div className="relative z-10 container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
+          <InterviewLogo />
+          <Card className="p-6 mt-6 text-center bg-white/90 backdrop-blur-sm">
+            <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
+            <h2 className="text-xl font-semibold mb-4">API Connection Error</h2>
+            <p className="mb-6">
+              We're having trouble connecting to our services. This might be due to API key authentication issues.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={() => window.location.reload()} variant="outline">Refresh Page</Button>
+              <Button onClick={handleStartNewInterview}>Start New Interview</Button>
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (errorState.hasError) {
     return (
-      <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
-        <InterviewLogo />
-        <Card className="p-6 mt-6 text-center">
-          <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
-          <h2 className="text-xl font-semibold mb-4">Something went wrong</h2>
-          <p className="mb-6">{errorState.message}</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button onClick={handleRetryLoading} variant="outline">Retry Loading</Button>
-            <Button onClick={handleStartNewInterview}>Start New Interview</Button>
-          </div>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-slate-50/60 to-blue-50/40" />
+        <div className="relative z-10 container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
+          <InterviewLogo />
+          <Card className="p-6 mt-6 text-center bg-white/90 backdrop-blur-sm">
+            <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
+            <h2 className="text-xl font-semibold mb-4">Something went wrong</h2>
+            <p className="mb-6">{errorState.message}</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={handleRetryLoading} variant="outline">Retry Loading</Button>
+              <Button onClick={handleStartNewInterview}>Start New Interview</Button>
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
-      <div className="space-y-4 md:space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative">
+      {/* Background Image with Overlay */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-5"
+        style={{
+          backgroundImage: "url('/assets/banners/nyc-skyline-banner.jpg')"
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-slate-50/60 to-blue-50/40" />
+      
+      {/* Content */}
+      <div className="relative z-10 container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
+        <div className="space-y-4 md:space-y-8">
         <div className="flex justify-end items-center sticky top-0 z-10 bg-opacity-90 bg-background backdrop-blur-sm py-1">
           <div className="text-xs flex items-center gap-1 text-gray-500">
             {isOnline ? (
@@ -280,8 +297,8 @@ const JobInterviewSimulator = () => {
         
         {!interviewReady && !isInterviewInProgress && !isInterviewComplete && 
          !isGeneratingQuestions && !loadingQuestions && !isGenerating && !isDetailMode && (
-          <InterviewForm 
-            onSubmit={handleFormSubmit} 
+          <MultiStepInterviewForm 
+            onComplete={handleFormSubmit} 
             isLoading={isGeneratingQuestions || loadingQuestions || isGenerating}
             progress={progress}
           />
@@ -303,6 +320,8 @@ const JobInterviewSimulator = () => {
             onTypingComplete={() => {}}
             isLastQuestion={isLastQuestion}
             jobTitle={jobTitle}
+            currentQuestionIndex={currentQuestionIndex}
+            totalQuestions={questions.length}
           />
         )}
         
@@ -313,6 +332,7 @@ const JobInterviewSimulator = () => {
             onStartNew={handleStartNewInterview}
           />
         )}
+        </div>
       </div>
       
       <UpgradePrompt

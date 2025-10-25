@@ -125,6 +125,7 @@ export const useInterviewSession = () => {
     setCurrentSessionId,
     questions,
     setQuestions,
+    currentQuestionIndex,
     isGeneratingQuestions,
     setIsGeneratingQuestions,
     isInterviewInProgress,
