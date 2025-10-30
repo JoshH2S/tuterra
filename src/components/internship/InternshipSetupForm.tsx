@@ -18,7 +18,7 @@ const formSchema = z.object({
   jobTitle: z.string().min(2, "Job title must be at least 2 characters"),
   industry: z.string().min(2, "Please select an industry"),
   jobDescription: z.string().min(20, "Please provide a detailed job description"),
-  durationWeeks: z.coerce.number().int().min(1).max(52),
+  durationWeeks: z.coerce.number().int().min(1).max(12),
   startDate: z.string()
 });
 
@@ -224,7 +224,7 @@ export function InternshipSetupForm() {
 
   return (
     <Card 
-      className="w-full max-w-2xl mx-auto shadow-md"
+      className="w-full max-w-2xl mx-auto shadow-xl bg-white/95 backdrop-blur-md border border-white/20"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

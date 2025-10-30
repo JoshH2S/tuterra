@@ -71,6 +71,9 @@ export default function SubscriptionSuccess() {
       return;
     }
     
+    // Check if this is coming from post-onboarding flow
+    const fromOnboarding = searchParams.get('from_onboarding') === 'true';
+    
     const syncSubscriptionStatus = async () => {
       try {
         setSyncing(true);
@@ -125,6 +128,18 @@ export default function SubscriptionSuccess() {
       } else {
         console.log(`Subscription verified as active: ${subStatus.plan_id}`);
         setSyncing(false);
+        
+        // If coming from onboarding, auto-redirect to dashboard after a short delay
+        const fromOnboarding = searchParams.get('from_onboarding') === 'true';
+        if (fromOnboarding) {
+          setTimeout(() => {
+            toast({
+              title: "Welcome to Tuterra Pro!",
+              description: "You're all set! Taking you to your dashboard...",
+            });
+            navigate('/dashboard', { replace: true });
+          }, 2000);
+        }
       }
     } catch (error) {
       console.error(`Sync attempt ${attempt} failed:`, error);

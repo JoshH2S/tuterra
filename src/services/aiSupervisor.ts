@@ -209,7 +209,20 @@ export class AISupervisorService {
         .limit(50);
 
       if (error) throw error;
-      return data as SupervisorMessage[];
+      
+      // Map the database response to SupervisorMessage interface
+      return (data || []).map((msg: any) => ({
+        id: msg.id,
+        message_type: msg.message_type as 'onboarding' | 'check_in' | 'feedback_followup' | 'reminder',
+        subject: msg.subject || undefined,
+        message_content: msg.message_content,
+        direction: (msg.direction || 'outbound') as 'outbound' | 'inbound',
+        sender_type: (msg.sender_type || 'supervisor') as 'supervisor' | 'user' | 'system',
+        context_data: msg.context_data,
+        sent_at: msg.sent_at || undefined,
+        is_read: msg.is_read || false,
+        status: msg.status as 'pending' | 'sent' | 'cancelled'
+      }));
     } catch (error) {
       console.error('Error fetching supervisor messages:', error);
       return [];
@@ -270,7 +283,7 @@ export class AISupervisorService {
     try {
       const { error } = await supabase
         .from('internship_supervisor_messages')
-        .update({ is_read: true })
+        .update({ status: 'sent' })
         .eq('id', messageId);
 
       if (error) {
@@ -349,17 +362,19 @@ export class AISupervisorService {
    */
   static async getUnreadCount(sessionId: string, userId: string): Promise<number> {
     try {
-      const { data, error } = await supabase.rpc('get_unread_message_count', {
-        p_session: sessionId,
-        p_user: userId
-      });
+      const { count, error } = await supabase
+        .from('internship_supervisor_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('session_id', sessionId)
+        .eq('user_id', userId)
+        .eq('status', 'sent');
 
       if (error) {
         console.error('Error getting unread count:', error);
         return 0;
       }
 
-      return data || 0;
+      return count || 0;
     } catch (error) {
       console.error('Error in getUnreadCount:', error);
       return 0;
@@ -383,17 +398,51 @@ export class AISupervisorService {
         .eq('id', userId)
         .limit(1);
 
+      // Get company name with same logic as dashboard
+      const { data: companyData } = await supabase
+        .from('internship_company_profiles')
+        .select('company_name')
+        .eq('session_id', sessionId)
+        .eq('profile_status', 'completed')
+        .limit(1);
+
+      let companyName = 'the company';
+      if (companyData && companyData.length > 0) {
+        companyName = companyData[0].company_name;
+      } else {
+        // Try fallback to company details
+        const { data: companyDetails } = await supabase
+          .from('internship_company_details')
+          .select('name')
+          .eq('session_id', sessionId)
+          .limit(1);
+        
+        if (companyDetails && companyDetails.length > 0) {
+          companyName = companyDetails[0].name;
+        } else {
+          // Final fallback based on industry
+          const industry = sessionData?.[0]?.industry || 'Technology';
+          companyName = `${industry} Corporation`;
+        }
+      }
+
       const firstName = userData?.[0]?.first_name || 'there';
       const jobTitle = sessionData?.[0]?.job_title || 'intern';
       const industry = sessionData?.[0]?.industry || 'your field';
 
       const fallbackMessage = `Hi ${firstName}! 👋
 
-Welcome to your virtual ${jobTitle} internship! I'm Sarah Mitchell, your internship coordinator, and I'm excited to work with you over the coming weeks.
+Welcome to your virtual ${jobTitle} internship at ${companyName}! I'm Sarah Mitchell, your internship coordinator, and I'm excited to work with you over the coming weeks.
 
 You'll be gaining hands-on experience in the ${industry} industry through a series of practical tasks and projects. I'll be here to guide you, provide feedback, and make sure you're getting the most out of this experience.
 
-Feel free to reach out if you have any questions or need help with anything. Let's make this a great learning experience!
+**Need help with a specific task?** Simply reply to this message and mention the task title. I'm here to assist you throughout your internship journey with:
+• Task clarification and guidance
+• Feedback on your work
+• Industry insights and best practices
+• Career advice and mentorship
+
+Feel free to reach out anytime with questions or if you need guidance on any aspect of your work. I'm here to support your success!
 
 Best regards,
 Sarah Mitchell

@@ -235,6 +235,20 @@ export function MultiStepInterviewForm({
       <div ref={formRef} className="w-full">
         <Card className="w-full max-w-4xl mx-auto shadow-xl bg-white/95 backdrop-blur-md border border-white/20">
           <CardHeader className="space-y-4 pb-6">
+            {/* Tuterra Logo */}
+            <motion.div
+              className="flex justify-start mb-4"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <img 
+                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png" 
+                alt="Tuterra Logo" 
+                className="h-8 md:h-10 w-auto object-contain" 
+              />
+            </motion.div>
+            
             <div className="text-center">
               <CardTitle className="text-2xl md:text-3xl font-bold">
                 Job Interview Simulator

@@ -28,7 +28,7 @@ export const SubmissionControls = ({
     <div className="flex justify-between items-center mt-6 pt-4 border-t">
       <div>
         <Button
-          variant="ghost"
+          variant="default"
           size="sm"
           onClick={onPrevious}
           disabled={currentQuestionIndex === 0 || isSubmitting}

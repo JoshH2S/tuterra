@@ -28,7 +28,7 @@ export const AssessmentHeader = ({
 
   return (
     <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
-      <h1 className="text-xl md:text-2xl font-bold truncate gradient-text">{title}</h1>
+      <h1 className="text-xl md:text-2xl font-bold truncate text-white drop-shadow-lg">{title}</h1>
       <div className="flex flex-row items-center justify-between md:justify-end gap-4">
         <div className={`flex items-center px-3 py-1.5 bg-background/80 backdrop-blur-sm shadow-sm rounded-full border ${getTimerColor()}`}>
           <Clock className={`mr-1.5 h-4 w-4 animate-pulse ${getTimerColor()}`} />

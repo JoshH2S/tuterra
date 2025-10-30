@@ -17,10 +17,14 @@ const StripeCheckoutRedirect = () => {
       try {
         console.log('Initializing checkout from redirect component');
         
+        // Check if we're coming from post-onboarding flow
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromOnboarding = urlParams.get('onboarding') === 'complete';
+        
         const success = await createCheckoutSession({
           planId: 'pro_plan',
-          successUrl: `${window.location.origin}/subscription-success`,
-          cancelUrl: `${window.location.origin}/pricing`,
+          successUrl: `${window.location.origin}/subscription-success${fromOnboarding ? '?from_onboarding=true' : ''}`,
+          cancelUrl: `${window.location.origin}/pricing${fromOnboarding ? '?onboarding=complete' : ''}`,
         });
 
         if (!success) {

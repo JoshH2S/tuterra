@@ -114,6 +114,8 @@ export function TaskDetailsModal({
     feedback_provided_at: string;
   } | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [existingSubmission, setExistingSubmission] = useState<any>(null);
+  const [isCheckingExistingSubmission, setIsCheckingExistingSubmission] = useState(false);
   
   // Helper function to check if a task is overdue (timezone-aware)
   const isTaskOverdue = (dueDate: string): boolean => {
@@ -124,12 +126,94 @@ export function TaskDetailsModal({
   
   const isPastDeadline = task ? isTaskOverdue(task.due_date) : false;
   
-  // Fetch detailed task content when modal opens
+  // Validation function for different submission types
+  const validateSubmissionData = () => {
+    switch (submissionType) {
+      case 'text':
+        if (!response.trim()) {
+          return {
+            isValid: false,
+            message: "Please provide a text response for your submission."
+          };
+        }
+        return { isValid: true, message: "" };
+        
+      case 'file':
+        if (!fileData || !fileData.url) {
+          return {
+            isValid: false,
+            message: "Please upload a file for your submission. Make sure the file upload completes successfully."
+          };
+        }
+        return { isValid: true, message: "" };
+        
+      case 'both':
+        if (!response.trim() && (!fileData || !fileData.url)) {
+          return {
+            isValid: false,
+            message: "Please provide either a text response or upload a file (or both)."
+          };
+        }
+        if (fileData && !fileData.url) {
+          return {
+            isValid: false,
+            message: "File upload appears to be incomplete. Please try uploading your file again."
+          };
+        }
+        return { isValid: true, message: "" };
+        
+      default:
+        return {
+          isValid: false,
+          message: "Please select a submission type."
+        };
+    }
+  };
+  
+  // Fetch detailed task content and check for existing submissions when modal opens
   useEffect(() => {
     if (isOpen && task) {
       fetchTaskDetails();
+      checkExistingSubmission();
     }
   }, [isOpen, task]);
+  
+  const checkExistingSubmission = async () => {
+    if (!task || !userId) return;
+    
+    setIsCheckingExistingSubmission(true);
+    
+    try {
+      const { data: existingSubmissionData, error } = await supabase
+        .from('internship_task_submissions')
+        .select('*')
+        .eq('task_id', task.id)
+        .eq('user_id', userId)
+        .single();
+      
+      if (existingSubmissionData && !error) {
+        setExistingSubmission(existingSubmissionData);
+        setSubmissionId(existingSubmissionData.id);
+        // If there's already a submission, we might want to show feedback or existing data
+        if (existingSubmissionData.response_text) {
+          setResponse(existingSubmissionData.response_text);
+        }
+        if (existingSubmissionData.file_url) {
+          setFileData({
+            url: existingSubmissionData.file_url,
+            name: existingSubmissionData.file_name || 'Uploaded file',
+            type: existingSubmissionData.file_type || 'application/octet-stream',
+            size: existingSubmissionData.file_size || 0
+          });
+        }
+      }
+    } catch (error) {
+      // No existing submission found, which is fine
+      console.log('No existing submission found:', error);
+    } finally {
+      setIsCheckingExistingSubmission(false);
+    }
+  };
   
   const fetchTaskDetails = async () => {
     if (!task) return;
@@ -328,10 +412,21 @@ export function TaskDetailsModal({
     }
   };
   
-  // Updated handleSubmit function that uses the new startFeedbackGeneration function
+  // Updated handleSubmit function with proper validation for each submission type
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!task) return;
+    
+    // Validate submission based on type
+    const validationResult = validateSubmissionData();
+    if (!validationResult.isValid) {
+      toast({
+        title: "Submission Validation Failed",
+        description: validationResult.message,
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Validate due date if it's being modified
     if (taskUpdateData.due_date) {
@@ -365,7 +460,8 @@ export function TaskDetailsModal({
         file_name: fileData?.name || null,
         file_type: fileData?.type || null,
         file_size: fileData?.size || null,
-        content_type: submissionType
+        content_type: submissionType,
+        is_update: !!existingSubmission
       });
       
       // First, check if the user exists
@@ -382,30 +478,44 @@ export function TaskDetailsModal({
       
       console.log("User validation successful, user exists:", userData);
       
-      // Create the submission
-      const { data: submissionData, error: submissionError } = await supabase
-        .from('internship_task_submissions')
-        .insert([
-          {
-            task_id: task.id,
-            user_id: userId,
-            response_text: response,
-            file_url: fileData?.url || null,
-            file_name: fileData?.name || null,
-            file_type: fileData?.type || null,
-            file_size: fileData?.size || null,
-            content_type: submissionType,
-            session_id: task.session_id
-          }
-        ])
-        .select()
-        .single();
-
-      if (submissionError) throw submissionError;
+      // Prepare submission data
+      const submissionData = {
+        task_id: task.id,
+        user_id: userId,
+        response_text: response || '',
+        file_url: fileData?.url || null,
+        file_name: fileData?.name || null,
+        file_type: fileData?.type || null,
+        file_size: fileData?.size || null,
+        content_type: submissionType,
+        session_id: task.session_id
+      };
       
-      type SubmissionResult = { id: string };
-      const submissions = submissionData as SubmissionResult[] | null;
-      const newSubmissionId = submissions && submissions.length > 0 ? submissions[0].id : null;
+      let newSubmissionId: string;
+      
+      // Use upsert to handle both new submissions and updates to existing ones
+      if (existingSubmission) {
+        // Update existing submission
+        const { data: updateData, error: updateError } = await supabase
+          .from('internship_task_submissions')
+          .update(submissionData)
+          .eq('id', existingSubmission.id)
+          .select()
+          .single();
+          
+        if (updateError) throw updateError;
+        newSubmissionId = updateData.id;
+      } else {
+        // Create new submission
+        const { data: insertData, error: insertError } = await supabase
+          .from('internship_task_submissions')
+          .insert([submissionData])
+          .select()
+          .single();
+          
+        if (insertError) throw insertError;
+        newSubmissionId = insertData.id;
+      }
       
       if (!newSubmissionId) {
         throw new Error("Failed to get submission ID");
@@ -908,41 +1018,144 @@ export function TaskDetailsModal({
                   </TabsContent>
                   
                   <TabsContent value="submit" className="mt-0">
-                    <div className="space-y-6">
+                    {isCheckingExistingSubmission ? (
+                      <div className="py-8 flex justify-center">
+                        <LoadingSpinner size="default" />
+                        <span className="ml-2 text-sm text-muted-foreground">Checking existing submission...</span>
+                      </div>
+                    ) : existingSubmission ? (
                       <div className="space-y-4">
-                        <div>
-                          <h4 className="font-medium mb-2">Submission Type</h4>
-                          <div className="flex space-x-4">
-                            <label className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                value="text"
-                                checked={submissionType === 'text'}
-                                onChange={(e) => setSubmissionType('text')}
-                                className="form-radio"
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CheckCircle className="h-5 w-5 text-blue-600" />
+                            <h4 className="font-medium text-blue-900">Existing Submission Found</h4>
+                          </div>
+                          <p className="text-sm text-blue-800 mb-3">
+                            You have already submitted this task. You can update your submission below if needed.
+                          </p>
+                          <div className="text-xs text-blue-700">
+                            Originally submitted: {format(new Date(existingSubmission.created_at), "MMMM d, yyyy 'at' h:mm a")}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-medium mb-2">Submission Type</h4>
+                            <div className="flex space-x-4">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  value="text"
+                                  checked={submissionType === 'text'}
+                                  onChange={(e) => setSubmissionType('text')}
+                                  className="form-radio"
+                                />
+                                <span>Text Only</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  value="file"
+                                  checked={submissionType === 'file'}
+                                  onChange={(e) => setSubmissionType('file')}
+                                  className="form-radio"
+                                />
+                                <span>File Only</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  value="both"
+                                  checked={submissionType === 'both'}
+                                  onChange={(e) => setSubmissionType('both')}
+                                  className="form-radio"
+                                />
+                                <span>Both Text & File</span>
+                              </label>
+                            </div>
+                          </div>
+                          {(submissionType === 'text' || submissionType === 'both') && (
+                            <div>
+                              <h4 className="font-medium mb-2">Your Response:</h4>
+                              <Textarea 
+                                placeholder="Type your response here..." 
+                                className="min-h-[150px]"
+                                value={response}
+                                onChange={(e) => setResponse(e.target.value)}
+                                disabled={isSubmitting}
                               />
-                              <span>Text Only</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                value="file"
-                                checked={submissionType === 'file'}
-                                onChange={(e) => setSubmissionType('file')}
-                                className="form-radio"
+                            </div>
+                          )}
+
+                          {(submissionType === 'file' || submissionType === 'both') && (
+                            <div>
+                              <h4 className="font-medium mb-2">Upload File:</h4>
+                              <FileUploadField
+                                onFileUpload={setFileData}
+                                onFileRemove={() => setFileData(null)}
+                                taskId={task?.id || ''}
+                                sessionId={task?.session_id || ''}
+                                userId={userId}
                               />
-                              <span>File Only</span>
-                            </label>
-                            <label className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                value="both"
-                                checked={submissionType === 'both'}
-                                onChange={(e) => setSubmissionType('both')}
-                                className="form-radio"
-                              />
-                              <span>Both Text & File</span>
-                            </label>
+                            </div>
+                          )}
+
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={handleCloseAndReset} disabled={isSubmitting}>
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={handleSubmit} 
+                              disabled={isSubmitting}
+                            >
+                              {isSubmitting ? (
+                                <LoadingSpinner size="small" />
+                              ) : existingSubmission ? (
+                                "Update Submission"
+                              ) : (
+                                "Submit Task"
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-medium mb-2">Submission Type</h4>
+                            <div className="flex space-x-4">
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  value="text"
+                                  checked={submissionType === 'text'}
+                                  onChange={(e) => setSubmissionType('text')}
+                                  className="form-radio"
+                                />
+                                <span>Text Only</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  value="file"
+                                  checked={submissionType === 'file'}
+                                  onChange={(e) => setSubmissionType('file')}
+                                  className="form-radio"
+                                />
+                                <span>File Only</span>
+                              </label>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  value="both"
+                                  checked={submissionType === 'both'}
+                                  onChange={(e) => setSubmissionType('both')}
+                                  className="form-radio"
+                                />
+                                <span>Both Text & File</span>
+                              </label>
+                            </div>
                           </div>
                         </div>
 
@@ -971,20 +1184,26 @@ export function TaskDetailsModal({
                             />
                           </div>
                         )}
-                      </div>
 
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={handleCloseAndReset} disabled={isSubmitting}>
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={handleSubmit} 
-                          disabled={isSubmitting || (!response.trim() && !fileData)}
-                        >
-                          {isSubmitting ? <LoadingSpinner size="small" /> : "Submit Task"}
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={handleCloseAndReset} disabled={isSubmitting}>
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={handleSubmit} 
+                            disabled={isSubmitting}
+                          >
+                            {isSubmitting ? (
+                              <LoadingSpinner size="small" />
+                            ) : existingSubmission ? (
+                              "Update Submission"
+                            ) : (
+                              "Submit Task"
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               </>

@@ -41,7 +41,7 @@ export const WelcomeStep = ({ onStart }: WelcomeStepProps) => {
           className="text-center space-y-4"
         >
           <img 
-            src="/lovable-uploads/ab68bba9-f2b9-4344-9799-6209be49e097.png"
+            src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
             alt="Tuterra Logo"
             className="h-12 mx-auto"
           />

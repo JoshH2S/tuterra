@@ -13,6 +13,7 @@ import { ActivityStreakDisplay } from "./ActivityStreakDisplay";
 interface WelcomePanelProps {
   sessionData: InternshipSession;
   tasks: InternshipTask[];
+  allTasks?: InternshipTask[]; // All tasks including future ones
   startDate: string; // Changed from optional to required since we provide a fallback
   onOpenTaskDetails?: (task: InternshipTask) => void;
 }
@@ -20,6 +21,7 @@ interface WelcomePanelProps {
 export function WelcomePanel({ 
   sessionData, 
   tasks, 
+  allTasks = [],
   startDate, 
   onOpenTaskDetails 
 }: WelcomePanelProps) {
@@ -49,9 +51,9 @@ export function WelcomePanel({
     return Math.max(0, Math.round(progressPercentage));
   };
   
-  // Count completed tasks
+  // Count completed tasks - use all tasks for total count
   const completedTasks = tasks.filter(task => task.status === "completed").length;
-  const totalTasks = tasks.length;
+  const totalTasks = allTasks.length > 0 ? allTasks.length : tasks.length; // Use all tasks for total count
   const taskCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   
   // Format date for display

@@ -23,13 +23,13 @@ const OnboardingPage = () => {
       // Show a toast to inform the user about the redirect
       toast({
         title: "Setup complete!",
-        description: "Redirecting you to the dashboard...",
+        description: "Taking you to choose your plan...",
       });
       
-      console.log("Onboarding complete, redirecting to dashboard");
+      console.log("Onboarding complete, redirecting to pricing");
       // Add a small delay to ensure the toast is visible
       setTimeout(() => {
-        navigate("/dashboard", { replace: true });
+        navigate("/pricing?onboarding=complete", { replace: true });
       }, 1000);
     } catch (error) {
       console.error("Navigation error:", error);

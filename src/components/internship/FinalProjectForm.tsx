@@ -82,10 +82,10 @@ export function FinalProjectForm({ sessionId, userId }: FinalProjectFormProps) {
     setUploadProgress(0);
     
     try {
-      // Create a unique file path
+      // Create a unique file path that matches RLS policy
       const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `internship-submissions/${sessionId}/${fileName}`;
+      const fileName = `${sessionId}-${Date.now()}.${fileExt}`;
+      const filePath = `${userId}/internship-submissions/${fileName}`;
       
       // Upload the file
       const { error: uploadError, data } = await supabase.storage

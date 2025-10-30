@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { PremiumContentCard } from "@/components/ui/premium-card";
 import { InterviewTranscript } from "@/types/interview";
 import { motion } from "framer-motion";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, Sparkles, Brain } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // Add the missing interface definition
@@ -11,12 +11,16 @@ interface InterviewCompletionProps {
   transcript: InterviewTranscript[];
   onDownloadTranscript: (format: 'txt' | 'pdf') => void;
   onStartNew: () => void;
+  onViewFeedback: () => void;
+  sessionId?: string;
 }
 
 export const InterviewCompletion = ({
   transcript,
   onDownloadTranscript,
-  onStartNew
+  onStartNew,
+  onViewFeedback,
+  sessionId
 }: InterviewCompletionProps) => {
   const navigate = useNavigate();
 
@@ -44,36 +48,53 @@ export const InterviewCompletion = ({
           title="Interview Complete"
           description="Thank you for completing your interview simulation"
           variant="elevated"
-          className="shadow-lg"
+          className="shadow-lg bg-white/95 backdrop-blur-md border border-white/20"
           headerAction={
             <div className="flex justify-center">
               <CheckCircle className="h-10 w-10 text-green-500" />
             </div>
           }
           footer={
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                onClick={() => onDownloadTranscript('pdf')} 
-                className="w-full sm:w-auto"
-                variant="outline"
-                disabled={transcript.length === 0}
-              >
-                Download PDF
-              </Button>
-              <Button 
-                onClick={() => onDownloadTranscript('txt')} 
-                className="w-full sm:w-auto"
-                variant="outline"
-                disabled={transcript.length === 0}
-              >
-                Download as Text
-              </Button>
-              <Button 
-                onClick={handleStartNewInterview} 
-                className="w-full sm:w-auto ml-auto"
-              >
-                Start New Interview
-              </Button>
+            <div className="space-y-3">
+              {/* Primary Action - View Feedback */}
+              <div className="flex justify-center">
+    <Button 
+      onClick={onViewFeedback}
+      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg font-medium shadow-lg"
+      disabled={!sessionId || transcript.length === 0}
+    >
+      <Brain className="h-5 w-5 mr-2" />
+      View Feedback
+      <Sparkles className="h-4 w-4 ml-2" />
+    </Button>
+              </div>
+              
+              {/* Secondary Actions */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  onClick={() => onDownloadTranscript('pdf')} 
+                  className="w-full sm:w-auto"
+                  variant="outline"
+                  disabled={transcript.length === 0}
+                >
+                  Download PDF
+                </Button>
+                <Button 
+                  onClick={() => onDownloadTranscript('txt')} 
+                  className="w-full sm:w-auto"
+                  variant="outline"
+                  disabled={transcript.length === 0}
+                >
+                  Download as Text
+                </Button>
+                <Button 
+                  onClick={handleStartNewInterview} 
+                  className="w-full sm:w-auto ml-auto"
+                  variant="outline"
+                >
+                  Start New Interview
+                </Button>
+              </div>
             </div>
           }
         >

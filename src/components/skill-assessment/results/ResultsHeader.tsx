@@ -37,8 +37,8 @@ export function ResultsHeader({
     <div className="flex flex-col gap-4 sm:gap-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{title}</h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs sm:text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold text-white drop-shadow-lg">{title}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs sm:text-sm text-white/80">
             <span>Completed on {formattedDate}</span>
             <span className="hidden sm:inline">•</span>
             <span className="capitalize">{level} Level</span>

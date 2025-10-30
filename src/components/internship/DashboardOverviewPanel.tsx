@@ -20,6 +20,7 @@ interface DashboardOverviewPanelProps {
     start_date: string;
   };
   tasks: InternshipTask[];
+  allTasks?: InternshipTask[]; // All tasks including future ones
   startDate: string;
   onOpenTaskDetails: (task: InternshipTask) => void;
 }
@@ -27,6 +28,7 @@ interface DashboardOverviewPanelProps {
 export function DashboardOverviewPanel({ 
   sessionData, 
   tasks, 
+  allTasks = [],
   startDate, 
   onOpenTaskDetails 
 }: DashboardOverviewPanelProps) {
@@ -66,8 +68,8 @@ export function DashboardOverviewPanel({
   const today = new Date();
   const daysSinceStart = differenceInDays(today, startDateObj);
   
-  // Calculate progress metrics
-  const totalTasks = tasks.length;
+  // Calculate progress metrics using all tasks for total count, but visible tasks for status counts
+  const totalTasks = allTasks.length > 0 ? allTasks.length : tasks.length; // Use all tasks for total count
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
   const inProgressTasks = tasks.filter(task => task.status === 'in_progress').length;
   const overdueTasks = tasks.filter(task => task.status === 'overdue').length;
@@ -180,6 +182,46 @@ export function DashboardOverviewPanel({
           </div>
         </CardContent>
       </Card>
+
+      {/* Upcoming Tasks Preview */}
+      {allTasks.length > tasks.length && (
+        <Card className="bg-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-500" />
+              Upcoming Tasks
+            </CardTitle>
+            <CardDescription>
+              {allTasks.length - tasks.length} more tasks will become available as you progress
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="space-y-2">
+              {allTasks
+                .filter(task => !tasks.find(t => t.id === task.id))
+                .slice(0, 3)
+                .map((task, index) => (
+                  <div key={task.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <span className="text-sm font-medium">{task.title}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {task.visible_after ? format(new Date(task.visible_after), 'MMM d') : 'Soon'}
+                    </div>
+                  </div>
+                ))}
+              {allTasks.length - tasks.length > 3 && (
+                <div className="text-center pt-2">
+                  <Badge variant="secondary" className="text-xs">
+                    +{allTasks.length - tasks.length - 3} more tasks
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Current Tasks preview moved to Tasks tab */}
     </div>

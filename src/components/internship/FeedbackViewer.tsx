@@ -41,15 +41,29 @@ export function FeedbackViewer({ submissionId, taskId }: FeedbackViewerProps) {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
+        // First get the submission data
+        const { data: submissionData, error: submissionError } = await supabase
           .from("internship_task_submissions")
           .select("*, internship_tasks(title)")
           .eq("id", submissionId)
           .single();
           
-        if (error) throw error;
+        if (submissionError) throw submissionError;
         
-        setFeedback(data as unknown as FeedbackData);
+        // Then get the detailed feedback text from internship_feedback_details
+        const { data: feedbackDetails, error: feedbackError } = await supabase
+          .from("internship_feedback_details")
+          .select("specific_comments")
+          .eq("submission_id", submissionId)
+          .single();
+        
+        // Combine the data - use detailed feedback if available, otherwise fall back to feedback_text
+        const combinedData = {
+          ...submissionData,
+          feedback_text: feedbackDetails?.specific_comments || submissionData.feedback_text
+        };
+        
+        setFeedback(combinedData as unknown as FeedbackData);
       } catch (err) {
         console.error("Error fetching feedback:", err);
         setError("Failed to load feedback. Please try again later.");

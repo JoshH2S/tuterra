@@ -8,6 +8,7 @@ import { SwipeableInternshipView, SwipeableInternshipViewRef } from "@/component
 import { TaskDetailsModal } from "@/components/internship/TaskDetailsModal";
 import { useInternshipRealtime } from "@/hooks/useInternshipRealtime";
 import { LoadingSpinner } from "@/components/ui/loading-states";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { isTaskOverdue, formatInUserTimezone, getRelativeDeadlineText } from "@/utils/dateUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -26,6 +27,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { InternshipWelcomeScreen } from "@/components/internship/InternshipWelcomeScreen";
 import { CompanyProfileService } from "@/services/companyProfileService";
 import { PortfolioSubmissionDialog } from "@/components/internship/PortfolioSubmissionDialog";
+import { ExitActions } from "@/components/internship/ExitActions";
 
 export default function VirtualInternshipDashboard() {
   const navigate = useNavigate();
@@ -49,10 +51,13 @@ export default function VirtualInternshipDashboard() {
   }
   
   const [hasInternships, setHasInternships] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingState, setLoadingState] = useState<'initial' | 'background' | 'idle'>('initial');
   const [internshipSession, setInternshipSession] = useState<InternshipSession | null>(null);
   const [tasks, setTasks] = useState<InternshipTask[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
+  
+  // Cache session data to avoid re-fetching
+  const sessionCache = useRef<InternshipSession | null>(null);
   const [selectedTask, setSelectedTask] = useState<InternshipTask | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -345,7 +350,13 @@ export default function VirtualInternshipDashboard() {
     async function fetchInternshipData() {
       if (!user) return;
       
-      setLoading(true);
+      // Set loading state based on whether we have cached data
+      if (sessionCache.current) {
+        setLoadingState('background'); // Background refresh
+      } else {
+        setLoadingState('initial'); // First load
+      }
+      
       try {
         // If a specific sessionId is provided, fetch that session
         if (sessionId) {
@@ -369,6 +380,8 @@ export default function VirtualInternshipDashboard() {
               start_date: (sessionData as any).start_date || sessionData.created_at // Use created_at as fallback for start_date
             };
             
+            // Cache the session data
+            sessionCache.current = completeSessionData;
             setInternshipSession(completeSessionData);
             setHasInternships(true);
 
@@ -413,6 +426,8 @@ export default function VirtualInternshipDashboard() {
               start_date: (data[0] as any).start_date || data[0].created_at // Use created_at as fallback for start_date
             };
             
+            // Cache the session data
+            sessionCache.current = completeSessionData;
             setInternshipSession(completeSessionData);
             setHasInternships(true);
 
@@ -445,7 +460,7 @@ export default function VirtualInternshipDashboard() {
           variant: "destructive",
         });
       } finally {
-        setLoading(false);
+        setLoadingState('idle');
       }
     }
     
@@ -556,7 +571,8 @@ export default function VirtualInternshipDashboard() {
   }
 
 
-  if (loading) {
+  // Only show full-page loading on initial load without cached data
+  if (loadingState === 'initial' && !sessionCache.current) {
     return (
       <div className="container mx-auto px-4 py-8 flex justify-center items-center h-64">
         <div className="flex flex-col items-center gap-4">
@@ -641,12 +657,14 @@ export default function VirtualInternshipDashboard() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl min-h-screen">
       {/* Banner that spans the full width */}
-      {internshipSession && (
+      {loadingState === 'background' && !internshipSession ? (
+        <Skeleton className="w-full h-48 mb-8 rounded-lg" />
+      ) : internshipSession ? (
         <InternshipBanner 
           sessionId={internshipSession.id}
           industry={internshipSession.industry}
         />
-      )}
+      ) : null}
       
       {/* User profile header with company information - now positioned on top of the banner */}
       <div className="relative z-10 -mt-24 mb-8 flex flex-col items-center sm:items-start sm:flex-row gap-4">
@@ -792,66 +810,8 @@ export default function VirtualInternshipDashboard() {
       
       {/* Exit Actions Section */}
       {internshipSession && (
-        <section className="mb-6">
-          <Card className="shadow-sm bg-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-medium flex items-center gap-2">
-                <ExternalLink className="h-4 w-4" />
-                Exit Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="p-3 border rounded-md bg-muted/20">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700">
-                      <Award className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium">Certificate Available</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {internshipSession?.is_completed 
-                          ? 'Visit completion page to download' 
-                          : 'Available after final submission'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-3 border rounded-md bg-muted/20 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
-                      <FileCheck className="h-4 w-4" />
-                          </div>
-                    <div>
-                      <h3 className="text-sm font-medium">Download Report</h3>
-                      <p className="text-xs text-muted-foreground">Summary of your internship</p>
-                          </div>
-                          </div>
-                        </div>
-                
-                <div className="p-3 border rounded-md bg-muted/20 hover:bg-muted/30 transition-colors">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start p-0 h-auto hover:bg-transparent"
-                    onClick={() => navigate("/dashboard")}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-700">
-                        <Briefcase className="h-4 w-4" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="text-sm font-medium">Exit to Dashboard</h3>
-                        <p className="text-xs text-muted-foreground">Return to main dashboard</p>
-                      </div>
-                    </div>
-                  </Button>
-                </div>
-              </div>
-                </CardContent>
-              </Card>
-        </section>
-        )}
+        <ExitActions sessionId={internshipSession.id} />
+      )}
 
       {/* Task Details Modal */}
       {user && (

@@ -66,7 +66,13 @@ export const QuestionDisplay = ({
           )}
         </CardTitle>
         <CardDescription>
-          Select the best answer for this question
+          {question.type === 'multiple_answer' ? (
+            Array.isArray(question.correctAnswer) && question.correctAnswer.length > 0 ?
+              `Select ${question.correctAnswer.length} answers` :
+              'Select all that apply'
+          ) : (
+            'Select the best answer'
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className={`space-y-4 ${isMobile ? "px-4 pb-4" : ""}`}>

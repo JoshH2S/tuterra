@@ -18,11 +18,11 @@ export interface AssessmentParams {
 const determineModelType = (tier: string = 'free') => {
   switch (tier) {
     case 'premium':
-      return 'gpt-3.5-turbo';
+      return 'gpt-4o';
     case 'pro':
-      return 'gpt-3.5-turbo';
+      return 'gpt-4o-mini';
     default:
-      return 'gpt-3.5-turbo';
+      return 'gpt-4o-mini';
   }
 };
 
@@ -30,11 +30,11 @@ const determineModelType = (tier: string = 'free') => {
 const getTokenLimit = (tier: string = 'free') => {
   switch (tier) {
     case 'premium':
-      return 16000;
+      return 8000; // GPT-4o has much higher limits
     case 'pro':
-      return 8000;
+      return 6000; // GPT-4o-mini
     default:
-      return 4000;
+      return 4000; // GPT-4o-mini conservative
   }
 };
 
@@ -206,6 +206,10 @@ export const useSkillAssessmentGeneration = () => {
       // Track usage before generation
       await trackFeatureInteraction('skill-assessment-generation', 'start');
       
+      // Prepare variables used in both cache-hit and fresh generation flows
+      let assessmentData: any | null = null;
+      let generationTime = 0;
+
       // Check cache for similar assessment
       const cacheKey = `assessment:${params.industry}:${params.role}:${params.level || 'intermediate'}`;
       const { data: cachedAssessment } = await supabase
@@ -217,73 +221,69 @@ export const useSkillAssessmentGeneration = () => {
 
       setProgress(30);
 
-      if (cachedAssessment && cachedAssessment.assessment_data) {
-        // Use cached assessment
-        await trackFeatureInteraction('skill-assessment-generation', 'cache-hit');
-        setProgress(100);
-        setIsGenerating(false);
-        return cachedAssessment.assessment_data;
-      }
-
-      // Get user's subscription tier
+      // Get user's subscription tier (needed for either path)
       const tier = await getUserTier();
       const modelType = determineModelType(tier);
       const maxTokens = getTokenLimit(tier);
 
-      setProgress(50);
-
-      // Generate assessment using edge function
-      const startTime = Date.now();
-      
-      console.log("Calling generate-skill-assessment with params:", {
-        industry: params.industry,
-        role: params.role,
-        additionalInfoLength: params.additionalInfo?.length || 0,
-        modelType,
-        maxTokens
-      });
-      
-      const response = await supabase.functions.invoke('generate-skill-assessment', {
-        body: {
-          ...params,
+      if (cachedAssessment && cachedAssessment.assessment_data) {
+        // Use cached assessment data but continue to save and navigate
+        await trackFeatureInteraction('skill-assessment-generation', 'cache-hit');
+        assessmentData = cachedAssessment.assessment_data;
+        setProgress(60);
+      } else {
+        // Generate assessment using edge function
+        const startTime = Date.now();
+        
+        console.log("Calling generate-skill-assessment with params:", {
+          industry: params.industry,
+          role: params.role,
+          additionalInfoLength: params.additionalInfo?.length || 0,
           modelType,
-          maxTokens,
+          maxTokens
+        });
+        
+        const response = await supabase.functions.invoke('generate-skill-assessment', {
+          body: {
+            ...params,
+            modelType,
+            maxTokens,
+          }
+        });
+
+        generationTime = Date.now() - startTime;
+        
+        console.log("Response from generate-skill-assessment:", {
+          hasError: !!response.error,
+          hasData: !!response.data,
+          hasAssessment: !!response.data?.assessment,
+          responseTime: generationTime
+        });
+        
+        if (response.error) {
+          console.error("Edge function error:", response.error);
+          throw new Error(`Failed to generate assessment: ${response.error.message || 'Unknown error'}`);
         }
-      });
+        
+        if (!response.data?.assessment) {
+          console.error("No assessment data in response:", response.data);
+          throw new Error("No assessment was generated. Please try again.");
+        }
+        
+        setProgress(80);
 
-      const generationTime = Date.now() - startTime;
-      
-      console.log("Response from generate-skill-assessment:", {
-        hasError: !!response.error,
-        hasData: !!response.data,
-        hasAssessment: !!response.data?.assessment,
-        responseTime: generationTime
-      });
-      
-      if (response.error) {
-        console.error("Edge function error:", response.error);
-        throw new Error(`Failed to generate assessment: ${response.error.message || 'Unknown error'}`);
-      }
-      
-      if (!response.data?.assessment) {
-        console.error("No assessment data in response:", response.data);
-        throw new Error("No assessment was generated. Please try again.");
-      }
-      
-      setProgress(80);
+        assessmentData = response.data.assessment;
 
-      // Cache the result for future use
-      if (!response.error && response.data?.assessment) {
-        // Calculate cache duration based on tier
-        const cacheDuration = tier === 'free' ? 30 : 7; // days
-        const cachedUntil = new Date();
-        cachedUntil.setDate(cachedUntil.getDate() + cacheDuration);
-
+        // Cache the result for future use
         try {
-          // Store in cache
+          // Calculate cache duration based on tier
+          const cacheDuration = tier === 'free' ? 30 : 7; // days
+          const cachedUntil = new Date();
+          cachedUntil.setDate(cachedUntil.getDate() + cacheDuration);
+
           await supabase.from('cached_assessments').insert({
             cache_key: cacheKey,
-            assessment_data: response.data.assessment,
+            assessment_data: assessmentData,
             cached_until: cachedUntil.toISOString(),
             model_used: modelType,
             generation_time: generationTime,
@@ -294,7 +294,7 @@ export const useSkillAssessmentGeneration = () => {
         }
 
         try {
-          // Track analytics
+          // Track analytics for fresh generations
           await supabase.from('assessment_analytics').insert({
             user_id: user.id,
             model_used: modelType,
@@ -306,19 +306,46 @@ export const useSkillAssessmentGeneration = () => {
           console.error('Error tracking analytics:', analyticsError);
           // Continue even if analytics tracking fails
         }
-        
-        // Decrement the assessment credits after successful generation
-        // Skip decrementing for premium users who have unlimited
-        if (tier !== 'premium') {
-          await decrementCredits('assessment_credits');
-        }
+      }
+
+      // Decrement the assessment credits after successful generation (including cache hits)
+      // Skip decrementing for premium users who have unlimited
+      if (tier !== 'premium') {
+        await decrementCredits('assessment_credits');
       }
 
       // Track completion
       await trackFeatureInteraction('skill-assessment-generation', 'complete');
       
+      setProgress(90);
+      
+      // Save the assessment to the database
+      if (!assessmentData) {
+        throw new Error('No assessment data available');
+      }
+      const { data: savedAssessment, error: saveError } = await supabase
+        .from('skill_assessments')
+        .insert({
+          title: `${params.role} - ${params.industry}`,
+          industry: params.industry,
+          role: params.role,
+          description: assessmentData.description,
+          creator_id: user.id,
+          questions: assessmentData.questions,
+          skills_tested: assessmentData.skills_tested,
+          level: params.level || 'intermediate',
+          tier: tier,
+        })
+        .select()
+        .single();
+      
+      if (saveError) {
+        console.error('Error saving assessment:', saveError);
+        throw new Error('Failed to save assessment to database');
+      }
+      
       setProgress(100);
-      return response.data?.assessment;
+      return savedAssessment;
     } catch (error) {
       console.error('Error generating assessment:', error);
       await trackFeatureInteraction('skill-assessment-generation', 'error');

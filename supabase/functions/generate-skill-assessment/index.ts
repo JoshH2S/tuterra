@@ -106,7 +106,7 @@ serve(async (req) => {
     
     console.log("Sending request to OpenAI API with prompt:", prompt.substring(0, 100) + "...");
 
-    const model = modelType || "gpt-3.5-turbo-16k";
+    const model = modelType || "gpt-4o-mini";
     const openAIResponse = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
@@ -126,7 +126,7 @@ serve(async (req) => {
           },
         ],
         temperature: 0.3,
-        max_tokens: maxTokens || 3000,
+        max_tokens: Math.min(maxTokens || 4000, 16384), // GPT-4o supports much higher limits
       }),
     });
 

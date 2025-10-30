@@ -260,7 +260,7 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
 
     switch (activeIndex) {
       case 0:
-        return <DashboardOverviewPanel sessionData={fullSessionData} tasks={visibleTasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
+        return <DashboardOverviewPanel sessionData={fullSessionData} tasks={visibleTasks} allTasks={tasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
       case 1:
         return (
           <div className="p-6">
@@ -268,14 +268,14 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
               tasks={visibleTasks} 
               onUpdateTaskStatus={updateTaskStatus} 
               onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} 
-              compact={true} 
-              allTasks={visibleTasks}
+              compact={false} 
+              allTasks={tasks}
               maxDisplayCount={5}
             />
           </div>
         );
       case 2:
-        return <CalendarView events={events} tasks={visibleTasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
+        return <CalendarView events={events} tasks={tasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
       case 3:
         return <EmailMessagingPanel sessionId={sessionData.id} />;
       case 4:
@@ -404,7 +404,7 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
                       {getTabIcon(index)}
                       {tab}
                       {/* Show indicator for Final Project tab */}
-                      {index === 7 && (
+                      {tab === "Final Project" && (
                         <>
                           {isCompleted && (
                             <Badge variant="default" className="text-xs px-1.5 py-0 bg-green-500 text-white">

@@ -52,7 +52,17 @@ export default function SkillAssessmentResults() {
   }
 
   return (
-    <div className="container px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 w-full">
+    <div className="min-h-screen w-full relative overflow-hidden">
+      {/* Background Image - Full Opacity */}
+      <div 
+        className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/skill%20assessment.jpg')"
+        }}
+      />
+      
+      {/* Content */}
+      <div className="relative z-10 container px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 w-full">
       <ResultsHeader 
         title={assessment.title}
         createdAt={result.created_at}
@@ -80,6 +90,7 @@ export default function SkillAssessmentResults() {
           skillBenchmarks={skillBenchmarks}
         />
       )}
+      </div>
     </div>
   );
 }

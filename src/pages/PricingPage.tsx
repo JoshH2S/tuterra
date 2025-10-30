@@ -20,10 +20,24 @@ export default function PricingPage() {
   const { createCheckoutSession, subscription, subscriptionLoading, cancelSubscription } = useSubscriptionManagement();
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isPostOnboarding, setIsPostOnboarding] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+    
+    // Check if user just completed onboarding
+    if (params.get('onboarding') === 'complete') {
+      setIsPostOnboarding(true);
+      toast({
+        title: "Welcome to Tuterra!",
+        description: "Choose a plan to get started with your learning journey.",
+        duration: 6000,
+      });
+      // Clean up the URL
+      navigate('/pricing', { replace: true });
+    }
+    
     if (params.get('canceled') === 'true') {
       toast({
         title: "Checkout Canceled",
@@ -36,6 +50,15 @@ export default function PricingPage() {
 
   const handleSelectPlan = async (planId: string) => {
     if (planId === 'free_plan') {
+      if (isLoggedIn && isPostOnboarding) {
+        // User just completed onboarding and chose free plan - go to dashboard
+        toast({
+          title: "Welcome to Tuterra!",
+          description: "You're all set with the free plan. Let's get started!",
+        });
+        navigate('/dashboard');
+        return;
+      }
       navigate('/auth?tab=signup&plan=free');
       return;
     }
@@ -44,6 +67,12 @@ export default function PricingPage() {
       return;
     }
     if (isLoggedIn) {
+      if (isPostOnboarding) {
+        // User just completed onboarding and wants to upgrade - proceed to checkout
+        // The success URL will take them to dashboard after payment
+        navigate('/profile-settings');
+        return;
+      }
       navigate('/profile-settings');
       return;
     }
@@ -161,14 +190,16 @@ export default function PricingPage() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl relative">
-      <Button 
-        variant="ghost" 
-        onClick={() => navigate('/profile-settings')}
-        className="absolute left-4 top-4 md:left-8 md:top-8"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Settings
-      </Button>
+      {!isPostOnboarding && (
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate('/profile-settings')}
+          className="absolute left-4 top-4 md:left-8 md:top-8"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Settings
+        </Button>
+      )}
 
       <motion.div
         initial="hidden"
@@ -176,9 +207,14 @@ export default function PricingPage() {
         variants={containerVariants}
         className="max-w-3xl mx-auto text-center mb-12"
       >
-        <h1 className="text-4xl font-bold tracking-tight mb-4">Choose the Right Plan</h1>
+        <h1 className="text-4xl font-bold tracking-tight mb-4">
+          {isPostOnboarding ? "Choose Your Plan" : "Choose the Right Plan"}
+        </h1>
         <p className="text-lg text-muted-foreground mb-8">
-          Find the perfect plan for your learning journey
+          {isPostOnboarding 
+            ? "Select a plan to unlock your full learning potential" 
+            : "Find the perfect plan for your learning journey"
+          }
         </p>
         
         <PremiumContentCard 

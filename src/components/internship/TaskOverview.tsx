@@ -162,7 +162,7 @@ export function TaskOverview({
               </div>
             ))}
             
-            {tasks.length > displayTasks.length && (
+            {(tasks.length > displayTasks.length || allTasks.length > tasks.length) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -170,7 +170,7 @@ export function TaskOverview({
                 onClick={() => setIsTaskModalOpen(true)}
               >
                 <Plus className="h-3 w-3 mr-1" />
-                View All Tasks ({tasks.length})
+                View All Tasks ({allTasks.length > 0 ? allTasks.length : tasks.length})
               </Button>
             )}
             
@@ -250,7 +250,7 @@ export function TaskOverview({
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Tasks & Deliverables</h2>
-            {tasks.length > 2 && (
+            {(tasks.length > 2 || allTasks.length > tasks.length) && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -258,7 +258,7 @@ export function TaskOverview({
                 className="h-8 gap-1"
               >
                 <Plus className="h-3.5 w-3.5" />
-                View All
+                View All ({allTasks.length > 0 ? allTasks.length : tasks.length})
               </Button>
             )}
           </div>
@@ -333,73 +333,140 @@ export function TaskOverview({
       
       {/* Task List Modal */}
       <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
-            <DialogTitle>All Tasks</DialogTitle>
+            <DialogTitle>All Tasks ({allTasks.length > 0 ? allTasks.length : tasks.length} Total)</DialogTitle>
             <DialogDescription>
-              Complete these tasks to progress in your internship
+              Your complete internship task list - current and upcoming tasks
             </DialogDescription>
           </DialogHeader>
           
-          <div className="max-h-[60vh] overflow-y-auto pr-1">
-            <div className="space-y-3 py-4">
-              {sortedTasks.map((task) => (
-                <div key={task.id} className="border rounded-lg overflow-hidden">
-                  <div className="flex items-center p-3 border-b bg-muted/20 gap-3">
-                    {getStatusIcon(task.status)}
-                    <h3 className="font-medium flex-1 text-sm md:text-base">{task.title}</h3>
-                    <Badge className={`${getStatusBadgeColor(task.status)} text-xs whitespace-nowrap`}>
-                      {task.status === 'not_started' ? 'Not Started' : 
-                       task.status === 'in_progress' ? 'In Progress' : 
-                       task.status === 'overdue' ? 'Overdue' : 
-                       'Completed'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="p-3">
-                    <p className="text-sm text-muted-foreground mb-3">
-                      {task.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="text-xs text-muted-foreground">
-                        Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy \'at\' h:mm a')}
+          <div className="max-h-[70vh] overflow-y-auto pr-1">
+            <div className="space-y-4 py-4">
+              
+              {/* Current/Visible Tasks Section */}
+              {tasks.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-sm text-gray-900 mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Current Tasks ({tasks.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {sortedTasks.map((task) => (
+                      <div key={task.id} className="border rounded-lg overflow-hidden">
+                        <div className="flex items-center p-3 border-b bg-muted/20 gap-3">
+                          {getStatusIcon(task.status)}
+                          <h3 className="font-medium flex-1 text-sm md:text-base">{task.title}</h3>
+                          <Badge className={`${getStatusBadgeColor(task.status)} text-xs whitespace-nowrap`}>
+                            {task.status === 'not_started' ? 'Not Started' : 
+                             task.status === 'in_progress' ? 'In Progress' : 
+                             task.status === 'overdue' ? 'Overdue' : 
+                             'Completed'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="p-3">
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {task.description}
+                          </p>
+                          
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div className="text-xs text-muted-foreground">
+                              Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy \'at\' h:mm a')}
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-xs h-8 px-3 touch-manipulation"
+                              onClick={() => openTaskDetails(task)}
+                            >
+                              {getActionButtonText(task.status)}
+                              <ChevronRight className="h-3 w-3 ml-1" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs h-8 px-3 touch-manipulation"
-                        onClick={() => openTaskDetails(task)}
-                      >
-                        {getActionButtonText(task.status)}
-                        <ChevronRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
               
-              {/* Show next upcoming task */}
-              {nextUpcomingTask && (
-                <div className="border rounded-lg overflow-hidden border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800/50">
-                  <div className="flex items-center p-3 border-b bg-muted/20 gap-3">
-                    <LockKeyhole className="h-4 w-4 text-blue-500" />
-                    <h3 className="font-medium flex-1 text-sm md:text-base">Coming Soon: {nextUpcomingTask.title}</h3>
-                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs whitespace-nowrap">
-                      Upcoming
-                    </Badge>
+              {/* Upcoming Tasks Section (now openable, not locked) */}
+              {allTasks.length > tasks.length && (
+                <div>
+                  <h4 className="font-medium text-sm text-gray-900 mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-blue-500" />
+                    Upcoming Tasks ({allTasks.length - tasks.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {allTasks
+                      .filter(task => !tasks.find(t => t.id === task.id))
+                      .sort((a, b) => {
+                        // Sort by visible_after date, then by due_date
+                        const aDate = new Date(a.visible_after || a.due_date);
+                        const bDate = new Date(b.visible_after || b.due_date);
+                        return aDate.getTime() - bDate.getTime();
+                      })
+                      .map((task) => (
+                        <div key={task.id} className="border rounded-lg overflow-hidden border-blue-200 bg-blue-50/30 dark:bg-blue-900/10 dark:border-blue-800/50">
+                          <div className="flex items-center p-3 border-b bg-muted/20 gap-3">
+                            <h3 className="font-medium flex-1 text-sm md:text-base">{task.title}</h3>
+                            <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs whitespace-nowrap">
+                              Upcoming
+                            </Badge>
+                          </div>
+
+                          <div className="p-3">
+                            <p className="text-sm text-muted-foreground mb-3">
+                              {task.description || "This task will be unlocked as you progress through your internship."}
+                            </p>
+
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="text-xs flex items-center text-blue-700">
+                                <Calendar className="h-3.5 w-3.5 mr-1.5 inline" />
+                                {task.visible_after ? (
+                                  <>Available: {format(new Date(task.visible_after), 'MMM d, yyyy')}</>
+                                ) : (
+                                  <>Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy')}</>
+                                )}
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="text-xs h-8 px-3"
+                                onClick={() => openTaskDetails(task)}
+                              >
+                                Open
+                                <ChevronRight className="h-3 w-3 ml-1" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                   </div>
-                  
-                  <div className="p-3">
-                    <p className="text-sm text-muted-foreground mb-3">
-                      This task will be unlocked soon
-                    </p>
-                    
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="text-xs flex items-center text-blue-700">
-                        <Calendar className="h-3.5 w-3.5 mr-1.5 inline" />
-                        Available: {format(new Date(nextUpcomingTask.visible_after!), 'MMM d, yyyy')}
-                      </div>
+                </div>
+              )}
+              
+              {/* Summary Stats */}
+              {allTasks.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                  <h4 className="font-medium text-sm text-gray-900 mb-2">Internship Progress</h4>
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Total Tasks:</span>
+                      <span className="font-medium ml-1">{allTasks.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Available Now:</span>
+                      <span className="font-medium ml-1">{tasks.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Completed:</span>
+                      <span className="font-medium ml-1 text-green-600">{tasks.filter(t => t.status === 'completed').length}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Upcoming:</span>
+                      <span className="font-medium ml-1 text-blue-600">{allTasks.length - tasks.length}</span>
                     </div>
                   </div>
                 </div>

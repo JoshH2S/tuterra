@@ -53,13 +53,13 @@ export function FileUploadField({
     setUploadProgress(0);
     
     try {
-      // Create a unique file path - simplified path structure
+      // Create a unique file path with proper folder structure
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${userId}_${taskId}_${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const fileName = `${taskId}_${Date.now()}.${fileExt}`;
+      const filePath = `${userId}/task-submissions/${fileName}`;
       
       console.log("Attempting to upload file:", {
-        bucket: "task-submissions",
+        bucket: "user-uploads",
         filePath,
         fileName: selectedFile.name,
         fileSize: selectedFile.size,
@@ -68,7 +68,7 @@ export function FileUploadField({
       
       // Upload the file
       const { data, error } = await supabase.storage
-        .from("task-submissions")
+        .from("user-uploads")
         .upload(filePath, selectedFile, {
           cacheControl: '3600',
           upsert: false
@@ -83,7 +83,7 @@ export function FileUploadField({
       
       // Get the public URL - use the same bucket name as the upload
       const { data: { publicUrl } } = supabase.storage
-        .from('task-submissions')
+        .from('user-uploads')
         .getPublicUrl(filePath);
       
       console.log("Generated public URL:", publicUrl);
@@ -106,6 +106,8 @@ export function FileUploadField({
       }
       
       setFile(null);
+      // Clear the parent component's file data on upload failure
+      onFileRemove();
     } finally {
       setUploading(false);
     }

@@ -3,10 +3,12 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useInterviewSession } from "@/hooks/interview";
 import { useInterviewQuestions } from "@/hooks/interview/useInterviewQuestions";
 import { useInterviewGeneration } from "@/hooks/interview/useInterviewGeneration";
+import { useInterviewFeedback } from "@/hooks/interview/useInterviewFeedback";
 import { MultiStepInterviewForm, ExtendedInterviewFormData } from "@/components/interview/MultiStepInterviewForm";
 import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
 import { InterviewDebug } from "@/components/interview/InterviewDebug";
+import { InterviewFeedbackComponent } from "@/components/interview/InterviewFeedback";
 import { Wifi, WifiOff, AlertCircle } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
@@ -62,10 +64,22 @@ const JobInterviewSimulator = () => {
 
   const { subscription } = useSubscription();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [errorState, setErrorState] = useState<{
     hasError: boolean;
     message: string;
   }>({ hasError: false, message: "" });
+
+  // Feedback hook
+  const {
+    feedback,
+    isGenerating: isGeneratingFeedback,
+    hasError: feedbackError,
+    generateFeedback,
+    fetchExistingFeedback,
+    retryGeneration,
+    resetFeedback
+  } = useInterviewFeedback();
 
   useEffect(() => {
     const setupInterview = async () => {
@@ -172,6 +186,35 @@ const JobInterviewSimulator = () => {
   const handleStartNewInterview = () => {
     handleStartNew();
     setErrorState({ hasError: false, message: "" });
+    setShowFeedback(false);
+    resetFeedback();
+  };
+
+  const handleViewFeedback = async () => {
+    if (!currentSessionId || transcript.length === 0) {
+      toast({
+        title: "Cannot Generate Feedback",
+        description: "Missing session data or transcript.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowFeedback(true);
+    
+    // First try to fetch existing feedback
+    await fetchExistingFeedback(currentSessionId);
+    
+    // If no existing feedback, generate new one
+    if (!feedback) {
+      await generateFeedback(currentSessionId, transcript);
+    }
+  };
+
+  const handleRetryFeedback = async () => {
+    if (currentSessionId && transcript.length > 0) {
+      await retryGeneration(currentSessionId, transcript);
+    }
   };
 
   const handleRetryLoading = async () => {
@@ -254,34 +297,18 @@ const JobInterviewSimulator = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative">
-      {/* Background Image with Overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-5"
-        style={{
-          backgroundImage: "url('/assets/banners/nyc-skyline-banner.jpg')"
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-slate-50/60 to-blue-50/40" />
+    <div className="min-h-screen w-full relative overflow-hidden">
+        {/* Background Image - Full Opacity */}
+        <div 
+          className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/pexels-artempodrez-6787059.jpg')"
+          }}
+        />
       
       {/* Content */}
       <div className="relative z-10 container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
         <div className="space-y-4 md:space-y-8">
-        <div className="flex justify-end items-center sticky top-0 z-10 bg-opacity-90 bg-background backdrop-blur-sm py-1">
-          <div className="text-xs flex items-center gap-1 text-gray-500">
-            {isOnline ? (
-              <>
-                <Wifi className="h-3 w-3 text-green-500" />
-                <span className="hidden sm:inline">Online</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="h-3 w-3 text-amber-500" />
-                <span className="hidden sm:inline">Offline Mode</span>
-              </>
-            )}
-          </div>
-        </div>
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
         
@@ -325,11 +352,25 @@ const JobInterviewSimulator = () => {
           />
         )}
         
-        {isInterviewComplete && (
+        {isInterviewComplete && !showFeedback && (
           <InterviewCompletion
             transcript={transcript}
             onDownloadTranscript={handleDownloadTranscript}
             onStartNew={handleStartNewInterview}
+            onViewFeedback={handleViewFeedback}
+            sessionId={currentSessionId}
+          />
+        )}
+
+        {isInterviewComplete && showFeedback && (
+          <InterviewFeedbackComponent
+            feedback={feedback}
+            transcript={transcript}
+            onDownloadTranscript={handleDownloadTranscript}
+            onStartNew={handleStartNewInterview}
+            loading={isGeneratingFeedback}
+            hasError={feedbackError}
+            onRetry={handleRetryFeedback}
           />
         )}
         </div>

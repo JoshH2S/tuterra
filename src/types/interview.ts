@@ -56,12 +56,11 @@ export interface InterviewResponse {
 export interface InterviewFeedback {
   id: string;
   session_id: string;
-  feedback: string;
+  overall_feedback: string;
   strengths: string[];
-  areas_for_improvement: string[];
-  overall_score: number;
+  weaknesses: string[];
+  tips?: string[];
   created_at: string;
-  updated_at: string;
 }
 
 export interface InterviewTranscript {

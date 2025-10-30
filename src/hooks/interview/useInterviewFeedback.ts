@@ -1,111 +1,108 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { InterviewFeedback, InterviewTranscript } from "@/types/interview";
 
-export const useInterviewFeedback = (
-  sessionId: string | null
-) => {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+export const useInterviewFeedback = () => {
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const { toast } = useToast();
 
-  const generateFeedback = async (transcript: InterviewTranscript[]) => {
-    if (!sessionId || transcript.length === 0 || hasError) return;
-    
-    setLoading(true);
+  const generateFeedback = async (sessionId: string, transcript: InterviewTranscript[]) => {
+    if (!sessionId || !transcript || transcript.length === 0) {
+      toast({
+        title: "Cannot Generate Feedback",
+        description: "Missing session ID or transcript data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    setHasError(false);
+
     try {
+      console.log("Generating feedback for session:", sessionId);
+      
+      // Call the edge function to generate feedback
       const { data, error } = await supabase.functions.invoke('generate-interview-feedback', {
-        body: { sessionId, transcript }
+        body: {
+          sessionId,
+          transcript: transcript.map(item => ({
+            question: item.question,
+            answer: item.answer || "No answer provided"
+          }))
+        }
       });
 
-      if (error) throw error;
-      
-      if (data && data.feedback) {
-        // Process the feedback data carefully
-        const feedbackData = data.feedback;
-        
-        // Create a properly typed feedback object with safe fallbacks
-        const processedFeedback: InterviewFeedback = {
-          id: feedbackData.id || '',
-          session_id: feedbackData.session_id || '',
-          feedback: typeof feedbackData.feedback === 'string' ? feedbackData.feedback : '',
-          strengths: Array.isArray(feedbackData.strengths) ? feedbackData.strengths : [],
-          areas_for_improvement: Array.isArray(feedbackData.areas_for_improvement) ? feedbackData.areas_for_improvement : [],
-          overall_score: typeof feedbackData.overall_score === 'number' ? feedbackData.overall_score : 0,
-          created_at: feedbackData.created_at || '',
-          updated_at: feedbackData.updated_at || feedbackData.created_at || ''
-        };
-        
-        setFeedback(processedFeedback);
-        setHasError(false);
+      if (error) {
+        console.error("Error generating feedback:", error);
+        throw error;
+      }
+
+      if (data?.feedback) {
+        setFeedback(data.feedback);
         toast({
-          title: "Feedback generated",
-          description: "Your interview feedback is ready!",
+          title: "Feedback Generated",
+          description: "Your AI-powered interview feedback is ready!",
         });
+      } else {
+        throw new Error("No feedback data received");
       }
     } catch (error) {
-      console.error("Error generating feedback:", error);
+      console.error("Failed to generate feedback:", error);
       setHasError(true);
       toast({
-        title: "Error",
-        description: "Failed to generate feedback. Please try manually generating feedback.",
+        title: "Feedback Generation Failed",
+        description: "We couldn't generate your feedback right now. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
-  const fetchFeedback = async () => {
+  const fetchExistingFeedback = async (sessionId: string) => {
     if (!sessionId) return;
-    
-    setLoading(true);
+
     try {
-      // Use functions.invoke instead of direct query since the table might not be in the types
+      console.log("Fetching existing feedback for session:", sessionId);
+      
       const { data, error } = await supabase.functions.invoke('get-interview-feedback', {
         body: { sessionId }
       });
 
-      if (error) throw error;
-      
-      if (data && data.feedback) {
-        const feedbackData = data.feedback;
-        
-        // Construct a properly typed feedback object with safe defaults
-        const processedFeedback: InterviewFeedback = {
-          id: feedbackData.id || '',
-          session_id: feedbackData.session_id || '',
-          feedback: typeof feedbackData.feedback === 'string' ? feedbackData.feedback : '',
-          strengths: Array.isArray(feedbackData.strengths) ? feedbackData.strengths : [],
-          areas_for_improvement: Array.isArray(feedbackData.areas_for_improvement) ? feedbackData.areas_for_improvement : [],
-          overall_score: typeof feedbackData.overall_score === 'number' ? feedbackData.overall_score : 0,
-          created_at: feedbackData.created_at || '',
-          updated_at: feedbackData.updated_at || feedbackData.created_at || ''
-        };
-        
-        setFeedback(processedFeedback);
+      if (error) {
+        console.error("Error fetching feedback:", error);
+        return;
+      }
+
+      if (data?.feedback) {
+        setFeedback(data.feedback);
       }
     } catch (error) {
-      console.error("Error fetching feedback:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch interview feedback. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      console.error("Failed to fetch existing feedback:", error);
     }
   };
 
+  const retryGeneration = async (sessionId: string, transcript: InterviewTranscript[]) => {
+    await generateFeedback(sessionId, transcript);
+  };
+
+  const resetFeedback = () => {
+    setFeedback(null);
+    setHasError(false);
+    setIsGenerating(false);
+  };
+
   return {
-    generateFeedback,
-    fetchFeedback,
     feedback,
-    loading,
+    isGenerating,
     hasError,
-    retry: () => setHasError(false)
+    generateFeedback,
+    fetchExistingFeedback,
+    retryGeneration,
+    resetFeedback
   };
 };

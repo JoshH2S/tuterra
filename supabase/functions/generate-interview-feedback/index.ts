@@ -69,7 +69,7 @@ serve(async (req) => {
       "feedback": "Overall feedback and analysis",
       "strengths": ["Strength 1", "Strength 2", "Strength 3"],
       "areas_for_improvement": ["Area 1", "Area 2", "Area 3"],
-      "overall_score": A number from 1-10 rating the overall interview performance
+      "tips": ["Tip 1", "Tip 2", "Tip 3"]
     }
     `;
     
@@ -126,10 +126,10 @@ serve(async (req) => {
         .from('interview_feedback')
         .insert({
           session_id: sessionId,
-          feedback: feedbackData.feedback,
+          overall_feedback: feedbackData.feedback,
           strengths: feedbackData.strengths,
-          areas_for_improvement: feedbackData.areas_for_improvement,
-          overall_score: feedbackData.overall_score
+          weaknesses: feedbackData.areas_for_improvement,
+          tips: feedbackData.tips || []
         })
         .select()
         .single();

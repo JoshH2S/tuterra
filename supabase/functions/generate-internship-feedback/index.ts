@@ -107,33 +107,55 @@ serve(async (req) => {
       );
     }
 
-    // If submission text is missing, let's get it from the database
+    // Get submission data from database (including user_id which we need later)
     let finalSubmissionText = submission_text;
+    let user_id: string;
+    
+    console.log("Fetching submission data from database");
+    const { data: submissionData, error: submissionError } = await supabaseAdmin
+      .from("internship_task_submissions")
+      .select("response_text, file_url, file_name, content_type, user_id")
+      .eq("id", submission_id)
+      .single();
+      
+    if (submissionError) {
+      console.error("Error fetching submission data:", submissionError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to fetch submission data", 
+          details: submissionError 
+        }),
+        { 
+          status: 500, 
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          } 
+        }
+      );
+    }
+    
+    if (!submissionData) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Submission not found", 
+          details: "No submission found with the provided ID" 
+        }),
+        { 
+          status: 404, 
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          } 
+        }
+      );
+    }
+    
+    // Extract user_id from submission data
+    user_id = submissionData.user_id;
+    
+    // Use submission text from request if provided, otherwise get from database
     if (!finalSubmissionText) {
-      console.log("Submission text missing from request, fetching from database");
-      const { data: submissionData, error: submissionError } = await supabaseAdmin
-        .from("internship_task_submissions")
-        .select("response_text, file_url, file_name, content_type")
-        .eq("id", submission_id)
-        .single();
-      
-      if (submissionError) {
-        console.error("Error fetching submission text:", submissionError);
-        return new Response(
-          JSON.stringify({ 
-            error: "Failed to fetch submission data", 
-            details: submissionError 
-          }),
-          { 
-            status: 500, 
-            headers: { 
-              "Content-Type": "application/json", 
-              ...corsHeaders 
-            } 
-          }
-        );
-      }
-      
       // If it's a file submission, include the file information
       if (submissionData?.content_type === 'file' || submissionData?.content_type === 'both') {
         const fileInfo = submissionData.file_url ? 
@@ -301,7 +323,7 @@ Please analyze the submission for a ${finalJobTitle} intern task. You need to pr
 
 Provide the feedback in the following JSON format:
 {
-  "feedback_text": "Detailed and formatted feedback with paragraphs and bullet points as needed",
+  "feedback_text": "Detailed and well-structured feedback using plain text only. Do NOT use markdown formatting, asterisks, hashtags, or any special characters for formatting. Use clear paragraphs and natural language structure instead.",
   "quality_rating": <number between 1-10>,
   "timeliness_rating": <number between 1-10>,
   "collaboration_rating": <number between 1-10>,
@@ -332,6 +354,8 @@ Your feedback should:
 3. Give actionable suggestions for improvement
 4. Relate to industry standards for a ${finalJobTitle} in the ${finalIndustry} field
 5. Accurately identify and assess demonstrated skills
+6. Use PLAIN TEXT ONLY - no markdown, asterisks (*), hashtags (#), or special formatting characters
+7. Structure content with clear paragraphs and natural language flow
 `;
 
     const userContent = `
@@ -422,7 +446,10 @@ ${finalSubmissionText}
         
         console.log("Successfully parsed feedback data with skills:", {
           skillsCount: Object.keys(skillsData).length,
-          totalXP: Object.values(skillsData).reduce((sum, skill) => sum + (skill.xp_earned || 0), 0)
+          totalXP: Object.values(skillsData).reduce((sum, skill) => {
+            const typedSkill = skill as { xp_earned: number; proficiency_score: number };
+            return sum + (typedSkill.xp_earned || 0);
+          }, 0)
         });
       } catch (error) {
         console.error("Error parsing AI response:", error);
@@ -463,19 +490,20 @@ ${finalSubmissionText}
       if (Object.keys(skillsData).length > 0) {
         console.log("Updating skill progress for user:", { userId: user_id, skills: Object.keys(skillsData) });
         
-        for (const [skillId, skillProgress] of Object.entries(skillsData)) {
-          try {
-            const { error: skillUpdateError } = await supabaseAdmin.rpc('update_user_skill_progress', {
-              p_user_id: user_id,
-              p_skill_id: skillId,
-              p_xp_gained: skillProgress.xp_earned,
-              p_submission_id: submission_id
-            });
+          for (const [skillId, skillProgress] of Object.entries(skillsData)) {
+            try {
+              const typedSkillProgress = skillProgress as { xp_earned: number; proficiency_score: number };
+              const { error: skillUpdateError } = await supabaseAdmin.rpc('update_user_skill_progress', {
+                p_user_id: user_id,
+                p_skill_id: skillId,
+                p_xp_gained: typedSkillProgress.xp_earned,
+                p_submission_id: submission_id
+              });
 
             if (skillUpdateError) {
               console.error("Error updating skill progress:", skillUpdateError);
             } else {
-              console.log(`Updated skill ${skillId} with ${skillProgress.xp_earned} XP`);
+              console.log(`Updated skill ${skillId} with ${typedSkillProgress.xp_earned} XP`);
             }
           } catch (skillError) {
             console.error("Error in skill progress update:", skillError);

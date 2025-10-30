@@ -42,6 +42,8 @@ interface SupervisorContext {
   job_title: string;
   industry: string;
   company_name: string;
+  duration_weeks: number;
+  task_areas: string;
   supervisor_state: any;
 }
 
@@ -74,8 +76,18 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    console.log('📊 Gathering context...')
     const ctx = await gatherMinimalContext(supabase, session_id, user_id)
+    console.log('✅ Context gathered:', { 
+      user_name: ctx.user_first_name, 
+      job_title: ctx.job_title, 
+      company_name: ctx.company_name,
+      industry: ctx.industry,
+      duration_weeks: ctx.duration_weeks,
+      task_areas: ctx.task_areas
+    })
 
+    console.log(`🚀 Executing action: ${action}`)
     let result;
     switch (action) {
       case 'onboarding': result = await handleOnboarding(supabase, ctx, context); break
@@ -85,6 +97,8 @@ serve(async (req) => {
       case 'user_message_response': result = await handleUserMessageResponse(supabase, ctx, context); break
       default: throw new Error(`Unknown action: ${action}`)
     }
+    
+    console.log('✅ Action completed:', result)
 
     return new Response(JSON.stringify(result), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -165,21 +179,60 @@ async function gatherMinimalContext(supabase: any, sessionId: string, userId: st
     { data: userData },
     { data: sessionData },
     { data: companyData },
-    { data: supervisorStateData }
+    { data: supervisorStateData },
+    { data: tasksData }
   ] = await Promise.all([
     supabase.from('profiles').select('first_name').eq('id', userId).limit(1).single(),
-    supabase.from('internship_sessions').select('job_title, industry').eq('id', sessionId).limit(1).single(),
-    supabase.from('internship_company_profiles').select('company_name').eq('session_id', sessionId).limit(1),
-    supabase.from('internship_supervisor_state').select('*').eq('session_id', sessionId).eq('user_id', userId).limit(1)
+    supabase.from('internship_sessions').select('job_title, industry, duration_weeks').eq('id', sessionId).limit(1).single(),
+    supabase.from('internship_company_profiles').select('company_name').eq('session_id', sessionId).eq('profile_status', 'completed').limit(1).single(),
+    supabase.from('internship_supervisor_state').select('*').eq('session_id', sessionId).eq('user_id', userId).limit(1),
+    supabase.from('internship_tasks').select('title').eq('session_id', sessionId).order('task_order').limit(3)
   ]);
 
-    return {
+  // Log for debugging
+  console.log('Company data from database:', companyData);
+  console.log('Session data from database:', sessionData);
+  
+  // Get company name with better fallback logic
+  let companyName = 'the company';
+  if (companyData?.company_name) {
+    companyName = companyData.company_name;
+  } else {
+    // Try fallback to company details table
+    const { data: companyDetails } = await supabase
+      .from('internship_company_details')
+      .select('name')
+      .eq('session_id', sessionId)
+      .limit(1)
+      .single();
+    
+    if (companyDetails?.name) {
+      companyName = companyDetails.name;
+    } else {
+      // Final fallback based on industry
+      const industry = sessionData?.industry || 'Technology';
+      companyName = `${industry} Corporation`;
+    }
+  }
+
+  // Get task areas for template
+  const taskAreas = tasksData && tasksData.length > 0 
+    ? tasksData.map(task => task.title).join(', ')
+    : 'various professional development activities';
+
+  console.log('Final company name used:', companyName);
+  console.log('Duration weeks:', sessionData?.duration_weeks);
+  console.log('Task areas:', taskAreas);
+
+  return {
     session_id: sessionId,
     user_id: userId,
     user_first_name: userData?.first_name || 'there',
-      job_title: sessionData?.job_title || 'Intern',
-      industry: sessionData?.industry || 'Technology',
-    company_name: companyData?.[0]?.company_name || 'the company',
+    job_title: sessionData?.job_title || 'Intern',
+    industry: sessionData?.industry || 'Technology',
+    company_name: companyName,
+    duration_weeks: sessionData?.duration_weeks || 8,
+    task_areas: taskAreas,
     supervisor_state: supervisorStateData?.[0] || null
   };
 }
@@ -232,12 +285,23 @@ async function handleOnboarding(supabase: any, context: SupervisorContext, reque
   const startTime = Date.now();
   const idem_key = mkIdem('onboarding', context.session_id, context.user_id);
 
+  console.log('🎉 Starting onboarding handler')
+  console.log('📋 Onboarding context:', {
+    session_id: context.session_id,
+    user_id: context.user_id,
+    user_name: context.user_first_name,
+    company_name: context.company_name,
+    supervisor_state: context.supervisor_state
+  })
+
   try {
     if (context.supervisor_state?.onboarding_completed) {
+      console.log('⏭️ Onboarding already completed, skipping')
       return { message: 'Onboarding already completed', skipped: true };
     }
 
-    const { data: template } = await supabase
+    console.log('🔍 Fetching onboarding template...')
+    const { data: template, error: templateError } = await supabase
       .from('internship_supervisor_templates')
       .select('prompt_template')
       .eq('template_type', 'onboarding')
@@ -246,6 +310,11 @@ async function handleOnboarding(supabase: any, context: SupervisorContext, reque
       .limit(1)
       .single();
 
+    if (templateError) {
+      console.log('⚠️ Template fetch error:', templateError)
+    }
+    console.log('📝 Template found:', !!template?.prompt_template)
+
     const templateText = template?.prompt_template || 
       'Write a warm welcome message for {user_name} starting as a {job_title} at {company_name} in the {industry} industry.';
 
@@ -253,14 +322,18 @@ async function handleOnboarding(supabase: any, context: SupervisorContext, reque
       user_name: context.user_first_name,
       job_title: context.job_title,
       company_name: context.company_name,
-      industry: context.industry
+      industry: context.industry,
+      duration_weeks: context.duration_weeks,
+      task_areas: context.task_areas
     };
+
+    console.log('🔧 Template variables:', variables)
 
     const fallback = `Hi ${context.user_first_name}! 👋
 
-Welcome to your virtual ${context.job_title} internship at ${context.company_name}! I'm Sarah Mitchell, your internship coordinator, and I'm excited to work with you over the coming weeks.
+Welcome to your virtual ${context.job_title} internship at ${context.company_name}! I'm Sarah Mitchell, your internship coordinator, and I'm excited to work with you over the coming ${context.duration_weeks} weeks.
 
-You'll be gaining hands-on experience in the ${context.industry} industry through a series of practical tasks and projects. I'll be here to guide you, provide feedback, and make sure you're getting the most out of this experience.
+You'll be gaining hands-on experience in the ${context.industry} industry through a series of practical tasks and projects, including work on ${context.task_areas}. I'll be here to guide you, provide feedback, and make sure you're getting the most out of this experience.
 
 Feel free to reach out if you have any questions or need help with anything. Let's make this a great learning experience!
 
@@ -268,9 +341,14 @@ Best regards,
 Sarah Mitchell
 Internship Coordinator`;
 
+    console.log('🤖 Generating message content...')
     const messageContent = await renderTemplateOrFallback(templateText, variables, fallback);
+    console.log('📝 Generated message length:', messageContent?.length || 0)
+    
     const subject = generateSubject('onboarding');
+    console.log('📧 Message subject:', subject)
 
+    console.log('💾 Inserting message into database...')
     const { data: message, error } = await supabase
       .from('internship_supervisor_messages')
       .insert({
@@ -290,10 +368,18 @@ Internship Coordinator`;
       .single();
 
     if (error?.code === '23505') {
+      console.log('⚠️ Duplicate message detected (idempotency key conflict)')
       return { message: 'Onboarding already sent', skipped: true };
     }
-    if (error) throw error;
 
+    if (error) {
+      console.error('❌ Database insert error:', error)
+      throw error;
+    }
+
+    console.log('✅ Message inserted successfully:', message?.id)
+
+    console.log('📊 Updating supervisor state and interactions...')
     await supabase.rpc('increment_interactions', { p_session: context.session_id, p_user: context.user_id, p_inc: 1 });
     await supabase.from('internship_supervisor_state').upsert({
       session_id: context.session_id,
@@ -303,10 +389,10 @@ Internship Coordinator`;
         last_interaction_at: new Date().toISOString()
       });
 
-    console.log(`✅ Onboarding sent in ${Date.now() - startTime}ms`);
+    console.log(`🎉 Onboarding completed successfully in ${Date.now() - startTime}ms`);
     return { message: 'Onboarding sent', message_id: message.id, duration_ms: Date.now() - startTime };
   } catch (error) {
-    console.error('Onboarding error:', error);
+    console.error('❌ Onboarding error:', error);
     throw error;
   }
 }

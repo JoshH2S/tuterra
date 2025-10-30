@@ -20,6 +20,11 @@ interface SubmissionWithTask {
   timeliness_rating: number | null;
   collaboration_rating: number | null;
   overall_assessment: string | null;
+  file_url: string | null;
+  file_name: string | null;
+  file_type: string | null;
+  file_size: number | null;
+  content_type: string | null;
   task: {
     title: string;
     description: string;
@@ -76,7 +81,8 @@ export function FeedbackCenter({ sessionData, tasks }: FeedbackCenterProps) {
   }, [sessionData.id, user]);
   
   const getSubmissionStatus = (submission: SubmissionWithTask) => {
-    if (submission.feedback_text) {
+    // Check if we have feedback (either in feedback_text or if ratings are present)
+    if (submission.feedback_text || submission.quality_rating) {
       return {
         label: "Feedback Received",
         color: "bg-green-100 text-green-800 border-green-200"
@@ -174,18 +180,67 @@ export function FeedbackCenter({ sessionData, tasks }: FeedbackCenterProps) {
               </TabsContent>
               
               <TabsContent value="submission" className="mt-4">
-                <Card>
-                  <CardHeader className="pb-2 border-b">
-                    <CardTitle className="text-base font-medium">
-                      {submissions.find(s => s.id === activeSubmissionId)?.task.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="whitespace-pre-line">
-                      {submissions.find(s => s.id === activeSubmissionId)?.response_text}
-              </div>
-                  </CardContent>
-                </Card>
+                {(() => {
+                  const activeSubmission = submissions.find(s => s.id === activeSubmissionId);
+                  const hasTextContent = activeSubmission?.response_text?.trim();
+                  const hasFileContent = activeSubmission?.file_url;
+                  
+                  if (!hasTextContent && !hasFileContent) {
+                    return (
+                      <Card>
+                        <CardContent className="p-6 text-center text-muted-foreground">
+                          <div className="mb-2">📄</div>
+                          <p>No submission content available</p>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  
+                  return (
+                    <Card>
+                      <CardHeader className="pb-2 border-b">
+                        <CardTitle className="text-base font-medium">
+                          {activeSubmission?.task.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-4">
+                        {hasTextContent && (
+                          <div>
+                            <h4 className="font-medium mb-2 text-sm">Text Response:</h4>
+                            <div className="whitespace-pre-line bg-muted/30 p-3 rounded-md text-sm">
+                              {activeSubmission.response_text}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {hasFileContent && (
+                          <div>
+                            <h4 className="font-medium mb-2 text-sm">File Submission:</h4>
+                            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-md border border-blue-200">
+                              <div className="h-8 w-8 rounded bg-blue-100 flex items-center justify-center">
+                                📎
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{activeSubmission.file_name || 'Uploaded File'}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {activeSubmission.file_type} • {activeSubmission.file_size ? `${Math.round(activeSubmission.file_size / 1024)}KB` : 'Unknown size'}
+                                </p>
+                              </div>
+                              <a 
+                                href={activeSubmission.file_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              >
+                                View File
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
               </TabsContent>
             </Tabs>
           </div>

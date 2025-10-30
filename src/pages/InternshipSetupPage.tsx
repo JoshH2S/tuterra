@@ -1,15 +1,21 @@
 
-import { InternshipSetupForm } from "@/components/internship/InternshipSetupForm";
+import { MultiStepInternshipSetupForm } from "@/components/internship/MultiStepInternshipSetupForm";
 
 export default function InternshipSetupPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-6">Create Your Virtual Internship</h1>
-      <p className="text-muted-foreground mb-8">
-        Customize your virtual internship experience to match your career goals. 
-        Fill out the form below to get started.
-      </p>
-      <InternshipSetupForm />
+    <div className="min-h-screen w-full relative overflow-hidden">
+      {/* Background Image - Full Opacity */}
+      <div 
+        className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/pexels-mart-production-7256413-2.jpg')"
+        }}
+      />
+      
+      {/* Content */}
+      <div className="relative z-10 container mx-auto px-4 py-8 max-w-5xl">
+        <MultiStepInternshipSetupForm />
+      </div>
     </div>
   );
 }

@@ -41,7 +41,7 @@ export const InterviewFeedbackComponent = ({
           title="Interview Feedback"
           description="Here's an AI-powered analysis of your interview performance"
           variant="gradient"
-          className="shadow-lg"
+          className="shadow-xl bg-white/95 backdrop-blur-md border border-white/20"
           footer={
             <div className="flex flex-col sm:flex-row gap-3">
               <Button 
@@ -99,13 +99,13 @@ export const InterviewFeedbackComponent = ({
             <div className="space-y-6">
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Overall Assessment</h3>
-                <p className="text-gray-700">{feedback.feedback}</p>
+                <p className="text-gray-700">{feedback.overall_feedback}</p>
               </div>
               
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Strengths</h3>
                 <ul className="list-disc pl-5 space-y-1">
-                  {feedback.strengths.map((strength, i) => (
+                  {feedback.strengths?.map((strength, i) => (
                     <li key={i} className="text-gray-700">{strength}</li>
                   ))}
                 </ul>
@@ -114,11 +114,22 @@ export const InterviewFeedbackComponent = ({
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Areas for Improvement</h3>
                 <ul className="list-disc pl-5 space-y-1">
-                  {feedback.areas_for_improvement.map((area, i) => (
+                  {feedback.weaknesses?.map((area, i) => (
                     <li key={i} className="text-gray-700">{area}</li>
                   ))}
                 </ul>
               </div>
+              
+              {feedback.tips && feedback.tips.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Tips for Improvement</h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {feedback.tips.map((tip, i) => (
+                      <li key={i} className="text-gray-700">{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Your Interview Transcript</h3>
