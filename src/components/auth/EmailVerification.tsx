@@ -53,10 +53,9 @@ export const EmailVerification = () => {
           if (session) {
             console.log("Session verified successfully");
             setVerificationSuccess(true);
-            // Add delay to show success state before redirect
-            setTimeout(() => {
-              navigate("/onboarding", { replace: true });
-            }, 1500);
+            setVerifying(false);
+            setProcessed(true);
+            // Don't auto-redirect - let user click Continue button
           } else {
             throw new Error("Session could not be established after verification");
           }

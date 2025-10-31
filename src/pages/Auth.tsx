@@ -74,8 +74,10 @@ const Auth = () => {
             } 
             // If email was just verified (emailVerified is true in URL)
             else if (window.location.href.includes("email_confirmed=true") || window.location.hash.includes("type=signup")) {
-              setMode("emailVerification");
-              console.log("Setting mode to emailVerification");
+              // Redirect to dedicated verification page instead of handling here
+              console.log("Email verification detected, redirecting to /verify-email");
+              navigate("/verify-email", { replace: true });
+              return;
             }
             // Otherwise, it's a successful sign-in
             else {
