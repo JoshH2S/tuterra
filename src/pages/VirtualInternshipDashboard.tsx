@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -13,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isTaskOverdue, formatInUserTimezone, getRelativeDeadlineText } from "@/utils/dateUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
-import { Briefcase, PlusCircle, Calendar, ExternalLink, MessageSquare, Award, BarChart, History, CheckCircle, FileCheck, Wifi, WifiOff } from "lucide-react";
+import { Briefcase, PlusCircle, Calendar, ExternalLink, MessageSquare, Award, BarChart, History, CheckCircle, FileCheck, Wifi, WifiOff, Lock, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format, isPast } from "date-fns";
 import { TaskFeedbackDialog } from "@/components/internship/TaskFeedbackDialog";
@@ -33,6 +34,7 @@ export default function VirtualInternshipDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { subscription } = useSubscription();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId');
@@ -592,13 +594,44 @@ export default function VirtualInternshipDashboard() {
           <p className="text-muted-foreground mb-6 max-w-md">
             Get hands-on experience by creating a virtual internship tailored to your career goals
           </p>
-          <Button 
-            onClick={() => navigate("/dashboard/internship/create")} 
-            className="gap-2 touch-manipulation"
-          >
-            <PlusCircle className="h-5 w-5" />
-            Create Virtual Internship
-          </Button>
+          {subscription.tier === "free" ? (
+            <div className="flex flex-col gap-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                <Lock className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-amber-800 mb-1">Premium Feature</h3>
+                <p className="text-sm text-amber-700 mb-3">
+                  Virtual internships require a premium subscription
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                  <Button 
+                    onClick={() => navigate("/internship-preview")}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Try Preview
+                  </Button>
+                  <Button 
+                    onClick={() => navigate("/pricing")}
+                    size="sm"
+                    className="gap-2 bg-amber-600 hover:bg-amber-700"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Upgrade Now
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Button 
+              onClick={() => navigate("/dashboard/virtual-internship/new")} 
+              className="gap-2 touch-manipulation"
+            >
+              <PlusCircle className="h-5 w-5" />
+              Create Virtual Internship
+            </Button>
+          )}
         </div>
       </div>
     );

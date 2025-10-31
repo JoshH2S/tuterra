@@ -20,6 +20,7 @@ interface SubscriptionCardProps {
   customButtonVariant?: ButtonProps["variant"];
   showDowngradeButton?: boolean;
   onDowngrade?: () => void;
+  additionalContent?: ReactNode;
 }
 
 export function SubscriptionCard({
@@ -36,6 +37,7 @@ export function SubscriptionCard({
   customButtonVariant,
   showDowngradeButton,
   onDowngrade,
+  additionalContent,
 }: SubscriptionCardProps) {
   return (
     <Card className={cn(
@@ -94,6 +96,8 @@ export function SubscriptionCard({
           {buttonText}
         </Button>
       )}
+      
+      {additionalContent}
     </Card>
   );
 }

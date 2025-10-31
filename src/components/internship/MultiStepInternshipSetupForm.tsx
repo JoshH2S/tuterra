@@ -4,14 +4,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Sparkles, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { InternshipIndustryStep } from "./setup-steps/InternshipIndustryStep";
 import { InternshipRoleStep } from "./setup-steps/InternshipRoleStep";
 import { InternshipDescriptionStep } from "./setup-steps/InternshipDescriptionStep";
 import { InternshipDurationStep } from "./setup-steps/InternshipDurationStep";
+import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
 
 export interface InternshipFormData {
   industry: string;
@@ -25,9 +27,11 @@ export function MultiStepInternshipSetupForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { subscription, loading: subscriptionLoading } = useSubscription();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   // Set default date to today
@@ -117,6 +121,12 @@ export function MultiStepInternshipSetupForm() {
         description: "Please sign in to create an internship",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Check if user has access to virtual internships (premium feature)
+    if (subscription.tier === "free") {
+      setShowUpgradePrompt(true);
       return;
     }
 
@@ -295,6 +305,74 @@ export function MultiStepInternshipSetupForm() {
   };
 
   const showProgress = isGenerating && generationProgress > 0;
+  const isFreeTier = subscription.tier === "free";
+
+  // Show upgrade prompt for free users
+  if (isFreeTier && !subscriptionLoading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+              <Lock className="w-8 h-8 text-amber-600" />
+            </div>
+            <CardTitle className="text-2xl text-gray-900">
+              Virtual Internships are a Premium Feature
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-6">
+            <p className="text-gray-600 text-lg leading-relaxed">
+              Get hands-on experience with realistic workplace scenarios, AI-powered supervision, 
+              and personalized feedback to build your professional skills.
+            </p>
+            
+            <div className="bg-white rounded-lg p-4 border border-amber-200">
+              <h4 className="font-semibold text-gray-900 mb-2">What you'll get with Premium:</h4>
+              <ul className="text-sm text-gray-600 space-y-1 text-left">
+                <li>• Unlimited virtual internship experiences</li>
+                <li>• AI supervisor with personalized feedback</li>
+                <li>• Real-world projects and tasks</li>
+                <li>• Professional skill development</li>
+                <li>• Certificate of completion</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                onClick={() => navigate("/internship-preview")}
+                variant="outline"
+                className="gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Try Preview First
+              </Button>
+              <Button 
+                onClick={() => navigate("/pricing")}
+                className="gap-2 bg-amber-600 hover:bg-amber-700"
+              >
+                <Sparkles className="w-4 h-4" />
+                Upgrade to Premium
+              </Button>
+            </div>
+            
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/dashboard")}
+              className="text-gray-500"
+            >
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+
+        <UpgradePrompt 
+          isOpen={showUpgradePrompt} 
+          onClose={() => setShowUpgradePrompt(false)} 
+          featureType="assessment"
+        />
+      </div>
+    );
+  }
 
   return (
     <React.Fragment>

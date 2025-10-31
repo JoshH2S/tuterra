@@ -8,7 +8,7 @@ import { useAuthStatus } from "@/hooks/useAuthStatus";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PremiumContentCard } from "@/components/ui/premium-card";
-import { Mail, Info, Check, AlertCircle, ArrowLeft } from "lucide-react";
+import { Mail, Info, Check, AlertCircle, ArrowLeft, Sparkles } from "lucide-react";
 import { InteractiveTooltip } from "@/components/ui/interactive-tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -69,10 +69,19 @@ export default function PricingPage() {
     if (isLoggedIn) {
       if (isPostOnboarding) {
         // User just completed onboarding and wants to upgrade - proceed to checkout
-        // The success URL will take them to dashboard after payment
-        navigate('/profile-settings');
+        setIsRedirecting(true);
+        const success = await createCheckoutSession({
+          planId: 'pro_plan',
+          successUrl: `${window.location.origin}/subscription-success?from_onboarding=true`,
+          cancelUrl: `${window.location.origin}/pricing?onboarding=complete`,
+        });
+        
+        if (!success) {
+          setIsRedirecting(false);
+        }
         return;
       }
+      // Existing users go to settings to manage subscription
       navigate('/profile-settings');
       return;
     }
@@ -146,6 +155,7 @@ export default function PricingPage() {
     ],
     pro: [
       "Unlimited quizzes, assessments, and interview simulations",
+      "Virtual internship experiences with AI supervision",
       "AI feedback on every quiz and skill report",
       "Learning path planning & skill progress tracking",
     ],
@@ -260,6 +270,19 @@ export default function PricingPage() {
           onSelect={handleSelectPlan}
           buttonText="Start Free"
           buttonDisabled={subscription?.planId === 'free_plan'}
+          additionalContent={
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full gap-2 text-amber-600 border-amber-200 hover:bg-amber-50"
+                onClick={() => navigate("/internship-preview")}
+              >
+                <Sparkles className="w-4 h-4" />
+                Try Virtual Internship Preview
+              </Button>
+            </div>
+          }
         />
 
         <SubscriptionCard
