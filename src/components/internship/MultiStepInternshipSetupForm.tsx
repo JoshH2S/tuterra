@@ -124,7 +124,7 @@ export function MultiStepInternshipSetupForm() {
       return;
     }
 
-    // Check if user has access to virtual internships (premium feature)
+    // Check if user has access to virtual internships (pro/premium feature)
     if (subscription.tier === "free") {
       setShowUpgradePrompt(true);
       return;
@@ -317,7 +317,7 @@ export function MultiStepInternshipSetupForm() {
               <Lock className="w-8 h-8 text-amber-600" />
             </div>
             <CardTitle className="text-2xl text-gray-900">
-              Virtual Internships are a Premium Feature
+              Virtual Internships Require Pro or Premium
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-6">
@@ -327,7 +327,7 @@ export function MultiStepInternshipSetupForm() {
             </p>
             
             <div className="bg-white rounded-lg p-4 border border-amber-200">
-              <h4 className="font-semibold text-gray-900 mb-2">What you'll get with Premium:</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">What you'll get with Pro/Premium:</h4>
               <ul className="text-sm text-gray-600 space-y-1 text-left">
                 <li>• Unlimited virtual internship experiences</li>
                 <li>• AI supervisor with personalized feedback</li>
@@ -351,7 +351,7 @@ export function MultiStepInternshipSetupForm() {
                 className="gap-2 bg-amber-600 hover:bg-amber-700"
               >
                 <Sparkles className="w-4 h-4" />
-                Upgrade to Premium
+                Upgrade Now
               </Button>
             </div>
             
