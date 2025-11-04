@@ -36,7 +36,10 @@ export function MobileTabNavigation({
             <div className="flex items-center gap-1.5">
               {tabs[activeIndex] && (
                 <>
-                  <tabs[activeIndex].icon className="h-4 w-4 text-primary" />
+                  {(() => {
+                    const IconComponent = tabs[activeIndex].icon;
+                    return <IconComponent className="h-4 w-4 text-primary" />;
+                  })()}
                   <span className="font-medium text-sm">{tabs[activeIndex].name}</span>
                 </>
               )}
