@@ -61,7 +61,7 @@ export function FeatureCards() {
       </div>
       
       {/* Remaining 4 cards in 2x2 grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-4 sm:gap-6">
         {features.slice(1).map((feature, index) => (
           <FeatureCard
             key={index + 1}
