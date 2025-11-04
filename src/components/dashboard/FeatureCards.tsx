@@ -50,15 +50,27 @@ export function FeatureCards() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 mb-10 px-4 lg:px-6">
-      {features.map((feature, index) => (
+    <div className="mt-6 mb-10 px-4 lg:px-6 space-y-6">
+      {/* First card - full width */}
+      <div className="w-full">
         <FeatureCard
-          key={index}
-          title={feature.title}
-          description={feature.description}
-          href={feature.href}
+          title={features[0].title}
+          description={features[0].description}
+          href={features[0].href}
         />
-      ))}
+      </div>
+      
+      {/* Remaining 4 cards in 2x2 grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {features.slice(1).map((feature, index) => (
+          <FeatureCard
+            key={index + 1}
+            title={feature.title}
+            description={feature.description}
+            href={feature.href}
+          />
+        ))}
+      </div>
     </div>
   );
 } 

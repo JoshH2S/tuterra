@@ -43,3 +43,4 @@ VALUES ('user-uploads', 'user-uploads', false)
 ON CONFLICT (id) DO UPDATE SET
   public = false;
 
+

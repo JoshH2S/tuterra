@@ -69,8 +69,8 @@ export default function StudentDashboard() {
         description="Track your progress and performance across all your courses" 
       />
 
-      {/* Feature Cards Section - Only shown on desktop */}
-      {!isMobile && <FeatureCards />}
+      {/* Feature Cards Section - Always at the top */}
+      <FeatureCards />
 
       <div className="space-y-4 sm:space-y-6 mt-10">
         {/* News Feed */}
