@@ -10,6 +10,7 @@ import { CertificateGenerator } from "@/services/certificateGenerator";
 import { ReportGenerator } from "@/services/reportGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ExitActionsProps {
   sessionId: string;
@@ -19,6 +20,7 @@ export function ExitActions({ sessionId }: ExitActionsProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [generatingCertificate, setGeneratingCertificate] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
   
@@ -216,16 +218,16 @@ export function ExitActions({ sessionId }: ExitActionsProps) {
                 <Award className="h-5 w-5 text-primary" />
               )}
               <div className="flex flex-col flex-1">
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center ${isMobile ? 'flex-col items-start' : 'gap-2'}`}>
                   <span className="font-medium">Generate Certificate</span>
-                  <Badge variant={status.variant} className="text-xs">
-                    {status.text}
+                  <Badge variant={status.variant} className={`text-xs ${isMobile ? 'mt-1' : ''}`}>
+                    {isMobile && status.text === "Complete Internship First" ? "Complete First" : status.text}
                   </Badge>
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className={`text-muted-foreground ${isMobile ? 'text-[10px] mt-1' : 'text-xs'}`}>
                   {isAvailable 
-                    ? "Skills-based completion certificate with your achievements" 
-                    : "Available after completing all tasks and final project"}
+                    ? (isMobile ? "Certificate with achievements" : "Skills-based completion certificate with your achievements")
+                    : (isMobile ? "Complete tasks and final project" : "Available after completing all tasks and final project")}
                 </span>
               </div>
             </Button>
@@ -243,16 +245,16 @@ export function ExitActions({ sessionId }: ExitActionsProps) {
                 <Download className="h-5 w-5 text-primary" />
               )}
               <div className="flex flex-col flex-1">
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center ${isMobile ? 'flex-col items-start' : 'gap-2'}`}>
                   <span className="font-medium">Download Report</span>
-                  <Badge variant={status.variant} className="text-xs">
-                    {status.text}
+                  <Badge variant={status.variant} className={`text-xs ${isMobile ? 'mt-1' : ''}`}>
+                    {isMobile && status.text === "Complete Internship First" ? "Complete First" : status.text}
                   </Badge>
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className={`text-muted-foreground ${isMobile ? 'text-[10px] mt-1' : 'text-xs'}`}>
                   {isAvailable 
-                    ? "Comprehensive performance report with skills analysis" 
-                    : "Detailed internship summary with career insights"}
+                    ? (isMobile ? "Performance report with analysis" : "Comprehensive performance report with skills analysis")
+                    : (isMobile ? "Summary with career insights" : "Detailed internship summary with career insights")}
                 </span>
               </div>
             </Button>

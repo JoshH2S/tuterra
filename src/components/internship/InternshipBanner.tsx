@@ -10,6 +10,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { LoadingSpinner } from "@/components/ui/loading-states";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * IMPORTANT: To use the attached NYC skyline banner image:
@@ -54,6 +55,7 @@ const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
 
 export function InternshipBanner({ sessionId, industry = "general" }: InternshipBannerProps) {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [banner, setBanner] = useState<string | null>(null);
   const [selectedBanner, setSelectedBanner] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -263,7 +265,9 @@ export function InternshipBanner({ sessionId, industry = "general" }: Internship
     <>
       <div className="relative w-full">
         {/* Banner display */}
-        <div className="w-full h-[200px] rounded-xl overflow-hidden mb-4 relative group">
+        <div className={`w-full rounded-xl overflow-hidden mb-4 relative group ${
+          isMobile ? 'h-[120px]' : 'h-[200px]'
+        }`}>
           {banner ? (
             <img 
               src={banner} 
@@ -273,27 +277,48 @@ export function InternshipBanner({ sessionId, industry = "general" }: Internship
             />
           ) : (
             <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-              <Image className="h-8 w-8 text-muted-foreground opacity-50" />
+              <Image className={`text-muted-foreground opacity-50 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
             </div>
           )}
           
-          {/* Fixed button with proper event handling and positioning */}
-          <Button 
-            variant="secondary" 
-            size="default" 
-            className="absolute bottom-3 right-3 z-50 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 bg-white/90 hover:bg-white text-gray-800 border backdrop-blur-sm"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log("Button clicked!"); // Debug log
-              openDialog();
-            }}
-            type="button"
-            aria-label="Change banner image"
-          >
-            <Image className="h-4 w-4" />
-            <span>Change Banner</span>
-          </Button>
+          {/* Change Banner button - hidden on mobile, shown on hover on desktop */}
+          {!isMobile && (
+            <Button 
+              variant="secondary" 
+              size="default" 
+              className="absolute bottom-3 right-3 z-50 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 bg-white/90 hover:bg-white text-gray-800 border backdrop-blur-sm opacity-0 group-hover:opacity-100"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Button clicked!"); // Debug log
+                openDialog();
+              }}
+              type="button"
+              aria-label="Change banner image"
+            >
+              <Image className="h-4 w-4" />
+              <span>Change Banner</span>
+            </Button>
+          )}
+          
+          {/* Mobile: Small icon button in top-right corner */}
+          {isMobile && (
+            <Button 
+              variant="secondary" 
+              size="icon" 
+              className="absolute top-2 right-2 z-50 h-8 w-8 shadow-lg bg-white/90 hover:bg-white text-gray-800 border backdrop-blur-sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Mobile button clicked!"); // Debug log
+                openDialog();
+              }}
+              type="button"
+              aria-label="Change banner image"
+            >
+              <Image className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 

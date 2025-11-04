@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ChartConfig, ChartContainer } from "@/components/ui/chart"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface InternshipProgressRadialsProps {
   completedTasks: number;
@@ -30,6 +31,8 @@ export function InternshipProgressRadials({
   totalTasks, 
   averageScore 
 }: InternshipProgressRadialsProps) {
+  const isMobile = useIsMobile();
+  
   // Calculate completion percentage
   const completionPercentage = totalTasks > 0 
     ? Math.round((completedTasks / totalTasks) * 100) 
@@ -76,30 +79,32 @@ export function InternshipProgressRadials({
   } as ChartConfig;
 
   return (
-    <div className="grid grid-cols-2 gap-6">
+    <div className={`grid grid-cols-2 ${isMobile ? 'gap-3' : 'gap-6'}`}>
       {/* Task Completion Radial */}
       <Card className="flex flex-col">
-        <CardHeader className="items-center pb-2">
-          <CardTitle className="text-lg">Task Completion</CardTitle>
+        <CardHeader className={`items-center ${isMobile ? 'pb-1 pt-3' : 'pb-2'}`}>
+          <CardTitle className={isMobile ? 'text-sm font-medium' : 'text-lg'}>
+            Task Completion
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 pb-2">
+        <CardContent className={`flex-1 ${isMobile ? 'pb-1 px-2' : 'pb-2'}`}>
           <ChartContainer
             config={completionConfig}
-            className="mx-auto aspect-square h-[150px]"
+            className={`mx-auto aspect-square ${isMobile ? 'h-[120px]' : 'h-[150px]'}`}
           >
             <RadialBarChart
               data={completionData}
               startAngle={90}
               endAngle={-270}
-              innerRadius={60}
-              outerRadius={80}
+              innerRadius={isMobile ? 45 : 60}
+              outerRadius={isMobile ? 60 : 80}
             >
               <PolarGrid
                 gridType="circle"
                 radialLines={false}
                 stroke="none"
                 className="first:fill-muted last:fill-background"
-                polarRadius={[65, 55]}
+                polarRadius={isMobile ? [50, 40] : [65, 55]}
               />
               <RadialBar 
                 dataKey="value" 
@@ -120,14 +125,15 @@ export function InternshipProgressRadials({
                           <tspan
                             x={viewBox.cx}
                             y={viewBox.cy}
-                            className="fill-foreground text-3xl font-bold"
+                            className={`fill-foreground font-bold ${isMobile ? 'text-xl' : 'text-3xl'}`}
+                            style={{ fontVariantNumeric: 'tabular-nums' }}
                           >
                             {completionPercentage}%
                           </tspan>
                           <tspan
                             x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 22}
-                            className="fill-muted-foreground text-xs"
+                            y={(viewBox.cy || 0) + (isMobile ? 16 : 22)}
+                            className={`fill-muted-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}
                           >
                             {completedTasks}/{totalTasks} tasks
                           </tspan>
@@ -141,39 +147,43 @@ export function InternshipProgressRadials({
             </RadialBarChart>
           </ChartContainer>
         </CardContent>
-        <CardFooter className="flex-col gap-1 text-sm pt-0">
-          {completionPercentage > 0 && (
-            <div className="flex items-center gap-1 text-xs leading-none text-muted-foreground">
-              <TrendingUp className="h-3 w-3 text-primary" />
-              <span>Keep up the momentum!</span>
-            </div>
-          )}
-        </CardFooter>
+        {!isMobile && (
+          <CardFooter className="flex-col gap-1 text-sm pt-0">
+            {completionPercentage > 0 && (
+              <div className="flex items-center gap-1 text-xs leading-none text-muted-foreground">
+                <TrendingUp className="h-3 w-3 text-primary" />
+                <span>Keep up the momentum!</span>
+              </div>
+            )}
+          </CardFooter>
+        )}
       </Card>
 
       {/* Average Score Radial */}
       <Card className="flex flex-col">
-        <CardHeader className="items-center pb-2">
-          <CardTitle className="text-lg">Average Score</CardTitle>
+        <CardHeader className={`items-center ${isMobile ? 'pb-1 pt-3' : 'pb-2'}`}>
+          <CardTitle className={isMobile ? 'text-sm font-medium' : 'text-lg'}>
+            Average Score
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 pb-2">
+        <CardContent className={`flex-1 ${isMobile ? 'pb-1 px-2' : 'pb-2'}`}>
           <ChartContainer
             config={scoreConfig}
-            className="mx-auto aspect-square h-[150px]"
+            className={`mx-auto aspect-square ${isMobile ? 'h-[120px]' : 'h-[150px]'}`}
           >
             <RadialBarChart
               data={scoreData}
               startAngle={90}
               endAngle={-270}
-              innerRadius={60}
-              outerRadius={80}
+              innerRadius={isMobile ? 45 : 60}
+              outerRadius={isMobile ? 60 : 80}
             >
               <PolarGrid
                 gridType="circle"
                 radialLines={false}
                 stroke="none"
                 className="first:fill-muted last:fill-background"
-                polarRadius={[65, 55]}
+                polarRadius={isMobile ? [50, 40] : [65, 55]}
               />
               <RadialBar 
                 dataKey="value" 
@@ -194,14 +204,15 @@ export function InternshipProgressRadials({
                           <tspan
                             x={viewBox.cx}
                             y={viewBox.cy}
-                            className="fill-foreground text-3xl font-bold"
+                            className={`fill-foreground font-bold ${isMobile ? 'text-xl' : 'text-3xl'}`}
+                            style={{ fontVariantNumeric: 'tabular-nums' }}
                           >
                             {formattedScore}
                           </tspan>
                           <tspan
                             x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 22}
-                            className="fill-muted-foreground text-xs"
+                            y={(viewBox.cy || 0) + (isMobile ? 16 : 22)}
+                            className={`fill-muted-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}
                           >
                             out of 10
                           </tspan>
@@ -215,14 +226,16 @@ export function InternshipProgressRadials({
             </RadialBarChart>
           </ChartContainer>
         </CardContent>
-        <CardFooter className="flex-col gap-1 text-sm pt-0">
-          {averageScore > 0 && (
-            <div className="flex items-center gap-1 text-xs leading-none text-muted-foreground">
-              <Award className="h-3 w-3 text-indigo-500" />
-              <span>{averageScore >= 8 ? "Excellent work!" : "Keep improving!"}</span>
-            </div>
-          )}
-        </CardFooter>
+        {!isMobile && (
+          <CardFooter className="flex-col gap-1 text-sm pt-0">
+            {averageScore > 0 && (
+              <div className="flex items-center gap-1 text-xs leading-none text-muted-foreground">
+                <Award className="h-3 w-3 text-indigo-500" />
+                <span>{averageScore >= 8 ? "Excellent work!" : "Keep improving!"}</span>
+              </div>
+            )}
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

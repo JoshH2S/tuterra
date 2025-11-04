@@ -15,6 +15,7 @@ import { SkillsDashboard } from "./skills/SkillsDashboard";
 import { FinalProjectForm } from "./FinalProjectForm";
 import { CareerPortfolioProject } from "./CareerPortfolioProject";
 import { InternshipMobileHeader } from "./InternshipMobileHeader";
+import { MobileTabNavigation } from "./MobileTabNavigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InternshipMetricsDashboard } from "./InternshipMetricsDashboard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -371,16 +372,24 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
   
   return (
     <div className="bg-white border rounded-md shadow-sm overflow-hidden">
-      {/* Mobile header bar */}
+      {/* Mobile navigation */}
       {isMobile && (
-        <InternshipMobileHeader 
-          title={sessionData.job_title} 
-          industry={sessionData.industry}
-          activeIndex={activeIndex}
-          onPrevious={handlePrevious}
-          onNext={handleNext}
-          maxIndex={tabs.length - 1}
-        />
+        <>
+          <InternshipMobileHeader 
+            title={sessionData.job_title} 
+            industry={sessionData.industry}
+            activeIndex={activeIndex}
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            maxIndex={tabs.length - 1}
+          />
+          <MobileTabNavigation
+            activeIndex={activeIndex}
+            onTabChange={setActiveIndex}
+            canSubmitFinal={canSubmitFinal}
+            isCompleted={isCompleted}
+          />
+        </>
       )}
       
       {/* Desktop tabs */}

@@ -36,6 +36,7 @@ export default function VirtualInternshipDashboard() {
   const { user } = useAuth();
   const { subscription } = useSubscription();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('sessionId');
   
@@ -687,7 +688,9 @@ export default function VirtualInternshipDashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl min-h-screen">
+    <div className={`container mx-auto px-4 py-6 max-w-7xl min-h-screen ${
+      isMobile ? 'pb-[calc(env(safe-area-inset-bottom)+24px)]' : ''
+    }`}>
       {/* Banner that spans the full width */}
       {loadingState === 'background' && !internshipSession ? (
         <Skeleton className="w-full h-48 mb-8 rounded-lg" />
@@ -698,10 +701,14 @@ export default function VirtualInternshipDashboard() {
         />
       ) : null}
       
-      {/* User profile header with company information - now positioned on top of the banner */}
-      <div className="relative z-10 -mt-24 mb-8 flex flex-col items-center sm:items-start sm:flex-row gap-4">
+      {/* User profile header with company information - positioned on top of the banner */}
+      <div className={`relative z-10 mb-8 flex flex-col items-center sm:items-start sm:flex-row gap-4 ${
+        isMobile ? '-mt-12' : '-mt-24'
+      }`}>
         <div className="relative">
-          <Avatar className="h-24 w-24 border-4 border-white shadow-md">
+          <Avatar className={`border-4 border-white shadow-md ${
+            isMobile ? 'h-16 w-16' : 'h-24 w-24'
+          }`}>
             {user?.user_metadata?.avatar_url ? (
               <AvatarImage 
                 src={user.user_metadata.avatar_url} 
@@ -709,30 +716,48 @@ export default function VirtualInternshipDashboard() {
                 className="object-cover" 
               />
             ) : (
-              <AvatarFallback className="text-xl bg-primary/10 text-primary">
+              <AvatarFallback className={`bg-primary/10 text-primary ${
+                isMobile ? 'text-lg' : 'text-xl'
+              }`}>
                 {`${user?.user_metadata?.first_name?.[0] || ""}${user?.user_metadata?.last_name?.[0] || ""}`.toUpperCase() || "?"}
               </AvatarFallback>
             )}
           </Avatar>
-          <div className="absolute -bottom-3 -right-3 bg-white rounded-full p-2 shadow-md">
-            <Badge className="bg-primary hover:bg-primary text-xs font-normal">
+          <div className={`absolute bg-white rounded-full shadow-md ${
+            isMobile ? '-bottom-2 -right-2 p-1' : '-bottom-3 -right-3 p-2'
+          }`}>
+            <Badge className={`bg-primary hover:bg-primary font-normal ${
+              isMobile ? 'text-[10px] px-1.5 py-0' : 'text-xs'
+            }`}>
               Active
             </Badge>
           </div>
         </div>
-        <div className="text-center sm:text-left bg-white/90 p-3 rounded-lg shadow-sm backdrop-blur-sm">
-          <h2 className="text-xl sm:text-2xl font-bold">
+        <div className={`text-center sm:text-left bg-white/90 rounded-lg shadow-sm backdrop-blur-sm ${
+          isMobile ? 'p-2.5' : 'p-3'
+        }`}>
+          <h2 className={`font-bold leading-tight ${
+            isMobile ? 'text-lg' : 'text-xl sm:text-2xl'
+          }`}>
             {user?.user_metadata?.first_name} {user?.user_metadata?.last_name}
           </h2>
-          <div className="text-sm text-muted-foreground">
-            Intern at <span className="font-medium text-primary">{companyName || `${internshipSession?.industry || "Technology"} Corporation`}</span>
+          <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            Intern at <span className="font-medium text-primary">
+              {companyName || `${internshipSession?.industry || "Technology"} Corporation`}
+            </span>
           </div>
-          <div className="mt-2 flex flex-wrap justify-center sm:justify-start items-center gap-2">
-            <Badge variant="outline" className="bg-background">
+          <div className={`flex flex-wrap justify-center sm:justify-start items-center gap-2 ${
+            isMobile ? 'mt-1.5' : 'mt-2'
+          }`}>
+            <Badge variant="outline" className={`bg-background ${
+              isMobile ? 'text-[10px] px-1.5 py-0' : ''
+            }`}>
               {internshipSession?.job_title || "Virtual Intern"}
             </Badge>
             <div className="h-1 w-1 rounded-full bg-muted-foreground"></div>
-            <span className="text-xs text-muted-foreground">
+            <span className={`text-muted-foreground ${
+              isMobile ? 'text-[10px]' : 'text-xs'
+            }`}>
               Started {internshipSession?.start_date ? format(new Date(internshipSession.start_date), 'MMM d, yyyy') : 'Recently'}
             </span>
           </div>
