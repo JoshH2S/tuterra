@@ -161,24 +161,24 @@ export default function InternshipOverviewPage() {
         />
         
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
+        <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
           <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4 text-white">Virtual Internships</h1>
-            <p className="text-white/90 mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-white">Virtual Internships</h1>
+            <p className="text-sm sm:text-base text-white/90 mb-6 sm:mb-8">
               Manage your virtual internship experiences
             </p>
           </div>
           
-          <div className="flex flex-col items-center justify-center text-center p-12 border border-dashed rounded-lg bg-white/95 backdrop-blur-md border-white/20 shadow-xl">
-            <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-2xl font-bold mb-2">No Virtual Internships Found</h2>
-            <p className="text-muted-foreground mb-6 max-w-md">
+          <div className="flex flex-col items-center justify-center text-center p-6 sm:p-12 border border-dashed rounded-lg bg-white/95 backdrop-blur-md border-white/20 shadow-xl">
+            <Briefcase className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mb-3 sm:mb-4" />
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">No Virtual Internships Found</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-md">
               Get hands-on experience by creating a virtual internship tailored to your career goals
             </p>
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
               <Button 
                 onClick={handleCreateNew} 
-                className="gap-2 rounded-full px-5 py-2 shadow-md bg-gradient-to-br from-primary-100 to-primary-200"
+                className="w-full sm:w-auto gap-2 rounded-full px-5 py-2 shadow-md bg-gradient-to-br from-primary-100 to-primary-200"
               >
                 <PlusCircle className="h-5 w-5" />
                 Create Your First Internship
@@ -201,18 +201,18 @@ export default function InternshipOverviewPage() {
       />
       
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Virtual Internships</h1>
-            <p className="text-white/90">
+      <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">Virtual Internships</h1>
+            <p className="text-sm sm:text-base text-white/90">
               Manage your virtual internship experiences
             </p>
           </div>
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
             <Button 
               onClick={handleCreateNew} 
-              className="gap-2 rounded-full px-5 py-2 shadow-md bg-gradient-to-br from-primary-100 to-primary-200"
+              className="w-full sm:w-auto gap-2 rounded-full px-5 py-2 shadow-md bg-gradient-to-br from-primary-100 to-primary-200"
             >
               <PlusCircle className="h-5 w-5" />
               Create New Internship
@@ -220,7 +220,7 @@ export default function InternshipOverviewPage() {
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {internships.map((internship, index) => (
             <motion.div
               key={internship.id}
@@ -254,35 +254,35 @@ export default function InternshipOverviewPage() {
                 </CardHeader>
 
                 <CardContent className="flex-1 pt-0">
-                  <div className="border-b border-gray-200 dark:border-gray-800 pb-3 mb-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-600/90 dark:text-gray-400/90">
-                      <Calendar className="h-4 w-4" />
+                  <div className="border-b border-gray-200 dark:border-gray-800 pb-2 sm:pb-3 mb-2 sm:mb-3">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600/90 dark:text-gray-400/90">
+                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       Started {format(new Date(internship.created_at), 'MMM d, yyyy')}
                     </div>
                   </div>
 
                   {internship.stats && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <BarChart className="h-4 w-4 text-blue-500" />
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <BarChart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500" />
                         <span>{internship.stats.completedTasks} / {internship.stats.totalTasks} tasks completed</span>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-sm">
-                        <MessageCircle className="h-4 w-4 text-green-500" />
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500" />
                         <span>{internship.stats.messageCount} messages</span>
                       </div>
 
                       {internship.stats.totalTasks > 0 && (
                         <div className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-xs uppercase font-semibold text-gray-500">Progress</span>
-                            <span className="text-sm font-medium">{internship.stats.progressPercent}%</span>
+                          <div className="flex justify-between text-xs sm:text-sm">
+                            <span className="text-[10px] sm:text-xs uppercase font-semibold text-gray-500">Progress</span>
+                            <span className="text-xs sm:text-sm font-medium">{internship.stats.progressPercent}%</span>
                           </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 sm:h-2 overflow-hidden">
                             {internship.stats.progressPercent > 0 ? (
                               <motion.div 
-                                className="bg-gradient-to-r from-primary-300 to-primary-500/80 h-2 rounded-full"
+                                className="bg-gradient-to-r from-primary-300 to-primary-500/80 h-1.5 sm:h-2 rounded-full"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${internship.stats.progressPercent}%` }}
                                 transition={{ duration: 1, delay: 0.5 }}
@@ -291,7 +291,7 @@ export default function InternshipOverviewPage() {
                                 }}
                               />
                             ) : (
-                              <div className="h-2" />
+                              <div className="h-1.5 sm:h-2" />
                             )}
                           </div>
                         </div>
@@ -300,28 +300,29 @@ export default function InternshipOverviewPage() {
                   )}
 
                   {internship.is_completed && (
-                    <div className="flex items-center gap-2 text-sm text-green-600 mt-3">
-                      <Award className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-green-600 mt-2 sm:mt-3">
+                      <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="font-medium">Internship completed!</span>
                     </div>
                   )}
                 </CardContent>
 
-                <CardFooter className="gap-2 pt-3 border-t border-gray-200 dark:border-gray-800 mt-2">
+                <CardFooter className="gap-2 pt-2 sm:pt-3 border-t border-gray-200 dark:border-gray-800 mt-2">
                   <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button 
                       onClick={() => handleContinue(internship.id)}
-                      className="w-full gap-2 shadow-sm hover:shadow-md"
+                      className="w-full gap-2 shadow-sm hover:shadow-md text-xs sm:text-sm"
                       variant={internship.is_completed ? "outline" : "default"}
+                      size="sm"
                     >
                       {internship.is_completed ? (
                         <>
-                          <Award className="h-4 w-4" />
+                          <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           View Certificate
                         </>
                       ) : (
                         <>
-                          <Play className="h-4 w-4" />
+                          <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           Continue
                         </>
                       )}
@@ -334,13 +335,13 @@ export default function InternshipOverviewPage() {
                         <Button 
                           variant="outline" 
                           size="icon"
-                          className="hover:bg-destructive/10 transition-colors"
+                          className="hover:bg-destructive/10 transition-colors h-8 w-8 sm:h-9 sm:w-9"
                           disabled={deletingId === internship.id}
                         >
                           {deletingId === internship.id ? (
                             <LoadingSpinner />
                           ) : (
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           )}
                         </Button>
                       </motion.div>

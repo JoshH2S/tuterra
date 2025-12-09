@@ -7,35 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
   }
   public: {
     Tables: {
@@ -644,6 +619,59 @@ export type Database = {
         }
         Relationships: []
       }
+      internship_company_applications: {
+        Row: {
+          application_sent: boolean | null
+          company_name: string
+          company_url: string | null
+          completed: boolean | null
+          cover_letter: string | null
+          created_at: string | null
+          id: string
+          position: string
+          research_notes: string | null
+          session_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          application_sent?: boolean | null
+          company_name: string
+          company_url?: string | null
+          completed?: boolean | null
+          cover_letter?: string | null
+          created_at?: string | null
+          id?: string
+          position: string
+          research_notes?: string | null
+          session_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          application_sent?: boolean | null
+          company_name?: string
+          company_url?: string | null
+          completed?: boolean | null
+          cover_letter?: string | null
+          created_at?: string | null
+          id?: string
+          position?: string
+          research_notes?: string | null
+          session_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_company_applications_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internship_company_details: {
         Row: {
           created_at: string | null
@@ -690,56 +718,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "internship_company_details_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "internship_sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      internship_company_applications: {
-        Row: {
-          company_name: string
-          company_url: string | null
-          completed: boolean | null
-          cover_letter: string | null
-          created_at: string | null
-          id: string
-          position: string
-          research_notes: string | null
-          session_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          company_name: string
-          company_url?: string | null
-          completed?: boolean | null
-          cover_letter?: string | null
-          created_at?: string | null
-          id?: string
-          position: string
-          research_notes?: string | null
-          session_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          company_name?: string
-          company_url?: string | null
-          completed?: boolean | null
-          cover_letter?: string | null
-          created_at?: string | null
-          id?: string
-          position?: string
-          research_notes?: string | null
-          session_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "internship_company_applications_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "internship_sessions"
@@ -1121,44 +1099,44 @@ export type Database = {
       internship_messages: {
         Row: {
           body: string | null
-          content: string
+          content: string | null
           id: string
           is_read: boolean | null
           related_task_id: string | null
-          sender: string
+          sender: string | null
           sender_avatar_url: string | null
           sender_name: string | null
-          sent_at: string
+          sent_at: string | null
           session_id: string | null
-          subject: string
+          subject: string | null
           timestamp: string | null
         }
         Insert: {
           body?: string | null
-          content: string
+          content?: string | null
           id?: string
           is_read?: boolean | null
           related_task_id?: string | null
-          sender: string
+          sender?: string | null
           sender_avatar_url?: string | null
           sender_name?: string | null
-          sent_at?: string
+          sent_at?: string | null
           session_id?: string | null
-          subject: string
+          subject?: string | null
           timestamp?: string | null
         }
         Update: {
           body?: string | null
-          content?: string
+          content?: string | null
           id?: string
           is_read?: boolean | null
           related_task_id?: string | null
-          sender?: string
+          sender?: string | null
           sender_avatar_url?: string | null
           sender_name?: string | null
-          sent_at?: string
+          sent_at?: string | null
           session_id?: string | null
-          subject?: string
+          subject?: string | null
           timestamp?: string | null
         }
         Relationships: [
@@ -1243,6 +1221,41 @@ export type Database = {
           },
         ]
       }
+      internship_portfolio_data: {
+        Row: {
+          created_at: string | null
+          id: string
+          reflection_essay: string | null
+          session_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reflection_essay?: string | null
+          session_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reflection_essay?: string | null
+          session_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_portfolio_data_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internship_progress: {
         Row: {
           ai_feedback: string | null
@@ -1283,6 +1296,8 @@ export type Database = {
       }
       internship_resources: {
         Row: {
+          content: string | null
+          description: string | null
           id: string
           link: string
           session_id: string | null
@@ -1290,6 +1305,8 @@ export type Database = {
           type: string
         }
         Insert: {
+          content?: string | null
+          description?: string | null
           id?: string
           link: string
           session_id?: string | null
@@ -1297,6 +1314,8 @@ export type Database = {
           type: string
         }
         Update: {
+          content?: string | null
+          description?: string | null
           id?: string
           link?: string
           session_id?: string | null
@@ -1492,6 +1511,13 @@ export type Database = {
             foreignKeyName: "internship_supervisor_interactions_message_id_fkey"
             columns: ["message_id"]
             isOneToOne: false
+            referencedRelation: "internship_inbox_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "internship_supervisor_interactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
             referencedRelation: "internship_supervisor_messages"
             referencedColumns: ["id"]
           },
@@ -1508,46 +1534,67 @@ export type Database = {
         Row: {
           context_data: Json | null
           created_at: string | null
+          direction: string
           generated_by: string | null
           id: string
+          idem_key: string | null
+          is_read: boolean | null
           message_content: string
           message_type: string
+          meta: Json | null
           prompt_version: string | null
           scheduled_for: string | null
           sender_persona: Json | null
+          sender_type: string
           sent_at: string | null
           session_id: string | null
           status: string | null
+          subject: string | null
+          thread_id: string | null
           user_id: string | null
         }
         Insert: {
           context_data?: Json | null
           created_at?: string | null
+          direction?: string
           generated_by?: string | null
           id?: string
+          idem_key?: string | null
+          is_read?: boolean | null
           message_content: string
           message_type: string
+          meta?: Json | null
           prompt_version?: string | null
           scheduled_for?: string | null
           sender_persona?: Json | null
+          sender_type?: string
           sent_at?: string | null
           session_id?: string | null
           status?: string | null
+          subject?: string | null
+          thread_id?: string | null
           user_id?: string | null
         }
         Update: {
           context_data?: Json | null
           created_at?: string | null
+          direction?: string
           generated_by?: string | null
           id?: string
+          idem_key?: string | null
+          is_read?: boolean | null
           message_content?: string
           message_type?: string
+          meta?: Json | null
           prompt_version?: string | null
           scheduled_for?: string | null
           sender_persona?: Json | null
+          sender_type?: string
           sent_at?: string | null
           session_id?: string | null
           status?: string | null
+          subject?: string | null
+          thread_id?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -1773,10 +1820,13 @@ export type Database = {
           file_type: string | null
           file_url: string | null
           id: string
+          is_featured_evidence: boolean | null
           overall_assessment: string | null
           quality_rating: number | null
           response_text: string
           session_id: string
+          skill_analysis: Json | null
+          skills_earned: Json | null
           status: string | null
           task_id: string
           timeliness_rating: number | null
@@ -1793,10 +1843,13 @@ export type Database = {
           file_type?: string | null
           file_url?: string | null
           id?: string
+          is_featured_evidence?: boolean | null
           overall_assessment?: string | null
           quality_rating?: number | null
           response_text: string
           session_id: string
+          skill_analysis?: Json | null
+          skills_earned?: Json | null
           status?: string | null
           task_id: string
           timeliness_rating?: number | null
@@ -1813,10 +1866,13 @@ export type Database = {
           file_type?: string | null
           file_url?: string | null
           id?: string
+          is_featured_evidence?: boolean | null
           overall_assessment?: string | null
           quality_rating?: number | null
           response_text?: string
           session_id?: string
+          skill_analysis?: Json | null
+          skills_earned?: Json | null
           status?: string | null
           task_id?: string
           timeliness_rating?: number | null
@@ -2017,6 +2073,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "internship_user_replies_original_message_id_fkey"
+            columns: ["original_message_id"]
+            isOneToOne: false
+            referencedRelation: "internship_inbox_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "internship_user_replies_original_message_id_fkey"
             columns: ["original_message_id"]
@@ -2257,6 +2320,72 @@ export type Database = {
           },
         ]
       }
+      migration_audit: {
+        Row: {
+          error_message: string | null
+          executed_at: string | null
+          executed_by: string | null
+          execution_time_ms: number | null
+          id: string
+          migration_name: string
+          operation_type: string
+          records_affected: number | null
+          table_name: string | null
+          validation_errors: Json | null
+        }
+        Insert: {
+          error_message?: string | null
+          executed_at?: string | null
+          executed_by?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          migration_name: string
+          operation_type: string
+          records_affected?: number | null
+          table_name?: string | null
+          validation_errors?: Json | null
+        }
+        Update: {
+          error_message?: string | null
+          executed_at?: string | null
+          executed_by?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          migration_name?: string
+          operation_type?: string
+          records_affected?: number | null
+          table_name?: string | null
+          validation_errors?: Json | null
+        }
+        Relationships: []
+      }
+      migration_rollback_data: {
+        Row: {
+          created_at: string | null
+          id: string
+          migration_name: string
+          operation_type: string
+          rollback_data: Json
+          table_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          migration_name: string
+          operation_type: string
+          rollback_data: Json
+          table_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          migration_name?: string
+          operation_type?: string
+          rollback_data?: Json
+          table_name?: string
+        }
+        Relationships: []
+      }
       openai_file_references: {
         Row: {
           created_at: string
@@ -2474,6 +2603,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          completed_internships: number | null
           course_guide_completed: boolean
           created_at: string
           email: string
@@ -2489,6 +2619,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          completed_internships?: number | null
           course_guide_completed?: boolean
           created_at?: string
           email: string
@@ -2504,6 +2635,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          completed_internships?: number | null
           course_guide_completed?: boolean
           created_at?: string
           email?: string
@@ -3012,6 +3144,45 @@ export type Database = {
         }
         Relationships: []
       }
+      skills: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          max_level: number | null
+          name: string
+          updated_at: string | null
+          xp_per_level: number | null
+        }
+        Insert: {
+          category: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          max_level?: number | null
+          name: string
+          updated_at?: string | null
+          xp_per_level?: number | null
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          max_level?: number | null
+          name?: string
+          updated_at?: string | null
+          xp_per_level?: number | null
+        }
+        Relationships: []
+      }
       student_courses: {
         Row: {
           course_id: string
@@ -3328,70 +3499,44 @@ export type Database = {
         }
         Relationships: []
       }
-      supervisor_lock_metrics: {
+      task_skill_mapping: {
         Row: {
-          duration_ms: number
-          error_details: string | null
-          id: number
-          lock_type: string
-          recorded_at: string
-          session_id: string
-          success: boolean
-          user_id: string
+          created_at: string | null
+          id: string
+          proficiency_weight: number | null
+          skill_id: string
+          task_id: string
+          xp_reward: number | null
         }
         Insert: {
-          duration_ms: number
-          error_details?: string | null
-          id?: number
-          lock_type: string
-          recorded_at?: string
-          session_id: string
-          success: boolean
-          user_id: string
+          created_at?: string | null
+          id?: string
+          proficiency_weight?: number | null
+          skill_id: string
+          task_id: string
+          xp_reward?: number | null
         }
         Update: {
-          duration_ms?: number
-          error_details?: string | null
-          id?: number
-          lock_type?: string
-          recorded_at?: string
-          session_id?: string
-          success?: boolean
-          user_id?: string
-        }
-        Relationships: []
-      }
-      supervisor_locks: {
-        Row: {
-          acquired_at: string
-          expires_at: string
-          lock_key: string
-          lock_type: string
-          session_id: string
-          user_id: string
-        }
-        Insert: {
-          acquired_at?: string
-          expires_at: string
-          lock_key: string
-          lock_type: string
-          session_id: string
-          user_id: string
-        }
-        Update: {
-          acquired_at?: string
-          expires_at?: string
-          lock_key?: string
-          lock_type?: string
-          session_id?: string
-          user_id?: string
+          created_at?: string | null
+          id?: string
+          proficiency_weight?: number | null
+          skill_id?: string
+          task_id?: string
+          xp_reward?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_supervisor_locks_session"
-            columns: ["session_id"]
+            foreignKeyName: "task_skill_mapping_skill_id_fkey"
+            columns: ["skill_id"]
             isOneToOne: false
-            referencedRelation: "internship_sessions"
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_skill_mapping_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "internship_tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -3683,6 +3828,56 @@ export type Database = {
         }
         Relationships: []
       }
+      user_skill_progress: {
+        Row: {
+          best_submission_id: string | null
+          created_at: string | null
+          current_level: number | null
+          current_xp: number | null
+          evidence_submissions: string[] | null
+          id: string
+          last_activity: string | null
+          skill_id: string
+          total_submissions: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          best_submission_id?: string | null
+          created_at?: string | null
+          current_level?: number | null
+          current_xp?: number | null
+          evidence_submissions?: string[] | null
+          id?: string
+          last_activity?: string | null
+          skill_id: string
+          total_submissions?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          best_submission_id?: string | null
+          created_at?: string | null
+          current_level?: number | null
+          current_xp?: number | null
+          evidence_submissions?: string[] | null
+          id?: string
+          last_activity?: string | null
+          skill_id?: string
+          total_submissions?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_skill_progress_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       virtual_internship_logins: {
         Row: {
           created_at: string | null
@@ -3768,6 +3963,81 @@ export type Database = {
       }
     }
     Views: {
+      internship_inbox_messages: {
+        Row: {
+          context_data: Json | null
+          created_at: string | null
+          direction: string | null
+          id: string | null
+          is_read: boolean | null
+          message_content: string | null
+          message_type: string | null
+          meta: Json | null
+          sender_persona: Json | null
+          sender_type: string | null
+          sent_at: string | null
+          session_id: string | null
+          subject: string | null
+          thread_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context_data?: Json | null
+          created_at?: string | null
+          direction?: string | null
+          id?: string | null
+          is_read?: boolean | null
+          message_content?: string | null
+          message_type?: string | null
+          meta?: Json | null
+          sender_persona?: Json | null
+          sender_type?: string | null
+          sent_at?: string | null
+          session_id?: string | null
+          subject?: string | null
+          thread_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context_data?: Json | null
+          created_at?: string | null
+          direction?: string | null
+          id?: string | null
+          is_read?: boolean | null
+          message_content?: string | null
+          message_type?: string | null
+          meta?: Json | null
+          sender_persona?: Json | null
+          sender_type?: string | null
+          sent_at?: string | null
+          session_id?: string | null
+          subject?: string | null
+          thread_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internship_supervisor_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      migration_health_dashboard: {
+        Row: {
+          avg_execution_time_ms: number | null
+          error_count: number | null
+          last_execution: string | null
+          migration_name: string | null
+          operation_count: number | null
+          operation_type: string | null
+          table_name: string | null
+          total_records_affected: number | null
+        }
+        Relationships: []
+      }
       response_processing_dashboard: {
         Row: {
           auto_response_generated: boolean | null
@@ -3821,203 +4091,194 @@ export type Database = {
       }
     }
     Functions: {
-      binary_quantize: {
-        Args: { "": string } | { "": unknown }
-        Returns: unknown
+      calculate_level_from_xp: {
+        Args: { xp: number; xp_per_level?: number }
+        Returns: number
       }
-      clean_expired_supervisor_locks: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_responses: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      get_app_config: {
-        Args: { config_key: string }
-        Returns: string
-      }
-      get_response_processing_metrics: {
-        Args: Record<PropertyKey, never>
+      check_messaging_system_health: {
+        Args: never
         Returns: {
-          total_pending: number
-          total_processed: number
-          total_escalated: number
-          total_failed: number
+          component: string
+          details: Json
+          status: string
+        }[]
+      }
+      cleanup_old_responses: { Args: never; Returns: undefined }
+      get_app_config: { Args: { config_key: string }; Returns: string }
+      get_response_processing_metrics: {
+        Args: never
+        Returns: {
           avg_processing_time_minutes: number
           escalation_rate: number
+          total_escalated: number
+          total_failed: number
+          total_pending: number
+          total_processed: number
         }[]
       }
       get_session_response_stats: {
         Args: { p_session_id: string }
         Returns: {
+          avg_response_time_hours: number
+          pending_responses: number
+          response_rate: number
           session_id: string
           total_messages: number
           total_responses: number
-          response_rate: number
-          avg_response_time_hours: number
-          pending_responses: number
         }[]
       }
-      halfvec_avg: {
-        Args: { "": number[] }
-        Returns: unknown
+      get_supervisor_median_reply_time: {
+        Args: { p_days?: number; p_session: string; p_user: string }
+        Returns: number
       }
-      halfvec_out: {
-        Args: { "": unknown }
-        Returns: unknown
+      get_supervisor_metrics_summary: {
+        Args: { p_days?: number; p_session: string; p_user: string }
+        Returns: {
+          median_reply_hours: number
+          open_rate: number
+          sent_count: number
+          total_replies: number
+          unread_count: number
+        }[]
       }
-      halfvec_send: {
-        Args: { "": unknown }
-        Returns: string
+      get_supervisor_open_rate: {
+        Args: { p_days?: number; p_session: string; p_user: string }
+        Returns: number
       }
-      halfvec_typmod_in: {
-        Args: { "": unknown[] }
+      get_supervisor_sent_count: {
+        Args: { p_days?: number; p_session: string; p_user: string }
+        Returns: number
+      }
+      get_unread_message_count: {
+        Args: { p_session: string; p_user: string }
         Returns: number
       }
       handle_phase_progression: {
         Args: {
-          p_session_id: string
-          p_user_id: string
           p_current_phase: number
           p_next_phase: number
+          p_session_id: string
+          p_user_id: string
         }
         Returns: Json
       }
       handle_user_subscription: {
         Args: {
-          p_user_id: string
-          p_stripe_subscription_id: string
-          p_stripe_customer_id: string
+          p_cancel_at_period_end: boolean
+          p_current_period_end: string
           p_plan_id: string
           p_status: string
-          p_current_period_end: string
-          p_cancel_at_period_end: boolean
+          p_stripe_customer_id: string
+          p_stripe_subscription_id: string
+          p_user_id: string
         }
         Returns: undefined
       }
-      hnsw_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
+      increment_interactions: {
+        Args: { p_inc: number; p_session: string; p_user: string }
+        Returns: undefined
       }
-      hnsw_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      l2_norm: {
-        Args: { "": unknown } | { "": unknown }
-        Returns: number
-      }
-      l2_normalize: {
-        Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: string
-      }
+      mark_messages_read: { Args: { p_message_ids: string[] }; Returns: number }
       match_content_chunks: {
         Args: {
-          query_embedding: string
-          match_threshold: number
           match_count: number
+          match_threshold: number
+          query_embedding: string
         }
         Returns: {
-          id: string
-          content_id: string
-          chunk_text: string
           chunk_index: number
+          chunk_text: string
+          content_id: string
+          id: string
           similarity: number
         }[]
       }
-      migrate_supervisor_messages_to_v2: {
-        Args: Record<PropertyKey, never>
-        Returns: number
+      migrate_supervisor_messages_to_v2: { Args: never; Returns: number }
+      migrate_supervisor_messages_to_v2_permissive: {
+        Args: never
+        Returns: {
+          execution_time_ms: number
+          operation_result: string
+          records_processed: number
+          validation_warnings: Json
+        }[]
+      }
+      migrate_supervisor_messages_to_v2_safe: {
+        Args: never
+        Returns: {
+          execution_time_ms: number
+          operation_result: string
+          records_processed: number
+          validation_errors: Json
+        }[]
       }
       recalculate_virtual_internship_streak: {
         Args: { p_user_id: string }
         Returns: {
           current_streak: number
-          longest_streak: number
           last_active_date: string
+          longest_streak: number
         }[]
       }
-      record_lock_metric: {
+      rollback_messaging_migration: {
+        Args: never
+        Returns: {
+          error_message: string
+          operation_result: string
+          records_affected: number
+        }[]
+      }
+      update_user_skill_progress: {
         Args: {
-          p_lock_type: string
-          p_session_id: string
+          p_skill_id: string
+          p_submission_id?: string
           p_user_id: string
-          p_duration_ms: number
-          p_success: boolean
-          p_error_details?: string
+          p_xp_gained: number
         }
         Returns: undefined
       }
-      sparsevec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
-      update_virtual_internship_streak: {
-        Args:
-          | { p_user_id: string; p_session_id?: string }
-          | { p_user_id: string; p_session_id?: string; p_user_date?: string }
-        Returns: {
-          current_streak: number
-          longest_streak: number
-          last_active_date: string
-        }[]
-      }
+      update_virtual_internship_streak:
+        | {
+            Args: { p_session_id?: string; p_user_id: string }
+            Returns: {
+              current_streak: number
+              last_active_date: string
+              longest_streak: number
+            }[]
+          }
+        | {
+            Args: {
+              p_session_id?: string
+              p_user_date?: string
+              p_user_id: string
+            }
+            Returns: {
+              current_streak: number
+              last_active_date: string
+              longest_streak: number
+            }[]
+          }
       validate_course_material_content: {
         Args: { content_to_validate: string }
         Returns: boolean
       }
-      vector_avg: {
-        Args: { "": number[] }
-        Returns: string
+      validate_messaging_data_post_migration: {
+        Args: never
+        Returns: {
+          details: Json
+          issue_count: number
+          table_name: string
+          validation_type: string
+        }[]
       }
-      vector_dims: {
-        Args: { "": string } | { "": unknown }
-        Returns: number
-      }
-      vector_norm: {
-        Args: { "": string }
-        Returns: number
-      }
-      vector_out: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: { "": string }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
+      validate_messaging_data_pre_migration: {
+        Args: never
+        Returns: {
+          details: Json
+          issue_count: number
+          table_name: string
+          validation_type: string
+        }[]
       }
     }
     Enums: {
@@ -4161,9 +4422,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       content_type: ["chapter", "section", "definition", "formula", "example"],
