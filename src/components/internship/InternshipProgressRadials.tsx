@@ -83,7 +83,7 @@ export function InternshipProgressRadials({
       {/* Task Completion Radial */}
       <Card className="flex flex-col">
         <CardHeader className={`items-center ${isMobile ? 'pb-1 pt-3' : 'pb-2'}`}>
-          <CardTitle className={isMobile ? 'text-sm font-medium' : 'text-lg'}>
+          <CardTitle className={isMobile ? 'text-xs font-medium' : 'text-base'}>
             Task Completion
           </CardTitle>
         </CardHeader>
@@ -162,7 +162,7 @@ export function InternshipProgressRadials({
       {/* Average Score Radial */}
       <Card className="flex flex-col">
         <CardHeader className={`items-center ${isMobile ? 'pb-1 pt-3' : 'pb-2'}`}>
-          <CardTitle className={isMobile ? 'text-sm font-medium' : 'text-lg'}>
+          <CardTitle className={isMobile ? 'text-xs font-medium' : 'text-base'}>
             Average Score
           </CardTitle>
         </CardHeader>
