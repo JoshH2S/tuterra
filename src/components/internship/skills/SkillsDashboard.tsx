@@ -9,6 +9,7 @@ import { useUserSkills } from "@/hooks/useUserSkills";
 import { SkillsDashboardProps, SKILL_CATEGORIES, SkillCategory } from "@/types/skills";
 import { LoadingSpinner } from "@/components/ui/loading-states";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   Trophy, 
   Target, 
@@ -22,6 +23,7 @@ import {
 export function SkillsDashboard({ sessionId, userId }: SkillsDashboardProps) {
   const { skills, progress, loading, error, totalXP, averageLevel, refreshSkills } = useUserSkills(userId);
   const [selectedCategory, setSelectedCategory] = useState<SkillCategory | 'all'>('all');
+  const isMobile = useIsMobile();
   const [xpNotification, setXpNotification] = useState<{
     skillName: string;
     xpGained: number;
@@ -106,44 +108,44 @@ export function SkillsDashboard({ sessionId, userId }: SkillsDashboardProps) {
       )}
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Zap className="h-5 w-5 text-blue-600" />
+          <CardContent className={isMobile ? "p-2.5" : "p-4"}>
+            <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3">
+              <div className={`rounded-lg bg-blue-100 ${isMobile ? 'p-1.5' : 'p-2'}`}>
+                <Zap className={`text-blue-600 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{totalXP}</p>
-                <p className="text-sm text-muted-foreground">Total XP</p>
+              <div className={isMobile ? 'text-center' : ''}>
+                <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{totalXP}</p>
+                <p className={`text-muted-foreground ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Total XP</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-green-600" />
+          <CardContent className={isMobile ? "p-2.5" : "p-4"}>
+            <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3">
+              <div className={`rounded-lg bg-green-100 ${isMobile ? 'p-1.5' : 'p-2'}`}>
+                <TrendingUp className={`text-green-600 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{averageLevel}</p>
-                <p className="text-sm text-muted-foreground">Average Level</p>
+              <div className={isMobile ? 'text-center' : ''}>
+                <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{averageLevel}</p>
+                <p className={`text-muted-foreground ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Avg Level</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Target className="h-5 w-5 text-purple-600" />
+          <CardContent className={isMobile ? "p-2.5" : "p-4"}>
+            <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3">
+              <div className={`rounded-lg bg-purple-100 ${isMobile ? 'p-1.5' : 'p-2'}`}>
+                <Target className={`text-purple-600 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{progress.length}</p>
-                <p className="text-sm text-muted-foreground">Skills Developed</p>
+              <div className={isMobile ? 'text-center' : ''}>
+                <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{progress.length}</p>
+                <p className={`text-muted-foreground ${isMobile ? 'text-[10px]' : 'text-sm'}`}>Skills</p>
               </div>
             </div>
           </CardContent>
@@ -183,23 +185,45 @@ export function SkillsDashboard({ sessionId, userId }: SkillsDashboardProps) {
 
       {/* Skills by Category */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
             Skills Progress
           </CardTitle>
-          <CardDescription>Track your skill development across different areas</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Track your skill development across different areas</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as SkillCategory | 'all')}>
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-              {Object.entries(SKILL_CATEGORIES).map(([key, category]) => (
-                <TabsTrigger key={key} value={key} className="text-xs">
-                  {category.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            {/* Scrollable filter chips on mobile */}
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="flex gap-2 pb-2 sm:pb-0 min-w-max sm:min-w-0 sm:flex-wrap">
+                <button
+                  onClick={() => setSelectedCategory('all')}
+                  className={cn(
+                    "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all",
+                    selectedCategory === 'all'
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                  )}
+                >
+                  All
+                </button>
+                {Object.entries(SKILL_CATEGORIES).map(([key, category]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedCategory(key as SkillCategory)}
+                    className={cn(
+                      "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all",
+                      selectedCategory === key
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                    )}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="mt-6">
               {/* Category Stats */}
@@ -229,7 +253,7 @@ export function SkillsDashboard({ sessionId, userId }: SkillsDashboardProps) {
               )}
 
               {/* Skills Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredSkills.map(skill => {
                   const skillProgress = progress.find(p => p.skill_id === skill.id);
                   

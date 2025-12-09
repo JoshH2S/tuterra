@@ -688,8 +688,8 @@ export default function VirtualInternshipDashboard() {
   }
 
   return (
-    <div className={`container mx-auto px-4 py-6 max-w-7xl min-h-screen ${
-      isMobile ? 'pb-[calc(env(safe-area-inset-bottom)+24px)]' : ''
+    <div className={`container mx-auto px-4 sm:px-6 py-6 max-w-xl sm:max-w-7xl min-h-screen ${
+      isMobile ? 'pb-24' : ''
     }`}>
       {/* Banner that spans the full width */}
       {loadingState === 'background' && !internshipSession ? (
@@ -765,13 +765,13 @@ export default function VirtualInternshipDashboard() {
       </div>
       
       {/* Clean, focused header */}
-      <header className="mb-6 pb-4 border-b">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">
+      <header className="mb-4 sm:mb-6 pb-3 sm:pb-4 border-b">
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:gap-3">
+          <div className="flex flex-col items-start gap-1">
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold leading-tight">
               {internshipSession?.job_title || "Virtual Internship"}
             </h1>
-            <p className="text-muted-foreground">{internshipSession?.industry}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{internshipSession?.industry}</p>
           </div>
           
           <div className="flex items-center gap-3 mt-2 md:mt-0">
