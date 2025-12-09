@@ -264,7 +264,7 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
         return <DashboardOverviewPanel sessionData={fullSessionData} tasks={visibleTasks} allTasks={tasks} startDate={startDate} onOpenTaskDetails={(task: InternshipTask) => onOpenTaskDetails(task.id)} />;
       case 1:
         return (
-          <div className="p-6">
+          <div className="p-2 sm:p-6">
             <TaskOverview 
               tasks={visibleTasks} 
               onUpdateTaskStatus={updateTaskStatus} 
@@ -463,7 +463,7 @@ export const SwipeableInternshipView = forwardRef<SwipeableInternshipViewRef, Sw
       )}
       
       {/* Tab content */}
-      <div className="p-5">
+      <div className="p-3 sm:p-5">
         {renderTabContent()}
       </div>
     </div>
