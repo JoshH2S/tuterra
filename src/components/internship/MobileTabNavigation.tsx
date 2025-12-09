@@ -73,47 +73,45 @@ export function MobileTabNavigation({
         </div>
       </div>
       
-      {/* Scrollable Tab Bar */}
+      {/* Scrollable Tab Bar - Horizontal scrollable pills */}
       <div className="overflow-x-auto scrollbar-hide">
-        <div className="flex gap-1 px-3 py-2 min-w-max">
+        <div className="flex gap-2 px-4 py-2 min-w-max">
           {tabs.map((tab, index) => {
             const Icon = tab.icon;
             const isActive = index === activeIndex;
             const isFinalProject = index === 7;
             
             return (
-              <Button
+              <button
                 key={index}
-                variant={isActive ? "default" : "ghost"}
-                size="sm"
-                onClick={() => onTabChange(index)}
+                onClick={() => !isFinalProject || canSubmitFinal || isCompleted ? onTabChange(index) : null}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 h-8 text-xs whitespace-nowrap transition-all",
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all",
                   isActive 
                     ? "bg-primary text-primary-foreground shadow-sm" 
-                    : "hover:bg-gray-100 text-gray-600",
-                  isFinalProject && !canSubmitFinal && !isCompleted && "opacity-60"
+                    : "bg-muted/60 hover:bg-muted text-muted-foreground",
+                  isFinalProject && !canSubmitFinal && !isCompleted && "opacity-50 cursor-not-allowed"
                 )}
                 disabled={isFinalProject && !canSubmitFinal && !isCompleted}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-3 w-3" />
                 <span>{tab.shortName}</span>
                 
                 {/* Status indicators for Final Project */}
                 {isFinalProject && (
                   <>
                     {isCompleted && (
-                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full ml-1" />
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
                     )}
                     {!isCompleted && canSubmitFinal && (
-                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full ml-1" />
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
                     )}
                     {!isCompleted && !canSubmitFinal && (
-                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full ml-1" />
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
                     )}
                   </>
                 )}
-              </Button>
+              </button>
             );
           })}
         </div>

@@ -247,9 +247,9 @@ export function TaskOverview({
   return (
     <>
       <ModernCard>
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Tasks & Deliverables</h2>
+        <div className="p-3 sm:p-6">
+          <div className="flex justify-between items-center mb-3 sm:mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold">Tasks & Deliverables</h2>
             {(tasks.length > 2 || allTasks.length > tasks.length) && (
               <Button 
                 variant="outline" 
@@ -276,11 +276,11 @@ export function TaskOverview({
           ) : (
             <div className="space-y-3">
               {displayTasks.map((task) => (
-                <div key={task.id} className="border rounded-lg overflow-hidden">
-                  <div className="flex items-center p-3 border-b bg-muted/20 gap-3">
+                <div key={task.id} className="border rounded-lg overflow-hidden relative">
+                  <div className="flex items-center p-2.5 sm:p-3 border-b bg-muted/20 gap-2 sm:gap-3">
                     {getStatusIcon(task.status)}
-                    <h3 className="font-medium flex-1 text-sm md:text-base">{task.title}</h3>
-                    <Badge className={`${getStatusBadgeColor(task.status)} text-xs whitespace-nowrap`}>
+                    <h3 className="font-medium flex-1 text-sm md:text-base pr-16 sm:pr-0">{task.title}</h3>
+                    <Badge className={`${getStatusBadgeColor(task.status)} text-[10px] sm:text-xs whitespace-nowrap absolute top-2 right-2 sm:static`}>
                       {task.status === 'not_started' ? 'Not Started' : 
                        task.status === 'in_progress' ? 'In Progress' : 
                        task.status === 'overdue' ? 'Overdue' : 
@@ -288,16 +288,16 @@ export function TaskOverview({
                     </Badge>
                   </div>
                   
-                  <div className="p-3">
-                    <p className="text-sm text-muted-foreground mb-3">
+                  <div className="p-2.5 sm:p-3">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
                       {task.description}
                     </p>
                     
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground">
                         Due: {formatInUserTimezone(task.due_date, 'MMM d, yyyy \'at\' h:mm a')}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 sm:gap-2">
                         {/* Testing button to mark as complete */}
                         {task.status !== 'completed' && (
                           <Button 

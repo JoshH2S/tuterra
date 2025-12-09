@@ -87,40 +87,40 @@ export function DashboardOverviewPanel({
     <div className="space-y-6">
       {/* Welcome banner */}
       <Card className="bg-white">
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between">
+        <CardHeader className={isMobile ? "pb-1 pt-3 px-3" : "pb-2"}>
+          <div className={`flex items-start justify-between ${isMobile ? 'gap-2' : ''}`}>
             <div>
-              <CardTitle className="text-xl">Welcome back!</CardTitle>
-              <CardDescription>
+              <CardTitle className={isMobile ? "text-lg" : "text-xl"}>Welcome back!</CardTitle>
+              <CardDescription className={isMobile ? "text-xs" : ""}>
                 {sessionData.job_title} • {sessionData.industry}
               </CardDescription>
             </div>
-            <Badge variant="outline" className="bg-primary/10 border-primary/25 text-primary">
+            <Badge variant="outline" className={`bg-primary/10 border-primary/25 text-primary ${isMobile ? 'text-[10px] px-1.5 py-0' : ''}`}>
               Day {daysSinceStart + 1}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-primary" />
+        <CardContent className={isMobile ? "px-3 pb-3 pt-1" : ""}>
+          <div className={`grid grid-cols-1 md:grid-cols-2 ${isMobile ? 'gap-2 mt-1' : 'gap-4 mt-2'}`}>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className={`rounded-full bg-primary/10 flex items-center justify-center ${isMobile ? 'h-8 w-8' : 'h-10 w-10'}`}>
+                <Calendar className={`text-primary ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
               </div>
               <div>
-                <h3 className="text-sm font-medium">Started on</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>Started on</h3>
+                <p className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
                   {formatInUserTimezone(startDate, "MMMM d, yyyy")}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <Briefcase className="h-5 w-5 text-amber-600" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className={`rounded-full bg-amber-100 flex items-center justify-center ${isMobile ? 'h-8 w-8' : 'h-10 w-10'}`}>
+                <Briefcase className={`text-amber-600 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
               </div>
               <div>
-                <h3 className="text-sm font-medium">Progress</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>Progress</h3>
+                <p className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
                   {completedTasks} of {totalTasks} tasks completed
                 </p>
               </div>
@@ -138,64 +138,69 @@ export function DashboardOverviewPanel({
 
       {/* Task Status Summary */}
       <Card className="bg-white">
-        <CardHeader className={isMobile ? "pb-1 pt-3" : "pb-2"}>
-          <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : 'text-lg'}`}>
-            <FileCheck className={`text-primary ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+        <CardHeader className={isMobile ? "pb-1 pt-3 px-3" : "pb-2"}>
+          <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-sm' : 'text-lg'}`}>
+            <FileCheck className={`text-primary ${isMobile ? 'h-3.5 w-3.5' : 'h-5 w-5'}`} />
             Task Status
           </CardTitle>
         </CardHeader>
         <CardContent className={isMobile ? "pt-1 px-3 pb-3" : "pt-2"}>
-          <div className={`grid grid-cols-2 ${isMobile ? 'gap-2' : 'gap-3 md:grid-cols-4'}`}>
-            <div className={`border rounded-md ${isMobile ? 'p-2' : 'p-3'}`}>
-              <div className={`flex items-center gap-1.5 ${isMobile ? 'mb-0.5' : 'mb-1'}`}>
-                <Check className={`text-green-500 ${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                <h3 className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>Completed</h3>
+          <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3 md:grid-cols-4'}`}>
+            <div className={`border rounded-md flex items-center ${isMobile ? 'p-2.5 gap-3' : 'p-3 flex-col items-start'}`}>
+              <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-1.5 mb-1'}`}>
+                <Check className={`text-green-500 ${isMobile ? 'h-4 w-4' : 'h-4 w-4'}`} />
+                {!isMobile && <h3 className="font-medium text-sm">Completed</h3>}
               </div>
-              <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {completedTasks}
-              </p>
-              <p className={`text-muted-foreground ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>
-                of {totalTasks} tasks
-              </p>
+              <div className={isMobile ? 'flex-1' : ''}>
+                {isMobile && <h3 className="font-medium text-xs">Completed</h3>}
+                <div className="flex items-baseline gap-1">
+                  <p className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {completedTasks}
+                  </p>
+                  <p className={`text-muted-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+                    of {totalTasks}
+                  </p>
+                </div>
+              </div>
             </div>
             
-            <div className={`border rounded-md ${isMobile ? 'p-2' : 'p-3'}`}>
-              <div className={`flex items-center gap-1.5 ${isMobile ? 'mb-0.5' : 'mb-1'}`}>
-                <Clock className={`text-amber-500 ${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                <h3 className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>In Progress</h3>
+            <div className={`border rounded-md flex items-center ${isMobile ? 'p-2.5 gap-3' : 'p-3 flex-col items-start'}`}>
+              <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-1.5 mb-1'}`}>
+                <Clock className={`text-amber-500 ${isMobile ? 'h-4 w-4' : 'h-4 w-4'}`} />
+                {!isMobile && <h3 className="font-medium text-sm">In Progress</h3>}
               </div>
-              <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {inProgressTasks}
-              </p>
-              <p className={`text-muted-foreground ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>
-                {isMobile ? 'being worked on' : 'tasks being worked on'}
-              </p>
+              <div className={isMobile ? 'flex-1' : ''}>
+                {isMobile && <h3 className="font-medium text-xs">In Progress</h3>}
+                <p className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {inProgressTasks}
+                </p>
+              </div>
             </div>
             
-            <div className={`border rounded-md ${isMobile ? 'p-2' : 'p-3'}`}>
-              <div className={`flex items-center gap-1.5 ${isMobile ? 'mb-0.5' : 'mb-1'}`}>
-                <AlertCircle className={`text-red-500 ${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                <h3 className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>Overdue</h3>
+            <div className={`border rounded-md flex items-center ${isMobile ? 'p-2.5 gap-3' : 'p-3 flex-col items-start'}`}>
+              <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-1.5 mb-1'}`}>
+                <AlertCircle className={`text-red-500 ${isMobile ? 'h-4 w-4' : 'h-4 w-4'}`} />
+                {!isMobile && <h3 className="font-medium text-sm">Overdue</h3>}
               </div>
-              <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {overdueTasks}
-              </p>
-              <p className={`text-muted-foreground ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>
-                need attention
-              </p>
+              <div className={isMobile ? 'flex-1' : ''}>
+                {isMobile && <h3 className="font-medium text-xs">Overdue</h3>}
+                <p className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {overdueTasks}
+                </p>
+              </div>
             </div>
             
-            <div className={`border rounded-md ${isMobile ? 'p-2' : 'p-3'}`}>
-              <div className={`flex items-center gap-1.5 ${isMobile ? 'mb-0.5' : 'mb-1'}`}>
-                <Calendar className={`text-blue-500 ${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-                <h3 className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>Pending</h3>
+            <div className={`border rounded-md flex items-center ${isMobile ? 'p-2.5 gap-3' : 'p-3 flex-col items-start'}`}>
+              <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-1.5 mb-1'}`}>
+                <Calendar className={`text-blue-500 ${isMobile ? 'h-4 w-4' : 'h-4 w-4'}`} />
+                {!isMobile && <h3 className="font-medium text-sm">Pending</h3>}
               </div>
-              <p className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {pendingTasks}
-              </p>
-              <p className={`text-muted-foreground ${isMobile ? 'text-[10px] leading-tight' : 'text-xs'}`}>
-                {isMobile ? 'not started' : 'not started yet'}
-              </p>
+              <div className={isMobile ? 'flex-1' : ''}>
+                {isMobile && <h3 className="font-medium text-xs">Pending</h3>}
+                <p className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {pendingTasks}
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>
