@@ -34,7 +34,7 @@ function FeatureCard({
         <img 
           src={illustration}
           alt=""
-          className="hidden md:block absolute top-4 right-4 w-14 lg:w-16 opacity-25 pointer-events-none select-none text-gray-700"
+          className="hidden md:block absolute top-4 right-4 w-14 lg:w-16 pointer-events-none select-none"
         />
       )}
 
