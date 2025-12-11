@@ -140,7 +140,15 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { job_title, industry, job_description, duration_weeks, start_date } = await req.json();
+    const { 
+      job_title, 
+      industry, 
+      job_description, 
+      duration_weeks, 
+      start_date,
+      is_promotional = false,  // ADD THIS
+      promo_code = null  // ADD THIS
+    } = await req.json();
 
     console.log(`Creating internship for user ${user.id}: ${job_title} in ${industry}`);
 
@@ -181,6 +189,47 @@ serve(async (req) => {
       });
     }
 
+    // NEW: Server-side access check
+    console.log('🔐 Checking user access...');
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('subscription_tier, promotional_internships_remaining, promo_code_used')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return new Response(JSON.stringify({ 
+        error: "Failed to verify subscription",
+        details: profileError.message 
+      }), { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500 
+      });
+    }
+
+    const hasAccess = 
+      profile.subscription_tier === 'pro' ||
+      profile.subscription_tier === 'premium' ||
+      (is_promotional && profile.promotional_internships_remaining > 0);
+
+    if (!hasAccess) {
+      console.log('❌ Access denied - no subscription or promotional internships');
+      return new Response(JSON.stringify({ 
+        error: "Subscription required",
+        details: "Virtual internships require a Pro/Premium subscription or a promotional code"
+      }), { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403 
+      });
+    }
+
+    console.log('✅ Access granted:', {
+      tier: profile.subscription_tier,
+      isPromotional: is_promotional,
+      promoRemaining: profile.promotional_internships_remaining
+    });
+
     // Insert into internship_sessions table
     const { data: sessionData, error: insertError } = await supabase
       .from("internship_sessions")
@@ -192,6 +241,8 @@ serve(async (req) => {
         duration_weeks,
         start_date,
         current_phase: 1,
+        is_promotional,  // ADD THIS
+        promo_code  // ADD THIS
       })
       .select("id")
       .single();
@@ -205,6 +256,39 @@ serve(async (req) => {
     }
 
     console.log(`✅ Internship session created with ID: ${sessionData.id}`);
+
+    // If promotional, decrement the counter
+    if (is_promotional && profile.promotional_internships_remaining > 0) {
+      console.log('📉 Decrementing promotional internship counter');
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          promotional_internships_remaining: profile.promotional_internships_remaining - 1 
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Failed to decrement promotional counter:', updateError);
+        // Don't fail the request, just log it
+      } else {
+        console.log('✅ Promotional internship counter decremented');
+      }
+
+      // Schedule feedback reminder
+      console.log('📅 Scheduling feedback reminder');
+      const { error: reminderError } = await supabase.rpc('schedule_feedback_reminder', {
+        p_user_id: user.id,
+        p_session_id: sessionData.id,
+        p_days_delay: 30
+      });
+
+      if (reminderError) {
+        console.error('Failed to schedule feedback reminder:', reminderError);
+        // Don't fail the request
+      } else {
+        console.log('✅ Feedback reminder scheduled');
+      }
+    }
 
     // Generate internship content with OpenAI
     const prompt = `Generate a ${duration_weeks}-week virtual internship program for a ${job_title} in the ${industry} industry. 

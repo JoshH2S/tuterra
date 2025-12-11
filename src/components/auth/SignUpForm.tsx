@@ -5,6 +5,7 @@ import { PersonalInfoInputs } from "./PersonalInfoInputs";
 import { PasswordInputs } from "./PasswordInputs";
 import { SubmitButton } from "./SubmitButton";
 import { SignUpFormHeader } from "./SignUpFormHeader";
+import { PromoCodeInput } from "./PromoCodeInput";
 import { useSignUpForm } from "@/hooks/useSignUpForm";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { PrivacyPolicy } from "@/components/legal/PrivacyPolicy";
@@ -32,6 +33,12 @@ export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
     setFirstName,
     lastName,
     setLastName,
+    // ADD PROMO CODE FIELDS
+    promoCode,
+    setPromoCode,
+    feedbackConsent,
+    setFeedbackConsent,
+    promoCodeApplied,
     loading,
     passwordError,
     setPasswordError,
@@ -134,6 +141,15 @@ export const SignUpForm = ({ onSignUpSuccess }: SignUpFormProps) => {
               passwordTouched={passwordTouched}
               setPasswordTouched={setPasswordTouched}
               validatePassword={validatePassword}
+            />
+
+            {/* ADD PROMO CODE INPUT */}
+            <PromoCodeInput
+              promoCode={promoCode}
+              setPromoCode={setPromoCode}
+              feedbackConsent={feedbackConsent}
+              setFeedbackConsent={setFeedbackConsent}
+              promoCodeApplied={promoCodeApplied}
             />
           </div>
 

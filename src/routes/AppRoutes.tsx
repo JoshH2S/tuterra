@@ -25,6 +25,7 @@ import OnboardingRedirect from "@/pages/OnboardingRedirect";
 import InternshipPreview from "@/pages/InternshipPreview";
 import CertificatePage from "@/pages/CertificatePage";
 import CertificateVerificationPage from "@/pages/CertificateVerificationPage";
+import PromotionalFeedback from "@/pages/PromotionalFeedback";
 
 export const AppRoutes = () => {
   return (
@@ -45,6 +46,9 @@ export const AppRoutes = () => {
       {/* Public Certificate Routes */}
       <Route path="/certificates/:certificateId" element={<CertificatePage />} />
       <Route path="/verify" element={<CertificateVerificationPage />} />
+      
+      {/* Promotional Feedback Route */}
+      <Route path="/feedback/promotional" element={<PromotionalFeedback />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard/*" element={

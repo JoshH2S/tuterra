@@ -4,11 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CreditCard } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePromotionalInternships } from "@/hooks/usePromotionalInternships";
 import { CreditsSummaryPopup } from "@/components/credits/CreditsSummaryPopup";
+import { PromotionalBadge } from "@/components/promotional/PromotionalBadge";
 
 export function DesktopHeader() {
   const navigate = useNavigate();
   const { subscription } = useSubscription();
+  const { status } = usePromotionalInternships();
 
   const handleUpgradeClick = () => {
     navigate('/pricing');
@@ -21,9 +24,19 @@ export function DesktopHeader() {
           {/* Removing EduPortal text from here since it's already in the sidebar */}
         </div>
         <div className="flex items-center gap-4">
+          {/* ADD PROMOTIONAL BADGE */}
+          {status.hasPromotionalInternships && (
+            <PromotionalBadge
+              internshipsRemaining={status.internshipsRemaining}
+              promoCode={status.promoCodeUsed}
+              compact={false}
+            />
+          )}
+
           <div className={subscription?.tier === 'free' ? "" : "hidden"}>
             <CreditsSummaryPopup />
           </div>
+          
           {/* Upgrade button only appears for free users */}
           {subscription?.tier === 'free' && (
             <Button

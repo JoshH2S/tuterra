@@ -8,8 +8,10 @@ import { MobileSearch } from "./MobileSearch";
 import { MobileMenu } from "./MobileMenu";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePromotionalInternships } from "@/hooks/usePromotionalInternships";
 import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { CreditsSummaryPopup } from "@/components/credits/CreditsSummaryPopup";
+import { PromotionalBadge } from "@/components/promotional/PromotionalBadge";
 
 export function MobileHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -18,6 +20,7 @@ export function MobileHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const { subscription } = useSubscription();
+  const { status } = usePromotionalInternships();
   
   // Close the menu when route changes
   useEffect(() => {
@@ -47,6 +50,15 @@ export function MobileHeader() {
           <div className="font-semibold text-lg">tuterra</div>
           
           <div className="flex items-center space-x-2">
+            {/* ADD PROMOTIONAL BADGE */}
+            {status.hasPromotionalInternships && (
+              <PromotionalBadge
+                internshipsRemaining={status.internshipsRemaining}
+                promoCode={status.promoCodeUsed}
+                compact={true}
+              />
+            )}
+
             {subscription?.tier === 'free' && (
               <>
                 <CreditsSummaryPopup />

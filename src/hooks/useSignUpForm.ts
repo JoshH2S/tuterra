@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
+import { usePromoCode } from "./usePromoCode";
 
 export const useSignUpForm = () => {
   const [email, setEmail] = useState("");
@@ -10,6 +11,12 @@ export const useSignUpForm = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  
+  // ADD PROMO CODE FIELDS
+  const [promoCode, setPromoCode] = useState("");
+  const [feedbackConsent, setFeedbackConsent] = useState(false);
+  const [promoCodeApplied, setPromoCodeApplied] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
@@ -17,6 +24,9 @@ export const useSignUpForm = () => {
   const [verificationSent, setVerificationSent] = useState(false);
   const [formError, setFormError] = useState("");
   const { toast } = useToast();
+  
+  // ADD PROMO CODE HOOK
+  const { validateCode, redeemCode } = usePromoCode();
 
   useEffect(() => {
     if (password) {
@@ -95,11 +105,50 @@ export const useSignUpForm = () => {
     }
   };
 
+  // ADD PROMO CODE VALIDATION FUNCTION
+  const handlePromoCodeValidation = async () => {
+    if (!promoCode.trim()) {
+      setPromoCodeApplied(false);
+      return true;
+    }
+
+    const validation = await validateCode(promoCode);
+    if (!validation.isValid) {
+      setFormError(validation.errorMessage || "Invalid promo code");
+      toast({
+        title: "Invalid Promo Code",
+        description: validation.errorMessage || "Please check your promo code and try again",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check if FIRST30 requires feedback consent
+    if (promoCode.toUpperCase() === 'FIRST30' && !feedbackConsent) {
+      setFormError("You must consent to feedback collection to use this promo code");
+      toast({
+        title: "Feedback Consent Required",
+        description: "The FIRST30 promo requires feedback consent",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setPromoCodeApplied(true);
+    return true;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
     
     if (!validatePassword()) {
+      return;
+    }
+
+    // ADD PROMO CODE VALIDATION
+    const promoValid = await handlePromoCodeValidation();
+    if (!promoValid) {
       return;
     }
     
@@ -118,6 +167,9 @@ export const useSignUpForm = () => {
               last_name: lastName,
               user_type: "student",
               subscription_tier: "free",
+              // STORE PROMO INFO IN METADATA
+              promo_code: promoCode.toUpperCase() || null,
+              feedback_consent: feedbackConsent,
             },
             emailRedirectTo: `${window.location.origin}/verify-email`
           },
@@ -126,10 +178,26 @@ export const useSignUpForm = () => {
         if (error) throw error;
         
         if (data?.user) {
+          // REDEEM PROMO CODE AFTER SIGNUP
+          if (promoCode.trim() && promoCodeApplied) {
+            const redemption = await redeemCode(promoCode, feedbackConsent);
+            if (!redemption.success) {
+              console.error('Failed to redeem promo code:', redemption.error);
+              // Don't block signup if redemption fails, just log it
+              toast({
+                title: "Note",
+                description: "Account created, but promo code redemption failed. Contact support.",
+                variant: "default",
+              });
+            }
+          }
+
           setVerificationSent(true);
           toast({
             title: "Verification email sent!",
-            description: "Please check your inbox and verify your email to continue.",
+            description: promoCodeApplied 
+              ? "Please check your inbox. Your promo code will be applied after verification."
+              : "Please check your inbox and verify your email to continue.",
           });
           
           localStorage.setItem("pendingVerificationEmail", email);
@@ -159,6 +227,12 @@ export const useSignUpForm = () => {
     setFirstName,
     lastName,
     setLastName,
+    // ADD PROMO CODE FIELDS
+    promoCode,
+    setPromoCode,
+    feedbackConsent,
+    setFeedbackConsent,
+    promoCodeApplied,
     loading,
     passwordError,
     setPasswordError,
