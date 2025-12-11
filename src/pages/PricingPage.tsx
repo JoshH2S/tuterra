@@ -270,19 +270,6 @@ export default function PricingPage() {
           onSelect={handleSelectPlan}
           buttonText="Start Free"
           buttonDisabled={subscription?.planId === 'free_plan'}
-          additionalContent={
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full gap-2 text-amber-600 border-amber-200 hover:bg-amber-50"
-                onClick={() => navigate("/internship-preview")}
-              >
-                <Sparkles className="w-4 h-4" />
-                Try Virtual Internship Preview
-              </Button>
-            </div>
-          }
         />
 
         <SubscriptionCard

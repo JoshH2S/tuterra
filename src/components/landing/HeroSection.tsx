@@ -2,8 +2,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   return (
@@ -47,6 +48,17 @@ export function HeroSection() {
               className="btn-gold-gradient px-8 py-3 rounded-lg flex items-center justify-center gap-2 bg-amber-400 text-black font-semibold hover:bg-amber-500 transition-colors"
             >
               Get Started <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/internship-preview"
+            >
+              <Button
+                variant="outline"
+                className="px-8 py-3 h-auto bg-white/90 hover:bg-white border-2 border-amber-300 text-gray-900 font-semibold gap-2 backdrop-blur-sm"
+              >
+                <Sparkles className="w-4 h-4" />
+                Try Preview
+              </Button>
             </Link>
           </div>
         </motion.div>

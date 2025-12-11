@@ -621,16 +621,6 @@ export default function VirtualInternshipDashboard() {
                 Create Virtual Internship
               </Button>
             )}
-            
-            {/* Preview button available to ALL users */}
-            <Button 
-              onClick={() => navigate("/internship-preview")}
-              variant="outline"
-              className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-100"
-            >
-              <Sparkles className="h-4 w-4" />
-              Try Virtual Internship Preview
-            </Button>
           </div>
         </div>
       </div>

@@ -2,12 +2,10 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { X, Mail, CheckCircle, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { X, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 interface VirtualInternshipSignupModalProps {
   isOpen: boolean;
@@ -16,129 +14,22 @@ interface VirtualInternshipSignupModalProps {
 
 export function VirtualInternshipSignupModal({ isOpen, onClose }: VirtualInternshipSignupModalProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    emailConsent: false
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.email.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.emailConsent) {
-      toast({
-        title: "Email Consent Required",
-        description: "Please opt in to receive email communications.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      console.log('=== VIRTUAL INTERNSHIP WAITLIST SIGNUP ===');
-      console.log('Form data:', {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        email_consent: formData.emailConsent
-      });
-
-      const { data, error } = await supabase
-        .from('virtual_internship_waitlist')
-        .insert({
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          email_consent: formData.emailConsent,
-          signed_up_at: new Date().toISOString()
-        });
-
-      console.log('Supabase response:', { data, error });
-
-      if (error) {
-        console.error('Supabase error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-        throw error;
-      }
-
-      console.log('✅ Successfully joined waitlist');
-      setIsSuccess(true);
-      
-      toast({
-        title: "Successfully Joined Waitlist!",
-        description: "We'll notify you as soon as virtual internships are available.",
-      });
-
-    } catch (error) {
-      console.error('=== WAITLIST SIGNUP ERROR ===');
-      console.error('Full error object:', error);
-      console.error('Error code:', error?.code);
-      console.error('Error message:', error?.message);
-      console.error('Error details:', error?.details);
-      
-      // Handle duplicate email error gracefully
-      if (error?.code === '23505') {
-        console.log('Handling duplicate email error');
-        toast({
-          title: "Already on Waitlist",
-          description: "This email is already registered for our virtual internship waitlist.",
-          variant: "destructive",
-        });
-      } else if (error?.message?.includes('JWT')) {
-        console.log('Handling JWT/auth error');
-        toast({
-          title: "Authentication Error",
-          description: "There was an authentication issue. Please refresh the page and try again.",
-          variant: "destructive",
-        });
-      } else if (error?.message?.includes('RLS')) {
-        console.log('Handling RLS policy error');
-        toast({
-          title: "Permission Error",
-          description: "There was a permission issue. Please contact support.",
-          variant: "destructive",
-        });
-      } else if (error?.code === 'PGRST116') {
-        console.log('Handling table not found error');
-        toast({
-          title: "Service Unavailable",
-          description: "The waitlist service is temporarily unavailable. Please try again later.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Handling generic error');
-        toast({
-          title: "Signup Failed",
-          description: `Something went wrong: ${error?.message || 'Unknown error'}. Please try again.`,
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
+  const handleGetStarted = () => {
+    onClose();
+    if (isLoggedIn) {
+      // User is already logged in, take them to create internship
+      navigate('/dashboard/virtual-internship/new');
+    } else {
+      // User needs to sign up
+      navigate('/auth?tab=signup');
     }
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
-      setFormData({ name: '', email: '', emailConsent: false });
-      setIsSuccess(false);
-      onClose();
-    }
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -166,16 +57,15 @@ export function VirtualInternshipSignupModal({ isOpen, onClose }: VirtualInterns
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-amber-600" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-white" />
                   </div>
-                  <CardTitle className="text-xl">Join Virtual Internship Waitlist</CardTitle>
+                  <CardTitle className="text-xl">Start Your Virtual Internship</CardTitle>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleClose}
-                  disabled={isSubmitting}
                   className="h-8 w-8 p-0"
                 >
                   <X className="h-4 w-4" />
@@ -183,91 +73,51 @@ export function VirtualInternshipSignupModal({ isOpen, onClose }: VirtualInterns
               </div>
             </CardHeader>
 
-            <CardContent>
-              {isSuccess ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-6"
+            <CardContent className="space-y-6">
+              <div className="text-center py-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  Ready to gain real-world experience?
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Join Tuterra and start your virtual internship journey with AI-powered supervision, 
+                  realistic workplace tasks, and personalized feedback.
+                </p>
+
+                {/* Highlight Features */}
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 mb-6 text-left">
+                  <p className="text-sm font-semibold text-gray-900 mb-2">What you'll get:</p>
+                  <ul className="text-sm text-gray-700 space-y-1.5">
+                    <li>✨ AI supervisor with personalized feedback</li>
+                    <li>💼 Realistic workplace scenarios</li>
+                    <li>📈 Professional skill development</li>
+                    <li>🎓 Certificate of completion</li>
+                  </ul>
+                </div>
+
+                {/* Promo Callout */}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                  <p className="text-sm font-semibold text-amber-900">
+                    🎉 Limited Time: Use code <span className="font-mono bg-amber-100 px-2 py-0.5 rounded">FIRST30</span>
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    First 30 users get 1 free virtual internship!
+                  </p>
+                </div>
+
+                <Button
+                  onClick={handleGetStarted}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 text-base font-semibold"
                 >
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    You're on the list!
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    We'll notify you as soon as virtual internships become available.
-                  </p>
-                  <Button onClick={handleClose} className="bg-amber-600 hover:bg-amber-700">
-                    Close
-                  </Button>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Full Name *</Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Enter your full name"
-                        disabled={isSubmitting}
-                        className="mt-2"
-                      />
-                    </div>
+                  {isLoggedIn ? 'Create Internship' : 'Get Started'}
+                </Button>
 
-                    <div>
-                      <Label htmlFor="email">Email Address *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder="Enter your email address"
-                        disabled={isSubmitting}
-                        className="mt-2"
-                      />
-                    </div>
-
-                    <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Checkbox
-                        id="emailConsent"
-                        checked={formData.emailConsent}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, emailConsent: !!checked }))}
-                        disabled={isSubmitting}
-                        className="mt-0.5"
-                      />
-                      <Label htmlFor="emailConsent" className="text-sm leading-5 cursor-pointer">
-                        I agree to receive email communications about virtual internship program updates 
-                        and launch notifications from Tuterra. I can unsubscribe at any time.
-                      </Label>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting || !formData.name.trim() || !formData.email.trim() || !formData.emailConsent}
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Joining Waitlist...
-                      </>
-                    ) : (
-                      'Join Waitlist'
-                    )}
-                  </Button>
-
-                  <p className="text-xs text-gray-500 text-center">
-                    By joining our waitlist, you'll be among the first to experience Tuterra's 
-                    innovative virtual internship program.
-                  </p>
-                </form>
-              )}
+                <p className="text-xs text-gray-500 mt-4">
+                  {isLoggedIn 
+                    ? 'Start your virtual internship experience now'
+                    : 'Create your free account to get started'
+                  }
+                </p>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

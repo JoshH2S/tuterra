@@ -307,26 +307,26 @@ export function InternshipPreviewResults({ data, formData, onBackToForm }: Inter
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.6 }}
       >
-        {/* Primary CTA for Virtual Internship Notifications */}
+        {/* Primary CTA for Getting Started */}
         <Card className="bg-gradient-to-br from-primary-100/80 to-primary-200/80 border-amber-200 p-6">
           <div className="text-center">
             <h3 className="text-xl font-semibold text-amber-900 mb-2">
-              Get Notified When Virtual Internships Launch
+              Ready to Start Your Virtual Internship?
             </h3>
             <p className="text-gray-700 mb-4">
-              Be the first to know when our virtual internship program becomes available. 
-              Join our waitlist for early access and exclusive updates.
+              Join Tuterra and get hands-on experience with realistic workplace scenarios, 
+              AI-powered supervision, and personalized feedback to build your professional skills.
             </p>
             <Button
               onClick={() => {
-                console.log('🚀 Join Waitlist button clicked - dispatching custom event');
+                console.log('🚀 Get Started button clicked - dispatching custom event');
                 const event = new CustomEvent('openVirtualInternshipSignup');
                 window.dispatchEvent(event);
                 console.log('✅ Custom event dispatched:', event);
               }}
               className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 text-lg font-semibold shadow-md border-0"
             >
-              Join the Waitlist
+              Get Started
             </Button>
           </div>
         </Card>

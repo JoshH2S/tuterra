@@ -237,7 +237,7 @@ export default function InternshipPreview() {
                 onClick={() => setIsSignupModalOpen(true)}
                 className="text-blue-600 hover:text-blue-700 font-medium underline cursor-pointer touch-manipulation"
               >
-                Sign up for free
+                Get Started
               </button>
             </p>
           </div>
