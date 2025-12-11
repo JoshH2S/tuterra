@@ -26,7 +26,7 @@ export const useSignUpForm = () => {
   const { toast } = useToast();
   
   // ADD PROMO CODE HOOK
-  const { validateCode } = usePromoCode();
+  const { validateCode, redeemCode } = usePromoCode();
 
   useEffect(() => {
     if (password) {
@@ -178,9 +178,20 @@ export const useSignUpForm = () => {
         if (error) throw error;
         
         if (data?.user) {
-          // Promo code will be automatically redeemed by database trigger
-          // after email verification and profile creation
-          
+          // REDEEM PROMO CODE AFTER SIGNUP
+          if (promoCode.trim() && promoCodeApplied) {
+            const redemption = await redeemCode(promoCode, feedbackConsent);
+            if (!redemption.success) {
+              console.error('Failed to redeem promo code:', redemption.error);
+              // Don't block signup if redemption fails, just log it
+              toast({
+                title: "Note",
+                description: "Account created, but promo code redemption failed. Contact support.",
+                variant: "default",
+              });
+            }
+          }
+
           setVerificationSent(true);
           toast({
             title: "Verification email sent!",

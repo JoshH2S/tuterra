@@ -54,8 +54,9 @@ export function HeroSection() {
             >
               <Button
                 variant="outline"
-                className="px-8 py-3 h-auto bg-white/90 hover:bg-white border-2 border-white/50 text-gray-900 font-semibold backdrop-blur-sm"
+                className="px-8 py-3 h-auto bg-white/90 hover:bg-white border-2 border-amber-300 text-gray-900 font-semibold gap-2 backdrop-blur-sm"
               >
+                <Sparkles className="w-4 h-4" />
                 Try Preview
               </Button>
             </Link>
