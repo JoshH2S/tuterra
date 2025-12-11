@@ -2,7 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -54,9 +54,9 @@ export function HeroSection() {
             >
               <Button
                 variant="outline"
-                className="px-8 py-3 h-auto bg-white/90 hover:bg-white border-2 border-amber-300 text-gray-900 font-semibold gap-2 backdrop-blur-sm"
+                className="px-8 py-3 h-auto bg-white/90 hover:bg-white text-gray-900 font-semibold gap-2 backdrop-blur-sm"
               >
-                <Sparkles className="w-4 h-4" />
+                <Briefcase className="w-4 h-4" />
                 Try Preview
               </Button>
             </Link>

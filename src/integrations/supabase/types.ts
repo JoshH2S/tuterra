@@ -1403,9 +1403,11 @@ export type Database = {
           id: string
           industry: string
           is_completed: boolean | null
+          is_promotional: boolean | null
           job_description: string | null
           job_title: string
           metadata: Json | null
+          promo_code: string | null
           questions: Json | null
           start_date: string | null
           user_id: string
@@ -1417,9 +1419,11 @@ export type Database = {
           id?: string
           industry: string
           is_completed?: boolean | null
+          is_promotional?: boolean | null
           job_description?: string | null
           job_title: string
           metadata?: Json | null
+          promo_code?: string | null
           questions?: Json | null
           start_date?: string | null
           user_id: string
@@ -1431,9 +1435,11 @@ export type Database = {
           id?: string
           industry?: string
           is_completed?: boolean | null
+          is_promotional?: boolean | null
           job_description?: string | null
           job_title?: string
           metadata?: Json | null
+          promo_code?: string | null
           questions?: Json | null
           start_date?: string | null
           user_id?: string
@@ -2607,10 +2613,16 @@ export type Database = {
           course_guide_completed: boolean
           created_at: string
           email: string
+          feedback_consent: boolean | null
+          feedback_consent_date: string | null
+          feedback_email_sent: boolean | null
+          feedback_email_sent_at: string | null
           first_name: string
           id: string
           last_name: string
           onboarding_complete: boolean
+          promo_code_used: string | null
+          promotional_internships_remaining: number | null
           school: string
           subscription_tier: string
           updated_at: string
@@ -2623,10 +2635,16 @@ export type Database = {
           course_guide_completed?: boolean
           created_at?: string
           email: string
+          feedback_consent?: boolean | null
+          feedback_consent_date?: string | null
+          feedback_email_sent?: boolean | null
+          feedback_email_sent_at?: string | null
           first_name: string
           id: string
           last_name: string
           onboarding_complete?: boolean
+          promo_code_used?: string | null
+          promotional_internships_remaining?: number | null
           school: string
           subscription_tier?: string
           updated_at?: string
@@ -2639,10 +2657,16 @@ export type Database = {
           course_guide_completed?: boolean
           created_at?: string
           email?: string
+          feedback_consent?: boolean | null
+          feedback_consent_date?: string | null
+          feedback_email_sent?: boolean | null
+          feedback_email_sent_at?: string | null
           first_name?: string
           id?: string
           last_name?: string
           onboarding_complete?: boolean
+          promo_code_used?: string | null
+          promotional_internships_remaining?: number | null
           school?: string
           subscription_tier?: string
           updated_at?: string
@@ -2650,6 +2674,138 @@ export type Database = {
           welcome_email_sent?: boolean
         }
         Relationships: []
+      }
+      promotional_code_redemptions: {
+        Row: {
+          code_id: string
+          id: string
+          ip_address: string | null
+          redeemed_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          code_id: string
+          id?: string
+          ip_address?: string | null
+          redeemed_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          code_id?: string
+          id?: string
+          ip_address?: string | null
+          redeemed_at?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotional_code_redemptions_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "promotional_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotional_code_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotional_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          current_uses: number | null
+          expires_at: string | null
+          id: string
+          internships_granted: number | null
+          max_uses: number
+          metadata: Json | null
+          starts_at: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          current_uses?: number | null
+          expires_at?: string | null
+          id?: string
+          internships_granted?: number | null
+          max_uses: number
+          metadata?: Json | null
+          starts_at: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          current_uses?: number | null
+          expires_at?: string | null
+          id?: string
+          internships_granted?: number | null
+          max_uses?: number
+          metadata?: Json | null
+          starts_at?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      promotional_feedback_reminders: {
+        Row: {
+          created_at: string | null
+          feedback_submitted: boolean | null
+          feedback_submitted_at: string | null
+          id: string
+          internship_session_id: string
+          scheduled_for: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feedback_submitted?: boolean | null
+          feedback_submitted_at?: string | null
+          id?: string
+          internship_session_id: string
+          scheduled_for: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feedback_submitted?: boolean | null
+          feedback_submitted_at?: string | null
+          id?: string
+          internship_session_id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotional_feedback_reminders_internship_session_id_fkey"
+            columns: ["internship_session_id"]
+            isOneToOne: false
+            referencedRelation: "internship_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotional_feedback_reminders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       question_responses: {
         Row: {
@@ -4220,6 +4376,15 @@ export type Database = {
           longest_streak: number
         }[]
       }
+      redeem_promo_code: {
+        Args: {
+          p_code: string
+          p_ip_address?: string
+          p_user_agent?: string
+          p_user_id: string
+        }
+        Returns: Record<string, unknown>
+      }
       rollback_messaging_migration: {
         Args: never
         Returns: {
@@ -4227,6 +4392,10 @@ export type Database = {
           operation_result: string
           records_affected: number
         }[]
+      }
+      schedule_feedback_reminder: {
+        Args: { p_days_delay?: number; p_session_id: string; p_user_id: string }
+        Returns: undefined
       }
       update_user_skill_progress: {
         Args: {
@@ -4279,6 +4448,10 @@ export type Database = {
           table_name: string
           validation_type: string
         }[]
+      }
+      validate_promo_code: {
+        Args: { p_code: string }
+        Returns: Record<string, unknown>
       }
     }
     Enums: {
