@@ -60,7 +60,18 @@ export default function Quizzes() {
   const showEmptyState = !totalQuizCount || totalQuizCount === 0;
 
   return (
-    <div className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-8 w-full max-w-full">
+    <>
+      {/* Full-bleed background layer - respects sidebar */}
+      <div 
+        className="fixed inset-0 left-0 md:left-[200px] -z-10"
+        style={{
+          backgroundImage: "url('/images/white-knight.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      <div className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-8 w-full max-w-full">
       <QuizFilters
         searchTerm={searchTerm}
         selectedCourse={selectedCourse}
@@ -115,5 +126,6 @@ export default function Quizzes() {
         onOpenChange={setShowCreateQuizDialog}
       />
     </div>
+    </>
   );
 }

@@ -130,7 +130,18 @@ const Courses = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <>
+      {/* Full-bleed background layer - respects sidebar */}
+      <div 
+        className="fixed inset-0 left-0 md:left-[200px] -z-10"
+        style={{
+          backgroundImage: "url('/images/white-knight.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      <div className="container mx-auto px-4 py-8">
       <CoursesHeader 
         onCreateClick={handleCreateClick}
         onSearch={handleSearch}
@@ -168,7 +179,8 @@ const Courses = () => {
           )
         )}
       </CourseErrorBoundary>
-    </div>
+      </div>
+    </>
   );
 };
 
