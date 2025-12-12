@@ -21,11 +21,11 @@ export function QuizzesEmptyState({ onCreateQuiz }: QuizzesEmptyStateProps) {
         <ClipboardList className="w-8 h-8 text-primary" />
       </div>
       
-      <h3 className="text-lg font-semibold gradient-text mb-2">
+      <h3 className="text-lg font-semibold text-white mb-2">
         No Quizzes Available
       </h3>
       
-      <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-sm mx-auto">
+      <p className="text-white/80 mb-6 max-w-sm mx-auto">
         Create your first quiz to start assessing student knowledge.
       </p>
       
