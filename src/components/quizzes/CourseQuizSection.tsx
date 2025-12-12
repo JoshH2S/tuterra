@@ -23,7 +23,7 @@ export function CourseQuizSection({
   return (
     <section key={course.id} className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-xl font-semibold text-white">
           {course.title || course.id}
         </h2>
         <Button 
