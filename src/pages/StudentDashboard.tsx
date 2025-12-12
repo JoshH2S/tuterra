@@ -68,7 +68,7 @@ export default function StudentDashboard() {
       <div 
         className="fixed inset-0 left-0 md:left-[200px] -z-10"
         style={{
-          backgroundImage: "url('/images/dashboard-bg.jpg')",
+          backgroundImage: "url('/images/white-knight.jpg')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
