@@ -30,17 +30,17 @@ export const usePromoCode = () => {
 
       if (error) throw error;
 
-      const result = {
-        isValid: data.is_valid,
-        errorMessage: data.error_message,
-        internshipsToGrant: data.internships_to_grant || 0,
+      const result: PromoCodeValidation = {
+        isValid: Boolean(data?.is_valid),
+        errorMessage: data?.error_message as string | null,
+        internshipsToGrant: (data?.internships_to_grant as number) || 0,
       };
 
       setValidationResult(result);
       return result;
     } catch (error: any) {
       console.error('Error validating promo code:', error);
-      const result = {
+      const result: PromoCodeValidation = {
         isValid: false,
         errorMessage: "Failed to validate promo code. Please try again.",
         internshipsToGrant: 0,
@@ -78,8 +78,8 @@ export const usePromoCode = () => {
 
       if (error) throw error;
 
-      if (!data.success) {
-        return { success: false, error: data.error_message };
+      if (!data?.success) {
+        return { success: false, error: (data?.error_message as string) || "Redemption failed" };
       }
 
       // Update feedback consent

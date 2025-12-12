@@ -1,9 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { calculatePasswordStrength, validatePasswordRequirements } from "@/lib/password";
 import { usePromoCode } from "./usePromoCode";
+
+// Note: Promo codes are automatically redeemed via database trigger 
+// (handle_new_user_promo_code) when the profile is created after email verification
 
 export const useSignUpForm = () => {
   const [email, setEmail] = useState("");
@@ -25,8 +27,9 @@ export const useSignUpForm = () => {
   const [formError, setFormError] = useState("");
   const { toast } = useToast();
   
-  // ADD PROMO CODE HOOK
-  const { validateCode, redeemCode } = usePromoCode();
+  // ADD PROMO CODE HOOK - only used for validation
+  // Actual redemption happens via database trigger after email verification
+  const { validateCode } = usePromoCode();
 
   useEffect(() => {
     if (password) {
@@ -178,20 +181,9 @@ export const useSignUpForm = () => {
         if (error) throw error;
         
         if (data?.user) {
-          // REDEEM PROMO CODE AFTER SIGNUP
-          if (promoCode.trim() && promoCodeApplied) {
-            const redemption = await redeemCode(promoCode, feedbackConsent);
-            if (!redemption.success) {
-              console.error('Failed to redeem promo code:', redemption.error);
-              // Don't block signup if redemption fails, just log it
-              toast({
-                title: "Note",
-                description: "Account created, but promo code redemption failed. Contact support.",
-                variant: "default",
-              });
-            }
-          }
-
+          // Promo code is stored in user metadata and will be automatically
+          // redeemed via database trigger when profile is created after verification
+          
           setVerificationSent(true);
           toast({
             title: "Verification email sent!",
