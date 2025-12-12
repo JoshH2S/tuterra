@@ -51,8 +51,11 @@ export const Layout = ({ children, isLandingPage = false }: LayoutProps) => {
   const showPublicHeader = location.pathname === "/about" || 
     location.pathname === "/contact";
 
-  // Determine background color - white for internship preview, gray for others
-  const backgroundClass = isInternshipPreviewPage ? "bg-white" : "bg-gray-50";
+  // Check if on dashboard route for transparent background
+  const isDashboardPage = location.pathname === "/dashboard";
+
+  // Determine background color - white for internship preview, transparent for dashboard, gray for others
+  const backgroundClass = isInternshipPreviewPage ? "bg-white" : (isDashboardPage ? "bg-transparent" : "bg-gray-50");
 
   return (
     <div className={cn("min-h-screen flex flex-col w-full max-w-full overflow-x-hidden", backgroundClass)}>
