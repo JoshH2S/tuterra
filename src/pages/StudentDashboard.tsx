@@ -63,7 +63,16 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 w-full max-w-full">
+    <div 
+      className="container mx-auto px-4 w-full max-w-full min-h-screen relative"
+      style={{
+        backgroundImage: "url('/images/dashboard-bg.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed"
+      }}
+    >
       <DashboardHeader 
         title="My Dashboard" 
         description="Track your progress and performance across all your courses" 
