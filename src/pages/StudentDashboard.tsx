@@ -63,16 +63,18 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div 
-      className="container mx-auto px-4 w-full max-w-full min-h-screen relative"
-      style={{
-        backgroundImage: "url('/images/dashboard-bg.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed"
-      }}
-    >
+    <>
+      {/* Full-bleed background layer - respects sidebar */}
+      <div 
+        className="fixed inset-0 left-0 md:left-[200px] -z-10"
+        style={{
+          backgroundImage: "url('/images/dashboard-bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      <div className="container mx-auto px-4 w-full max-w-full min-h-screen relative">
       <DashboardHeader 
         title="My Dashboard" 
         description="Track your progress and performance across all your courses" 
@@ -128,5 +130,6 @@ export default function StudentDashboard() {
         onCreateSession={handleCreateSession}
       />
     </div>
+    </>
   );
 }
