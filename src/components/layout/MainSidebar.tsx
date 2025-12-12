@@ -30,7 +30,7 @@ export const MainSidebar = () => {
     <div ref={sidebarRef} className="relative flex">
       <Sidebar className={cn(
         "fixed left-0 top-0 h-screen",
-        "bg-white", 
+        "bg-gradient-to-br from-primary-100/80 to-primary-200/80", 
         "border-r border-gray-200 dark:border-gray-800",
         "shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]",
         "transition-all duration-300 ease-in-out z-30",
