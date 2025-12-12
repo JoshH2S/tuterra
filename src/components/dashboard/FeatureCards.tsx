@@ -40,17 +40,17 @@ function FeatureCard({
 
       {/* Content */}
       <div className="flex-1">
-        <h3 className={`font-semibold mb-1.5 sm:mb-2 leading-tight text-white ${
+        <h3 className={`font-semibold mb-1.5 sm:mb-2 leading-tight ${
           isLarge ? 'text-lg sm:text-xl' : 'text-base sm:text-lg'
         }`}>{title}</h3>
-        <p className={`text-white/90 leading-snug md:pr-12 ${
+        <p className={`text-gray-800/80 dark:text-gray-100/80 leading-snug md:pr-12 ${
           isLarge ? 'text-sm' : 'text-xs sm:text-sm'
         }`}>{description}</p>
       </div>
 
       {/* CTA — Desktop Only */}
       <div className="hidden md:flex justify-end mt-auto pt-3">
-        <span className="text-sm font-medium text-white hover:underline flex items-center gap-1 group">
+        <span className="text-sm font-medium text-primary-700 dark:text-primary-400 hover:underline flex items-center gap-1 group">
           {ctaText}
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
         </span>
