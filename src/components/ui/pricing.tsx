@@ -1,4 +1,3 @@
-
 "use client";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -6,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Check, Star } from "lucide-react";
+import { Check, Star, Gift } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef } from "react";
+import { usePromotionalInternships } from "@/hooks/usePromotionalInternships";
 
 interface PricingPlan {
   name: string;
@@ -35,6 +35,7 @@ export function Pricing({
 }: PricingProps) {
   const [isMonthly, setIsMonthly] = useState(true);
   const switchRef = useRef<HTMLButtonElement>(null);
+  const { status: promoStatus } = usePromotionalInternships();
 
   const handleToggle = (checked: boolean) => {
     setIsMonthly(!checked);
@@ -95,6 +96,16 @@ export function Pricing({
               <p className="text-base font-semibold text-muted-foreground">
                 {plan.name}
               </p>
+              
+              {/* Promotional Internship Badge for Free plan */}
+              {plan.name === "Free" && promoStatus.hasPromotionalInternships && (
+                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 mx-auto">
+                  <Gift className="h-4 w-4 text-amber-500" />
+                  <span className="text-sm font-bold text-amber-500">
+                    🎁 {promoStatus.internshipsRemaining} Free Internship{promoStatus.internshipsRemaining > 1 ? 's' : ''} Included!
+                  </span>
+                </div>
+              )}
               <div className="mt-6 flex items-center justify-center gap-x-2">
                 <span className="text-5xl font-bold tracking-tight text-foreground">
                   {isMonthly ? plan.price : plan.yearlyPrice}
