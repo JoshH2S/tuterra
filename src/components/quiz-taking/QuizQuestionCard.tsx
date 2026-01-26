@@ -4,7 +4,7 @@ import { QuizQuestion } from "@/hooks/quiz/quizTypes";
 import { QuestionLoading } from "./question-card/QuestionLoading";
 import { QuestionFeedback } from "./question-card/QuestionFeedback";
 import { QuestionContent } from "./question-card/QuestionContent";
-import { Card } from "@/components/ui/card";
+import { PremiumCard } from "@/components/ui/premium-card";
 import { motion } from "framer-motion";
 
 interface QuizQuestionCardProps {
@@ -58,7 +58,7 @@ export function QuizQuestionCard({
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="w-full overflow-hidden shadow-md border border-gray-200 dark:border-gray-800 rounded-xl">
+      <PremiumCard className="w-full overflow-hidden">
         <div className="space-y-6">
           {showFeedback && selectedAnswer ? (
             <QuestionFeedback 
@@ -84,7 +84,7 @@ export function QuizQuestionCard({
             />
           )}
         </div>
-      </Card>
+      </PremiumCard>
     </motion.div>
   );
 }

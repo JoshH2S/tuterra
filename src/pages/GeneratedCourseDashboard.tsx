@@ -1,24 +1,85 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Plus, GraduationCap, Clock, Target } from "lucide-react";
+import { BookOpen, Plus, GraduationCap, Clock, Target, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { PremiumCard } from "@/components/ui/premium-card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useGeneratedCourses } from "@/hooks/useGeneratedCourses";
 import { CourseCreateWizard } from "@/components/course-engine/CourseCreateWizard";
 import { GeneratedCourseCard } from "@/components/course-engine/GeneratedCourseCard";
+import { GeneratedCoursesEmptyState } from "@/components/course-engine/GeneratedCoursesEmptyState";
+import { GeneratedCoursesNoResults } from "@/components/course-engine/GeneratedCoursesNoResults";
 import { AdaptiveLoading } from "@/components/shared/LoadingStates";
+import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 
 const GeneratedCourseDashboard = () => {
   const navigate = useNavigate();
-  const { courses, isLoading, refreshCourses } = useGeneratedCourses();
+  const { courses, isLoading, refreshCourses, deleteCourse } = useGeneratedCourses();
   const [showWizard, setShowWizard] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"recent" | "alpha" | "progress">("recent");
+  const [filterBy, setFilterBy] = useState<"all" | "active" | "completed" | "draft">("all");
 
-  const activeCourses = courses.filter(c => c.status === 'active');
-  const completedCourses = courses.filter(c => c.status === 'completed');
-  const draftCourses = courses.filter(c => c.status === 'draft' || c.status === 'generating');
+  // Debounce search input
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Filter and sort courses
+  const filteredAndSortedCourses = useMemo(() => {
+    let filtered = [...courses];
+
+    // Apply search filter
+    if (debouncedSearchQuery) {
+      filtered = filtered.filter(course =>
+        course.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        course.topic.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (filterBy !== "all") {
+      filtered = filtered.filter(course => {
+        if (filterBy === "draft") {
+          return course.status === "draft" || course.status === "generating";
+        }
+        return course.status === filterBy;
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (sortBy === "alpha") {
+        return a.title.localeCompare(b.title);
+      } else if (sortBy === "progress") {
+        const progressA = a.progress || 0;
+        const progressB = b.progress || 0;
+        return progressB - progressA;
+      } else {
+        // Recent (default)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return filtered;
+  }, [courses, debouncedSearchQuery, filterBy, sortBy]);
+
+  const activeCourses = filteredAndSortedCourses.filter(c => c.status === 'active');
+  const completedCourses = filteredAndSortedCourses.filter(c => c.status === 'completed');
+  const draftCourses = filteredAndSortedCourses.filter(c => c.status === 'draft' || c.status === 'generating');
+
+  // Fetch courses on mount
+  useEffect(() => {
+    refreshCourses();
+  }, [refreshCourses]);
 
   const handleCourseCreated = () => {
     setShowWizard(false);
@@ -27,6 +88,14 @@ const GeneratedCourseDashboard = () => {
 
   const handleCourseClick = (courseId: string) => {
     navigate(`/courses/generated/${courseId}`);
+  };
+
+  const handleDeleteCourse = async (courseId: string) => {
+    const success = await deleteCourse(courseId);
+    if (success) {
+      await refreshCourses();
+    }
+    return success;
   };
 
   return (
@@ -64,6 +133,47 @@ const GeneratedCourseDashboard = () => {
               Create Course
             </Button>
           </div>
+
+          {/* Search and Filters */}
+          {courses.length > 0 && (
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="relative md:col-span-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search courses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-white/90 backdrop-blur-sm"
+                />
+              </div>
+
+              {/* Sort */}
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="bg-white/90 backdrop-blur-sm">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Most Recent</SelectItem>
+                  <SelectItem value="alpha">Alphabetical</SelectItem>
+                  <SelectItem value="progress">Progress</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Filter */}
+              <Select value={filterBy} onValueChange={(value: any) => setFilterBy(value)}>
+                <SelectTrigger className="bg-white/90 backdrop-blur-sm">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Courses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="draft">In Progress</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Stats Overview */}
@@ -109,18 +219,15 @@ const GeneratedCourseDashboard = () => {
         {isLoading ? (
           <AdaptiveLoading />
         ) : courses.length === 0 ? (
-          <PremiumCard className="p-12 text-center">
-            <GraduationCap className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No courses yet</h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Create your first personalized course on any topic. Our AI will generate
-              a complete learning journey with modules, checkpoints, and feedback.
-            </p>
-            <Button onClick={() => setShowWizard(true)} size="lg">
-              <Plus className="h-5 w-5 mr-2" />
-              Create Your First Course
-            </Button>
-          </PremiumCard>
+          <GeneratedCoursesEmptyState onCreateClick={() => setShowWizard(true)} />
+        ) : filteredAndSortedCourses.length === 0 ? (
+          <GeneratedCoursesNoResults 
+            searchQuery={searchQuery}
+            onClearFilters={() => {
+              setSearchQuery("");
+              setFilterBy("all");
+            }}
+          />
         ) : (
           <div className="space-y-6">
             {/* Active Courses */}
@@ -132,7 +239,9 @@ const GeneratedCourseDashboard = () => {
                     <GeneratedCourseCard
                       key={course.id}
                       course={course}
+                      progress={course.progress || 0}
                       onClick={() => handleCourseClick(course.id)}
+                      onDelete={handleDeleteCourse}
                     />
                   ))}
                 </div>
@@ -148,7 +257,9 @@ const GeneratedCourseDashboard = () => {
                     <GeneratedCourseCard
                       key={course.id}
                       course={course}
+                      progress={course.progress || 0}
                       onClick={() => handleCourseClick(course.id)}
+                      onDelete={handleDeleteCourse}
                     />
                   ))}
                 </div>
@@ -164,7 +275,9 @@ const GeneratedCourseDashboard = () => {
                     <GeneratedCourseCard
                       key={course.id}
                       course={course}
+                      progress={course.progress || 0}
                       onClick={() => handleCourseClick(course.id)}
+                      onDelete={handleDeleteCourse}
                     />
                   ))}
                 </div>

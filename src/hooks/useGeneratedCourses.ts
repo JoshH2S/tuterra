@@ -9,8 +9,12 @@ import {
   CourseLevel 
 } from '@/types/course-engine';
 
+interface CourseWithProgress extends GeneratedCourse {
+  progress?: number;
+}
+
 interface UseGeneratedCoursesReturn {
-  courses: GeneratedCourse[];
+  courses: CourseWithProgress[];
   isLoading: boolean;
   isCreating: boolean;
   error: Error | null;
@@ -18,10 +22,11 @@ interface UseGeneratedCoursesReturn {
   refreshCourses: () => Promise<void>;
   createCourse: (data: CreateCourseRequest) => Promise<{ course: GeneratedCourse; modules: CourseModule[] } | null>;
   deleteCourse: (courseId: string) => Promise<boolean>;
+  getCourseProgress: (courseId: string) => number;
 }
 
 export const useGeneratedCourses = (): UseGeneratedCoursesReturn => {
-  const [courses, setCourses] = useState<GeneratedCourse[]>([]);
+  const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -42,8 +47,39 @@ export const useGeneratedCourses = (): UseGeneratedCoursesReturn => {
 
       if (fetchError) throw fetchError;
       
+      // Fetch progress data for all courses
+      const { data: progressData } = await supabase
+        .from('course_progress')
+        .select('course_id, total_steps_completed')
+        .eq('user_id', user.id);
+
+      // Fetch module counts for each course
+      const { data: modulesData } = await supabase
+        .from('course_modules')
+        .select('course_id, is_completed');
+
+      // Create progress map
+      const progressMap = new Map<string, number>();
+      if (modulesData) {
+        // Group modules by course
+        const courseModules = modulesData.reduce((acc, mod) => {
+          if (!acc[mod.course_id]) acc[mod.course_id] = [];
+          acc[mod.course_id].push(mod);
+          return acc;
+        }, {} as Record<string, typeof modulesData>);
+
+        // Calculate progress percentage for each course
+        Object.entries(courseModules).forEach(([courseId, modules]) => {
+          if (modules.length > 0) {
+            const completedCount = modules.filter(m => m.is_completed).length;
+            const percentage = Math.round((completedCount / modules.length) * 100);
+            progressMap.set(courseId, percentage);
+          }
+        });
+      }
+      
       // Transform the data to match our types
-      const transformedCourses: GeneratedCourse[] = (data || []).map(course => ({
+      const transformedCourses: CourseWithProgress[] = (data || []).map(course => ({
         id: course.id,
         user_id: course.user_id,
         topic: course.topic,
@@ -60,6 +96,7 @@ export const useGeneratedCourses = (): UseGeneratedCoursesReturn => {
         context_summary: course.context_summary || undefined,
         created_at: course.created_at,
         updated_at: course.updated_at,
+        progress: progressMap.get(course.id) || 0,
       }));
       
       setCourses(transformedCourses);
@@ -153,6 +190,11 @@ export const useGeneratedCourses = (): UseGeneratedCoursesReturn => {
     }
   }, []);
 
+  const getCourseProgress = useCallback((courseId: string) => {
+    const course = courses.find(c => c.id === courseId);
+    return course?.progress || 0;
+  }, [courses]);
+
   return {
     courses,
     isLoading,
@@ -162,5 +204,6 @@ export const useGeneratedCourses = (): UseGeneratedCoursesReturn => {
     refreshCourses: fetchCourses,
     createCourse,
     deleteCourse,
+    getCourseProgress,
   };
 };
