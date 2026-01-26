@@ -69,10 +69,18 @@ export interface CourseModule {
   steps?: ModuleStep[];
 }
 
+export interface ContentSlide {
+  title: string;
+  content: string;
+  keyPoints?: string[];
+  visualHint?: string; // Suggestion for what visual/diagram would help
+}
+
 export interface StepContent {
   // For 'teach' type
   text?: string;
   keyPoints?: string[];
+  slides?: ContentSlide[]; // New: slide-based content for teach steps
   
   // For 'prompt' type
   question?: string;

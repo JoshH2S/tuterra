@@ -33,9 +33,11 @@ export function ModuleSidebar({
   onStepSelect,
   onBack,
 }: ModuleSidebarProps) {
-  const completedModules = modules.filter(m => m.is_completed).length;
-  const progressPercent = modules.length > 0 
-    ? Math.round((completedModules / modules.length) * 100) 
+  // Use step-based progress for consistency with main progress bar
+  const totalStepsAcrossCourse = modules.length * 6; // 6 steps per module
+  const completedSteps = progress?.total_steps_completed || 0;
+  const progressPercent = totalStepsAcrossCourse > 0 
+    ? Math.round((completedSteps / totalStepsAcrossCourse) * 100) 
     : 0;
 
   return (
@@ -55,7 +57,7 @@ export function ModuleSidebar({
         <h2 className="font-semibold text-sm truncate mb-1">{course.title}</h2>
         
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-          <span>{completedModules} of {modules.length} modules</span>
+          <span>{completedSteps} of {totalStepsAcrossCourse} steps completed</span>
         </div>
         
         <Progress value={progressPercent} className="h-1.5" />

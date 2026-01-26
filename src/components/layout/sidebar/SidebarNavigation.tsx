@@ -33,8 +33,8 @@ interface NavigationItem {
 export const navigationItems: NavigationItem[] = [
   { 
     icon: Home, 
-    label: "Dashboard", 
-    path: "/dashboard" 
+    label: "Home", 
+    path: "/courses/generated" 
   },
   { 
     icon: BookOpenText, 
@@ -81,7 +81,8 @@ export const SidebarNavigation = ({ isCollapsed = false }: SidebarNavigationProp
   
   const isActive = (path: string) => {
     if (location.pathname === path) return true;
-    if (path === '/dashboard' && location.pathname === '/') return true;
+    // Dashboard overview is active for /dashboard and /dashboard/overview
+    if (path === '/dashboard/overview' && (location.pathname === '/dashboard' || location.pathname === '/dashboard/')) return true;
     if (path !== '/' && path !== '/dashboard' && location.pathname.startsWith(path)) {
       const morePreciseMatch = navigationItems.some(item => 
         item.path !== path && 

@@ -117,9 +117,9 @@ Module Summary: ${module.summary}
 Estimated Duration: ${module.estimated_minutes} minutes
 
 Create 6 learning steps following this sequence:
-1. TEACH step - Introduction and key concepts (concise, 2-3 paragraphs max)
+1. TEACH step - Comprehensive introduction with 3-4 slides (each slide focuses on one concept)
 2. PROMPT step - Interactive question to check understanding
-3. TEACH step - Deeper exploration of the topic
+3. TEACH step - Deeper exploration with 3-4 slides (advanced concepts, applications, examples)
 4. QUIZ step - 3 multiple choice questions
 5. PROMPT step - Scenario-based application question
 6. CHECKPOINT step - ${checkpointType === 'quiz' ? '5 assessment questions' : 'Written reflection prompt'}
@@ -130,10 +130,47 @@ Generate JSON with this structure:
     {
       "step_index": 0,
       "step_type": "teach",
-      "title": "Step title",
+      "title": "Introduction to [Topic]",
       "content": {
-        "text": "Teaching content here...",
-        "keyPoints": ["Key point 1", "Key point 2"]
+        "slides": [
+          {
+            "title": "Welcome & Overview",
+            "content": "Engaging introduction that sets context and explains why this topic matters. Include a hook and real-world relevance. 80-120 words.",
+            "keyPoints": [
+              "Key concept 1 with clear explanation",
+              "Important detail 2 with context",
+              "Practical insight 3"
+            ],
+            "visualHint": "Suggest a diagram, chart, or visual that would help (e.g., 'A flowchart showing the process', 'Timeline of events')"
+          },
+          {
+            "title": "Core Concept",
+            "content": "Deep dive into the main concept with clear definitions and examples. 80-120 words.",
+            "keyPoints": [
+              "Fundamental principle 1",
+              "Related concept 2",
+              "Important distinction 3"
+            ]
+          },
+          {
+            "title": "Practical Examples",
+            "content": "Real-world examples and practical applications with specific scenarios. 80-120 words.",
+            "keyPoints": [
+              "Example 1 with explanation",
+              "Example 2 with context",
+              "Common use case 3"
+            ]
+          },
+          {
+            "title": "Tips & Common Pitfalls",
+            "content": "Expert insights, best practices, and common mistakes to avoid. 80-120 words.",
+            "keyPoints": [
+              "Best practice 1",
+              "Common mistake to avoid 2",
+              "Pro tip 3"
+            ]
+          }
+        ]
       }
     },
     {
@@ -149,10 +186,46 @@ Generate JSON with this structure:
     {
       "step_index": 2,
       "step_type": "teach",
-      "title": "Going Deeper",
+      "title": "Advanced Concepts",
       "content": {
-        "text": "More detailed content...",
-        "keyPoints": ["Key point 1", "Key point 2"]
+        "slides": [
+          {
+            "title": "Building on Basics",
+            "content": "Connect to previous learning and introduce advanced aspects. 80-120 words.",
+            "keyPoints": [
+              "Connection to previous concepts",
+              "Advanced aspect 1",
+              "Advanced aspect 2"
+            ]
+          },
+          {
+            "title": "Deep Dive",
+            "content": "Explore nuances, edge cases, and sophisticated applications with technical depth. 80-120 words.",
+            "keyPoints": [
+              "Nuanced detail 1",
+              "Edge case or exception 2",
+              "Technical insight 3"
+            ]
+          },
+          {
+            "title": "Real-World Applications",
+            "content": "Advanced real-world scenarios and professional applications. 80-120 words.",
+            "keyPoints": [
+              "Professional application 1",
+              "Complex scenario 2",
+              "Industry practice 3"
+            ]
+          },
+          {
+            "title": "Mastery & Next Steps",
+            "content": "Summary of advanced concepts and pathways for continued growth. 80-120 words.",
+            "keyPoints": [
+              "Key mastery indicator 1",
+              "Integration point 2",
+              "Path for further learning 3"
+            ]
+          }
+        ]
       }
     },
     {
@@ -244,12 +317,26 @@ Generate JSON with this structure:
   ]
 }
 
-Guidelines:
-- Keep teaching content concise and engaging
-- Questions should require active thinking
-- Checkpoint should assess key module concepts
-- Content appropriate for ${course.level} level
-- No job guarantees or certification language`;
+Guidelines for TEACH steps:
+- Structure content as 4 SLIDES per teach step, each with a clear focus
+- Each slide should have 80-120 words of content (concise but informative)
+- Each slide should have 3 focused key points
+- Build a logical progression: Overview → Core Concept → Examples → Tips
+- For language courses: include pronunciation tips and cultural notes
+- For technical courses: include code examples and practical applications
+- Make content engaging and visual - think "presentation mode"
+- Use descriptive slide titles that preview the content
+- First teach step: Introduces foundations clearly
+- Second teach step: Advances to applications and mastery
+
+Guidelines for interactive elements:
+- PROMPT questions should check understanding of taught material
+- QUIZ questions should have clear correct answers with explanations
+- CHECKPOINT should comprehensively assess key module concepts
+- All content appropriate for ${course.level} level
+- No job guarantees or certification language
+
+IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substantial enough that students can answer subsequent questions without external resources.`;
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -262,7 +349,7 @@ Guidelines:
         messages: [
           {
             role: 'system',
-            content: 'You are an expert instructional designer. Always respond with valid JSON only.'
+            content: 'You are an expert instructional designer. Generate structured learning content following the provided schema.'
           },
           {
             role: 'user',
@@ -270,7 +357,127 @@ Guidelines:
           }
         ],
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: 3500,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "module_steps",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                steps: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      step_index: { type: "integer" },
+                      step_type: { 
+                        type: "string",
+                        enum: ["teach", "prompt", "quiz", "checkpoint", "reflection"]
+                      },
+                      title: { type: "string" },
+                      content: {
+                        type: "object",
+                        properties: {
+                          slides: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                title: { type: "string" },
+                                content: { type: "string" },
+                                keyPoints: {
+                                  type: "array",
+                                  items: { type: "string" }
+                                },
+                                visualHint: { type: "string" }
+                              },
+                              required: ["title", "content", "keyPoints"],
+                              additionalProperties: false
+                            }
+                          },
+                          question: { type: "string" },
+                          expectedResponse: { type: "string" },
+                          hints: {
+                            type: "array",
+                            items: { type: "string" }
+                          },
+                          questions: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                id: { type: "string" },
+                                question: { type: "string" },
+                                options: {
+                                  type: "object",
+                                  properties: {
+                                    A: { type: "string" },
+                                    B: { type: "string" },
+                                    C: { type: "string" },
+                                    D: { type: "string" }
+                                  },
+                                  required: ["A", "B", "C", "D"],
+                                  additionalProperties: false
+                                },
+                                correctAnswer: {
+                                  type: "string",
+                                  enum: ["A", "B", "C", "D"]
+                                },
+                                explanation: { type: "string" },
+                                points: { type: "integer" }
+                              },
+                              required: ["id", "question", "options", "correctAnswer"],
+                              additionalProperties: false
+                            }
+                          },
+                          instructions: { type: "string" },
+                          submissionType: {
+                            type: "string",
+                            enum: ["text", "choice", "file"]
+                          },
+                          reflectionPrompts: {
+                            type: "array",
+                            items: { type: "string" }
+                          }
+                        },
+                        additionalProperties: false
+                      },
+                      rubric: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            criterion: { type: "string" },
+                            weight: { type: "integer" },
+                            levels: {
+                              type: "object",
+                              properties: {
+                                excellent: { type: "string" },
+                                good: { type: "string" },
+                                satisfactory: { type: "string" },
+                                needsImprovement: { type: "string" }
+                              },
+                              required: ["excellent", "good", "satisfactory", "needsImprovement"],
+                              additionalProperties: false
+                            }
+                          },
+                          required: ["criterion", "weight", "levels"],
+                          additionalProperties: false
+                        }
+                      }
+                    },
+                    required: ["step_index", "step_type", "title", "content"],
+                    additionalProperties: false
+                  }
+                }
+              },
+              required: ["steps"],
+              additionalProperties: false
+            }
+          }
+        }
       }),
     });
 
@@ -293,20 +500,75 @@ Guidelines:
       );
     }
 
-    // Parse the generated content
+    // Parse the generated content (no fence stripping needed with structured output)
     let stepsData;
     try {
-      const cleanedContent = generatedContent
-        .replace(/```json\n?/g, '')
-        .replace(/```\n?/g, '')
-        .trim();
-      stepsData = JSON.parse(cleanedContent);
+      stepsData = JSON.parse(generatedContent);
     } catch (parseError) {
       console.error('Failed to parse generated steps:', parseError);
       return new Response(
         JSON.stringify({ error: 'Failed to parse generated content' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Validate the structure
+    if (!stepsData?.steps || !Array.isArray(stepsData.steps) || stepsData.steps.length !== 6) {
+      console.error('Invalid steps structure:', stepsData);
+      return new Response(
+        JSON.stringify({ error: 'Generated content does not match expected structure' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Normalize/validate generated steps to match UI + evaluator expectations:
+    // - Ensure quiz step has exactly 3 questions (slice extras)
+    // - Ensure checkpoint quiz uses configured questionCount (default 5)
+    // - Ensure all question IDs are present + unique within the step
+    try {
+      const checkpointQuestionCount =
+        (module.checkpoints_schema?.questionCount && Number(module.checkpoints_schema.questionCount)) || 5;
+
+      if (stepsData?.steps && Array.isArray(stepsData.steps)) {
+        stepsData.steps = stepsData.steps.map((s: any) => {
+          if (!s?.content) return s;
+
+          const isQuiz = s.step_type === 'quiz';
+          const isCheckpointQuiz =
+            s.step_type === 'checkpoint' && (module.checkpoints_schema?.type || 'quiz') === 'quiz';
+
+          if ((isQuiz || isCheckpointQuiz) && Array.isArray(s.content.questions)) {
+            // Enforce question count
+            const expectedCount = isQuiz ? 3 : checkpointQuestionCount;
+            if (s.content.questions.length > expectedCount) {
+              s.content.questions = s.content.questions.slice(0, expectedCount);
+            }
+
+            // Ensure unique IDs
+            const used = new Set<string>();
+            s.content.questions = s.content.questions.map((q: any, idx: number) => {
+              const baseId = typeof q?.id === 'string' && q.id.trim().length > 0
+                ? q.id.trim()
+                : `q${s.step_index}_${idx + 1}`;
+
+              let id = baseId;
+              let n = 2;
+              while (used.has(id)) {
+                id = `${baseId}_${n}`;
+                n++;
+              }
+              used.add(id);
+
+              return { ...q, id };
+            });
+          }
+
+          return s;
+        });
+      }
+    } catch (normalizeErr) {
+      console.error('Failed to normalize generated steps:', normalizeErr);
+      // Non-fatal; continue with best-effort content
     }
 
     // Insert steps into database
@@ -328,6 +590,30 @@ Guidelines:
 
     if (stepsError) {
       console.error('Error inserting steps:', stepsError);
+      
+      // If duplicate key error, fetch existing steps instead
+      if (stepsError.code === '23505' || stepsError.message.includes('duplicate key')) {
+        console.log('Steps already exist (duplicate key), fetching existing steps...');
+        const { data: existingSteps, error: fetchError } = await supabase
+          .from('module_steps')
+          .select('*')
+          .eq('module_id', module_id)
+          .order('step_index', { ascending: true });
+        
+        if (fetchError || !existingSteps || existingSteps.length === 0) {
+          return new Response(
+            JSON.stringify({ error: 'Failed to retrieve existing steps', details: fetchError?.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        console.log('Returning existing steps:', existingSteps.length);
+        return new Response(
+          JSON.stringify({ success: true, steps: existingSteps, cached: true }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: 'Failed to save steps', details: stepsError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

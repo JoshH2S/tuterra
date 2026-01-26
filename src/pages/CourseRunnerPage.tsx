@@ -39,6 +39,7 @@ const CourseRunnerPage = () => {
     lastFeedback,
     loadCourse,
     submitStep,
+    markStepComplete,
     navigateToStep,
     navigateToModule,
     getProgressPercentage,
@@ -60,6 +61,13 @@ const CourseRunnerPage = () => {
     const result = await submitStep(submission);
     if (result.success && result.nextStepId) {
       // Auto-advance after feedback is dismissed
+    }
+  };
+
+  const handleTeachComplete = async () => {
+    const result = await markStepComplete();
+    if (result.success) {
+      handleNextStep();
     }
   };
 
@@ -210,6 +218,7 @@ const CourseRunnerPage = () => {
                 step={currentStep}
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
+                onTeachComplete={handleTeachComplete}
               />
             ) : (
               <div className="text-center py-12">
@@ -236,11 +245,19 @@ const CourseRunnerPage = () => {
                 <span>Step {currentStepIndex + 1} of {steps.length}</span>
               </div>
 
-              {currentStep.step_type === 'teach' && (
+              {/* Only show Continue button for legacy teach steps without slides */}
+              {currentStep.step_type === 'teach' && 
+               (!currentStep.content.slides || currentStep.content.slides.length === 0) && (
                 <Button onClick={handleNextStep}>
                   Continue
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
+              )}
+              
+              {/* Spacer for non-teach steps or slide-based teach steps */}
+              {(currentStep.step_type !== 'teach' || 
+                (currentStep.content.slides && currentStep.content.slides.length > 0)) && (
+                <div className="w-[100px]" />
               )}
             </div>
           </div>

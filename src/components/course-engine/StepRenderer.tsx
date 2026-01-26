@@ -8,14 +8,16 @@ import { PremiumCard } from "@/components/ui/premium-card";
 import { Badge } from "@/components/ui/badge";
 import { ModuleStep, SubmissionData, QuizQuestion } from "@/types/course-engine";
 import { cn } from "@/lib/utils";
+import { SlideNavigator } from "./SlideNavigator";
 
 interface StepRendererProps {
   step: ModuleStep;
   onSubmit: (submission: SubmissionData) => Promise<void>;
   isSubmitting: boolean;
+  onTeachComplete?: () => void; // Called when user completes viewing all slides
 }
 
-export function StepRenderer({ step, onSubmit, isSubmitting }: StepRendererProps) {
+export function StepRenderer({ step, onSubmit, isSubmitting, onTeachComplete }: StepRendererProps) {
   const [response, setResponse] = useState("");
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [showHint, setShowHint] = useState(false);
@@ -54,6 +56,29 @@ export function StepRenderer({ step, onSubmit, isSubmitting }: StepRendererProps
 
   // Render teaching content
   if (step.step_type === 'teach') {
+    // Use slide-based navigation if slides are available
+    if (step.content.slides && step.content.slides.length > 0) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              {getStepIcon()}
+              {getStepLabel()}
+            </Badge>
+            {step.title && <h2 className="text-xl font-semibold">{step.title}</h2>}
+          </div>
+
+          <SlideNavigator 
+            slides={step.content.slides} 
+            onComplete={onTeachComplete}
+            autoMarkComplete={true}
+            isSubmitting={isSubmitting}
+          />
+        </div>
+      );
+    }
+
+    // Fallback to legacy single-page format for backward compatibility
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2 mb-4">

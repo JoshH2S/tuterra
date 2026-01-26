@@ -27,6 +27,7 @@ interface UseCourseRunnerReturn {
   loadCourse: (courseId: string) => Promise<void>;
   loadModuleSteps: (moduleId: string) => Promise<void>;
   submitStep: (submission: SubmissionData) => Promise<{ success: boolean; nextStepId?: string }>;
+  markStepComplete: (stepId?: string) => Promise<{ success: boolean; nextStepId?: string }>;
   navigateToStep: (stepId: string) => void;
   navigateToModule: (moduleIndex: number) => void;
   getProgressPercentage: () => number;
@@ -193,10 +194,22 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
 
       setSteps(result.steps);
 
-      // Set current step
+      // Set current step - prioritize saved progress, then first incomplete
       if (result.steps.length > 0) {
-        const incompleteStep = result.steps.find((s: ModuleStep) => !s.is_completed);
-        setCurrentStep(incompleteStep || result.steps[0]);
+        let targetStep: ModuleStep | undefined;
+        
+        // First, try to resume from saved progress
+        if (progress?.current_step_id) {
+          targetStep = result.steps.find((s: ModuleStep) => s.id === progress.current_step_id);
+        }
+        
+        // If no saved step or saved step not found, find first incomplete
+        if (!targetStep) {
+          targetStep = result.steps.find((s: ModuleStep) => !s.is_completed);
+        }
+        
+        // Fallback to first step
+        setCurrentStep(targetStep || result.steps[0]);
       }
     } catch (err) {
       console.error('Error loading steps:', err);
@@ -281,6 +294,65 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
     }
   }, [currentStep, course]);
 
+  const markStepComplete = useCallback(async (stepId?: string) => {
+    const targetStep = stepId ? steps.find(s => s.id === stepId) : currentStep;
+    if (!targetStep || !course) {
+      return { success: false };
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await supabase.functions.invoke('mark-step-complete', {
+        body: {
+          step_id: targetStep.id,
+          course_id: course.id,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to mark step complete');
+      }
+
+      const result = response.data;
+
+      if (!result.success) {
+        throw new Error('Failed to mark step complete');
+      }
+
+      // Update step completion locally
+      setSteps(prev =>
+        prev.map(s =>
+          s.id === targetStep.id
+            ? { ...s, is_completed: true, completed_at: new Date().toISOString() }
+            : s
+        )
+      );
+
+      // Update progress with server response
+      setProgress(prev => prev ? {
+        ...prev,
+        total_steps_completed: result.completed_steps,
+        last_activity_at: new Date().toISOString(),
+      } : null);
+
+      return {
+        success: true,
+        nextStepId: result.next_step_id,
+      };
+    } catch (err) {
+      console.error('Error marking step complete:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to complete step. Please try again.',
+        variant: 'destructive',
+      });
+      return { success: false };
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [currentStep, course, steps]);
+
   const navigateToStep = useCallback((stepId: string) => {
     const step = steps.find(s => s.id === stepId);
     if (step) {
@@ -298,11 +370,19 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
   }, [modules]);
 
   const getProgressPercentage = useCallback(() => {
-    if (!modules.length) return 0;
+    // Use step-based progress instead of module-based for better granularity
+    if (!progress || !progress.total_steps_completed) return 0;
+    
+    // Calculate total steps across all modules
+    const totalStepsAcrossCourse = modules.reduce((total, module) => {
+      // Each module has 6 steps by default (2 teach, 2 prompt, 1 quiz, 1 checkpoint)
+      return total + 6;
+    }, 0);
 
-    const completedModules = modules.filter(m => m.is_completed).length;
-    return Math.round((completedModules / modules.length) * 100);
-  }, [modules]);
+    if (totalStepsAcrossCourse === 0) return 0;
+    
+    return Math.round((progress.total_steps_completed / totalStepsAcrossCourse) * 100);
+  }, [progress, modules]);
 
   return {
     course,
@@ -318,6 +398,7 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
     loadCourse,
     loadModuleSteps,
     submitStep,
+    markStepComplete,
     navigateToStep,
     navigateToModule,
     getProgressPercentage,
