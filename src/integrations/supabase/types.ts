@@ -133,6 +133,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_state: {
+        Row: {
+          created_at: string | null
+          has_completed_onboarding: boolean | null
+          has_seen_availability_prompt: boolean | null
+          has_seen_upgrade_prompt: boolean | null
+          last_upgrade_prompt_at: string | null
+          updated_at: string | null
+          upgrade_prompt_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          has_completed_onboarding?: boolean | null
+          has_seen_availability_prompt?: boolean | null
+          has_seen_upgrade_prompt?: boolean | null
+          last_upgrade_prompt_at?: string | null
+          updated_at?: string | null
+          upgrade_prompt_count?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          has_completed_onboarding?: boolean | null
+          has_seen_availability_prompt?: boolean | null
+          has_seen_upgrade_prompt?: boolean | null
+          last_upgrade_prompt_at?: string | null
+          updated_at?: string | null
+          upgrade_prompt_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       assessment_analytics: {
         Row: {
           created_at: string
@@ -2807,6 +2840,36 @@ export type Database = {
           },
         ]
       }
+      push_tokens: {
+        Row: {
+          created_at: string | null
+          device_id: string | null
+          device_name: string | null
+          expo_push_token: string
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_id?: string | null
+          device_name?: string | null
+          expo_push_token: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string | null
+          device_name?: string | null
+          expo_push_token?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       question_responses: {
         Row: {
           created_at: string
@@ -3082,6 +3145,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scheduled_notifications: {
+        Row: {
+          created_at: string | null
+          day_key: string
+          id: string
+          notification_type: string
+          scheduled_for: string
+          sent_at: string | null
+          task_id: string
+          task_title: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_key: string
+          id?: string
+          notification_type: string
+          scheduled_for: string
+          sent_at?: string | null
+          task_id: string
+          task_title: string
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          day_key?: string
+          id?: string
+          notification_type?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          task_id?: string
+          task_title?: string
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
       }
       session_reminders: {
         Row: {
@@ -4099,6 +4201,36 @@ export type Database = {
         }
         Relationships: []
       }
+      week_plans: {
+        Row: {
+          created_at: string | null
+          id: string
+          selected_day: string
+          tasks_by_day: Json
+          updated_at: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          selected_day: string
+          tasks_by_day?: Json
+          updated_at?: string | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          selected_day?: string
+          tasks_by_day?: Json
+          updated_at?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       welcome_section_config: {
         Row: {
           created_at: string
@@ -4261,6 +4393,17 @@ export type Database = {
       }
       cleanup_old_responses: { Args: never; Returns: undefined }
       get_app_config: { Args: { config_key: string }; Returns: string }
+      get_pending_notifications: {
+        Args: { check_time?: string }
+        Returns: {
+          expo_push_token: string
+          notification_id: string
+          notification_type: string
+          scheduled_for: string
+          task_title: string
+          user_id: string
+        }[]
+      }
       get_response_processing_metrics: {
         Args: never
         Returns: {
@@ -4335,6 +4478,10 @@ export type Database = {
         Returns: undefined
       }
       mark_messages_read: { Args: { p_message_ids: string[] }; Returns: number }
+      mark_notification_sent: {
+        Args: { notification_id: string }
+        Returns: undefined
+      }
       match_content_chunks: {
         Args: {
           match_count: number
