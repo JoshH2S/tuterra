@@ -420,6 +420,126 @@ export type Database = {
           },
         ]
       }
+      course_modules: {
+        Row: {
+          checkpoints_schema: Json | null
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          estimated_minutes: number | null
+          id: string
+          is_completed: boolean | null
+          module_index: number
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          checkpoints_schema?: Json | null
+          completed_at?: string | null
+          course_id: string
+          created_at?: string
+          estimated_minutes?: number | null
+          id?: string
+          is_completed?: boolean | null
+          module_index: number
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          checkpoints_schema?: Json | null
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string
+          estimated_minutes?: number | null
+          id?: string
+          is_completed?: boolean | null
+          module_index?: number
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "generated_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_progress: {
+        Row: {
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          current_module_id: string | null
+          current_step_id: string | null
+          id: string
+          last_activity_at: string | null
+          module_completion: Json | null
+          started_at: string | null
+          total_checkpoints_passed: number | null
+          total_steps_completed: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: string
+          created_at?: string
+          current_module_id?: string | null
+          current_step_id?: string | null
+          id?: string
+          last_activity_at?: string | null
+          module_completion?: Json | null
+          started_at?: string | null
+          total_checkpoints_passed?: number | null
+          total_steps_completed?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string
+          current_module_id?: string | null
+          current_step_id?: string | null
+          id?: string
+          last_activity_at?: string | null
+          module_completion?: Json | null
+          started_at?: string | null
+          total_checkpoints_passed?: number | null
+          total_steps_completed?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "generated_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_progress_current_module_id_fkey"
+            columns: ["current_module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_progress_current_step_id_fkey"
+            columns: ["current_step_id"]
+            isOneToOne: false
+            referencedRelation: "module_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_templates: {
         Row: {
           content: Json
@@ -584,6 +704,57 @@ export type Database = {
           id?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      generated_courses: {
+        Row: {
+          context_summary: string | null
+          created_at: string
+          description: string | null
+          format_preferences: Json | null
+          goal: string | null
+          id: string
+          learning_objectives: Json | null
+          level: Database["public"]["Enums"]["course_level"]
+          pace_weeks: number
+          status: Database["public"]["Enums"]["course_engine_status"]
+          title: string
+          topic: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context_summary?: string | null
+          created_at?: string
+          description?: string | null
+          format_preferences?: Json | null
+          goal?: string | null
+          id?: string
+          learning_objectives?: Json | null
+          level?: Database["public"]["Enums"]["course_level"]
+          pace_weeks?: number
+          status?: Database["public"]["Enums"]["course_engine_status"]
+          title: string
+          topic: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context_summary?: string | null
+          created_at?: string
+          description?: string | null
+          format_preferences?: Json | null
+          goal?: string | null
+          id?: string
+          learning_objectives?: Json | null
+          level?: Database["public"]["Enums"]["course_level"]
+          pace_weeks?: number
+          status?: Database["public"]["Enums"]["course_engine_status"]
+          title?: string
+          topic?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2425,6 +2596,53 @@ export type Database = {
         }
         Relationships: []
       }
+      module_steps: {
+        Row: {
+          completed_at: string | null
+          content: Json
+          created_at: string
+          id: string
+          is_completed: boolean | null
+          module_id: string
+          rubric: Json | null
+          step_index: number
+          step_type: Database["public"]["Enums"]["course_step_type"]
+          title: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          module_id: string
+          rubric?: Json | null
+          step_index: number
+          step_type: Database["public"]["Enums"]["course_step_type"]
+          title?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          module_id?: string
+          rubric?: Json | null
+          step_index?: number
+          step_type?: Database["public"]["Enums"]["course_step_type"]
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_steps_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       openai_file_references: {
         Row: {
           created_at: string
@@ -3440,6 +3658,60 @@ export type Database = {
           xp_per_level?: number | null
         }
         Relationships: []
+      }
+      step_submissions: {
+        Row: {
+          ai_feedback: Json | null
+          attempt_number: number | null
+          course_id: string
+          created_at: string
+          id: string
+          is_passing: boolean | null
+          score: number | null
+          step_id: string
+          submission: Json
+          user_id: string
+        }
+        Insert: {
+          ai_feedback?: Json | null
+          attempt_number?: number | null
+          course_id: string
+          created_at?: string
+          id?: string
+          is_passing?: boolean | null
+          score?: number | null
+          step_id: string
+          submission: Json
+          user_id: string
+        }
+        Update: {
+          ai_feedback?: Json | null
+          attempt_number?: number | null
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_passing?: boolean | null
+          score?: number | null
+          step_id?: string
+          submission?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "step_submissions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "generated_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "step_submissions_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "module_steps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_courses: {
         Row: {
@@ -4603,6 +4875,19 @@ export type Database = {
     }
     Enums: {
       content_type: "chapter" | "section" | "definition" | "formula" | "example"
+      course_engine_status:
+        | "draft"
+        | "generating"
+        | "active"
+        | "completed"
+        | "archived"
+      course_level: "beginner" | "intermediate" | "advanced"
+      course_step_type:
+        | "teach"
+        | "prompt"
+        | "quiz"
+        | "checkpoint"
+        | "reflection"
       news_topic:
         | "business_economics"
         | "political_science_law"
@@ -4745,6 +5030,15 @@ export const Constants = {
   public: {
     Enums: {
       content_type: ["chapter", "section", "definition", "formula", "example"],
+      course_engine_status: [
+        "draft",
+        "generating",
+        "active",
+        "completed",
+        "archived",
+      ],
+      course_level: ["beginner", "intermediate", "advanced"],
+      course_step_type: ["teach", "prompt", "quiz", "checkpoint", "reflection"],
       news_topic: [
         "business_economics",
         "political_science_law",
