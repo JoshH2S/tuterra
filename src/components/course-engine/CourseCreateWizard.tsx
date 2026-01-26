@@ -16,20 +16,22 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, BookOpen, Target, Gauge, Settings, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { CourseLevel, FormatPreferences, CreateCourseRequest } from "@/types/course-engine";
+import { useGeneratedCourses } from "@/hooks/useGeneratedCourses";
+import { toast } from "@/hooks/use-toast";
 
 interface CourseCreateWizardProps {
-  isOpen: boolean;
+  open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateCourseRequest) => Promise<void>;
-  isCreating: boolean;
+  onCreated?: () => void;
 }
 
 export const CourseCreateWizard = ({
-  isOpen,
+  open,
   onClose,
-  onSubmit,
-  isCreating,
+  onCreated,
 }: CourseCreateWizardProps) => {
+  const { createCourse } = useGeneratedCourses();
+  const [isCreating, setIsCreating] = useState(false);
   const [step, setStep] = useState(1);
   const [topic, setTopic] = useState("");
   const [goal, setGoal] = useState("");
@@ -43,13 +45,25 @@ export const CourseCreateWizard = ({
   });
 
   const handleSubmit = async () => {
-    await onSubmit({
-      topic,
-      goal: goal || undefined,
-      level,
-      pace_weeks: paceWeeks,
-      format_preferences: formatPreferences,
-    });
+    setIsCreating(true);
+    try {
+      const result = await createCourse({
+        topic,
+        goal: goal || undefined,
+        level,
+        pace_weeks: paceWeeks,
+        format_preferences: formatPreferences,
+      });
+      
+      if (result) {
+        handleClose();
+        onCreated?.();
+      }
+    } catch (error) {
+      console.error('Error creating course:', error);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleClose = () => {
@@ -81,7 +95,7 @@ export const CourseCreateWizard = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
