@@ -14,6 +14,7 @@ import {
   Users,
   FileQuestion,
   Briefcase,
+  Sparkles,
   LucideIcon
 } from "lucide-react";
 
@@ -59,6 +60,11 @@ export const navigationItems: NavigationItem[] = [
     icon: Briefcase, 
     label: "Virtual Internships", 
     path: "/dashboard/virtual-internship/overview" 
+  },
+  { 
+    icon: Sparkles, 
+    label: "AI Courses", 
+    path: "/courses/generated" 
   },
   { 
     icon: UserRoundCog, 
