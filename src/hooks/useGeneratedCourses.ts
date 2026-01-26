@@ -15,6 +15,7 @@ interface UseGeneratedCoursesReturn {
   isCreating: boolean;
   error: Error | null;
   fetchCourses: () => Promise<void>;
+  refreshCourses: () => Promise<void>;
   createCourse: (data: CreateCourseRequest) => Promise<{ course: GeneratedCourse; modules: CourseModule[] } | null>;
   deleteCourse: (courseId: string) => Promise<boolean>;
 }
@@ -158,6 +159,7 @@ export const useGeneratedCourses = (): UseGeneratedCoursesReturn => {
     isCreating,
     error,
     fetchCourses,
+    refreshCourses: fetchCourses,
     createCourse,
     deleteCourse,
   };

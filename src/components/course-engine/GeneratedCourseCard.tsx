@@ -27,12 +27,14 @@ import { formatDistanceToNow } from "date-fns";
 interface GeneratedCourseCardProps {
   course: GeneratedCourse;
   progress?: number;
-  onDelete: (courseId: string) => Promise<boolean>;
+  onClick?: () => void;
+  onDelete?: (courseId: string) => Promise<boolean>;
 }
 
 export const GeneratedCourseCard = ({
   course,
   progress = 0,
+  onClick,
   onDelete,
 }: GeneratedCourseCardProps) => {
   const navigate = useNavigate();
@@ -40,11 +42,20 @@ export const GeneratedCourseCard = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
+    if (!onDelete) return;
     setIsDeleting(true);
     const success = await onDelete(course.id);
     setIsDeleting(false);
     if (success) {
       setShowDeleteDialog(false);
+    }
+  };
+  
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(`/courses/generated/${course.id}`);
     }
   };
 
@@ -149,7 +160,7 @@ export const GeneratedCourseCard = ({
           {/* Action Button */}
           <Button
             className="w-full"
-            onClick={() => navigate(`/courses/learn/${course.id}`)}
+            onClick={handleClick}
           >
             <Play className="h-4 w-4 mr-2" />
             {progress > 0 ? "Continue Learning" : "Start Course"}
