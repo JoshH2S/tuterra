@@ -16,11 +16,13 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { PremiumCard } from "@/components/ui/premium-card";
 import { useCourseRunner } from "@/hooks/useCourseRunner";
+import { CourseContractScreen } from "@/components/course-engine/CourseContractScreen";
 import { cn } from "@/lib/utils";
 
 const GeneratedCourseDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [showContract, setShowContract] = useState(false);
   const {
     course,
     modules,
@@ -37,9 +39,19 @@ const GeneratedCourseDetail = () => {
   }, [id, loadCourse]);
 
   const handleStartCourse = () => {
+    setShowContract(true);
+  };
+
+  const handleAcceptContract = async (startDate: Date) => {
+    // TODO: Save contract details to course_progress
+    // For now, just navigate to the course
     if (id) {
       navigate(`/courses/generated/${id}/learn`);
     }
+  };
+
+  const handleCancelContract = () => {
+    setShowContract(false);
   };
 
   const handleContinue = () => {
@@ -78,6 +90,20 @@ const GeneratedCourseDetail = () => {
             Back to Courses
           </Button>
         </PremiumCard>
+      </div>
+    );
+  }
+
+  // Show contract screen for new courses
+  if (showContract) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <CourseContractScreen
+          course={course}
+          modules={modules}
+          onAcceptContract={handleAcceptContract}
+          onCancel={handleCancelContract}
+        />
       </div>
     );
   }

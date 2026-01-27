@@ -142,6 +142,9 @@ export interface CourseProgress {
   last_activity_at: string;
   started_at: string;
   completed_at?: string;
+  scheduled_start_date?: string; // User's chosen start date from contract
+  target_completion_date?: string; // Calculated completion date
+  sessions_per_week?: number; // User's commitment (default 2)
   created_at: string;
   updated_at: string;
 }
