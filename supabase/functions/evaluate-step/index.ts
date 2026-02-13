@@ -125,7 +125,7 @@ serve(async (req) => {
       if (openAIApiKey && (submission.text || submission.response)) {
         const userResponse = submission.text || submission.response || '';
         
-        const evaluationPrompt = `You are evaluating a student's response in an educational course.
+        const evaluationPrompt = `You are a STRICT educational evaluator. Your job is to accurately assess student understanding - being too lenient undermines their learning.
 
 Course: ${course.topic} (${course.level} level)
 Module: ${module.title}
@@ -139,17 +139,27 @@ Student's Response:
 
 ${step.rubric ? `Evaluation Rubric: ${JSON.stringify(step.rubric)}` : ''}
 
+STRICT SCORING GUIDELINES:
+- 0%: Non-answers ("no idea", "idk", "I don't know", "?", gibberish, single words, or responses showing ZERO effort/understanding)
+- 1-29%: Minimal effort but completely wrong or irrelevant to the question
+- 30-49%: Attempts to answer but shows fundamental misunderstanding
+- 50-69%: Partially correct with some understanding but missing key concepts
+- 70-84%: Good understanding with minor gaps or imprecision
+- 85-100%: Excellent, demonstrates strong grasp of the material
+
+CRITICAL: Do NOT give points for simply writing something. The response must ACTUALLY ADDRESS the question with relevant content. Empty effort deserves 0%.
+
 Provide feedback in this JSON format:
 {
   "overallScore": <number 0-100>,
-  "feedback": "Constructive feedback paragraph (2-3 sentences, no markdown)",
-  "strengths": ["Specific strength 1", "Specific strength 2"],
-  "improvements": ["Suggestion 1", "Suggestion 2"],
+  "feedback": "Constructive feedback paragraph (2-3 sentences, no markdown). If score is 0%, explain why the response doesn't meet minimum standards.",
+  "strengths": ["Specific strength 1", "Specific strength 2"], // Empty array [] if score < 30
+  "improvements": ["Specific suggestion 1", "Specific suggestion 2"],
   "nextStepGuidance": "What the student should do next",
-  "conceptsToReview": ["Concept 1", "Concept 2"] // if score < 70
+  "conceptsToReview": ["Concept 1", "Concept 2"] // Required if score < 70
 }
 
-Be encouraging but honest. Focus on learning, not criticism.`;
+Be honest and fair. Students learn best from accurate feedback, not false encouragement.`;
 
         try {
           const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -163,7 +173,7 @@ Be encouraging but honest. Focus on learning, not criticism.`;
               messages: [
                 {
                   role: 'system',
-                  content: 'You are a supportive educational evaluator. Always respond with valid JSON only.'
+                  content: 'You are a strict but fair educational evaluator. Give 0% for non-answers or zero-effort responses - do not reward empty attempts. Always respond with valid JSON only.'
                 },
                 {
                   role: 'user',

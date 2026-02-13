@@ -72,30 +72,24 @@ export interface CourseModule {
 export interface ContentSlide {
   title: string;
   content: string;
-  keyPoints?: string[];
-  visualHint?: string; // Suggestion for what visual/diagram would help
+  keyPoints: string[];
+  visualHint: string; // Now required for consistent AI generation
 }
 
 export interface StepContent {
-  // For 'teach' type
+  // Legacy fields for backward compatibility
   text?: string;
   keyPoints?: string[];
-  slides?: ContentSlide[]; // New: slide-based content for teach steps
   
-  // For 'prompt' type
-  question?: string;
-  expectedResponse?: string;
-  hints?: string[];
-  
-  // For 'quiz' type
-  questions?: QuizQuestion[];
-  
-  // For 'checkpoint' type
-  instructions?: string;
-  submissionType?: 'text' | 'choice' | 'file';
-  
-  // For 'reflection' type
-  reflectionPrompts?: string[];
+  // New structured fields (nullable superset for OpenAI compatibility)
+  slides?: ContentSlide[] | null; // For 'teach' type
+  question?: string | null; // For 'prompt' type
+  expectedResponse?: string | null; // For 'prompt' type
+  hints?: string[] | null; // For 'prompt' type
+  questions?: QuizQuestion[] | null; // For 'quiz' and 'checkpoint' types
+  instructions?: string | null; // For 'checkpoint' type
+  submissionType?: 'text' | 'choice' | 'file' | null; // For 'checkpoint' type
+  reflectionPrompts?: string[] | null; // For 'reflection' and 'checkpoint' types
 }
 
 export interface QuizQuestion {
@@ -103,8 +97,8 @@ export interface QuizQuestion {
   question: string;
   options: { A: string; B: string; C: string; D: string };
   correctAnswer: 'A' | 'B' | 'C' | 'D';
-  explanation?: string;
-  points?: number;
+  explanation: string; // Now required for consistent feedback
+  points: number; // Now required for scoring
 }
 
 export interface ModuleStep {

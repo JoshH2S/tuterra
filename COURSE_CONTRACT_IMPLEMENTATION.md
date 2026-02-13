@@ -188,3 +188,8 @@ Course Commitment:
 **After:** Specific contract, clear expectations, informed commitment
 
 This transforms course starting from **"clicking a button"** to **"making a commitment"** - which is exactly what real courses require for success.
+
+
+
+
+

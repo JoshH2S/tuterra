@@ -12,6 +12,9 @@ interface GenerateStepsRequest {
   module_id: string;
 }
 
+// In-memory lock to prevent duplicate simultaneous generation within the same Edge runtime
+const generationLocks = new Map<string, Promise<any>>();
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -28,13 +31,19 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Create client with service role key to bypass RLS for reliable step checking
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Still verify the user is authenticated
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabase.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await authClient.auth.getUser(token);
     if (claimsError || !claimsData?.user) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
@@ -51,21 +60,46 @@ serve(async (req) => {
       );
     }
 
+    // In-memory lock: if the same runtime is already generating for this module, piggyback on that promise
+    if (generationLocks.has(module_id)) {
+      console.log('⏳ Same-instance generation in progress for module:', module_id, '- waiting...');
+      try {
+        const result = await generationLocks.get(module_id);
+        return new Response(
+          JSON.stringify(result),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (error) {
+        console.error('Piggybacked generation failed, will check DB:', error);
+      }
+    }
+
     // Check if steps already exist for this module
-    const { data: existingSteps } = await supabase
+    console.log('Checking for existing steps for module:', module_id);
+    
+    const { data: existingSteps, error: checkError } = await supabase
       .from('module_steps')
       .select('*')
       .eq('module_id', module_id)
       .order('step_index', { ascending: true });
 
+    if (checkError) {
+      console.error('Error checking for existing steps:', checkError);
+    }
+
     if (existingSteps && existingSteps.length > 0) {
-      console.log('Steps already exist for module:', module_id);
+      console.log('✅ Returning', existingSteps.length, 'cached steps for module:', module_id);
       return new Response(
         JSON.stringify({ success: true, steps: existingSteps, cached: true }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('No existing steps found for module:', module_id, '- generating...');
+
+    // Create a promise for the generation and store it in the in-memory lock
+    const generationPromise = (async () => {
+      try {
     // Fetch course and module details
     const { data: course, error: courseError } = await supabase
       .from('generated_courses')
@@ -74,10 +108,7 @@ serve(async (req) => {
       .single();
 
     if (courseError || !course) {
-      return new Response(
-        JSON.stringify({ error: 'Course not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+          throw new Error('Course not found');
     }
 
     const { data: module, error: moduleError } = await supabase
@@ -87,20 +118,14 @@ serve(async (req) => {
       .single();
 
     if (moduleError || !module) {
-      return new Response(
-        JSON.stringify({ error: 'Module not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+          throw new Error('Module not found');
     }
 
     console.log('Generating steps for module:', module.title);
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('OpenAI API key not configured');
     }
 
     // Build the prompt for step generation
@@ -150,7 +175,8 @@ Generate JSON with this structure:
               "Fundamental principle 1",
               "Related concept 2",
               "Important distinction 3"
-            ]
+            ],
+            "visualHint": "Diagram suggestion for this concept"
           },
           {
             "title": "Practical Examples",
@@ -159,7 +185,8 @@ Generate JSON with this structure:
               "Example 1 with explanation",
               "Example 2 with context",
               "Common use case 3"
-            ]
+            ],
+            "visualHint": "Visual example suggestion"
           },
           {
             "title": "Tips & Common Pitfalls",
@@ -168,7 +195,8 @@ Generate JSON with this structure:
               "Best practice 1",
               "Common mistake to avoid 2",
               "Pro tip 3"
-            ]
+            ],
+            "visualHint": "Helpful visual for tips and pitfalls"
           }
         ]
       }
@@ -178,10 +206,16 @@ Generate JSON with this structure:
       "step_type": "prompt",
       "title": "Check Your Understanding",
       "content": {
+        "slides": null,
         "question": "Interactive question...",
         "expectedResponse": "What a good answer would include...",
-        "hints": ["Hint 1", "Hint 2"]
-      }
+        "hints": ["Hint 1", "Hint 2"],
+        "questions": null,
+        "instructions": null,
+        "submissionType": null,
+        "reflectionPrompts": null
+      },
+      "rubric": null
     },
     {
       "step_index": 2,
@@ -196,7 +230,8 @@ Generate JSON with this structure:
               "Connection to previous concepts",
               "Advanced aspect 1",
               "Advanced aspect 2"
-            ]
+            ],
+            "visualHint": "Connection diagram or concept map"
           },
           {
             "title": "Deep Dive",
@@ -205,7 +240,8 @@ Generate JSON with this structure:
               "Nuanced detail 1",
               "Edge case or exception 2",
               "Technical insight 3"
-            ]
+            ],
+            "visualHint": "Technical diagram or detailed illustration"
           },
           {
             "title": "Real-World Applications",
@@ -214,7 +250,8 @@ Generate JSON with this structure:
               "Professional application 1",
               "Complex scenario 2",
               "Industry practice 3"
-            ]
+            ],
+            "visualHint": "Real-world scenario visualization"
           },
           {
             "title": "Mastery & Next Steps",
@@ -223,27 +260,44 @@ Generate JSON with this structure:
               "Key mastery indicator 1",
               "Integration point 2",
               "Path for further learning 3"
-            ]
+            ],
+            "visualHint": "Mastery roadmap or learning path diagram"
           }
-        ]
-      }
+        ],
+        "question": null,
+        "expectedResponse": null,
+        "hints": null,
+        "questions": null,
+        "instructions": null,
+        "submissionType": null,
+        "reflectionPrompts": null
+      },
+      "rubric": null
     },
     {
       "step_index": 3,
       "step_type": "quiz",
       "title": "Knowledge Check",
       "content": {
+        "slides": null,
+        "question": null,
+        "expectedResponse": null,
+        "hints": null,
         "questions": [
           {
             "id": "q1",
             "question": "Question text?",
             "options": { "A": "Option A", "B": "Option B", "C": "Option C", "D": "Option D" },
             "correctAnswer": "A",
-            "explanation": "Why A is correct...",
+            "explanation": "Clear explanation of why A is correct and why other options are wrong",
             "points": 1
           }
-        ]
-      }
+        ],
+        "instructions": null,
+        "submissionType": null,
+        "reflectionPrompts": null
+      },
+      "rubric": null
     },
     {
       "step_index": 4,
@@ -321,6 +375,7 @@ Guidelines for TEACH steps:
 - Structure content as 4 SLIDES per teach step, each with a clear focus
 - Each slide should have 80-120 words of content (concise but informative)
 - Each slide should have 3 focused key points
+- ALWAYS include a visualHint suggesting diagrams, charts, or visuals that would help
 - Build a logical progression: Overview → Core Concept → Examples → Tips
 - For language courses: include pronunciation tips and cultural notes
 - For technical courses: include code examples and practical applications
@@ -331,10 +386,19 @@ Guidelines for TEACH steps:
 
 Guidelines for interactive elements:
 - PROMPT questions should check understanding of taught material
-- QUIZ questions should have clear correct answers with explanations
+- QUIZ questions MUST have clear correct answers with detailed explanations
+- QUIZ questions MUST include points (typically 1 point each)
+- Explanations should explain why the correct answer is right AND why others are wrong
 - CHECKPOINT should comprehensively assess key module concepts
 - All content appropriate for ${course.level} level
 - No job guarantees or certification language
+
+CRITICAL: Set unused content fields to null based on step type:
+- TEACH steps: Set question, expectedResponse, hints, questions, instructions, submissionType, reflectionPrompts to null. Set rubric to null.
+- PROMPT steps: Set slides, questions, instructions, submissionType, reflectionPrompts to null. Set rubric to null.
+- QUIZ steps: Set slides, question, expectedResponse, hints, instructions, submissionType, reflectionPrompts to null. Set rubric to null.
+- CHECKPOINT steps: Set slides, question, expectedResponse, hints to null. Use either questions OR reflectionPrompts (set the other to null). Include rubric array.
+- REFLECTION steps: Set slides, question, expectedResponse, hints, questions, instructions, submissionType to null. Set rubric to null.
 
 IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substantial enough that students can answer subsequent questions without external resources.`;
 
@@ -372,7 +436,7 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
                     type: "object",
                     properties: {
                       step_index: { type: "integer" },
-                      step_type: { 
+                      step_type: {
                         type: "string",
                         enum: ["teach", "prompt", "quiz", "checkpoint", "reflection"]
                       },
@@ -381,7 +445,7 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
                         type: "object",
                         properties: {
                           slides: {
-                            type: "array",
+                            type: ["array", "null"],
                             items: {
                               type: "object",
                               properties: {
@@ -393,18 +457,18 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
                                 },
                                 visualHint: { type: "string" }
                               },
-                              required: ["title", "content", "keyPoints"],
+                              required: ["title", "content", "keyPoints", "visualHint"],
                               additionalProperties: false
                             }
                           },
-                          question: { type: "string" },
-                          expectedResponse: { type: "string" },
+                          question: { type: ["string", "null"] },
+                          expectedResponse: { type: ["string", "null"] },
                           hints: {
-                            type: "array",
+                            type: ["array", "null"],
                             items: { type: "string" }
                           },
                           questions: {
-                            type: "array",
+                            type: ["array", "null"],
                             items: {
                               type: "object",
                               properties: {
@@ -428,24 +492,34 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
                                 explanation: { type: "string" },
                                 points: { type: "integer" }
                               },
-                              required: ["id", "question", "options", "correctAnswer"],
+                              required: ["id", "question", "options", "correctAnswer", "explanation", "points"],
                               additionalProperties: false
                             }
                           },
-                          instructions: { type: "string" },
+                          instructions: { type: ["string", "null"] },
                           submissionType: {
-                            type: "string",
-                            enum: ["text", "choice", "file"]
+                            type: ["string", "null"],
+                            enum: ["text", "choice", "file", null]
                           },
                           reflectionPrompts: {
-                            type: "array",
+                            type: ["array", "null"],
                             items: { type: "string" }
                           }
                         },
+                        required: [
+                          "slides",
+                          "question", 
+                          "expectedResponse",
+                          "hints",
+                          "questions",
+                          "instructions",
+                          "submissionType",
+                          "reflectionPrompts"
+                        ],
                         additionalProperties: false
                       },
                       rubric: {
-                        type: "array",
+                        type: ["array", "null"],
                         items: {
                           type: "object",
                           properties: {
@@ -468,7 +542,7 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
                         }
                       }
                     },
-                    required: ["step_index", "step_type", "title", "content"],
+                    required: ["step_index", "step_type", "title", "content", "rubric"],
                     additionalProperties: false
                   }
                 }
@@ -484,20 +558,14 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
     if (!openAIResponse.ok) {
       const errorText = await openAIResponse.text();
       console.error('OpenAI API error:', errorText);
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate steps' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Failed to generate steps');
     }
 
     const openAIData = await openAIResponse.json();
     const generatedContent = openAIData.choices[0]?.message?.content;
 
     if (!generatedContent) {
-      return new Response(
-        JSON.stringify({ error: 'No content generated' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('No content generated');
     }
 
     // Parse the generated content (no fence stripping needed with structured output)
@@ -506,19 +574,13 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
       stepsData = JSON.parse(generatedContent);
     } catch (parseError) {
       console.error('Failed to parse generated steps:', parseError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to parse generated content' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Failed to parse generated content');
     }
 
     // Validate the structure
     if (!stepsData?.steps || !Array.isArray(stepsData.steps) || stepsData.steps.length !== 6) {
       console.error('Invalid steps structure:', stepsData);
-      return new Response(
-        JSON.stringify({ error: 'Generated content does not match expected structure' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Generated content does not match expected structure');
     }
 
     // Normalize/validate generated steps to match UI + evaluator expectations:
@@ -582,55 +644,55 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
       is_completed: false
     }));
 
-    const { data: insertedSteps, error: stepsError } = await supabase
+    // Idempotent write: ignore duplicates if another request raced us, then re-select authoritative steps
+    const { error: upsertError } = await supabase
       .from('module_steps')
-      .insert(stepsToInsert)
-      .select()
-      .order('step_index', { ascending: true });
+      .upsert(stepsToInsert, { onConflict: 'module_id,step_index', ignoreDuplicates: true });
 
-    if (stepsError) {
-      console.error('Error inserting steps:', stepsError);
-      
-      // If duplicate key error, fetch existing steps instead
-      if (stepsError.code === '23505' || stepsError.message.includes('duplicate key')) {
-        console.log('Steps already exist (duplicate key), fetching existing steps...');
-        const { data: existingSteps, error: fetchError } = await supabase
-          .from('module_steps')
-          .select('*')
-          .eq('module_id', module_id)
-          .order('step_index', { ascending: true });
-        
-        if (fetchError || !existingSteps || existingSteps.length === 0) {
-          return new Response(
-            JSON.stringify({ error: 'Failed to retrieve existing steps', details: fetchError?.message }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        console.log('Returning existing steps:', existingSteps.length);
-        return new Response(
-          JSON.stringify({ success: true, steps: existingSteps, cached: true }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ error: 'Failed to save steps', details: stepsError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (upsertError) {
+      console.error('Error upserting steps:', upsertError);
+      throw new Error(upsertError.message || 'Failed to save steps');
     }
 
-    console.log('Created steps:', insertedSteps.length);
+    const { data: finalSteps, error: fetchFinalError } = await supabase
+      .from('module_steps')
+      .select('*')
+      .eq('module_id', module_id)
+      .order('step_index', { ascending: true });
 
-    return new Response(
-      JSON.stringify({ success: true, steps: insertedSteps, cached: false }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    if (fetchFinalError || !finalSteps || finalSteps.length === 0) {
+      throw new Error(fetchFinalError?.message || 'Failed to retrieve steps after generation');
+    }
+
+    console.log('Created/loaded steps:', finalSteps.length);
+    return { success: true, steps: finalSteps, cached: false };
+
+      } catch (error) {
+        console.error('Error in generation:', error);
+        throw error;
+      }
+    })();
+
+    // Store the promise in the in-memory lock so duplicate same-instance requests can piggyback
+    generationLocks.set(module_id, generationPromise);
+
+    try {
+      const result = await generationPromise;
+      return new Response(
+        JSON.stringify(result),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } finally {
+      generationLocks.delete(module_id);
+    }
 
   } catch (error) {
     console.error('Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

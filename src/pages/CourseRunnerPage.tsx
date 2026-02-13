@@ -16,8 +16,11 @@ import { useCourseRunner } from "@/hooks/useCourseRunner";
 import { StepRenderer } from "@/components/course-engine/StepRenderer";
 import { ModuleSidebar } from "@/components/course-engine/ModuleSidebar";
 import { FeedbackDisplay } from "@/components/course-engine/FeedbackDisplay";
+import { ModuleStartConfirmation } from "@/components/course-engine/ModuleStartConfirmation";
+import { ModuleGenerationLoading } from "@/components/course-engine/ModuleGenerationLoading";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CourseModule } from "@/types/course-engine";
 
 const CourseRunnerPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +28,9 @@ const CourseRunnerPage = () => {
   const isMobile = useIsMobile();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showModuleConfirmation, setShowModuleConfirmation] = useState(false);
+  const [pendingModule, setPendingModule] = useState<CourseModule | null>(null);
+  const [isGeneratingModule, setIsGeneratingModule] = useState(false);
 
   const {
     course,
@@ -38,6 +44,7 @@ const CourseRunnerPage = () => {
     isSubmitting,
     lastFeedback,
     loadCourse,
+    loadModuleSteps,
     submitStep,
     markStepComplete,
     navigateToStep,
@@ -50,6 +57,13 @@ const CourseRunnerPage = () => {
       loadCourse(id);
     }
   }, [id, loadCourse]);
+
+  // Auto-load steps when current module changes (only on the runner page, not the detail page)
+  useEffect(() => {
+    if (currentModule) {
+      loadModuleSteps(currentModule.id);
+    }
+  }, [currentModule, loadModuleSteps]);
 
   useEffect(() => {
     if (lastFeedback) {
@@ -71,6 +85,68 @@ const CourseRunnerPage = () => {
     }
   };
 
+  // Calculate which modules are locked (all modules after the furthest reached)
+  const getLockedModuleIndices = (): number[] => {
+    if (!progress) return [];
+    
+    // Find the highest module index that has been started (has steps loaded or is completed)
+    let highestReachedIndex = 0;
+    modules.forEach((module) => {
+      if (module.is_completed || progress.current_module_id === module.id) {
+        highestReachedIndex = Math.max(highestReachedIndex, module.module_index);
+      }
+    });
+    
+    // Lock all modules beyond highestReachedIndex + 1
+    return modules
+      .filter((m) => m.module_index > highestReachedIndex + 1)
+      .map((m) => m.module_index);
+  };
+
+  const lockedModuleIndices = getLockedModuleIndices();
+
+  const handleModuleSelect = (moduleIndex: number) => {
+    // Check if module is locked
+    if (lockedModuleIndices.includes(moduleIndex)) {
+      return; // Shouldn't happen due to UI, but guard anyway
+    }
+    
+    const targetModule = modules.find((m) => m.module_index === moduleIndex);
+    if (!targetModule) return;
+    
+    // If this is the next unstarted module, show confirmation dialog
+    const isNextModule = currentModule && moduleIndex === currentModule.module_index + 1;
+    const hasStepsAlready = targetModule.id === progress?.current_module_id || targetModule.is_completed;
+    
+    if (isNextModule && !hasStepsAlready) {
+      setPendingModule(targetModule);
+      setShowModuleConfirmation(true);
+    } else {
+      // Navigate directly (already generated or going back)
+      navigateToModule(moduleIndex);
+    }
+  };
+
+  const handleConfirmModuleStart = async () => {
+    if (!pendingModule) return;
+    
+    setShowModuleConfirmation(false);
+    setIsGeneratingModule(true);
+    
+    try {
+      // Navigate to the module (this will trigger loadModuleSteps via useEffect in useCourseRunner)
+      await navigateToModule(pendingModule.module_index);
+    } finally {
+      setIsGeneratingModule(false);
+      setPendingModule(null);
+    }
+  };
+
+  const handleCancelModuleStart = () => {
+    setShowModuleConfirmation(false);
+    setPendingModule(null);
+  };
+
   const handleNextStep = () => {
     setShowFeedback(false);
     
@@ -84,7 +160,9 @@ const CourseRunnerPage = () => {
       const nextModuleIndex = currentModule.module_index + 1;
       const nextModule = modules.find(m => m.module_index === nextModuleIndex);
       if (nextModule) {
-        navigateToModule(nextModuleIndex);
+        // Show confirmation for next module
+        setPendingModule(nextModule);
+        setShowModuleConfirmation(true);
       } else {
         // Course complete!
         navigate(`/courses/generated/${id}`);
@@ -136,43 +214,45 @@ const CourseRunnerPage = () => {
     currentModule?.module_index === modules.length - 1;
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Mobile Menu Button */}
-      {isMobile && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="fixed top-4 left-4 z-50"
-          onClick={() => setShowSidebar(!showSidebar)}
-        >
-          {showSidebar ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-      )}
+    <>
+      <div className="flex h-screen bg-background">
+        {/* Mobile Menu Button */}
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed top-4 left-4 z-50"
+            onClick={() => setShowSidebar(!showSidebar)}
+          >
+            {showSidebar ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        )}
 
-      {/* Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-40 w-72 bg-card border-r transform transition-transform duration-200",
-        isMobile && !showSidebar && "-translate-x-full",
-        !isMobile && "relative translate-x-0"
-      )}>
-        <ModuleSidebar
-          course={course}
-          modules={modules}
-          currentModule={currentModule}
-          currentStep={currentStep}
-          steps={steps}
-          progress={progress}
-          onModuleSelect={(index) => {
-            navigateToModule(index);
-            if (isMobile) setShowSidebar(false);
-          }}
-          onStepSelect={(stepId) => {
-            navigateToStep(stepId);
-            if (isMobile) setShowSidebar(false);
-          }}
-          onBack={() => navigate(`/courses/generated/${id}`)}
-        />
-      </div>
+        {/* Sidebar */}
+        <div className={cn(
+          "fixed inset-y-0 left-0 z-40 w-72 bg-card border-r transform transition-transform duration-200",
+          isMobile && !showSidebar && "-translate-x-full",
+          !isMobile && "relative translate-x-0"
+        )}>
+          <ModuleSidebar
+            course={course}
+            modules={modules}
+            currentModule={currentModule}
+            currentStep={currentStep}
+            steps={steps}
+            progress={progress}
+            lockedModuleIndices={lockedModuleIndices}
+            onModuleSelect={(index) => {
+              handleModuleSelect(index);
+              if (isMobile) setShowSidebar(false);
+            }}
+            onStepSelect={(stepId) => {
+              navigateToStep(stepId);
+              if (isMobile) setShowSidebar(false);
+            }}
+            onBack={() => navigate(`/courses/generated/${id}`)}
+          />
+        </div>
 
       {/* Overlay for mobile */}
       {isMobile && showSidebar && (
@@ -263,7 +343,26 @@ const CourseRunnerPage = () => {
           </div>
         )}
       </div>
-    </div>
+      </div>
+
+      {/* Module Start Confirmation Dialog */}
+      <ModuleStartConfirmation
+        open={showModuleConfirmation}
+        module={pendingModule}
+        onConfirm={handleConfirmModuleStart}
+        onCancel={handleCancelModuleStart}
+      />
+
+      {/* Module Generation Loading Overlay */}
+      {isGeneratingModule && pendingModule && (
+        <ModuleGenerationLoading moduleTitle={pendingModule.title} />
+      )}
+      
+      {/* Also show loading during initial step load (but not if showing feedback) */}
+      {!showFeedback && isLoadingSteps && currentModule && (
+        <ModuleGenerationLoading moduleTitle={currentModule.title} />
+      )}
+    </>
   );
 };
 

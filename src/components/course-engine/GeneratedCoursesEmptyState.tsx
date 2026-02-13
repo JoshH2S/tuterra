@@ -23,3 +23,8 @@ export function GeneratedCoursesEmptyState({ onCreateClick }: GeneratedCoursesEm
   );
 }
 
+
+
+
+
+

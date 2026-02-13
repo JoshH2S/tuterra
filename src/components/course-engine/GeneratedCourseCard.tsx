@@ -179,12 +179,14 @@ export const GeneratedCourseCard = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
+            <AlertDialogAction asChild>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting || !onDelete}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

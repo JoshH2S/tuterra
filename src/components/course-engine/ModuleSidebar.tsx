@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle, Circle, BookOpen, Clock } from "lucide-react";
+import { ArrowLeft, CheckCircle, Circle, BookOpen, Clock, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,6 +20,7 @@ interface ModuleSidebarProps {
   onModuleSelect: (moduleIndex: number) => void;
   onStepSelect: (stepId: string) => void;
   onBack: () => void;
+  lockedModuleIndices?: number[];
 }
 
 export function ModuleSidebar({
@@ -32,6 +33,7 @@ export function ModuleSidebar({
   onModuleSelect,
   onStepSelect,
   onBack,
+  lockedModuleIndices = [],
 }: ModuleSidebarProps) {
   // Use step-based progress for consistency with main progress bar
   const totalStepsAcrossCourse = modules.length * 6; // 6 steps per module
@@ -70,18 +72,21 @@ export function ModuleSidebar({
             const isActive = currentModule?.id === module.id;
             const moduleProgress = progress?.module_completion?.[module.id];
             const isCompleted = module.is_completed;
+            const isLocked = lockedModuleIndices.includes(module.module_index);
             
             return (
               <div key={module.id} className="mb-2">
                 {/* Module Header */}
                 <button
-                  onClick={() => onModuleSelect(module.module_index)}
+                  onClick={() => !isLocked && onModuleSelect(module.module_index)}
+                  disabled={isLocked}
                   className={cn(
                     "w-full text-left p-3 rounded-lg transition-colors",
                     isActive 
                       ? "bg-primary/10 border border-primary/30" 
-                      : "hover:bg-muted/50",
-                    isCompleted && "opacity-75"
+                      : !isLocked && "hover:bg-muted/50",
+                    isCompleted && "opacity-75",
+                    isLocked && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -91,19 +96,30 @@ export function ModuleSidebar({
                         ? "bg-green-500 text-white" 
                         : isActive 
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
+                          : isLocked
+                            ? "bg-muted-foreground/20 text-muted-foreground"
+                            : "bg-muted text-muted-foreground"
                     )}>
                       {isCompleted ? (
                         <CheckCircle className="h-4 w-4" />
+                      ) : isLocked ? (
+                        <Lock className="h-3.5 w-3.5" />
                       ) : (
                         module.module_index + 1
                       )}
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {module.title}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm truncate">
+                          {module.title}
+                        </p>
+                        {isLocked && (
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            (Locked)
+                          </span>
+                        )}
+                      </div>
                       {module.estimated_minutes && (
                         <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                           <Clock className="h-3 w-3" />

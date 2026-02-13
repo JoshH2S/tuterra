@@ -119,7 +119,7 @@ export function SlideNavigator({ slides, onComplete, autoMarkComplete = true, is
             </PremiumCard>
           )}
 
-          {/* Visual Hint (if provided) */}
+          {/* Visual Hint */}
           {currentSlide.visualHint && (
             <PremiumCard className="p-4 bg-amber-50 border-amber-200">
               <p className="text-sm text-amber-900">

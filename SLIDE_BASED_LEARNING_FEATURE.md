@@ -1868,3 +1868,8 @@ The `module_steps.content` JSONB field now supports both legacy format (`text`, 
 4. Existing courses will use legacy format until steps are regenerated
 
 This comprehensive system transforms traditional learning content into an engaging, slide-based experience while maintaining robust evaluation and progress tracking.
+
+
+
+
+

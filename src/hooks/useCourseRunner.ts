@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -44,6 +44,9 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
   const [isLoadingSteps, setIsLoadingSteps] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastFeedback, setLastFeedback] = useState<AIFeedback | null>(null);
+
+  // Dedup guard: prevent concurrent calls to loadModuleSteps for the same module
+  const activeModuleLoadRef = useRef<string | null>(null);
 
   const loadCourse = useCallback(async (courseId: string) => {
     setIsLoading(true);
@@ -172,6 +175,13 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
   const loadModuleSteps = useCallback(async (moduleId: string) => {
     if (!course) return;
 
+    // Dedup: skip if we're already loading this exact module
+    if (activeModuleLoadRef.current === moduleId) {
+      console.log('[useCourseRunner] Skipping duplicate loadModuleSteps for', moduleId);
+      return;
+    }
+    activeModuleLoadRef.current = moduleId;
+
     setIsLoadingSteps(true);
     setSteps([]);
 
@@ -188,47 +198,41 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
       }
 
       const result = response.data;
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to load steps');
+
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to load steps');
       }
 
-      setSteps(result.steps);
-
-      // Set current step - prioritize saved progress, then first incomplete
-      if (result.steps.length > 0) {
-        let targetStep: ModuleStep | undefined;
-        
-        // First, try to resume from saved progress
-        if (progress?.current_step_id) {
-          targetStep = result.steps.find((s: ModuleStep) => s.id === progress.current_step_id);
+      // Only update state if this is still the active load (not superseded by a newer request)
+      if (activeModuleLoadRef.current === moduleId) {
+        setSteps(result.steps);
+        if (result.steps.length > 0) {
+          let targetStep: ModuleStep | undefined;
+          if (progress?.current_step_id) {
+            targetStep = result.steps.find((s: ModuleStep) => s.id === progress.current_step_id);
+          }
+          if (!targetStep) {
+            targetStep = result.steps.find((s: ModuleStep) => !s.is_completed);
+          }
+          setCurrentStep(targetStep || result.steps[0]);
         }
-        
-        // If no saved step or saved step not found, find first incomplete
-        if (!targetStep) {
-          targetStep = result.steps.find((s: ModuleStep) => !s.is_completed);
-        }
-        
-        // Fallback to first step
-        setCurrentStep(targetStep || result.steps[0]);
       }
     } catch (err) {
       console.error('Error loading steps:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to load module content. Please try again.',
-        variant: 'destructive',
-      });
+      if (activeModuleLoadRef.current === moduleId) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load module content. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } finally {
-      setIsLoadingSteps(false);
+      if (activeModuleLoadRef.current === moduleId) {
+        setIsLoadingSteps(false);
+        activeModuleLoadRef.current = null;
+      }
     }
   }, [course]);
-
-  // Auto-load steps when current module changes
-  useEffect(() => {
-    if (currentModule) {
-      loadModuleSteps(currentModule.id);
-    }
-  }, [currentModule, loadModuleSteps]);
 
   const submitStep = useCallback(async (submission: SubmissionData) => {
     if (!currentStep || !course) {
