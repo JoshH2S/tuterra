@@ -9,7 +9,7 @@ import { InterviewChat } from "@/components/interview/InterviewChat";
 import { InterviewReadyPrompt } from "@/components/interview/InterviewReadyPrompt";
 import { InterviewDebug } from "@/components/interview/InterviewDebug";
 import { InterviewFeedbackComponent } from "@/components/interview/InterviewFeedback";
-import { Wifi, WifiOff, AlertCircle } from "lucide-react";
+import { Wifi, WifiOff, AlertCircle, BrainCircuit, Plus } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradePrompt } from "@/components/credits/UpgradePrompt";
 import { toast } from "@/hooks/use-toast";
@@ -297,17 +297,44 @@ const JobInterviewSimulator = () => {
   }
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden">
-        {/* Background Image - Full Opacity */}
-        <div 
-          className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/pexels-artempodrez-6787059.jpg')"
-          }}
-        />
+    <>
+      <div className="fixed inset-0 left-0 md:left-[200px] z-0 pointer-events-none bg-white" />
       
+      {/* Hero Card — only on landing/setup state */}
+      {!isInterviewInProgress && !isInterviewComplete && !isDetailMode && !isGeneratingQuestions && !loadingQuestions && !isGenerating && (
+        <div className="relative z-10 mb-16 px-4 sm:px-6">
+          <div
+            className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] flex flex-col sm:flex-row bg-[#F7F3EC] p-4 gap-4"
+            style={{ minHeight: '340px' }}
+          >
+            <div className="flex flex-col justify-between p-4 sm:w-[36%] shrink-0">
+              <div>
+                <p className="text-xs font-mono text-[#8a7a5a] mb-4 tracking-wide uppercase">AI-Powered Practice</p>
+                <div className="flex items-start gap-3 mb-4">
+                  <BrainCircuit className="h-8 w-8 text-[#7a6a2a] mt-1 shrink-0" />
+                  <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">Interview Simulator</h1>
+                </div>
+                <p className="text-sm text-[#5a5040] leading-relaxed">
+                  Practice real interview questions with AI feedback tailored to your target role and industry.
+                </p>
+              </div>
+              <div className="mt-8">
+                <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] font-semibold text-sm">
+                  <Plus className="h-4 w-4" />
+                  Set up below to start
+                </div>
+              </div>
+            </div>
+            <div
+              className="flex-1 rounded-xl bg-cover bg-center min-h-[200px] sm:min-h-0"
+              style={{ backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/jobinterviewsimulator.jpg')" }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Content */}
-      <div className="relative z-10 container py-4 md:py-6 max-w-5xl mx-auto px-3 sm:px-6">
+      <div className="relative z-10 container mx-auto px-4">
         <div className="space-y-4 md:space-y-8">
         
         <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
@@ -381,7 +408,7 @@ const JobInterviewSimulator = () => {
         onClose={() => setShowUpgradePrompt(false)}
         featureType="interview"
       />
-    </div>
+    </>
   );
 };
 

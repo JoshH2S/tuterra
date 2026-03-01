@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from "lucide-react";
+
 import { useToast } from "@/hooks/use-toast";
 import { InterviewIndustryStep } from "./steps/InterviewIndustryStep";
 import { InterviewJobTitleStep } from "./steps/InterviewJobTitleStep";
@@ -34,13 +34,6 @@ export function MultiStepInterviewForm({
   const formRef = useRef<HTMLDivElement>(null);
 
   const totalSteps = 3;
-  const progressValue = (currentStep / totalSteps) * 100;
-
-  const stepTitles = [
-    "Select Industry",
-    "Job Title", 
-    "Job Description"
-  ];
 
   // Notify parent of step changes
   useEffect(() => {
@@ -183,6 +176,8 @@ export function MultiStepInterviewForm({
 
   const showProgress = isLoading && progress > 0;
 
+  const stepLabels = ["Industry", "Role", "Description"];
+
   return (
     <React.Fragment>
       {/* Loading Overlay */}
@@ -198,15 +193,15 @@ export function MultiStepInterviewForm({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-lg p-8 max-w-md mx-4 text-center shadow-xl"
+              className="bg-[#F9F8F6] rounded-2xl p-8 max-w-md mx-4 text-center shadow-[0_2px_24px_rgba(0,0,0,0.07)] border border-black/[0.06]"
             >
               <div className="flex items-center justify-center mb-4">
-                <Sparkles className="h-8 w-8 text-blue-600 animate-pulse" />
+                <Sparkles className="h-8 w-8 text-[#C8A84B] animate-pulse" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">
+              <h3 className="text-lg font-semibold tracking-tight text-[#111] mb-2">
                 {isGenerating ? "Creating Your Interview" : "Preparing Questions"}
               </h3>
-              <p className="text-gray-600 mb-4 text-sm">
+              <p className="text-gray-400 mb-4 text-sm leading-relaxed">
                 {isGenerating 
                   ? "We're analyzing your job details and crafting personalized interview questions..."
                   : "This may take a moment as we prepare your interview experience..."
@@ -214,8 +209,8 @@ export function MultiStepInterviewForm({
               </p>
               {showProgress ? (
                 <div className="space-y-2">
-                  <Progress value={progress} className="h-2" />
-                  <p className="text-xs text-gray-500">
+                  <Progress value={progress} className="h-1.5" />
+                  <p className="text-xs text-gray-400">
                     {progress < 30 && "Analyzing job requirements..."}
                     {progress >= 30 && progress < 60 && "Generating questions..."}
                     {progress >= 60 && progress < 90 && "Finalizing interview..."}
@@ -224,7 +219,7 @@ export function MultiStepInterviewForm({
                 </div>
               ) : (
                 <div className="flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  <Loader2 className="h-6 w-6 animate-spin text-[#C8A84B]" />
                 </div>
               )}
             </motion.div>
@@ -233,11 +228,17 @@ export function MultiStepInterviewForm({
       </AnimatePresence>
 
       <div ref={formRef} className="w-full">
-        <Card className="w-full max-w-4xl mx-auto shadow-xl bg-white/95 backdrop-blur-md border border-white/20">
-          <CardHeader className="space-y-4 pb-6">
+        {/* Card — Option B: Apple-like depth */}
+        <div className="w-full max-w-4xl mx-auto bg-[#F9F8F6] border border-black/[0.06] shadow-[0_2px_24px_rgba(0,0,0,0.07)] rounded-2xl relative overflow-hidden">
+
+          {/* Visual anchor — thin warm gradient top strip */}
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#C8A84B]/70 via-amber-200/80 to-transparent" />
+
+          {/* Header */}
+          <div className="pt-10 px-8 pb-6 space-y-8">
             {/* Tuterra Logo */}
             <motion.div
-              className="flex justify-start mb-4"
+              className="flex justify-start"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -248,39 +249,60 @@ export function MultiStepInterviewForm({
                 className="h-8 md:h-10 w-auto object-contain" 
               />
             </motion.div>
-            
-            <div className="text-center">
-              <CardTitle className="text-2xl md:text-3xl font-bold">
+
+            {/* Title + subtitle */}
+            <div className="text-center space-y-3">
+              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#091747]">
                 Job Interview Simulator
-              </CardTitle>
-              <p className="text-gray-600 mt-2">
+              </h1>
+              <p className="text-sm text-gray-400 leading-relaxed max-w-sm mx-auto">
                 Get personalized interview practice with AI-powered questions
               </p>
             </div>
-            
-            {/* Progress Bar */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Step {currentStep} of {totalSteps}</span>
-                <span className="text-gray-600">{Math.round(progressValue)}% Complete</span>
-              </div>
-              <Progress value={progressValue} className="h-2" />
-              <div className="flex justify-between text-xs text-gray-500">
-                {stepTitles.map((title, index) => (
-                  <span 
-                    key={index}
-                    className={`${
-                      index + 1 <= currentStep ? 'text-blue-600 font-medium' : ''
-                    }`}
-                  >
-                    {title}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </CardHeader>
 
-          <CardContent className="px-6 pb-6">
+            {/* Deliberate numbered stepper */}
+            <div className="flex items-center justify-center">
+              {stepLabels.map((label, i) => {
+                const stepNum = i + 1;
+                const isComplete = currentStep > stepNum;
+                const isActive = currentStep === stepNum;
+                return (
+                  <React.Fragment key={label}>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-200 ${
+                          isComplete
+                            ? "bg-[#C8A84B] text-white"
+                            : isActive
+                            ? "bg-[#091747] text-white"
+                            : "bg-stone-200 text-stone-400"
+                        }`}
+                      >
+                        {isComplete ? <Check className="w-3.5 h-3.5" /> : `0${stepNum}`}
+                      </div>
+                      <span
+                        className={`text-[10px] tracking-widest uppercase font-medium ${
+                          isActive ? "text-[#091747]" : "text-stone-400"
+                        }`}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                    {i < 2 && (
+                      <div
+                        className={`h-px w-12 mx-3 mb-5 transition-colors duration-300 ${
+                          currentStep > stepNum ? "bg-[#C8A84B]" : "bg-stone-200"
+                        }`}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="px-8 pb-10">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
@@ -288,19 +310,19 @@ export function MultiStepInterviewForm({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
-                className="min-h-[400px]"
+                className="min-h-[420px]"
               >
                 {renderStep()}
               </motion.div>
             </AnimatePresence>
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between items-center mt-8 pt-6 border-t">
+            <div className="flex justify-between items-center mt-10">
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={handleBack}
                 disabled={currentStep === 1 || isGenerating || isLoading}
-                className="flex items-center gap-2 touch-manipulation"
+                className="flex items-center gap-2 touch-manipulation text-stone-400 hover:text-stone-600 hover:bg-transparent px-0"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
@@ -308,19 +330,19 @@ export function MultiStepInterviewForm({
 
               <div className="flex items-center gap-2">
                 {currentStep < totalSteps ? (
-                  <Button
+                  <button
                     onClick={handleNext}
                     disabled={!canProceedToNext() || isGenerating || isLoading}
-                    className="flex items-center gap-2 px-6 touch-manipulation"
+                    className="flex items-center gap-2 px-8 py-2.5 rounded-full text-sm font-medium bg-[#091747] text-white hover:bg-[#0d2060] disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 touch-manipulation"
                   >
                     Next
                     <ArrowRight className="h-4 w-4" />
-                  </Button>
+                  </button>
                 ) : (
-                  <Button
+                  <button
                     onClick={handleGenerate}
                     disabled={!canProceedToNext() || isGenerating || isLoading}
-                    className="flex items-center gap-2 px-6 bg-green-600 hover:bg-green-700 touch-manipulation"
+                    className="flex items-center gap-2 px-8 py-2.5 rounded-full text-sm font-medium bg-[#091747] text-white hover:bg-[#0d2060] disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 touch-manipulation"
                   >
                     {isGenerating || isLoading ? (
                       <>
@@ -333,12 +355,12 @@ export function MultiStepInterviewForm({
                         Start Interview
                       </>
                     )}
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </React.Fragment>
   );

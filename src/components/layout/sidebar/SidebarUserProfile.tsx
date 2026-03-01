@@ -85,7 +85,7 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
               </span>
               <SubscriptionBadge tier={subscription.tier} className="h-5 px-1.5 py-0" />
             </div>
-            <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <div className="text-xs text-black flex items-center gap-2">
               {subscription.tier === "free" ? "Free Plan" : (
                 subscription.tier === "premium" ? "Premium Plan" : "Pro Plan"
               )}

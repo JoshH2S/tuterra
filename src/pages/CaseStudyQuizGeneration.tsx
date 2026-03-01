@@ -111,22 +111,22 @@ const CaseStudyQuizGeneration = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+    <div className="min-h-screen bg-[#F5F4F1]">
+      <header className="sticky top-0 z-50 bg-[#F9F8F6] border-b border-[#C8A84B]/25">
         <div className="container mx-auto px-4">
-          <div className="h-16 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold">
+          <div className="h-14 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-semibold tracking-tight text-[#091747]">
                 Case Study Quiz Generator
               </h1>
               {newsSources.length > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                <Badge variant="outline" className="bg-stone-100 text-stone-600 border-stone-200 text-xs">
                   {newsSources.length} Sources Found
                 </Badge>
               )}
             </div>
-            
-            <StepProgress 
+
+            <StepProgress
               steps={steps}
               currentStep={step}
             />

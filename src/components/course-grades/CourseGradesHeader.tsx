@@ -20,7 +20,7 @@ export function CourseGradesHeader({ courseName, onBack }: CourseGradesHeaderPro
         <span>Back to Courses</span>
       </Button>
       
-      <h1 className="text-2xl sm:text-3xl font-bold mb-2">{courseName || "Course"} Grades</h1>
+      <h1 className="text-2xl sm:text-3xl font-semibold mb-2">{courseName || "Course"} Grades</h1>
       <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">View your quiz performance for this course</p>
     </>
   );

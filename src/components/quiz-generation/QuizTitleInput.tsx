@@ -10,17 +10,15 @@ interface QuizTitleInputProps {
 export function QuizTitleInput({ title, onChange }: QuizTitleInputProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor="quiz-title">Quiz Title</Label>
+      <Label htmlFor="quiz-title" className="text-sm font-medium text-stone-600">Quiz Title</Label>
       <Input
         id="quiz-title"
         placeholder="Enter a title for your quiz"
         value={title}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full"
+        className="w-full bg-stone-50 border-stone-200 focus-visible:ring-stone-300"
       />
-      <p className="text-sm text-muted-foreground">
-        This title will appear in the quizzes section
-      </p>
+      <p className="text-xs text-stone-400">This title will appear in the quizzes section</p>
     </div>
   );
 }

@@ -21,9 +21,9 @@ export function CourseQuizSection({
   const navigate = useNavigate();
 
   return (
-    <section key={course.id} className="space-y-4">
+    <section key={course.id} className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">
+        <h2 className="text-lg font-semibold text-black tracking-tight">
           {course.title || course.id}
         </h2>
         <Button 

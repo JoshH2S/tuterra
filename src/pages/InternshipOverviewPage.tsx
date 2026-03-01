@@ -18,7 +18,8 @@ import {
   Award,
   Clock,
   Users,
-  MessageCircle
+  MessageCircle,
+  Plus
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -128,18 +129,46 @@ export default function InternshipOverviewPage() {
     navigate("/dashboard/virtual-internship/new");
   };
 
+  const HeroCard = () => (
+    <div className="relative z-10 mb-8 px-4 sm:px-6 pt-6">
+      <div
+        className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] flex flex-col sm:flex-row bg-[#F7F3EC] p-4 gap-4"
+        style={{ minHeight: '300px' }}
+      >
+        <div className="flex flex-col justify-between p-4 sm:w-[36%] shrink-0">
+          <div>
+            <p className="text-xs font-mono text-[#8a7a5a] mb-4 tracking-wide uppercase">Hands-On Experience</p>
+            <div className="flex items-start gap-3 mb-4">
+              <Briefcase className="h-8 w-8 text-[#7a6a2a] mt-1 shrink-0" />
+              <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">Virtual Internships</h1>
+            </div>
+            <p className="text-sm text-[#5a5040] leading-relaxed">
+              Gain real-world experience with AI-guided virtual internships tailored to your career goals.
+            </p>
+          </div>
+          <div className="mt-8">
+            <Button
+              onClick={handleCreateNew}
+              className="flex items-center gap-2 px-6 py-5 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] hover:-translate-y-0.5 transition-all font-semibold"
+            >
+              <Plus className="h-5 w-5" />
+              {internships.length === 0 ? "Create Your First Internship" : "Create New Internship"}
+            </Button>
+          </div>
+        </div>
+        <div
+          className="flex-1 rounded-xl bg-cover bg-center min-h-[200px] sm:min-h-0"
+          style={{ backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/pexels-mart-production-7256413-2.jpg')" }}
+        />
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="min-h-screen w-full relative overflow-hidden">
-        {/* Background Image - Full Opacity */}
-        <div 
-          className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/pexels-mart-production-7256413-2.jpg')"
-          }}
-        />
-        
-        {/* Content */}
+      <div className="min-h-screen w-full relative">
+        <div className="fixed inset-0 w-full h-full bg-white" />
+        <HeroCard />
         <div className="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
           <div className="flex items-center justify-center h-64">
             <LoadingSpinner />
@@ -151,39 +180,16 @@ export default function InternshipOverviewPage() {
 
   if (internships.length === 0) {
     return (
-      <div className="min-h-screen w-full relative overflow-hidden">
-        {/* Background Image - Full Opacity */}
-        <div 
-          className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/pexels-mart-production-7256413-2.jpg')"
-          }}
-        />
-        
-        {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
-          <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-white">Virtual Internships</h1>
-            <p className="text-sm sm:text-base text-white/90 mb-6 sm:mb-8">
-              Manage your virtual internship experiences
-            </p>
-          </div>
-          
-          <div className="flex flex-col items-center justify-center text-center p-6 sm:p-12 border border-dashed rounded-lg bg-white/95 backdrop-blur-md border-white/20 shadow-xl">
+      <div className="min-h-screen w-full relative">
+        <div className="fixed inset-0 w-full h-full bg-white" />
+        <HeroCard />
+        <div className="relative z-10 container mx-auto px-4 pb-8 max-w-4xl">
+          <div className="flex flex-col items-center justify-center text-center p-6 sm:p-12 border border-dashed rounded-lg bg-white shadow">
             <Briefcase className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mb-3 sm:mb-4" />
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">No Virtual Internships Found</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">No Virtual Internships Yet</h2>
             <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-md">
               Get hands-on experience by creating a virtual internship tailored to your career goals
             </p>
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
-              <Button 
-                onClick={handleCreateNew} 
-                className="w-full sm:w-auto gap-2 rounded-full px-5 py-2 shadow-md bg-gradient-to-br from-primary-100 to-primary-200"
-              >
-                <PlusCircle className="h-5 w-5" />
-                Create Your First Internship
-              </Button>
-            </motion.div>
           </div>
         </div>
       </div>
@@ -191,34 +197,11 @@ export default function InternshipOverviewPage() {
   }
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden">
-      {/* Background Image - Full Opacity */}
-      <div 
-        className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/pexels-mart-production-7256413-2.jpg')"
-        }}
-      />
-      
+    <div className="min-h-screen w-full relative">
+      <div className="fixed inset-0 w-full h-full bg-white" />
+      <HeroCard />
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
-          <div className="text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">Virtual Internships</h1>
-            <p className="text-sm sm:text-base text-white/90">
-              Manage your virtual internship experiences
-            </p>
-          </div>
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
-            <Button 
-              onClick={handleCreateNew} 
-              className="w-full sm:w-auto gap-2 rounded-full px-5 py-2 shadow-md bg-gradient-to-br from-primary-100 to-primary-200"
-            >
-              <PlusCircle className="h-5 w-5" />
-              Create New Internship
-            </Button>
-          </motion.div>
-        </div>
+      <div className="relative z-10 container mx-auto px-4 pb-8 max-w-6xl">
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {internships.map((internship, index) => (
@@ -229,24 +212,24 @@ export default function InternshipOverviewPage() {
               transition={{ duration: 0.3, delay: index * 0.1 }}
             >
               <MotionCard 
-                className="flex flex-col shadow-xl bg-white/95 backdrop-blur-md border border-white/20 hover:shadow-2xl hover:bg-white/98"
-                whileHover={{ scale: 1.01, boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)" }}
-                transition={{ duration: 0.2 }}
+                className="flex flex-col border-0 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] hover:shadow-lg bg-white"
+                whileHover={{ scale: 1.01 }}
+                transition={{ duration: 0.3 }}
               >
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <Badge 
-                        variant={internship.is_completed ? "default" : "secondary"}
-                        className="mb-2"
+                        variant="outline"
+                        className="mb-3 bg-gray-50 text-gray-600 border-gray-200"
                       >
                         {internship.is_completed ? "Completed" : "Active"}
                       </Badge>
-                      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                        <Building className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-lg font-semibold flex items-center gap-2 leading-tight mb-1">
+                        <Building className="h-4 w-4 text-gray-500" />
                         {internship.job_title}
                       </CardTitle>
-                      <CardDescription className="text-sm">
+                      <CardDescription className="text-sm text-gray-500 mt-2">
                         {internship.industry} Industry
                       </CardDescription>
                     </div>
@@ -254,44 +237,41 @@ export default function InternshipOverviewPage() {
                 </CardHeader>
 
                 <CardContent className="flex-1 pt-0">
-                  <div className="border-b border-gray-200 dark:border-gray-800 pb-2 sm:pb-3 mb-2 sm:mb-3">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600/90 dark:text-gray-400/90">
-                      <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <div className="border-b border-gray-100 dark:border-gray-800 pb-3 mb-4">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <Calendar className="h-3 w-3" />
                       Started {format(new Date(internship.created_at), 'MMM d, yyyy')}
                     </div>
                   </div>
 
                   {internship.stats && (
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex items-center gap-2 text-xs sm:text-sm">
-                        <BarChart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500" />
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <BarChart className="h-3.5 w-3.5 text-gray-400" />
                         <span>{internship.stats.completedTasks} / {internship.stats.totalTasks} tasks completed</span>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-xs sm:text-sm">
-                        <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500" />
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <MessageCircle className="h-3.5 w-3.5 text-gray-400" />
                         <span>{internship.stats.messageCount} messages</span>
                       </div>
 
                       {internship.stats.totalTasks > 0 && (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-[10px] sm:text-xs uppercase font-semibold text-gray-500">Progress</span>
-                            <span className="text-xs sm:text-sm font-medium">{internship.stats.progressPercent}%</span>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-[10px] uppercase font-medium text-gray-500">Progress</span>
+                            <span className="text-xs font-medium text-gray-700">{internship.stats.progressPercent}%</span>
                           </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 sm:h-2 overflow-hidden">
+                          <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
                             {internship.stats.progressPercent > 0 ? (
                               <motion.div 
-                                className="bg-gradient-to-r from-primary-300 to-primary-500/80 h-1.5 sm:h-2 rounded-full"
+                                className="bg-gray-700 h-1.5 rounded-full"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${internship.stats.progressPercent}%` }}
                                 transition={{ duration: 1, delay: 0.5 }}
-                                style={{
-                                  boxShadow: "0 0 5px rgba(var(--primary-500), 0.5)"
-                                }}
                               />
                             ) : (
-                              <div className="h-1.5 sm:h-2" />
+                              <div className="h-1.5" />
                             )}
                           </div>
                         </div>

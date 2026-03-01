@@ -11,7 +11,7 @@ import WelcomePage from "@/pages/virtual-internship/WelcomePage";
 import { DebugTaskSubmission } from "@/components/internship/DebugTaskSubmission";
 
 export const dashboardRoutes = [
-  <Route key="dashboard-index" path="/" element={<Navigate to="/courses/generated" replace />} />,
+  <Route key="dashboard-index" path="/" element={<Navigate to="/dashboard/overview" replace />} />,
   <Route key="dashboard-full" path="/overview" element={<StudentDashboard />} />,
   <Route key="dashboard-profile" path="profile-settings" element={<ProfileSettings />} />,
   <Route key="dashboard-password" path="update-password" element={<UpdatePassword />} />,

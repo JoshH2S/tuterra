@@ -1,7 +1,4 @@
 
-import { RadioGroup } from "@/components/ui/radio-group";
-import { RadioCard } from "@/components/quiz-generation/RadioCard";
-import { GraduationCap, School, Brain } from "lucide-react";
 import { QuestionDifficulty } from "@/types/quiz";
 
 interface DifficultyOption {
@@ -17,35 +14,26 @@ interface DifficultySelectorProps {
 }
 
 export const DifficultySelector = ({ value, onChange, options }: DifficultySelectorProps) => {
-  const getIconForDifficulty = (difficulty: QuestionDifficulty) => {
-    switch (difficulty) {
-      case "middle_school":
-      case "high_school":
-        return School;
-      case "university":
-        return GraduationCap;
-      case "post_graduate":
-        return Brain;
-      default:
-        return School;
-    }
-  };
-
   return (
-    <RadioGroup
-      value={value}
-      onValueChange={(value) => onChange(value as QuestionDifficulty)}
-      className="grid gap-3"
-    >
+    <div className="flex flex-wrap gap-2">
       {options.map((option) => (
-        <RadioCard
+        <button
           key={option.value}
-          value={option.value}
-          icon={getIconForDifficulty(option.value)}
-          label={option.label}
-          description={option.description}
-        />
+          onClick={() => onChange(option.value)}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 ease-out touch-manipulation ${
+            value === option.value
+              ? "bg-[#091747] text-white shadow-sm"
+              : "bg-stone-100 text-stone-600 hover:bg-stone-200 hover:-translate-y-px"
+          }`}
+        >
+          {option.label}
+        </button>
       ))}
-    </RadioGroup>
+      {value && (
+        <p className="w-full text-xs text-stone-400 mt-1 leading-relaxed">
+          {options.find((o) => o.value === value)?.description}
+        </p>
+      )}
+    </div>
   );
 };

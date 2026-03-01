@@ -117,6 +117,9 @@ export function StepRenderer({ step, onSubmit, isSubmitting, onTeachComplete }: 
     );
   }
 
+  // Shared floating card styling (matches SlideNavigator)
+  const contentCardClass = "relative rounded-xl bg-white p-6 space-y-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08),0_8px_24px_-4px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.8)]";
+
   // Render prompt/reflection
   if (step.step_type === 'prompt' || step.step_type === 'reflection') {
     const prompts = step.step_type === 'reflection' 
@@ -124,7 +127,7 @@ export function StepRenderer({ step, onSubmit, isSubmitting, onTeachComplete }: 
       : [step.content.question];
 
     return (
-      <div className="space-y-6">
+      <div className={contentCardClass}>
         <div className="flex items-center gap-2 mb-4">
           <Badge variant="secondary" className="flex items-center gap-1">
             {getStepIcon()}
@@ -189,7 +192,7 @@ export function StepRenderer({ step, onSubmit, isSubmitting, onTeachComplete }: 
     const allAnswered = questions.every(q => quizAnswers[q.id]);
 
     return (
-      <div className="space-y-6">
+      <div className={contentCardClass}>
         <div className="flex items-center gap-2 mb-4">
           <Badge variant="secondary" className="flex items-center gap-1">
             {getStepIcon()}

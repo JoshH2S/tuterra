@@ -13,13 +13,13 @@ export function CourseSelector({ selectedCourseId, setSelectedCourseId }: Course
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="course-select">Course</Label>
+      <Label htmlFor="course-select" className="text-sm font-medium text-stone-600">Course</Label>
       <Select
         value={selectedCourseId}
         onValueChange={setSelectedCourseId}
         disabled={isLoading}
       >
-        <SelectTrigger id="course-select" className="w-full">
+        <SelectTrigger id="course-select" className="w-full bg-stone-50 border-stone-200 focus:ring-stone-300 focus:border-stone-300">
           <SelectValue placeholder="Select a course" />
         </SelectTrigger>
         <SelectContent>
@@ -30,8 +30,8 @@ export function CourseSelector({ selectedCourseId, setSelectedCourseId }: Course
           ))}
         </SelectContent>
       </Select>
-      <p className="text-sm text-muted-foreground">
-        Please create a course first to track quiz performance. Quizzes must be associated with a course for proper progress tracking.
+      <p className="text-xs text-stone-400 leading-relaxed">
+        Create a course first to track quiz performance and progress.
       </p>
     </div>
   );

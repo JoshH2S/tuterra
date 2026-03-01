@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { Building2 } from "lucide-react";
 
@@ -13,7 +11,7 @@ interface AssessmentIndustryStepProps {
 
 const POPULAR_INDUSTRIES = [
   "Technology",
-  "Healthcare", 
+  "Healthcare",
   "Finance",
   "Education",
   "Marketing",
@@ -47,62 +45,60 @@ export function AssessmentIndustryStep({ value, onChange }: AssessmentIndustrySt
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Building2 className="h-5 md:h-6 w-5 md:w-6 text-black" />
-          <h2 className="text-xl md:text-2xl font-semibold text-black">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Building2 className="h-5 w-5 text-stone-400" />
+          <h2 className="text-xl md:text-2xl font-normal tracking-tight text-[#091747]">
             Which industry should this assessment focus on?
           </h2>
         </div>
-        <p className="text-sm md:text-base text-black/80">
+        <p className="text-sm text-gray-400 leading-relaxed">
           Select the industry to create relevant skill assessment questions
         </p>
       </div>
 
       {!showCustomInput ? (
-        <motion.div 
-          className="space-y-4"
+        <motion.div
+          className="space-y-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+          <div className="flex flex-wrap gap-2.5 justify-center">
             {POPULAR_INDUSTRIES.map((industry) => (
-              <Button
+              <button
                 key={industry}
-                variant={value === industry ? "default" : "outline"}
-                className={`h-auto p-3 text-xs md:text-sm font-medium transition-all touch-manipulation whitespace-normal break-words ${
-                  value === industry 
-                    ? "" 
-                    : "bg-white/90 hover:bg-white border-white/50 text-gray-900 hover:text-gray-800"
-                }`}
                 onClick={() => handleIndustrySelect(industry)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 ease-out touch-manipulation ${
+                  value === industry
+                    ? "bg-[#091747] text-white shadow-sm"
+                    : "bg-stone-100 text-stone-600 hover:bg-stone-200 hover:-translate-y-px"
+                }`}
               >
                 {industry}
-              </Button>
+              </button>
             ))}
           </div>
 
           <div className="text-center">
-            <Button
-              variant="outline"
+            <button
               onClick={handleShowCustomInput}
-              className="bg-white/90 hover:bg-white border-white/50 text-gray-900 hover:text-gray-800 text-sm touch-manipulation"
+              className="text-sm text-stone-400 hover:text-stone-600 transition-colors duration-150 underline underline-offset-4 decoration-stone-300 touch-manipulation"
             >
               Don't see your industry? Enter it manually
-            </Button>
+            </button>
           </div>
         </motion.div>
       ) : (
-        <motion.div 
+        <motion.div
           className="space-y-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
           <div>
-            <Label htmlFor="custom-industry" className="text-sm font-medium text-white">
+            <Label htmlFor="custom-industry" className="text-sm font-medium text-stone-600">
               Enter your industry
             </Label>
             <Input
@@ -110,40 +106,21 @@ export function AssessmentIndustryStep({ value, onChange }: AssessmentIndustrySt
               value={customIndustry}
               onChange={(e) => handleCustomIndustryChange(e.target.value)}
               placeholder="e.g., Renewable Energy, Biotechnology, Real Estate..."
-              className="mt-2 text-sm md:text-base bg-white/95 border-white/50 text-gray-900 placeholder:text-gray-600"
+              className="mt-2 bg-white border-stone-200 focus-visible:ring-stone-300"
               autoFocus
             />
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCustomInput(false);
-                setCustomIndustry("");
-                onChange("");
-              }}
-              className="flex-1 touch-manipulation bg-white/90 hover:bg-white border-white/50 text-gray-900 hover:text-gray-800"
-            >
-              Back to Popular Industries
-            </Button>
-          </div>
-        </motion.div>
-      )}
-
-      {value && (
-        <motion.div 
-          className="bg-amber-50/95 backdrop-blur-sm p-4 rounded-lg border border-amber-200"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <span className="text-sm font-medium text-amber-900">Selected Industry:</span>
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 w-fit">
-              {value}
-            </Badge>
-          </div>
+          <button
+            onClick={() => {
+              setShowCustomInput(false);
+              setCustomIndustry("");
+              onChange("");
+            }}
+            className="text-sm text-stone-400 hover:text-stone-600 transition-colors duration-150 underline underline-offset-4 decoration-stone-300 touch-manipulation"
+          >
+            ← Back to popular industries
+          </button>
         </motion.div>
       )}
     </div>

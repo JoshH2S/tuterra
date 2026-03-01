@@ -1,18 +1,24 @@
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { format } from "date-fns";
-import { Calendar } from "lucide-react";
+import { Link } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import { BookOpen, Clock, MoreVertical, Trash2, FileEdit, Play } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Course } from "@/types/course";
 import { supabase } from "@/integrations/supabase/client";
-import { useResponsive } from "@/hooks/useResponsive";
 import { toast } from "@/hooks/use-toast";
-import { CourseCardHeader } from "./course-card/CourseCardHeader";
-import { CourseMasterySection } from "./course-card/CourseMasterySection";
-import { CourseQuickActions } from "./course-card/CourseQuickActions";
+import { StudentPerformance } from "@/types/student";
 import { CourseEditDialog } from "./course-card/CourseEditDialog";
 import { CourseDeleteDialog } from "./course-card/CourseDeleteDialog";
-import { StudentPerformance } from "@/types/student";
 
 interface CourseCardProps {
   course: Course;
@@ -21,153 +27,60 @@ interface CourseCardProps {
 }
 
 export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseCardProps) => {
-  const { isMobile } = useResponsive();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(course.title);
   const [editedDescription, setEditedDescription] = useState(course.description || "");
   const [performanceData, setPerformanceData] = useState<StudentPerformance | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Calculate progress value based on completed quizzes out of 10
+
   const maxQuizzes = 10;
   const completedQuizzes = performanceData?.completed_quizzes || 0;
   const progressValue = Math.min((completedQuizzes / maxQuizzes) * 100, 100);
-  
-  // Determine expertise level based on progress
-  const expertiseLevel = 
+
+  const expertiseLevel =
     progressValue >= 100 ? "Expert" :
     progressValue >= 70 ? "Advanced" :
     progressValue >= 40 ? "Intermediate" :
-    progressValue >= 10 ? "Beginner" : 
+    progressValue >= 10 ? "Beginner" :
     "Novice";
 
-  // Fetch course performance from the student_performance table
   useEffect(() => {
-    const fetchCoursePerformance = async () => {
+    const fetchPerformance = async () => {
       try {
-        setIsLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-        
         if (!user) return;
 
-        // Fetch performance data for this course
-        const { data: performanceData, error: performanceError } = await supabase
-          .from('student_performance')
-          .select(`
-            id,
-            student_id,
-            course_id,
-            total_quizzes,
-            completed_quizzes,
-            average_score,
-            last_activity,
-            strengths,
-            areas_for_improvement,
-            courses(
-              title
-            )
-          `)
-          .eq('student_id', user.id)
-          .eq('course_id', course.id)
+        const { data } = await supabase
+          .from("student_performance")
+          .select("id, student_id, course_id, total_quizzes, completed_quizzes, average_score, last_activity, strengths, areas_for_improvement, courses(title)")
+          .eq("student_id", user.id)
+          .eq("course_id", course.id)
           .maybeSingle();
 
-        if (performanceError && performanceError.code !== 'PGRST116') { // Not found is ok
-          console.error('Error fetching performance:', performanceError);
-        }
-
-        if (performanceData) {
-          setPerformanceData(performanceData);
-        } else {
-          // If no performance data found, check quiz_responses as a fallback
-          const { data: responses, error: responsesError } = await supabase
-            .from('quiz_responses')
-            .select(`
-              id,
-              quiz_id,
-              score,
-              total_questions,
-              completed_at,
-              quizzes(
-                course_id
-              )
-            `)
-            .eq('student_id', user.id)
-            .not('completed_at', 'is', null)
-            .order('completed_at', { ascending: false });
-
-          if (responsesError) {
-            console.error('Error fetching quiz responses:', responsesError);
-          } else {
-            // Filter responses for this course
-            const courseResponses = responses?.filter(
-              r => r.quizzes && r.quizzes.course_id === course.id
-            ) || [];
-            
-            if (courseResponses.length > 0) {
-              // Calculate average score
-              const totalScore = courseResponses.reduce((acc, curr) => acc + curr.score, 0);
-              const avgScore = courseResponses.length > 0 ? totalScore / courseResponses.length : 0;
-              
-              // Create performance object
-              const syntheticPerformance: StudentPerformance = {
-                id: 'synthetic',
-                student_id: user.id,
-                course_id: course.id,
-                total_quizzes: courseResponses.length,
-                completed_quizzes: courseResponses.length,
-                average_score: avgScore,
-                last_activity: courseResponses[0].completed_at,
-                course_title: course.title,
-                courses: { title: course.title }
-              };
-              
-              setPerformanceData(syntheticPerformance);
-            } else {
-              setPerformanceData(null);
-            }
-          }
+        if (data) {
+          setPerformanceData(data);
         }
       } catch (error) {
-        console.error('Error fetching course performance:', error);
-      } finally {
-        setIsLoading(false);
+        console.error("Error fetching performance:", error);
       }
     };
-
-    fetchCoursePerformance();
-  }, [course.id, course.title]);
+    fetchPerformance();
+  }, [course.id]);
 
   const handleEditCourse = async () => {
     setIsSubmitting(true);
     try {
       const { error } = await supabase
-        .from('courses')
-        .update({ 
-          title: editedTitle,
-          description: editedDescription 
-        })
-        .eq('id', course.id);
-
+        .from("courses")
+        .update({ title: editedTitle, description: editedDescription })
+        .eq("id", course.id);
       if (error) throw error;
-      
-      toast({
-        title: "Course updated",
-        description: "The course has been updated successfully.",
-      });
-      
+      toast({ title: "Course updated", description: "The course has been updated successfully." });
       setIsEditDialogOpen(false);
-      
-      // If a callback was provided, call it to refresh the courses list
       if (onCourseUpdated) onCourseUpdated();
     } catch (error) {
-      console.error('Error updating course:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update course. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update course.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -176,66 +89,93 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
   const handleDeleteCourse = async () => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('courses')
-        .delete()
-        .eq('id', course.id);
-
+      const { error } = await supabase.from("courses").delete().eq("id", course.id);
       if (error) throw error;
-      
-      toast({
-        title: "Course deleted",
-        description: "The course has been deleted successfully.",
-      });
-      
+      toast({ title: "Course deleted", description: "The course has been deleted successfully." });
       setIsDeleteDialogOpen(false);
-      
-      // If a callback was provided, call it to refresh the courses list
       if (onCourseDeleted) onCourseDeleted();
     } catch (error) {
-      console.error('Error deleting course:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete course. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete course.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  return (
-    <motion.div
-      whileHover={!isMobile ? { y: -4 } : undefined}
-      className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-200"
-    >
-      <CourseCardHeader course={course} />
 
-      <div className="p-4">
-        <div className="flex items-center mb-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">
-              Created {format(new Date(course.created_at || new Date()), 'MMM d, yyyy')}
+  return (
+    <>
+      <Card className="group relative overflow-hidden border border-white/20 bg-white/40 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_16px_32px_rgba(0,0,0,0.12)] hover:bg-white/50 transition-all duration-300 hover:-translate-y-1 rounded-2xl">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1 pr-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="outline" className="bg-[#FFF8DC]/70 text-black/70 border-black/10">
+                  {expertiseLevel}
+                </Badge>
+              </div>
+              <h3 className="font-medium text-foreground line-clamp-2 text-lg leading-relaxed">
+                {course.title}
+              </h3>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-black/45 hover:text-black/80 opacity-60 group-hover:opacity-100 transition">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                  <FileEdit className="h-4 w-4 mr-2" />
+                  Edit Course
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Course
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-black/60 line-clamp-2 mb-5 leading-relaxed">
+            {course.description || "No description provided"}
+          </p>
+
+          {/* Meta Info */}
+          <div className="flex items-center gap-5 text-xs text-black/45 mb-5">
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="h-3 w-3" />
+              {completedQuizzes}/{maxQuizzes} quizzes
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-3 w-3" />
+              {formatDistanceToNow(new Date(course.created_at || new Date()), { addSuffix: true })}
             </span>
           </div>
+
+          {/* Progress Bar */}
+          <div className="space-y-2 mb-5">
+            <div className="flex justify-between text-xs">
+              <span className="text-black/45">Progress</span>
+              <span className="text-black/75 font-medium">{Math.round(progressValue)}%</span>
+            </div>
+            <Progress value={progressValue} className="h-1.5 bg-black/5" indicatorClassName="bg-[#B8860B]" />
+          </div>
+
+          {/* Action Button */}
+          <Button
+            asChild
+            className="w-full rounded-full py-5 text-black bg-gradient-to-br from-[#FFF8DC]/90 to-[#FFE4B5]/90 border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_10px_25px_rgba(184,134,11,0.18)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08),0_18px_40px_rgba(184,134,11,0.26)] hover:-translate-y-[1px] transition-all"
+          >
+            <Link to={`/courses/${course.id}/grades`}>
+              <Play className="h-4 w-4 mr-2" />
+              {completedQuizzes > 0 ? "Continue Course" : "Start Course"}
+            </Link>
+          </Button>
         </div>
+      </Card>
 
-        <CourseMasterySection 
-          completedQuizzes={completedQuizzes}
-          maxQuizzes={maxQuizzes}
-          expertiseLevel={expertiseLevel}
-          progressValue={progressValue}
-        />
-
-        <CourseQuickActions 
-          courseId={course.id}
-          onEditClick={() => setIsEditDialogOpen(true)}
-          onDeleteClick={() => setIsDeleteDialogOpen(true)}
-        />
-      </div>
-
-      <CourseEditDialog 
+      <CourseEditDialog
         isOpen={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         title={editedTitle}
@@ -246,12 +186,12 @@ export const CourseCard = ({ course, onCourseUpdated, onCourseDeleted }: CourseC
         isSubmitting={isSubmitting}
       />
 
-      <CourseDeleteDialog 
+      <CourseDeleteDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onDelete={handleDeleteCourse}
         isSubmitting={isSubmitting}
       />
-    </motion.div>
+    </>
   );
 };

@@ -133,35 +133,45 @@ export function ModuleSidebar({
                 {/* Steps List (only for current module) */}
                 {isActive && steps.length > 0 && (
                   <div className="ml-6 mt-1 space-y-0.5 border-l pl-3">
-                    {steps.map((step, index) => {
-                      const isCurrentStep = currentStep?.id === step.id;
-                      const isStepCompleted = step.is_completed;
-                      
-                      return (
-                        <button
-                          key={step.id}
-                          onClick={() => onStepSelect(step.id)}
-                          className={cn(
-                            "w-full text-left py-2 px-2 rounded text-sm transition-colors flex items-center gap-2",
-                            isCurrentStep 
-                              ? "bg-primary/10 text-primary font-medium" 
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                          )}
-                        >
-                          {isStepCompleted ? (
-                            <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <Circle className={cn(
-                              "h-3.5 w-3.5 flex-shrink-0",
-                              isCurrentStep ? "text-primary" : "text-muted-foreground/50"
-                            )} />
-                          )}
-                          <span className="truncate">
-                            {step.title || `${step.step_type.charAt(0).toUpperCase() + step.step_type.slice(1)} ${index + 1}`}
-                          </span>
-                        </button>
-                      );
-                    })}
+                    {(() => {
+                      const firstIncompleteIndex = steps.findIndex(s => !s.is_completed);
+                      return steps.map((step, index) => {
+                        const isCurrentStep = currentStep?.id === step.id;
+                        const isStepCompleted = step.is_completed;
+                        // Lock any step that comes after the first incomplete step
+                        const isStepLocked = firstIncompleteIndex !== -1 && index > firstIncompleteIndex;
+
+                        return (
+                          <button
+                            key={step.id}
+                            onClick={() => !isStepLocked && onStepSelect(step.id)}
+                            disabled={isStepLocked}
+                            className={cn(
+                              "w-full text-left py-2 px-2 rounded text-sm transition-colors flex items-center gap-2",
+                              isCurrentStep
+                                ? "bg-primary/10 text-primary font-medium"
+                                : isStepLocked
+                                  ? "opacity-40 cursor-not-allowed text-muted-foreground"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                            )}
+                          >
+                            {isStepCompleted ? (
+                              <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                            ) : isStepLocked ? (
+                              <Lock className="h-3 w-3 flex-shrink-0 text-muted-foreground/40" />
+                            ) : (
+                              <Circle className={cn(
+                                "h-3.5 w-3.5 flex-shrink-0",
+                                isCurrentStep ? "text-primary" : "text-muted-foreground/50"
+                              )} />
+                            )}
+                            <span className="truncate">
+                              {step.title || `${step.step_type.charAt(0).toUpperCase() + step.step_type.slice(1)} ${index + 1}`}
+                            </span>
+                          </button>
+                        );
+                      });
+                    })()}
                   </div>
                 )}
               </div>

@@ -15,6 +15,15 @@ interface GenerateStepsRequest {
 // In-memory lock to prevent duplicate simultaneous generation within the same Edge runtime
 const generationLocks = new Map<string, Promise<any>>();
 
+function inferSubjectType(topic: string, context: string): 'humanities' | 'technical' | 'business' {
+  const text = (topic + ' ' + context).toLowerCase();
+  const technical = ['python', 'javascript', 'typescript', 'excel', 'sql', 'code', 'programming', 'data', 'algorithm', 'machine learning', 'software', 'html', 'css', 'react', 'database', 'api', 'cloud', 'cybersecurity', 'networking'];
+  const business = ['marketing', 'economics', 'finance', 'entrepreneur', 'management', 'strategy', 'accounting', 'startup', 'investment', 'sales', 'branding', 'leadership', 'operations', 'supply chain'];
+  if (technical.some(k => text.includes(k))) return 'technical';
+  if (business.some(k => text.includes(k))) return 'business';
+  return 'humanities';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -130,9 +139,27 @@ serve(async (req) => {
 
     // Build the prompt for step generation
     const checkpointType = module.checkpoints_schema?.type || 'quiz';
-    
-    const prompt = `You are an expert instructional designer. Create learning steps for a course module.
 
+    // Documentary mode: detect subject type and build style injection
+    const isDocumentary = course.format_preferences?.documentary === true;
+    const subjectType = isDocumentary
+      ? inferSubjectType(course.topic, course.context_summary || course.description || '')
+      : null;
+
+    const documentaryBlock = isDocumentary ? `
+DOCUMENTARY MODE — ACTIVE:
+The first slide of each teach step must open with 2–4 sentences of cinematic contextual framing before transitioning into instruction. The narrative opener sets the scene: name the era, the place, the forces at play, or the moment of discovery. No invented dialogue. No fabricated details. Factually grounded at all times.
+${subjectType === 'humanities' ? 'SUBJECT TYPE — HUMANITIES: Use historical anchors — dates, geography, named figures, social tensions. Ground the reader in time and place before explaining ideas.' : ''}${subjectType === 'technical' ? 'SUBJECT TYPE — TECHNICAL: Keep the narrative opener brief (2–3 sentences max). Immediately transition into clear, procedural, actionable instruction. Avoid dramatic language.' : ''}${subjectType === 'business' ? 'SUBJECT TYPE — BUSINESS: Frame through transformation, market shift, or strategic decision. Balance narrative with practical application and real-world consequences.' : ''}
+Rules: Never say "everything changed forever." No romanticisation. Restrained, intelligent tone. Narrative framing must enhance understanding — never distract from it.
+` : '';
+
+    const prompt = `You are a master educator writing rich, narrative course content. Your slides must read like a knowledgeable professor explaining ideas to a curious, engaged student — not like a summary or bullet-point outline.
+
+EXAMPLE OF EXCELLENT SLIDE CONTENT (model every slide after this standard):
+Title: "Judea Under Roman Rule"
+Content: "In the first century CE, the region of Judea was under the authority of the Roman Empire. Rome governed through local rulers — such as Herod the Great and later Roman prefects like Pontius Pilate — while maintaining military presence to suppress unrest. The Jewish people lived with strong expectations of divine intervention. Many believed God would send a Messiah, a deliverer who would restore Israel's independence and fulfill covenant promises. This tension — imperial domination and religious expectation — formed the backdrop for the emergence of Christianity."
+Notice: specific names and dates, developed narrative paragraphs, a named tension or conflict, a closing synthesis that explains the "so what." Every slide content field must reach this depth.
+${documentaryBlock}
 Course Topic: ${course.topic}
 Course Level: ${course.level}
 Course Context: ${course.context_summary || course.description}
@@ -142,9 +169,9 @@ Module Summary: ${module.summary}
 Estimated Duration: ${module.estimated_minutes} minutes
 
 Create 6 learning steps following this sequence:
-1. TEACH step - Comprehensive introduction with 3-4 slides (each slide focuses on one concept)
+1. TEACH step - Comprehensive introduction with 4 slides (each slide focuses on one concept)
 2. PROMPT step - Interactive question to check understanding
-3. TEACH step - Deeper exploration with 3-4 slides (advanced concepts, applications, examples)
+3. TEACH step - Deeper exploration with 4 slides (advanced concepts, applications, examples)
 4. QUIZ step - 3 multiple choice questions
 5. PROMPT step - Scenario-based application question
 6. CHECKPOINT step - ${checkpointType === 'quiz' ? '5 assessment questions' : 'Written reflection prompt'}
@@ -159,44 +186,40 @@ Generate JSON with this structure:
       "content": {
         "slides": [
           {
-            "title": "Welcome & Overview",
-            "content": "Engaging introduction that sets context and explains why this topic matters. Include a hook and real-world relevance. 80-120 words.",
+            "title": "Setting the Scene",
+            "content": "Write 150-200 words of flowing narrative prose. Name specific people, places, dates, and forces at work. Open with the defining tension or question of this topic. Explain WHY it matters. Close with a synthesis sentence that bridges to what comes next. Do NOT write a summary — write an explanation.",
             "keyPoints": [
-              "Key concept 1 with clear explanation",
-              "Important detail 2 with context",
-              "Practical insight 3"
-            ],
-            "visualHint": "Suggest a diagram, chart, or visual that would help (e.g., 'A flowchart showing the process', 'Timeline of events')"
+              "Specific key insight with a named example or figure",
+              "The central tension or dynamic with concrete detail",
+              "Why this matters: a real consequence or implication"
+            ]
           },
           {
-            "title": "Core Concept",
-            "content": "Deep dive into the main concept with clear definitions and examples. 80-120 words.",
+            "title": "Core Concept: [Name It]",
+            "content": "Write 150-200 words of narrative prose. Define the core concept precisely, then explain it through a concrete example or historical moment. Describe how it works in practice, who is involved, and what its effects are. End with a clear statement of its significance.",
             "keyPoints": [
-              "Fundamental principle 1",
-              "Related concept 2",
-              "Important distinction 3"
-            ],
-            "visualHint": "Diagram suggestion for this concept"
+              "The precise definition with a clarifying distinction",
+              "A named example that illustrates the concept in action",
+              "The broader implication or consequence"
+            ]
           },
           {
-            "title": "Practical Examples",
-            "content": "Real-world examples and practical applications with specific scenarios. 80-120 words.",
+            "title": "How It Works in Practice",
+            "content": "Write 150-200 words of narrative prose. Walk through a real or representative example step by step. Use specific names, numbers, or events. Describe cause and effect. Show what happens when this concept plays out in the real world.",
             "keyPoints": [
-              "Example 1 with explanation",
-              "Example 2 with context",
-              "Common use case 3"
-            ],
-            "visualHint": "Visual example suggestion"
+              "Step 1 or factor 1 with specific detail",
+              "Step 2 or factor 2 with specific detail",
+              "The outcome or result and what it reveals"
+            ]
           },
           {
-            "title": "Tips & Common Pitfalls",
-            "content": "Expert insights, best practices, and common mistakes to avoid. 80-120 words.",
+            "title": "Key Takeaways & What to Watch For",
+            "content": "Write 150-200 words of narrative prose. Synthesize the most important insights from this lesson. Explain the common misconceptions students have. Then name the key things to watch for — the signs, patterns, or questions that reveal real understanding of this topic.",
             "keyPoints": [
-              "Best practice 1",
-              "Common mistake to avoid 2",
-              "Pro tip 3"
-            ],
-            "visualHint": "Helpful visual for tips and pitfalls"
+              "The most important insight and why it is often misunderstood",
+              "A common mistake or misconception to avoid",
+              "The question or pattern that distinguishes surface understanding from real mastery"
+            ]
           }
         ]
       }
@@ -224,44 +247,40 @@ Generate JSON with this structure:
       "content": {
         "slides": [
           {
-            "title": "Building on Basics",
-            "content": "Connect to previous learning and introduce advanced aspects. 80-120 words.",
+            "title": "Building on What You Know",
+            "content": "Write 150-200 words of narrative prose. Begin by naming exactly what was established in the first lesson, then introduce the complication, nuance, or deeper layer. Explain what changes when you look more closely — what was missing from the simpler view?",
             "keyPoints": [
-              "Connection to previous concepts",
-              "Advanced aspect 1",
-              "Advanced aspect 2"
-            ],
-            "visualHint": "Connection diagram or concept map"
+              "The connection to what was already taught",
+              "The new complexity or nuance being introduced",
+              "Why this deeper layer matters"
+            ]
           },
           {
-            "title": "Deep Dive",
-            "content": "Explore nuances, edge cases, and sophisticated applications with technical depth. 80-120 words.",
+            "title": "Deeper Dive: [Specific Aspect]",
+            "content": "Write 150-200 words of narrative prose. Go deep on one advanced aspect of this topic. Use a specific example, case, or scenario to ground the explanation. Address the edge cases, exceptions, or debates that exist in this area.",
             "keyPoints": [
-              "Nuanced detail 1",
-              "Edge case or exception 2",
-              "Technical insight 3"
-            ],
-            "visualHint": "Technical diagram or detailed illustration"
+              "The advanced aspect explained precisely",
+              "A named exception or edge case",
+              "How experts or practitioners think about this"
+            ]
           },
           {
-            "title": "Real-World Applications",
-            "content": "Advanced real-world scenarios and professional applications. 80-120 words.",
+            "title": "Real-World Application",
+            "content": "Write 150-200 words of narrative prose. Describe a real or realistic scenario where this knowledge is applied. Walk through who makes what decision, what information they use, and what the stakes are. Make the abstract concrete.",
             "keyPoints": [
-              "Professional application 1",
-              "Complex scenario 2",
-              "Industry practice 3"
-            ],
-            "visualHint": "Real-world scenario visualization"
+              "The scenario and the key actors or decision-makers",
+              "How the concepts from this module directly apply",
+              "What good judgment or expertise looks like here"
+            ]
           },
           {
-            "title": "Mastery & Next Steps",
-            "content": "Summary of advanced concepts and pathways for continued growth. 80-120 words.",
+            "title": "Synthesis & Mastery",
+            "content": "Write 150-200 words of narrative prose. Bring together all the major threads of this module into a coherent picture. Explain how the pieces relate to each other. Name what a true expert would know that a novice would not. Point to what comes next in this subject.",
             "keyPoints": [
-              "Key mastery indicator 1",
-              "Integration point 2",
-              "Path for further learning 3"
-            ],
-            "visualHint": "Mastery roadmap or learning path diagram"
+              "The central insight that ties the module together",
+              "What distinguishes novice from expert understanding",
+              "The open questions or next steps in this field"
+            ]
           }
         ],
         "question": null,
@@ -371,21 +390,19 @@ Generate JSON with this structure:
   ]
 }
 
-Guidelines for TEACH steps:
-- Structure content as 4 SLIDES per teach step, each with a clear focus
-- Each slide should have 80-120 words of content (concise but informative)
-- Each slide should have 3 focused key points
-- ALWAYS include a visualHint suggesting diagrams, charts, or visuals that would help
-- Build a logical progression: Overview → Core Concept → Examples → Tips
-- For language courses: include pronunciation tips and cultural notes
-- For technical courses: include code examples and practical applications
-- Make content engaging and visual - think "presentation mode"
-- Use descriptive slide titles that preview the content
-- First teach step: Introduces foundations clearly
-- Second teach step: Advances to applications and mastery
+WRITING RULES FOR TEACH SLIDE CONTENT (non-negotiable):
+- Write 150-200 words of NARRATIVE PROSE per slide — never a summary, never a list dressed as prose
+- Name specific people, places, events, dates, and forces. Vague generalities are not acceptable.
+- Each slide must have a clear arc: establish context → develop the idea → close with a synthesis or implication
+- Use precise language. If discussing history: name the rulers, empires, and dates. If discussing science: name the mechanism. If discussing business: name the companies or markets.
+- keyPoints must be substantive sentences with concrete detail, not vague labels like "Important concept 1"
+- Slide titles should name the specific concept, not use generic placeholders (e.g., "Judea Under Roman Rule", not "Historical Context")
+- First teach step: grounds the learner in the foundational facts, tensions, and context
+- Second teach step: advances into nuance, application, and synthesis
+
 
 Guidelines for interactive elements:
-- PROMPT questions should check understanding of taught material
+- PROMPT questions should be thought-provoking and require synthesis of taught material, not mere recall
 - QUIZ questions MUST have clear correct answers with detailed explanations
 - QUIZ questions MUST include points (typically 1 point each)
 - Explanations should explain why the correct answer is right AND why others are wrong
@@ -400,7 +417,7 @@ CRITICAL: Set unused content fields to null based on step type:
 - CHECKPOINT steps: Set slides, question, expectedResponse, hints to null. Use either questions OR reflectionPrompts (set the other to null). Include rubric array.
 - REFLECTION steps: Set slides, question, expectedResponse, hints, questions, instructions, submissionType to null. Set rubric to null.
 
-IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substantial enough that students can answer subsequent questions without external resources.`;
+IMPORTANT: The TEACH steps are the foundation of learning. A student reading only the slides must come away with enough understanding to answer all subsequent prompts, quizzes, and the checkpoint without needing outside resources. Thin, vague, or generic content is a failure.`;
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -413,7 +430,7 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
         messages: [
           {
             role: 'system',
-            content: 'You are an expert instructional designer. Generate structured learning content following the provided schema.'
+            content: 'You are a master educator and instructional designer. You write course content with the depth, specificity, and narrative quality of an expert professor. Your slide prose is rich, substantive, and grounded in concrete detail — never generic or vague. You follow the provided JSON schema exactly.'
           },
           {
             role: 'user',
@@ -421,7 +438,7 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
           }
         ],
         temperature: 0.7,
-        max_tokens: 3500,
+        max_tokens: 6000,
         response_format: {
           type: "json_schema",
           json_schema: {
@@ -455,9 +472,8 @@ IMPORTANT: The TEACH steps are the foundation of learning. They MUST be substant
                                   type: "array",
                                   items: { type: "string" }
                                 },
-                                visualHint: { type: "string" }
                               },
-                              required: ["title", "content", "keyPoints", "visualHint"],
+                              required: ["title", "content", "keyPoints"],
                               additionalProperties: false
                             }
                           },

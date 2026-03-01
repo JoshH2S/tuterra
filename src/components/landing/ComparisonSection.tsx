@@ -1,199 +1,135 @@
-
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, XCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const platforms = [
   {
     name: "Tuterra",
     logo: "/lovable-uploads/5abc5bdf-f0f2-4773-844c-b174f2e2b884.png",
-    logoAlt: "Tuterra Logo"
+    logoAlt: "Tuterra Logo",
+    isTuterra: true,
   },
   {
     name: "Coursera",
     logo: "/lovable-uploads/cfcdbcb8-21ea-4d0f-beae-4368ad873520.png",
-    logoAlt: "Coursera Logo"
+    logoAlt: "Coursera Logo",
+    isTuterra: false,
   },
   {
     name: "Skillshare",
     logo: "/lovable-uploads/c74dcaa0-03f0-4ace-83cb-ad0b944f15dd.png",
-    logoAlt: "Skillshare Logo"
+    logoAlt: "Skillshare Logo",
+    isTuterra: false,
   },
   {
     name: "Magic School",
     logo: "/lovable-uploads/9c384236-998d-4be7-8fce-38625409b005.png",
-    logoAlt: "Magic School Logo"
-  }
+    logoAlt: "Magic School Logo",
+    isTuterra: false,
+  },
 ];
 
 const features = [
-  {
-    name: "Live News Integration",
-    values: [true, false, false, false]
-  },
-  {
-    name: "Mobile UI",
-    values: [true, true, true, true]
-  },
-  {
-    name: "AI-Powered Feedback",
-    values: [true, "Basic-auto quizzes", false, "Prompt-based feedback"]
-  },
-  {
-    name: "Job Interview Prep",
-    values: [true, "Rare", false, false]
-  },
-  {
-    name: "Career-Prep Tools",
-    values: ["Strong", "Medium", "Weak", "Low"]
-  },
-  {
-    name: "Engagement",
-    values: ["High", "Medium-High", "High (Creative)", "Low"]
-  }
+  { name: "Live News Integration",    values: [true,  false,             false,                false] },
+  { name: "Mobile UI",               values: [true,  true,              true,                 true] },
+  { name: "AI-Powered Feedback",     values: [true,  "Basic",           false,                "Prompt-based"] },
+  { name: "Job Interview Prep",      values: [true,  "Rare",            false,                false] },
+  { name: "Career-Prep Tools",       values: ["Strong", "Medium",       "Weak",               "Low"] },
+  { name: "Engagement",              values: ["High",  "Medium–High",   "High (Creative)",    "Low"] },
 ];
 
-const advantages = [
-  {
-    title: "AI-Powered Learning Content",
-    description: "AI-generated quizzes and case studies powered by real-time news for industry-aligned learning"
-  },
-  {
-    title: "Interview Preparation",
-    description: "Interactive interview simulator with role-specific questions and real-time feedback to boost confidence"
-  },
-  {
-    title: "Performance Analytics",
-    description: "Dynamic analytics dashboard with personalized performance insights and improvement pathways"
-  },
-  {
-    title: "All-in-One Platform",
-    description: "Comprehensive all-in-one platform covering learning, tutoring, assessments, and career readiness"
-  },
-  {
-    title: "Content Transformation",
-    description: "Textbook-to-tool pipeline that instantly converts content into customized lessons, quizzes, and projects"
-  },
-  {
-    title: "Engaging Learning Experience",
-    description: "Gamified learning experiences and real-world scenarios proven to drive higher engagement and career readiness"
+function CellValue({ value, isTuterra }: { value: boolean | string; isTuterra: boolean }) {
+  if (typeof value === "boolean") {
+    return value ? (
+      <span className={`text-base font-semibold ${isTuterra ? "text-[#C8A84B]" : "text-stone-400"}`}>✓</span>
+    ) : (
+      <span className="text-stone-300 text-base select-none">—</span>
+    );
   }
-];
+  return (
+    <span className={`text-sm ${isTuterra ? "text-[#091747] font-medium" : "text-stone-500"}`}>
+      {value}
+    </span>
+  );
+}
 
 export function ComparisonSection() {
   return (
-    <section className="py-20 bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      <div className="container mx-auto px-4">
+    <section className="bg-white py-20 md:py-28">
+      <div className="max-w-6xl mx-auto px-6">
+
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="text-center mb-14"
         >
-          <h2 className="text-3xl font-bold mb-4 gradient-text">
-            Feature Comparison
+          <p className="text-xs font-mono uppercase tracking-widest text-[#C8A84B] mb-4">
+            Why Tuterra
+          </p>
+          <h2 className="text-3xl font-semibold tracking-tight text-[#091747]">
+            Built Differently
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            See how our modern approach outperforms traditional learning management systems
+          <p className="mt-3 text-stone-500 max-w-xl mx-auto text-base leading-relaxed">
+            See how Tuterra compares to other learning platforms on the features that matter most.
           </p>
         </motion.div>
 
-        {/* Comparison Chart - Full Width */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="mb-20"
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="w-full overflow-x-auto"
         >
-          <div className="w-full overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <div className="min-w-[768px]">
-              {/* Platform Headers - Logos Only */}
-              <div className="grid comparison-grid gap-4 mb-6">
-                <div /> {/* Empty space for feature names */}
-                {platforms.map((platform, index) => (
-                  <div 
-                    key={index}
-                    className="rounded-t-2xl bg-blue-100/80 dark:bg-blue-900/20 p-6 text-center"
-                  >
-                    <img
-                      src={platform.logo}
-                      alt={platform.logoAlt}
-                      className="mx-auto h-10 object-contain"
-                    />
-                  </div>
-                ))}
-              </div>
+          <div className="min-w-[640px]">
 
-              {/* Feature Rows */}
-              {features.map((feature, index) => (
-                <div 
-                  key={feature.name}
-                  className="grid comparison-grid gap-4 mb-4"
+            {/* Platform header row */}
+            <div className="grid comparison-grid gap-px mb-2">
+              <div /> {/* feature name column spacer */}
+              {platforms.map((p) => (
+                <div
+                  key={p.name}
+                  className={`py-5 px-4 flex items-center justify-center rounded-t-xl ${
+                    p.isTuterra ? "bg-[#F7F3EC] border border-[#C8A84B]/30 border-b-0" : "bg-stone-50"
+                  }`}
                 >
-                  <div className="flex items-center">
-                    <span className="w-2 h-2 bg-blue-600 rounded-full mr-2" />
-                    <span className="font-medium">{feature.name}</span>
-                  </div>
-                  {feature.values.map((value, i) => (
-                    <div 
-                      key={i}
-                      className="bg-blue-100/50 dark:bg-blue-900/10 p-4 flex items-center justify-center text-center feature-cell"
-                    >
-                      {typeof value === 'boolean' ? (
-                        value ? (
-                          <CheckCircle className="w-6 h-6 text-green-500" />
-                        ) : (
-                          <XCircle className="w-6 h-6 text-red-500" />
-                        )
-                      ) : (
-                        <span className="text-sm">{value}</span>
-                      )}
-                    </div>
-                  ))}
+                  <img src={p.logo} alt={p.logoAlt} className="h-8 object-contain" />
                 </div>
               ))}
             </div>
+
+            {/* Feature rows */}
+            {features.map((feature, fi) => (
+              <div key={feature.name} className="grid comparison-grid gap-px">
+                {/* Feature name */}
+                <div className={`py-4 flex items-center ${fi < features.length - 1 ? "border-b border-stone-100" : ""}`}>
+                  <span className="text-sm font-medium text-[#091747]">{feature.name}</span>
+                </div>
+
+                {/* Values */}
+                {feature.values.map((val, vi) => {
+                  const isTuterra = vi === 0;
+                  return (
+                    <div
+                      key={vi}
+                      className={`py-4 px-4 flex items-center justify-center text-center
+                        ${isTuterra ? "bg-[#F7F3EC] border-x border-[#C8A84B]/30" : "bg-stone-50/50"}
+                        ${fi < features.length - 1 ? "border-b border-stone-100" : ""}
+                        ${fi === features.length - 1 && isTuterra ? "rounded-b-xl border-b border-[#C8A84B]/30" : ""}
+                      `}
+                    >
+                      <CellValue value={val} isTuterra={isTuterra} />
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+
           </div>
         </motion.div>
 
-        {/* Key Advantages Section - Full Width */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
-        >
-          <h3 className="text-2xl font-bold mb-8 text-center">Key Advantages</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            {advantages.map((advantage, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex items-start gap-4 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm"
-              >
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mt-0.5">
-                  <CheckCircle className="w-4 h-4 text-blue-500" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    {advantage.title}
-                  </h4>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
-                    {advantage.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
       </div>
     </section>
   );

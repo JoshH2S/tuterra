@@ -74,7 +74,7 @@ export function SlideNavigator({ slides, onComplete, autoMarkComplete = true, is
         ))}
       </div>
 
-      {/* Slide Content with Animation */}
+      {/* Slide Content with Animation - floating white card */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlideIndex}
@@ -82,7 +82,7 @@ export function SlideNavigator({ slides, onComplete, autoMarkComplete = true, is
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
-          className="space-y-6"
+          className="relative rounded-xl bg-white p-6 space-y-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08),0_8px_24px_-4px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.8)]"
         >
           {/* Slide Title */}
           {currentSlide.title && (
@@ -119,15 +119,6 @@ export function SlideNavigator({ slides, onComplete, autoMarkComplete = true, is
             </PremiumCard>
           )}
 
-          {/* Visual Hint */}
-          {currentSlide.visualHint && (
-            <PremiumCard className="p-4 bg-amber-50 border-amber-200">
-              <p className="text-sm text-amber-900">
-                <span className="font-semibold">💡 Visual Tip: </span>
-                {currentSlide.visualHint}
-              </p>
-            </PremiumCard>
-          )}
         </motion.div>
       </AnimatePresence>
 

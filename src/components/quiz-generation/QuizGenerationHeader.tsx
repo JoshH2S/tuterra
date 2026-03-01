@@ -8,19 +8,14 @@ interface QuizGenerationHeaderProps {
 
 export const QuizGenerationHeader = ({ onSaveTemplate }: QuizGenerationHeaderProps) => {
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 gradient-text">AI Quiz Generation</h1>
-          <p className="text-gray-600 dark:text-gray-400">Create AI-powered quizzes from your course materials</p>
-        </div>
-        {onSaveTemplate && (
-          <Button onClick={onSaveTemplate} variant="outline">
-            <Save className="w-4 h-4 mr-2" />
-            Save as Template
-          </Button>
-        )}
-      </div>
+    <div className="flex items-center gap-4">
+      <h1 className="text-lg font-semibold tracking-tight text-[#091747]">AI Quiz Generation</h1>
+      {onSaveTemplate && (
+        <Button onClick={onSaveTemplate} variant="ghost" size="sm" className="text-stone-400 hover:text-stone-600 hover:bg-transparent text-xs gap-1.5">
+          <Save className="w-3.5 h-3.5" />
+          Save Template
+        </Button>
+      )}
     </div>
   );
 };

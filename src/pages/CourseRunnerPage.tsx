@@ -21,11 +21,13 @@ import { ModuleGenerationLoading } from "@/components/course-engine/ModuleGenera
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CourseModule } from "@/types/course-engine";
+import { useToast } from "@/hooks/use-toast";
 
 const CourseRunnerPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [showSidebar, setShowSidebar] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showModuleConfirmation, setShowModuleConfirmation] = useState(false);
@@ -114,8 +116,23 @@ const CourseRunnerPage = () => {
     const targetModule = modules.find((m) => m.module_index === moduleIndex);
     if (!targetModule) return;
     
-    // If this is the next unstarted module, show confirmation dialog
     const isNextModule = currentModule && moduleIndex === currentModule.module_index + 1;
+
+    // Guard: next module is only accessible if the current module is fully complete
+    if (isNextModule && currentModule) {
+      const allStepsDone = steps.length > 0 && steps.every(s => s.is_completed);
+      const moduleComplete = currentModule.is_completed || allStepsDone;
+      if (!moduleComplete) {
+        toast({
+          title: 'Module not complete',
+          description: 'Please complete all steps in the current module before moving on.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    // If this is the next unstarted module, show confirmation dialog
     const hasStepsAlready = targetModule.id === progress?.current_module_id || targetModule.is_completed;
     
     if (isNextModule && !hasStepsAlready) {
@@ -262,10 +279,10 @@ const CourseRunnerPage = () => {
         />
       )}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content - white canvas (sidebar keeps its own styling) */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-white">
         {/* Top Progress Bar */}
-        <div className="border-b bg-card px-6 py-3">
+        <div className="border-b bg-white px-6 py-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -310,7 +327,7 @@ const CourseRunnerPage = () => {
 
         {/* Navigation Footer */}
         {!showFeedback && currentStep && (
-          <div className="border-t bg-card px-6 py-4">
+          <div className="border-t bg-white px-6 py-4">
             <div className="max-w-3xl mx-auto flex items-center justify-between">
               <Button
                 variant="outline"

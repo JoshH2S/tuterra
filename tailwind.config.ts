@@ -20,7 +20,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Quicksand', 'sans-serif'], // Set Quicksand as the default font
+        sans: ['Quicksand', 'sans-serif'],
+        bitter: ['Bitter', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",

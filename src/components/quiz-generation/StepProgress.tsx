@@ -1,8 +1,7 @@
 
 import React from "react";
-import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface StepProgressProps {
   steps: {
@@ -14,46 +13,40 @@ interface StepProgressProps {
 
 export const StepProgress = ({ steps, currentStep }: StepProgressProps) => {
   return (
-    <div className="hidden md:flex items-center gap-2">
-      {steps.map((step, index) => {
-        const isActive = currentStep === index + 1;
-        const isCompleted = currentStep > index + 1;
-        const Icon = step.icon;
-        
+    <div className="hidden md:flex items-center">
+      {steps.map((step, i) => {
+        const stepNum = i + 1;
+        const isComplete = currentStep > stepNum;
+        const isActive = currentStep === stepNum;
         return (
-          <React.Fragment key={index}>
-            {index > 0 && (
-              <div 
-                className={cn(
-                  "h-px w-8", 
-                  isCompleted ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"
-                )}
+          <React.Fragment key={i}>
+            <div className="flex flex-col items-center gap-1.5">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-200 ${
+                  isComplete
+                    ? "bg-[#C8A84B] text-white"
+                    : isActive
+                    ? "bg-[#091747] text-white"
+                    : "bg-stone-200 text-stone-400"
+                }`}
+              >
+                {isComplete ? <Check className="w-3.5 h-3.5" /> : `0${stepNum}`}
+              </div>
+              <span
+                className={`text-[10px] tracking-widest uppercase font-medium hidden lg:block ${
+                  isActive ? "text-[#091747]" : "text-stone-400"
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div
+                className={`h-px w-10 mx-3 mb-5 transition-colors duration-300 ${
+                  currentStep > stepNum ? "bg-[#C8A84B]" : "bg-stone-200"
+                }`}
               />
             )}
-            <motion.div
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
-                isActive && "bg-primary/10 text-primary",
-                isCompleted && "text-primary",
-                !isActive && !isCompleted && "text-gray-500"
-              )}
-              animate={{
-                scale: isActive ? 1.05 : 1,
-              }}
-              transition={{ duration: 0.2 }}
-            >
-              <div
-                className={cn(
-                  "w-6 h-6 rounded-full flex items-center justify-center",
-                  isActive && "bg-primary text-white",
-                  isCompleted && "bg-primary/20 text-primary",
-                  !isActive && !isCompleted && "bg-gray-100 dark:bg-gray-800 text-gray-500"
-                )}
-              >
-                <Icon className="w-3.5 h-3.5" />
-              </div>
-              <span className="hidden lg:inline">{step.label}</span>
-            </motion.div>
           </React.Fragment>
         );
       })}

@@ -30,9 +30,9 @@ export const MainSidebar = () => {
     <div ref={sidebarRef} className="relative flex">
       <Sidebar className={cn(
         "fixed left-0 top-0 h-screen",
-        "bg-gradient-to-br from-primary-100/80 to-primary-200/80", 
-        "border-r border-gray-200 dark:border-gray-800",
-        "shadow-[1px_0_5px_0_rgba(0,0,0,0.05)]",
+        "bg-[#F7F3EC] dark:bg-gray-900", 
+        "border-r border-[#e8e0d0] dark:border-gray-800",
+        "shadow-[1px_0_3px_0_rgba(0,0,0,0.02)]",
         "transition-all duration-300 ease-in-out z-30",
         "w-[200px]" // Fixed width, no more collapsed state
       )}>
@@ -54,7 +54,7 @@ export const MainSidebar = () => {
         </SidebarContent>
 
         {/* Move the user profile to the sidebar footer */}
-        <SidebarFooter className="border-t border-gray-200 dark:border-gray-800 p-2">
+        <SidebarFooter className="border-t border-[#e8e0d0] dark:border-gray-800 p-2">
           <SidebarUserProfile isCollapsed={false} />
         </SidebarFooter>
       </Sidebar>

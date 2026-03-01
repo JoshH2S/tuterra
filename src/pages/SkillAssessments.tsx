@@ -62,48 +62,48 @@ export default function SkillAssessments() {
   };
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden">
-      {/* Background Image - Full Opacity */}
-      <div 
-        className="fixed inset-0 w-full h-full bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/characters/skill%20assessment.jpg')"
-        }}
-      />
-      
-      {/* Content */}
-      <div className="relative z-10 container max-w-7xl mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 md:space-y-8 w-full">
+    <>
+      <div className="fixed inset-0 left-0 md:left-[200px] z-0 pointer-events-none bg-white" />
+
+      {/* Hero — at page root level, outside the content container */}
       {!isCreating && (
         <AssessmentHero onCreateNew={handleCreateNew} />
       )}
 
-      {isCreating ? (
-        <MultiStepAssessmentForm 
-          onComplete={handleAssessmentComplete}
-          onCancel={handleCancel}
-          isLoading={isGenerating}
-          progress={progress}
-        />
-      ) : (
-        <>
-          <AssessmentSearch searchQuery={searchQuery} onSearch={handleSearch} />
+      {/* Content */}
+      <div className="container mx-auto px-4 relative z-10 pb-10">
+        {isCreating ? (
+          <MultiStepAssessmentForm 
+            onComplete={handleAssessmentComplete}
+            onCancel={handleCancel}
+            isLoading={isGenerating}
+            progress={progress}
+          />
+        ) : (
+          <>
+            <AssessmentSearch searchQuery={searchQuery} onSearch={handleSearch} />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 w-full">
-            <SkillAssessmentsList 
-              onViewAssessment={handleViewAssessment} 
-              searchQuery={searchQuery}
-              renderItem={(assessment) => (
-                <AssessmentCard 
-                  key={assessment.id} 
-                  assessment={assessment} 
-                  onViewAssessment={handleViewAssessment} 
-                />
-              )}
-            />
-          </div>
-        </>
-      )}
+            <div className="mt-6 mb-6">
+              <h2 className="text-3xl font-semibold text-gray-900 mb-1">All Assessments</h2>
+              <p className="text-gray-500">Track and manage your skill assessments</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 w-full">
+              <SkillAssessmentsList 
+                onViewAssessment={handleViewAssessment} 
+                searchQuery={searchQuery}
+                renderItem={(assessment) => (
+                  <AssessmentCard 
+                    key={assessment.id} 
+                    assessment={assessment} 
+                    onViewAssessment={handleViewAssessment} 
+                  />
+                )}
+              />
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </>
   );
 }

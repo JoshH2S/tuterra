@@ -60,30 +60,22 @@ export const GeneratedCourseCard = ({
   };
 
   const getLevelColor = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "bg-green-500/20 text-green-400 border-green-500/30";
-      case "intermediate":
-        return "bg-amber-500/20 text-amber-400 border-amber-500/30";
-      case "advanced":
-        return "bg-red-500/20 text-red-400 border-red-500/30";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
+    // Warm paper aesthetic - subtle cream treatment
+    return "bg-[#FFF8DC]/70 text-black/70 border-black/10";
   };
 
   const getStatusBadge = () => {
     switch (course.status) {
       case "completed":
         return (
-          <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
-            <CheckCircle className="h-3 w-3 mr-1" />
+          <Badge variant="outline" className="bg-[#FFD700]/18 text-black/75 border-black/10">
+            <CheckCircle className="h-3.5 w-3.5 mr-1" />
             Completed
           </Badge>
         );
       case "active":
         return progress > 0 ? (
-          <Badge variant="outline" className="bg-primary/20 text-primary border-primary/30">
+          <Badge variant="outline" className="bg-[#FFE4B5]/55 text-black/70 border-black/10">
             In Progress
           </Badge>
         ) : null;
@@ -94,28 +86,25 @@ export const GeneratedCourseCard = ({
 
   return (
     <>
-      <Card className="group relative overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300">
-        {/* Gradient Accent */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary/60" />
-
-        <div className="p-5">
+      <Card className="group relative overflow-hidden border border-white/20 bg-white/40 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_16px_32px_rgba(0,0,0,0.12)] hover:bg-white/50 transition-all duration-300 hover:-translate-y-1 rounded-2xl">
+        <div className="p-6">
           {/* Header */}
-          <div className="flex items-start justify-between mb-3">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex-1 pr-2">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-2">
                 <Badge variant="outline" className={getLevelColor(course.level)}>
                   {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
                 </Badge>
                 {getStatusBadge()}
               </div>
-              <h3 className="font-semibold text-foreground line-clamp-2 text-lg">
+              <h3 className="font-medium text-foreground line-clamp-2 text-lg leading-relaxed">
                 {course.title}
               </h3>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-black/45 hover:text-black/80 opacity-60 group-hover:opacity-100 transition">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -132,34 +121,34 @@ export const GeneratedCourseCard = ({
           </div>
 
           {/* Description */}
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+          <p className="text-sm text-black/60 line-clamp-2 mb-5 leading-relaxed">
             {course.description || `A ${course.pace_weeks}-week journey exploring ${course.topic}`}
           </p>
 
           {/* Meta Info */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-            <span className="flex items-center gap-1">
-              <BookOpen className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-5 text-xs text-black/45 mb-5">
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="h-3 w-3" />
               {course.pace_weeks} modules
             </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-3 w-3" />
               {formatDistanceToNow(new Date(course.created_at), { addSuffix: true })}
             </span>
           </div>
 
           {/* Progress Bar */}
-          <div className="space-y-1.5 mb-4">
+          <div className="space-y-2 mb-5">
             <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Progress</span>
-              <span className="text-primary font-medium">{progress}%</span>
+              <span className="text-black/45">Progress</span>
+              <span className="text-black/75 font-medium">{progress}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className="h-1.5 bg-black/5" indicatorClassName="bg-[#B8860B]" />
           </div>
 
           {/* Action Button */}
           <Button
-            className="w-full"
+            className="w-full rounded-full py-5 text-black bg-gradient-to-br from-[#FFF8DC]/90 to-[#FFE4B5]/90 border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_10px_25px_rgba(184,134,11,0.18)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08),0_18px_40px_rgba(184,134,11,0.26)] hover:-translate-y-[1px] transition-all"
             onClick={handleClick}
           >
             <Play className="h-4 w-4 mr-2" />

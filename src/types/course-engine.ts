@@ -10,6 +10,7 @@ export interface FormatPreferences {
   scenarioHeavy?: boolean;
   quizHeavy?: boolean;
   writingHeavy?: boolean;
+  documentary?: boolean;
 }
 
 export interface LearningObjective {
@@ -73,7 +74,7 @@ export interface ContentSlide {
   title: string;
   content: string;
   keyPoints: string[];
-  visualHint: string; // Now required for consistent AI generation
+  visualHint?: string;
 }
 
 export interface StepContent {

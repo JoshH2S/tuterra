@@ -1,6 +1,4 @@
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { QuestionDifficulty } from "@/types/quiz";
 
 interface QuizDifficultySelectorProps {
@@ -8,41 +6,33 @@ interface QuizDifficultySelectorProps {
   setDifficulty: (difficulty: QuestionDifficulty) => void;
 }
 
-export function QuizDifficultySelector({ difficulty, setDifficulty }: QuizDifficultySelectorProps) {
-  const difficultyOptions: { value: QuestionDifficulty; label: string }[] = [
-    { value: "middle_school", label: "Middle School" },
-    { value: "high_school", label: "High School" },
-    { value: "university", label: "University" },
-    { value: "post_graduate", label: "Post Graduate" },
-  ];
+const DIFFICULTY_OPTIONS: { value: QuestionDifficulty; label: string }[] = [
+  { value: "middle_school", label: "Middle School" },
+  { value: "high_school", label: "High School" },
+  { value: "university", label: "University" },
+  { value: "post_graduate", label: "Post Graduate" },
+];
 
+export function QuizDifficultySelector({ difficulty, setDifficulty }: QuizDifficultySelectorProps) {
   return (
     <div className="space-y-3">
-      <Label>Difficulty Level</Label>
-      <RadioGroup
-        value={difficulty}
-        onValueChange={(value) => setDifficulty(value as QuestionDifficulty)}
-        className="grid grid-cols-2 gap-2 sm:grid-cols-4"
-      >
-        {difficultyOptions.map((option) => (
-          <div
+      <label className="text-sm font-medium text-stone-600">Difficulty Level</label>
+      <div className="flex flex-wrap gap-2">
+        {DIFFICULTY_OPTIONS.map((option) => (
+          <button
             key={option.value}
-            className={`
-              flex items-center space-x-2 rounded-md border p-3 cursor-pointer
-              ${difficulty === option.value ? "border-primary bg-primary/5" : ""}
-            `}
+            type="button"
             onClick={() => setDifficulty(option.value)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 ease-out touch-manipulation ${
+              difficulty === option.value
+                ? "bg-[#091747] text-white shadow-sm"
+                : "bg-stone-100 text-stone-600 hover:bg-stone-200 hover:-translate-y-px"
+            }`}
           >
-            <RadioGroupItem value={option.value} id={option.value} />
-            <Label
-              htmlFor={option.value}
-              className="cursor-pointer font-normal"
-            >
-              {option.label}
-            </Label>
-          </div>
+            {option.label}
+          </button>
         ))}
-      </RadioGroup>
+      </div>
     </div>
   );
 }

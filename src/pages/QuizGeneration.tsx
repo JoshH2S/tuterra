@@ -117,10 +117,10 @@ const QuizGeneration = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+    <div className="min-h-screen bg-[#F5F4F1]">
+      <header className="sticky top-0 z-50 bg-[#F9F8F6] border-b border-[#C8A84B]/25">
         <div className="container mx-auto px-4">
-          <div className="h-16 flex items-center justify-between">
+          <div className="h-14 flex items-center justify-between">
             <QuizGenerationHeader onSaveTemplate={quizQuestions.length > 0 ? handleSaveTemplate : undefined} />
             <div className="hidden md:block">
               <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />

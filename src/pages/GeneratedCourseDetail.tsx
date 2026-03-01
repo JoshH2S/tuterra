@@ -12,7 +12,6 @@ import {
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { PremiumCard } from "@/components/ui/premium-card";
 import { useCourseRunner } from "@/hooks/useCourseRunner";
@@ -124,25 +123,31 @@ const GeneratedCourseDetail = () => {
       </Button>
 
       {/* Course Header */}
-      <PremiumCard className="p-6 mb-6">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+      <div className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] bg-[#F7F3EC] p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <p className="text-xs font-mono text-[#8a7a5a] mb-3 tracking-wide uppercase">
+              AI-Powered Learning
+            </p>
+
+            <div className="flex items-center gap-2 mb-3">
               <Badge className={getLevelColor(course.level)}>
                 {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
               </Badge>
-              <Badge variant="outline">
+              <Badge variant="outline" className="border-[#C8A84B]/50 text-[#8a7a5a]">
                 {course.pace_weeks} {course.pace_weeks === 1 ? 'week' : 'weeks'}
               </Badge>
             </div>
-            
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">{course.title}</h1>
-            
+
+            <h1 className="text-2xl md:text-3xl font-medium text-[#1a1a1a] leading-tight tracking-tight mb-2">
+              {course.title}
+            </h1>
+
             {course.description && (
-              <p className="text-muted-foreground mb-4">{course.description}</p>
+              <p className="text-sm text-[#5a5040] leading-relaxed mb-4">{course.description}</p>
             )}
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 text-sm text-[#8a7a5a]">
               <span className="flex items-center gap-1">
                 <BookOpen className="h-4 w-4" />
                 {modules.length} modules
@@ -154,33 +159,51 @@ const GeneratedCourseDetail = () => {
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-3">
+          <div className="flex flex-col items-center gap-3">
             {hasStarted ? (
               <>
-                <div className="text-right mb-2">
-                  <p className="text-sm text-muted-foreground">Progress</p>
-                  <p className="text-2xl font-bold">{progressPercent}%</p>
+                {/* Circular progress ring */}
+                <div className="relative w-24 h-24">
+                  <svg className="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                    <circle cx="48" cy="48" r="38" fill="none" stroke="#C8A84B" strokeWidth="7" opacity="0.2" />
+                    <circle
+                      cx="48" cy="48" r="38"
+                      fill="none"
+                      stroke="#C8A84B"
+                      strokeWidth="7"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 38}`}
+                      strokeDashoffset={`${2 * Math.PI * 38 * (1 - progressPercent / 100)}`}
+                      className="transition-all duration-700 ease-out"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-lg font-bold text-[#1a1a1a] leading-none">{progressPercent}%</span>
+                    <span className="text-[10px] text-[#8a7a5a] mt-0.5">done</span>
+                  </div>
                 </div>
-                <Button onClick={handleContinue} size="lg">
+                <Button
+                  onClick={handleContinue}
+                  size="lg"
+                  className="flex items-center gap-2 px-6 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all font-semibold"
+                >
                   Continue Learning
-                  <ChevronRight className="h-5 w-5 ml-2" />
+                  <ChevronRight className="h-5 w-5" />
                 </Button>
               </>
             ) : (
-              <Button onClick={handleStartCourse} size="lg">
-                <Play className="h-5 w-5 mr-2" />
+              <Button
+                onClick={handleStartCourse}
+                size="lg"
+                className="flex items-center gap-2 px-6 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all font-semibold"
+              >
+                <Play className="h-5 w-5" />
                 Start Course
               </Button>
             )}
           </div>
         </div>
-
-        {hasStarted && (
-          <div className="mt-6">
-            <Progress value={progressPercent} className="h-2" />
-          </div>
-        )}
-      </PremiumCard>
+      </div>
 
       {/* Learning Objectives */}
       {course.learning_objectives && course.learning_objectives.length > 0 && (

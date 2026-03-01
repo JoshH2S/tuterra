@@ -63,49 +63,49 @@ export const AssessmentCard = ({ assessment, onViewAssessment }: AssessmentCardP
   };
   
   return (
-    <Card className="h-full transition-all hover:shadow-md active:scale-[0.98] touch-manipulation w-full">
-      <CardHeader className="pb-3 sm:pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+    <Card className="h-full border border-black/[0.06] shadow-[0_1px_3px_0_rgba(0,0,0,0.04),0_4px_16px_0_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.10)] transition-all duration-300 hover:-translate-y-1 active:scale-[0.98] touch-manipulation w-full">
+      <CardHeader className="pb-4 sm:pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <CardTitle className="text-base sm:text-lg font-semibold line-clamp-1">
+            <CardTitle className="text-base sm:text-lg font-semibold line-clamp-1 leading-tight">
               {assessment.title}
             </CardTitle>
-            <CardDescription className="flex items-center gap-2 mt-1 text-xs sm:text-sm">
+            <CardDescription className="flex items-center gap-2 mt-2 text-xs sm:text-sm text-gray-500">
               <Building2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
               {assessment.industry}
             </CardDescription>
           </div>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm whitespace-nowrap self-start">
+          <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 text-xs sm:text-sm whitespace-nowrap self-start">
             {assessment.role}
           </Badge>
         </div>
       </CardHeader>
 
-      <CardContent className="pb-4 sm:pb-6">
-        <div className="space-y-3 sm:space-y-4">
-          <div className="flex flex-wrap gap-1 sm:gap-1.5">
+      <CardContent className="pb-5 sm:pb-6">
+        <div className="space-y-4 sm:space-y-5">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {skills.slice(0, isMobile ? 2 : 3).map((skill) => (
               <Badge
                 key={skill}
-                variant="secondary"
-                className="text-xs truncate max-w-[120px]"
+                variant="outline"
+                className="bg-gray-50 text-gray-600 border-gray-200 text-xs truncate max-w-[120px]"
               >
                 {skill}
               </Badge>
             ))}
             {skills.length > (isMobile ? 2 : 3) && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 text-xs">
                 +{skills.length - (isMobile ? 2 : 3)} more
               </Badge>
             )}
           </div>
 
-          <div className="space-y-1 sm:space-y-1.5">
+          <div className="space-y-2">
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-muted-foreground">
+              <span className="text-gray-500">
                 {previousScore !== null ? "Previous Score" : "Questions"}
               </span>
-              <span className="font-medium">
+              <span className="font-medium text-gray-700">
                 {previousScore !== null 
                   ? `${previousScore}%`
                   : `${assessment.questions?.length || 0} total`}
@@ -113,8 +113,8 @@ export const AssessmentCard = ({ assessment, onViewAssessment }: AssessmentCardP
             </div>
             <Progress 
               value={previousScore !== null ? previousScore : 0} 
-              className="h-1.5 sm:h-2"
-              indicatorClassName={`${previousScore !== null ? 'bg-primary' : 'bg-primary/80'}`}
+              className="h-1.5 bg-black/5"
+              indicatorClassName="bg-[#B8860B]"
             />
           </div>
         </div>
@@ -124,7 +124,7 @@ export const AssessmentCard = ({ assessment, onViewAssessment }: AssessmentCardP
         {previousScore !== null && (
           <Button 
             variant="outline" 
-            className="text-xs sm:text-sm py-1 sm:py-2 flex-1 px-3"
+            className="text-xs sm:text-sm flex-1 px-3 rounded-full"
             onClick={handleViewResults}
           >
             <Eye className="w-3.5 h-3.5 mr-1.5" />
@@ -132,8 +132,7 @@ export const AssessmentCard = ({ assessment, onViewAssessment }: AssessmentCardP
           </Button>
         )}
         <Button 
-          variant={previousScore !== null ? "outline" : "default"} 
-          className={`text-xs sm:text-sm py-1 sm:py-2 ${previousScore !== null ? 'flex-1 px-3' : 'w-full'}`}
+          className={`text-xs sm:text-sm rounded-full text-black bg-gradient-to-br from-[#FFF8DC]/90 to-[#FFE4B5]/90 border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_10px_25px_rgba(184,134,11,0.18)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08),0_18px_40px_rgba(184,134,11,0.26)] transition-all ${previousScore !== null ? 'flex-1 px-3' : 'w-full'}`}
           onClick={() => onViewAssessment(assessment.id)}
         >
           <FileText className="w-3.5 h-3.5 mr-1.5" />

@@ -1,10 +1,11 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CourseSelector } from "@/components/quiz-generation/CourseSelector";
 import { QuizDifficultySelector } from "@/components/quiz-generation/QuizDifficultySelector";
 import { QuestionDifficulty } from "@/types/quiz";
 import { QuizTitleInput } from "@/components/quiz-generation/QuizTitleInput";
+import { FileText } from "lucide-react";
+import { StepHeader } from "@/components/quiz-generation/StepHeader";
 
 interface CourseSelectionStepProps {
   title: string;
@@ -25,31 +26,23 @@ export const CourseSelectionStep = ({
 }: CourseSelectionStepProps) => {
   return (
     <div className="space-y-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Quiz Setup</h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Configure the basic settings for your quiz
-        </p>
+      <StepHeader
+        title="Quiz Setup"
+        description="Configure the basic settings for your quiz"
+        icon={FileText}
+      />
+
+      <div className="bg-white border border-black/[0.06] rounded-xl p-6 shadow-[0_1px_8px_rgba(0,0,0,0.04)] space-y-6">
+        <QuizTitleInput title={title} onChange={setTitle} />
+        <CourseSelector
+          selectedCourseId={selectedCourseId}
+          setSelectedCourseId={setSelectedCourseId}
+        />
+        <QuizDifficultySelector
+          difficulty={difficulty}
+          setDifficulty={setDifficulty}
+        />
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Quiz Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <QuizTitleInput title={title} onChange={setTitle} />
-            
-          <CourseSelector
-            selectedCourseId={selectedCourseId}
-            setSelectedCourseId={setSelectedCourseId}
-          />
-
-          <QuizDifficultySelector
-            difficulty={difficulty}
-            setDifficulty={setDifficulty}
-          />
-        </CardContent>
-      </Card>
     </div>
   );
 };

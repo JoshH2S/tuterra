@@ -24,13 +24,13 @@ export const CourseSelection = ({
   return (
     <>
       <div className="space-y-2">
-        <label htmlFor="course" className="text-sm font-medium">Select Course</label>
+        <label htmlFor="course" className="text-sm font-medium text-stone-600">Select Course</label>
         <Select
           value={selectedCourseId}
           onValueChange={setSelectedCourseId}
           disabled={isLoadingCourses}
         >
-          <SelectTrigger className={`${selectedCourseId ? 'border-primary bg-white dark:bg-gray-800 ring-1 ring-primary/30' : ''}`}>
+          <SelectTrigger className="bg-stone-50 border-stone-200 focus:ring-stone-300 focus:border-stone-300">
             <SelectValue placeholder="Select a course" />
           </SelectTrigger>
           <SelectContent>
@@ -41,21 +41,20 @@ export const CourseSelection = ({
             ))}
           </SelectContent>
         </Select>
-        
         {selectedCourseId && selectedCourse && (
-          <p className="text-xs text-primary font-medium mt-1 flex items-center">
-            <span className="mr-1">✓</span> Selected: {selectedCourse.title}
+          <p className="text-xs text-[#C8A84B] font-medium mt-1">
+            ✓ {selectedCourse.title}
           </p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="difficulty" className="text-sm font-medium">Education Level</label>
+      <div className="space-y-2 mt-4">
+        <label htmlFor="difficulty" className="text-sm font-medium text-stone-600">Education Level</label>
         <Select
           value={difficulty}
           onValueChange={(value: QuestionDifficulty) => setDifficulty(value)}
         >
-          <SelectTrigger className={`${difficulty ? 'border-primary bg-white dark:bg-gray-800 ring-1 ring-primary/30' : ''}`}>
+          <SelectTrigger className="bg-stone-50 border-stone-200 focus:ring-stone-300 focus:border-stone-300">
             <SelectValue placeholder="Select education level" />
           </SelectTrigger>
           <SelectContent>

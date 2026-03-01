@@ -58,6 +58,7 @@ export function PricingSection() {
     <div className="bg-background">
       <Pricing
         plans={tuteeraPricing}
+        eyebrow="Pricing"
         title="Choose Your Learning Journey"
         description="Start with our free plan or upgrade for unlimited access to all features"
       />

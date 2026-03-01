@@ -24,12 +24,14 @@ interface PricingPlan {
 
 interface PricingProps {
   plans: PricingPlan[];
+  eyebrow?: string;
   title?: string;
   description?: string;
 }
 
 export function Pricing({
   plans,
+  eyebrow,
   title = "Simple, Transparent Pricing",
   description = "Choose the plan that works for you. All plans include access to our platform, lead generation tools, and dedicated support.",
 }: PricingProps) {
@@ -42,117 +44,124 @@ export function Pricing({
   };
 
   return (
-    <div className="container py-20">
-      <div className="text-center space-y-4 mb-12">
-        <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          {title}
-        </h2>
-        <p className="text-muted-foreground text-lg whitespace-pre-line">
-          {description}
-        </p>
-      </div>
+    <div className="py-20 md:py-28">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center">
+          {!!eyebrow && (
+            <p className="text-xs font-mono uppercase tracking-widest text-[#C8A84B] mb-4">
+              {eyebrow}
+            </p>
+          )}
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#091747] leading-snug">
+            {title}
+          </h2>
+          <p className="mt-4 text-base text-stone-500 leading-relaxed whitespace-pre-line max-w-2xl mx-auto">
+            {description}
+          </p>
+        </div>
 
-      <div className="flex justify-center mb-10">
-        <label className="relative inline-flex items-center cursor-pointer">
-          <Label>
-            <Switch
-              ref={switchRef}
-              checked={!isMonthly}
-              onCheckedChange={handleToggle}
-              className="relative"
-            />
-          </Label>
-        </label>
-        <span className="ml-2 font-semibold">
-          Annual billing <span className="text-primary">(Save 20%)</span>
-        </span>
-      </div>
+        <div className="flex justify-center mt-10 mb-10">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <Label>
+              <Switch
+                ref={switchRef}
+                checked={!isMonthly}
+                onCheckedChange={handleToggle}
+                className="relative"
+              />
+            </Label>
+          </label>
+          <span className="ml-2 text-sm font-medium text-[#091747]">
+            Annual billing <span className="text-[#C8A84B]">(Save 20%)</span>
+          </span>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 sm:2 gap-4">
-        {plans.map((plan, index) => (
-          <motion.div
-            key={index}
-            initial={{ y: 50, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{
-              duration: 0.5,
-              delay: index * 0.1,
-            }}
-            className={cn(
-              `rounded-2xl border-[1px] p-6 bg-background text-center lg:flex lg:flex-col lg:justify-center relative`,
-              plan.isPopular ? "border-primary border-2" : "border-border"
-            )}
-          >
-            {plan.isPopular && (
-              <div className="absolute top-0 right-0 bg-primary py-0.5 px-2 rounded-bl-xl rounded-tr-xl flex items-center">
-                <Star className="text-primary-foreground h-4 w-4 fill-current" />
-                <span className="text-primary-foreground ml-1 font-sans font-semibold">
-                  Popular
-                </span>
-              </div>
-            )}
-            <div className="flex-1 flex flex-col">
-              <p className="text-base font-semibold text-muted-foreground">
-                {plan.name}
-              </p>
-              
-              {/* Promotional Internship Badge for Free plan */}
-              {plan.name === "Free" && promoStatus.hasPromotionalInternships && (
-                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 mx-auto">
-                  <Gift className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm font-bold text-amber-500">
-                    🎁 {promoStatus.internshipsRemaining} Free Internship{promoStatus.internshipsRemaining > 1 ? 's' : ''} Included!
+        <div className="grid grid-cols-1 md:grid-cols-3 sm:2 gap-4">
+          {plans.map((plan, index) => (
+            <motion.div
+              key={index}
+              initial={{ y: 50, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{
+                duration: 0.5,
+                delay: index * 0.1,
+              }}
+              className={cn(
+                `rounded-2xl border-[1px] p-6 bg-background text-center lg:flex lg:flex-col lg:justify-center relative`,
+                plan.isPopular ? "border-primary border-2" : "border-border"
+              )}
+            >
+              {plan.isPopular && (
+                <div className="absolute top-0 right-0 bg-primary py-0.5 px-2 rounded-bl-xl rounded-tr-xl flex items-center">
+                  <Star className="text-primary-foreground h-4 w-4 fill-current" />
+                  <span className="text-primary-foreground ml-1 font-sans font-semibold">
+                    Popular
                   </span>
                 </div>
               )}
-              <div className="mt-6 flex items-center justify-center gap-x-2">
-                <span className="text-5xl font-bold tracking-tight text-foreground">
-                  {isMonthly ? plan.price : plan.yearlyPrice}
-                </span>
-                {plan.period !== "Next 3 months" && (
-                  <span className="text-sm font-semibold leading-6 tracking-wide text-muted-foreground">
-                    / {plan.period}
+              <div className="flex-1 flex flex-col">
+                <p className="text-base font-semibold text-muted-foreground">
+                  {plan.name}
+                </p>
+              
+                {/* Promotional Internship Badge for Free plan */}
+                {plan.name === "Free" && promoStatus.hasPromotionalInternships && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 mx-auto">
+                    <Gift className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-bold text-amber-500">
+                      🎁 {promoStatus.internshipsRemaining} Free Internship{promoStatus.internshipsRemaining > 1 ? 's' : ''} Included!
+                    </span>
+                  </div>
+                )}
+                <div className="mt-6 flex items-center justify-center gap-x-2">
+                  <span className="text-5xl font-bold tracking-tight text-foreground">
+                    {isMonthly ? plan.price : plan.yearlyPrice}
                   </span>
-                )}
+                  {plan.period !== "Next 3 months" && (
+                    <span className="text-sm font-semibold leading-6 tracking-wide text-muted-foreground">
+                      / {plan.period}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs leading-5 text-muted-foreground">
+                  {isMonthly ? "billed monthly" : "billed annually"}
+                </p>
+
+                <ul className="mt-5 gap-2 flex flex-col">
+                  {plan.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                      <span className="text-left">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <hr className="w-full my-4" />
+
+                <Link
+                  to={plan.href}
+                  className={cn(
+                    buttonVariants({
+                      variant: "outline",
+                    }),
+                    "group relative w-full gap-2 overflow-hidden text-lg font-semibold tracking-tighter",
+                    "transform-gpu ring-offset-current transition-all duration-300 ease-out hover:ring-2 hover:ring-primary hover:ring-offset-1 hover:bg-primary hover:text-primary-foreground",
+                    plan.isPopular
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-foreground"
+                  )}
+                >
+                  {plan.buttonText}
+                </Link>
+                <p className="mt-6 text-xs leading-5 text-muted-foreground">
+                  {plan.description}
+                </p>
               </div>
-
-              <p className="text-xs leading-5 text-muted-foreground">
-                {isMonthly ? "billed monthly" : "billed annually"}
-              </p>
-
-              <ul className="mt-5 gap-2 flex flex-col">
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-                    <span className="text-left">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <hr className="w-full my-4" />
-
-              <Link
-                to={plan.href}
-                className={cn(
-                  buttonVariants({
-                    variant: "outline",
-                  }),
-                  "group relative w-full gap-2 overflow-hidden text-lg font-semibold tracking-tighter",
-                  "transform-gpu ring-offset-current transition-all duration-300 ease-out hover:ring-2 hover:ring-primary hover:ring-offset-1 hover:bg-primary hover:text-primary-foreground",
-                  plan.isPopular
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-foreground"
-                )}
-              >
-                {plan.buttonText}
-              </Link>
-              <p className="mt-6 text-xs leading-5 text-muted-foreground">
-                {plan.description}
-              </p>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );

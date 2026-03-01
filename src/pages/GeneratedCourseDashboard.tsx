@@ -35,79 +35,55 @@ const GeneratedCourseDashboard = () => {
 
   return (
     <>
-      {/* Full-bleed background layer - respects sidebar */}
+      {/* Clean white background */}
       <div 
-        className="fixed inset-0 left-0 md:left-[200px] -z-10"
-        style={{
-          backgroundImage: "url('/images/white-knight.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
+        className="fixed inset-0 left-0 md:left-[200px] z-0 pointer-events-none bg-white"
       />
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Hero Card Section */}
+      <div className="relative z-10 mb-16 px-4 sm:px-6">
+        <div 
+          className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] flex flex-col sm:flex-row bg-[#F7F3EC] p-4 gap-4"
+          style={{ minHeight: '340px' }}
+        >
+          {/* Solid Content Panel — smaller portion */}
+          <div className="flex flex-col justify-between p-4 sm:w-[36%] shrink-0">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
-                <GraduationCap className="h-8 w-8" />
-                Course Engine
-              </h1>
-              <p className="text-white/80 mt-2">
-                Generate personalized courses on any topic
+              <p className="text-xs font-mono text-[#8a7a5a] mb-4 tracking-wide uppercase">
+                AI-Powered Learning
+              </p>
+              <div className="flex items-start gap-3 mb-4">
+                <GraduationCap className="h-8 w-8 text-[#7a6a2a] mt-1 shrink-0" />
+                <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">
+                  Course Engine
+                </h1>
+              </div>
+              <p className="text-sm text-[#5a5040] leading-relaxed">
+                Generate personalized courses on any topic with AI-powered learning paths
               </p>
             </div>
-            <Button 
-              onClick={() => setShowWizard(true)}
-              className="flex items-center gap-2"
-              size="lg"
-            >
-              <Plus className="h-5 w-5" />
-              Create Course
-            </Button>
+            <div className="mt-8">
+              <Button 
+                onClick={() => setShowWizard(true)}
+                className="flex items-center gap-2 px-6 py-5 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] hover:-translate-y-0.5 transition-all font-semibold"
+              >
+                <Plus className="h-5 w-5" />
+                Create Your Course
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <PremiumCard className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <BookOpen className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Active Courses</p>
-                <p className="text-2xl font-bold">{activeCourses.length}</p>
-              </div>
-            </div>
-          </PremiumCard>
-          
-          <PremiumCard className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Target className="h-5 w-5 text-green-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{completedCourses.length}</p>
-              </div>
-            </div>
-          </PremiumCard>
-          
-          <PremiumCard className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
-                <Clock className="h-5 w-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold">{draftCourses.length}</p>
-              </div>
-            </div>
-          </PremiumCard>
+          {/* Image Panel — enveloped inside the card */}
+          <div 
+            className="flex-1 rounded-xl bg-cover bg-center min-h-[220px] sm:min-h-0"
+            style={{
+              backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-mart-production-7718665.jpg')",
+            }}
+          />
         </div>
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
 
         {/* Course List */}
         {isLoading ? (
@@ -120,18 +96,18 @@ const GeneratedCourseDashboard = () => {
               Create your first personalized course on any topic. Our AI will generate
               a complete learning journey with modules, checkpoints, and feedback.
             </p>
-            <Button onClick={() => setShowWizard(true)} size="lg">
+            <Button onClick={() => setShowWizard(true)} size="lg" className="rounded-full">
               <Plus className="h-5 w-5 mr-2" />
               Create Your First Course
             </Button>
           </PremiumCard>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-10">
             {/* Active Courses */}
             {activeCourses.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-white mb-4">Continue Learning</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <h2 className="text-lg font-medium text-black mb-6">Continue Learning</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {activeCourses.map((course) => (
                     <GeneratedCourseCard
                       key={course.id}
@@ -147,8 +123,8 @@ const GeneratedCourseDashboard = () => {
             {/* Draft/Generating Courses */}
             {draftCourses.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-white mb-4">In Progress</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <h2 className="text-lg font-medium text-black mb-6">In Progress</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {draftCourses.map((course) => (
                     <GeneratedCourseCard
                       key={course.id}
@@ -164,8 +140,8 @@ const GeneratedCourseDashboard = () => {
             {/* Completed Courses */}
             {completedCourses.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-white mb-4">Completed</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <h2 className="text-lg font-medium text-black mb-6">Completed</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {completedCourses.map((course) => (
                     <GeneratedCourseCard
                       key={course.id}

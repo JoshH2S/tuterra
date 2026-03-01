@@ -41,10 +41,10 @@ export function QuizFilters({
       {/* Page Header */}
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
-            Available Quizzes
+          <h1 className="text-3xl font-semibold text-gray-900">
+            All Quizzes
           </h1>
-          <p className="text-white/80 mt-1">
+          <p className="text-gray-500 mt-1">
             View and manage your course quizzes
           </p>
         </div>
@@ -73,10 +73,9 @@ export function QuizFilters({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Create Quiz button clicked');
               handleCreateQuiz();
             }}
-            className="touch-manipulation relative z-10"
+            className="touch-manipulation relative z-10 bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-black hover:from-primary-200 hover:to-primary-300"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Quiz

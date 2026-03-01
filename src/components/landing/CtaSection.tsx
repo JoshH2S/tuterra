@@ -1,36 +1,35 @@
-
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function CtaSection() {
   return (
-    <section className="py-20 bg-gradient-to-br from-primary-100/80 to-primary-200/80 text-white shadow-md">
-      <div className="container mx-auto px-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+    <section className="bg-[#F9F7F0] py-28">
+      <div className="max-w-2xl mx-auto px-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center max-w-3xl mx-auto"
+          transition={{ duration: 0.45, ease: "easeOut" }}
         >
-          <h2 className="text-4xl font-bold mb-6 gradient-text">
-            Ready to Transform Your Educational Experience?
-          </h2>
-          <p className="text-xl gradient-text mb-8">
-            Join thousands of educators and students already using our platform to enhance learning outcomes.
+          <p className="text-xs font-mono uppercase tracking-widest text-[#C8A84B] mb-6">
+            Get Started
           </p>
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            className="inline-block"
-          >
-            <Link 
-              to="/auth?tab=signup" 
-              className="px-10 py-4 bg-gradient-to-r from-[#091747] to-blue-400 dark:to-blue-500 text-white rounded-lg font-medium hover:opacity-90 shadow-md transition-colors"
-            >
-              Get Started Today
+          <h2 className="text-4xl font-semibold tracking-tight text-[#091747] leading-tight">
+            Ready to Learn With Purpose?
+          </h2>
+          <p className="mt-5 text-base text-stone-500 leading-relaxed">
+            Join Tuterra and start building the skills that matter.
+          </p>
+          <div className="mt-10">
+            <Link to="/auth?tab=signup">
+              <Button className="rounded-full px-10 py-3 h-auto bg-[#091747] text-white hover:bg-[#0d2060] transition-colors duration-150 text-base font-medium flex items-center gap-2 mx-auto">
+                Start Your Learning Journey
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             </Link>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </section>

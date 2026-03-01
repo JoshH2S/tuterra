@@ -34,7 +34,7 @@ export const navigationItems: NavigationItem[] = [
   { 
     icon: Home, 
     label: "Home", 
-    path: "/courses/generated" 
+    path: "/dashboard/overview" 
   },
   { 
     icon: BookOpenText, 

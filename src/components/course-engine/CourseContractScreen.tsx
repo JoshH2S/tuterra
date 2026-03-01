@@ -20,19 +20,19 @@ export function CourseContractScreen({
   onAcceptContract, 
   onCancel 
 }: CourseContractScreenProps) {
-  const [selectedStartDate, setSelectedStartDate] = useState<Date>(new Date());
+  const startDate = new Date(); // Always use today's date
   const [isAccepting, setIsAccepting] = useState(false);
 
   // Calculate course metrics
   const totalMinutes = modules.reduce((acc, m) => acc + (m.estimated_minutes || 0), 0);
   const sessionsPerWeek = 2; // Standard: 2 sessions per week
   const minutesPerSession = Math.round(totalMinutes / (course.pace_weeks * sessionsPerWeek));
-  const targetCompletionDate = addWeeks(selectedStartDate, course.pace_weeks);
+  const targetCompletionDate = addWeeks(startDate, course.pace_weeks);
   
   // Calculate session schedule
   const getSessionSchedule = () => {
     const sessions = [];
-    let currentDate = selectedStartDate;
+    let currentDate = startDate;
     
     for (let week = 0; week < course.pace_weeks; week++) {
       // Tuesday and Thursday sessions
@@ -53,7 +53,7 @@ export function CourseContractScreen({
   const handleAccept = async () => {
     setIsAccepting(true);
     try {
-      await onAcceptContract(selectedStartDate);
+      await onAcceptContract(startDate);
     } finally {
       setIsAccepting(false);
     }
@@ -92,47 +92,37 @@ export function CourseContractScreen({
 
         {/* Course Commitment */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <Calendar className="h-8 w-8 text-blue-600" />
+          <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <Calendar className="h-8 w-8 text-primary" />
             <div>
-              <p className="font-semibold text-blue-900">Duration</p>
-              <p className="text-blue-700">{course.pace_weeks} weeks</p>
+              <p className="font-semibold text-primary-800">Duration</p>
+              <p className="text-primary-700">{course.pace_weeks} weeks</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
-            <Clock className="h-8 w-8 text-green-600" />
+          <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <Clock className="h-8 w-8 text-primary" />
             <div>
-              <p className="font-semibold text-green-900">Time Commitment</p>
-              <p className="text-green-700">{sessionsPerWeek} sessions/week</p>
-              <p className="text-sm text-green-600">~{minutesPerSession} min each</p>
+              <p className="font-semibold text-primary-800">Time Commitment</p>
+              <p className="text-primary-700">{sessionsPerWeek} sessions/week</p>
+              <p className="text-sm text-primary-600">~{minutesPerSession} min each</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
-            <Target className="h-8 w-8 text-purple-600" />
+          <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <Target className="h-8 w-8 text-primary" />
             <div>
-              <p className="font-semibold text-purple-900">Total Learning</p>
-              <p className="text-purple-700">{Math.round(totalMinutes / 60)}h {totalMinutes % 60}m</p>
-              <p className="text-sm text-purple-600">{modules.length} modules</p>
+              <p className="font-semibold text-primary-800">Total Learning</p>
+              <p className="text-primary-700">{Math.round(totalMinutes / 60)}h {totalMinutes % 60}m</p>
+              <p className="text-sm text-primary-600">{modules.length} modules</p>
             </div>
           </div>
         </div>
 
-        {/* Start Date Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            When would you like to start?
-          </label>
-          <input
-            type="date"
-            value={format(selectedStartDate, 'yyyy-MM-dd')}
-            onChange={(e) => setSelectedStartDate(new Date(e.target.value))}
-            min={format(new Date(), 'yyyy-MM-dd')}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
-          />
-          <p className="text-sm text-slate-500 mt-1">
-            Target completion: <strong>{format(targetCompletionDate, 'EEEE, MMMM d, yyyy')}</strong>
+        {/* Target Completion Date */}
+        <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+          <p className="text-sm text-amber-800">
+            <strong>📅 Your course starts today!</strong> Target completion: <strong>{format(targetCompletionDate, 'EEEE, MMMM d, yyyy')}</strong>
           </p>
         </div>
       </PremiumCard>

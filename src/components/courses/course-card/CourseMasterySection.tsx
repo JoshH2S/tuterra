@@ -16,22 +16,17 @@ export const CourseMasterySection: React.FC<CourseMasterySectionProps> = ({
   progressValue
 }) => {
   return (
-    <div className="mb-4">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-medium text-gray-700">Course Mastery</span>
-        <span className="text-sm text-gray-600">
+    <div className="mb-5">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-medium text-gray-600">Course Mastery</span>
+        <span className="text-xs text-gray-500">
           {expertiseLevel} ({completedQuizzes}/{maxQuizzes} quizzes)
         </span>
       </div>
       <Progress 
         value={progressValue} 
-        className="h-2"
-        indicatorClassName={cn(
-          progressValue >= 100 ? "bg-green-600" :
-          progressValue >= 70 ? "bg-blue-600" :
-          progressValue >= 40 ? "bg-yellow-500" :
-          progressValue >= 10 ? "bg-orange-500" : "bg-gray-400"
-        )}
+        className="h-1.5 bg-gray-100"
+        indicatorClassName="bg-gray-700"
       />
     </div>
   );

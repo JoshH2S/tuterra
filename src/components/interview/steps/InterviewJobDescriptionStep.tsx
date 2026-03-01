@@ -1,8 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { FileText, Info, CheckCircle } from "lucide-react";
+import { FileText, CheckCircle } from "lucide-react";
 
 interface InterviewJobDescriptionStepProps {
   value: string;
@@ -15,103 +14,76 @@ export function InterviewJobDescriptionStep({ value, onChange }: InterviewJobDes
   const isOptimalLength = wordCount >= 100;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <FileText className="h-5 md:h-6 w-5 md:w-6 text-purple-600" />
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <FileText className="h-5 w-5 text-stone-400" />
+          <h2 className="text-xl md:text-2xl font-normal tracking-tight text-[#091747]">
             Share the job description
           </h2>
         </div>
-        <p className="text-sm md:text-base text-gray-600">
+        <p className="text-sm text-gray-400 leading-relaxed">
           Paste the job description to get highly relevant interview questions
         </p>
       </div>
 
-      <motion.div 
+      <motion.div
         className="space-y-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
         <div>
-          <Label htmlFor="job-description" className="text-sm font-medium">
-            Job Description *
+          <Label htmlFor="job-description" className="text-sm font-medium text-stone-600">
+            Job Description
           </Label>
           <Textarea
             id="job-description"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="Paste the complete job description here. Include responsibilities, requirements, qualifications, and any specific skills mentioned..."
-            className="mt-2 text-sm md:text-base min-h-[150px] resize-none"
+            className="mt-2 min-h-[160px] resize-none bg-white border-stone-200 focus-visible:ring-stone-300"
             maxLength={5000}
           />
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mt-2">
+          <div className="flex justify-between items-center mt-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">
-                {wordCount} words
-              </span>
+              <span className="text-xs text-stone-400">{wordCount} words</span>
               {isOptimalLength && (
-                <div className="flex items-center gap-1 text-green-600">
+                <div className="flex items-center gap-1 text-[#C8A84B]">
                   <CheckCircle className="h-3 w-3" />
-                  <span className="text-xs">Good length!</span>
+                  <span className="text-xs font-medium">Good length</span>
                 </div>
               )}
             </div>
-            <span className="text-xs text-gray-400 self-end sm:self-auto">
-              {charCount}/5000 characters
-            </span>
+            <span className="text-xs text-stone-300">{charCount}/5000</span>
           </div>
         </div>
 
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h4 className="text-sm font-medium text-blue-900 mb-1">
-                Tips for better interview questions
-              </h4>
-              <ul className="text-xs md:text-sm text-blue-800 space-y-1">
-                <li>• Include specific responsibilities and requirements</li>
-                <li>• Mention required skills and technologies</li>
-                <li>• Add company culture or team information if available</li>
-                <li>• More detailed descriptions (100+ words) generate better questions</li>
-              </ul>
-            </div>
-          </div>
+        <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
+          <ul className="text-xs text-stone-500 space-y-1.5 leading-relaxed">
+            <li>Include specific responsibilities and requirements</li>
+            <li>Mention required skills and technologies</li>
+            <li>Add company culture or team information if available</li>
+            <li>Descriptions with 100+ words generate better questions</li>
+          </ul>
         </div>
 
         {!isOptimalLength && wordCount > 0 && (
-          <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-            <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="text-sm font-medium text-amber-900 mb-1">
-                  Consider adding more details
-                </h4>
-                <p className="text-xs md:text-sm text-amber-800">
-                  Job descriptions with 100+ words help us create more specific and relevant interview questions. 
-                  Try adding more details about responsibilities, requirements, or company information.
-                </p>
-              </div>
-            </div>
-          </div>
+          <p className="text-xs text-stone-400 leading-relaxed">
+            Adding more detail (aim for 100+ words) will help us craft more specific, relevant questions.
+          </p>
         )}
       </motion.div>
 
       {value && isOptimalLength && (
-        <motion.div 
-          className="bg-green-50 p-4 rounded-lg border border-green-200"
+        <motion.div
+          className="flex items-center gap-2 text-sm font-medium text-[#C8A84B]"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
         >
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-sm font-medium text-green-900">
-              Great! Your job description is detailed enough for personalized questions.
-            </span>
-          </div>
+          <CheckCircle className="h-4 w-4" />
+          Description looks great — ready to generate your interview.
         </motion.div>
       )}
     </div>

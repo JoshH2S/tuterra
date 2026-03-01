@@ -26,10 +26,10 @@ export const CoursesHeader = ({
     <div className="mb-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'} text-white`}>
-            Courses
+          <h1 className={`font-semibold ${isMobile ? 'text-2xl' : 'text-3xl'} text-gray-900`}>
+            All Courses
           </h1>
-          <p className={`text-white/80 ${isMobile ? 'text-sm' : ''} mt-1`}>
+          <p className={`text-gray-500 ${isMobile ? 'text-sm' : ''} mt-1`}>
             Create and manage your courses
           </p>
         </div>

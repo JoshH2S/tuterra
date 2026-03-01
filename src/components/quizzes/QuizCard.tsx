@@ -72,16 +72,14 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md border border-gray-200 dark:border-gray-700"
+      className="group relative overflow-hidden rounded-xl bg-white border border-black/[0.06] shadow-[0_1px_3px_0_rgba(0,0,0,0.04),0_4px_16px_0_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.10)] transition-all duration-300"
     >
       <div className="p-6">
         {/* Status Badge */}
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex justify-between items-start mb-5">
           <Badge
-            variant={
-              quiz.status === 'completed' ? 'default' :
-              quiz.status === 'in_progress' ? 'secondary' : 'outline'
-            }
+            variant="outline"
+            className="bg-gray-50 text-gray-600 border-gray-200"
           >
             {quiz.status === 'not_attempted' ? 'Not Attempted' :
              quiz.status === 'in_progress' ? 'In Progress' : 'Completed'}
@@ -102,59 +100,59 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
         </div>
 
         {/* Quiz Title */}
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 line-clamp-2 leading-relaxed">
           {quiz.title}
         </h3>
 
         {/* Quiz Details */}
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <User className="w-4 h-4 mr-2" />
+        <div className="space-y-2.5 mb-5">
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <User className="w-3.5 h-3.5 mr-2" />
             Creator: {quiz.creator}
           </div>
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <Clock className="w-4 h-4 mr-2" />
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <Clock className="w-3.5 h-3.5 mr-2" />
             Duration: {quiz.duration}
           </div>
-          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-            <FileText className="w-4 h-4 mr-2" />
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <FileText className="w-3.5 h-3.5 mr-2" />
             {quiz.totalQuestions} Questions
           </div>
         </div>
 
         {/* Previous Score - only show if there's a valid attempt */}
         {hasAttempted && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 Latest Score (Attempt #{quiz.attemptNumber})
               </span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
+              <span className="text-xs font-medium text-gray-700 dark:text-white">
                 {normalizedScore}%
               </span>
             </div>
             <Progress 
               value={normalizedScore} 
-              className="h-2 bg-gray-100 dark:bg-gray-700"
-              indicatorClassName="bg-primary"
+              className="h-1.5 bg-black/5"
+              indicatorClassName="bg-[#B8860B]"
             />
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mt-4">
+        <div className="flex gap-3 mt-5">
           {quiz.status === 'completed' ? (
             <>
               <Button 
                 variant="outline" 
-                className="flex-1" 
+                className="flex-1 rounded-full" 
                 onClick={() => onViewResults(quiz.id)}
               >
                 View Results
               </Button>
               {quiz.allowRetake && (
                 <Button 
-                  className="flex-1"
+                  className="flex-1 rounded-full text-black bg-gradient-to-br from-[#FFF8DC]/90 to-[#FFE4B5]/90 border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_10px_25px_rgba(184,134,11,0.18)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08),0_18px_40px_rgba(184,134,11,0.26)] transition-all"
                   onClick={() => onRetakeQuiz(quiz.id)}
                 >
                   Retake Quiz
@@ -163,7 +161,7 @@ export function QuizCard({ quiz, onViewResults, onStartQuiz, onRetakeQuiz }: Qui
             </>
           ) : (
             <Button 
-              className="w-full"
+              className="w-full rounded-full text-black bg-gradient-to-br from-[#FFF8DC]/90 to-[#FFE4B5]/90 border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_10px_25px_rgba(184,134,11,0.18)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08),0_18px_40px_rgba(184,134,11,0.26)] transition-all"
               onClick={() => onStartQuiz(quiz.id)}
             >
               {hasSavedProgress ? (

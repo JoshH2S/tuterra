@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AssessmentIndustryStep } from "./steps/AssessmentIndustryStep";
 import { AssessmentRoleStep } from "./steps/AssessmentRoleStep";
@@ -40,13 +39,7 @@ export function MultiStepAssessmentForm({
   const formRef = useRef<HTMLDivElement>(null);
 
   const totalSteps = 3;
-  const stepProgress = (currentStep / totalSteps) * 100;
-
-  const stepTitles = [
-    "Select Industry",
-    "Target Role", 
-    "Assessment Details"
-  ];
+  const stepLabels = ["Industry", "Role", "Details"];
 
   // Scroll to top when step changes
   useEffect(() => {
@@ -162,7 +155,7 @@ export function MultiStepAssessmentForm({
     <React.Fragment>
       {/* Loading Overlay */}
       <AnimatePresence>
-        {(isLoading) && (
+        {isLoading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -173,194 +166,175 @@ export function MultiStepAssessmentForm({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl p-8 max-w-md w-full mx-4 text-center shadow-2xl"
+              className="bg-[#F9F8F6] rounded-2xl p-8 max-w-md mx-4 text-center shadow-[0_2px_24px_rgba(0,0,0,0.07)] border border-black/[0.06]"
             >
-              <div className="space-y-4">
-                <div className="flex justify-center">
-                  <div className="relative">
-                    <Loader2 className="h-12 w-12 text-primary animate-spin" />
-                    <Sparkles className="h-6 w-6 text-amber-500 absolute -top-1 -right-1 animate-pulse" />
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Creating Your Assessment
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Our AI is generating personalized questions based on your requirements...
-                  </p>
-                </div>
-
-                {showProgress ? (
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm text-gray-600">
-                      <span>Progress</span>
-                      <span>{Math.round(progress)}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2" />
-                  </div>
-                ) : (
-                  <div className="flex justify-center">
-                    <div className="animate-pulse flex space-x-1">
-                      <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="h-2 w-2 bg-primary rounded-full animate-bounce"></div>
-                    </div>
-                  </div>
-                )}
-
-                <p className="text-xs text-gray-500">
-                  This may take a moment as we analyze your requirements and create targeted questions.
-                </p>
+              <div className="flex items-center justify-center mb-4">
+                <Sparkles className="h-8 w-8 text-[#C8A84B] animate-pulse" />
               </div>
+              <h3 className="text-lg font-semibold tracking-tight text-[#091747] mb-2">
+                Creating Your Assessment
+              </h3>
+              <p className="text-gray-400 mb-4 text-sm leading-relaxed">
+                Our AI is generating personalized questions based on your requirements...
+              </p>
+              {showProgress ? (
+                <div className="space-y-2">
+                  <Progress value={progress} className="h-1.5" />
+                  <p className="text-xs text-gray-400">{Math.round(progress)}% complete</p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-[#C8A84B]" />
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div ref={formRef} className="w-full max-w-4xl mx-auto">
-        <Card className="w-full shadow-xl bg-white/95 backdrop-blur-md border border-white/20">
-          <CardHeader className="text-center pb-4">
+      <div ref={formRef} className="w-full">
+        {/* Card */}
+        <div className="w-full max-w-4xl mx-auto bg-[#F9F8F6] border border-black/[0.06] shadow-[0_2px_24px_rgba(0,0,0,0.07)] rounded-2xl relative overflow-hidden">
+
+          {/* Visual anchor — thin warm gradient top strip */}
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#C8A84B]/70 via-amber-200/80 to-transparent" />
+
+          {/* Header */}
+          <div className="pt-10 px-8 pb-6 space-y-8">
             {/* Tuterra Logo */}
             <motion.div
-              className="flex justify-start mb-4"
+              className="flex justify-start"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <img 
-                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png" 
-                alt="Tuterra Logo" 
-                className="h-8 md:h-10 w-auto object-contain" 
+              <img
+                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+                alt="Tuterra Logo"
+                className="h-8 md:h-10 w-auto object-contain"
               />
             </motion.div>
-            
-            <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-              Create Skill Assessment
-            </CardTitle>
-            <p className="text-sm md:text-base text-gray-600 mb-4">
-              Generate AI-powered skill assessments tailored to your industry and role
-            </p>
-            
-            {/* Progress Bar */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-sm text-gray-600">
-                <span>Step {currentStep} of {totalSteps}</span>
-                <span>{Math.round(stepProgress)}% Complete</span>
-              </div>
-              <Progress value={stepProgress} className="h-2" />
+
+            {/* Title + subtitle */}
+            <div className="text-center space-y-3">
+              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#091747]">
+                Create Skill Assessment
+              </h1>
+              <p className="text-sm text-gray-400 leading-relaxed max-w-sm mx-auto">
+                Generate AI-powered skill assessments tailored to your industry and role
+              </p>
             </div>
 
-            {/* Step Indicators */}
-            <div className="flex justify-center mt-4">
-              <div className="flex items-center space-x-2 md:space-x-4">
-                {stepTitles.map((title, index) => {
-                  const stepNumber = index + 1;
-                  const isActive = stepNumber === currentStep;
-                  const isCompleted = stepNumber < currentStep;
-                  
-                  return (
-                    <div key={stepNumber} className="flex items-center">
-                      <div className={`
-                        flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full text-xs md:text-sm font-medium transition-all
-                        ${isActive 
-                          ? 'bg-primary text-white' 
-                          : isCompleted 
-                            ? 'bg-green-500 text-white' 
-                            : 'bg-gray-200 text-gray-600'
-                        }
-                      `}>
-                        {isCompleted ? '✓' : stepNumber}
+            {/* Deliberate numbered stepper */}
+            <div className="flex items-center justify-center">
+              {stepLabels.map((label, i) => {
+                const stepNum = i + 1;
+                const isComplete = currentStep > stepNum;
+                const isActive = currentStep === stepNum;
+                return (
+                  <React.Fragment key={label}>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-200 ${
+                          isComplete
+                            ? "bg-[#C8A84B] text-white"
+                            : isActive
+                            ? "bg-[#091747] text-white"
+                            : "bg-stone-200 text-stone-400"
+                        }`}
+                      >
+                        {isComplete ? <Check className="w-3.5 h-3.5" /> : `0${stepNum}`}
                       </div>
-                      <span className={`
-                        ml-2 text-xs md:text-sm font-medium hidden sm:inline
-                        ${isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-gray-500'}
-                      `}>
-                        {title}
+                      <span
+                        className={`text-[10px] tracking-widest uppercase font-medium ${
+                          isActive ? "text-[#091747]" : "text-stone-400"
+                        }`}
+                      >
+                        {label}
                       </span>
-                      {index < stepTitles.length - 1 && (
-                        <div className={`
-                          w-8 md:w-12 h-0.5 mx-2 md:mx-4
-                          ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}
-                        `} />
-                      )}
                     </div>
-                  );
-                })}
-              </div>
+                    {i < 2 && (
+                      <div
+                        className={`h-px w-12 mx-3 mb-5 transition-colors duration-300 ${
+                          currentStep > stepNum ? "bg-[#C8A84B]" : "bg-stone-200"
+                        }`}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </div>
-          </CardHeader>
+          </div>
 
-          <CardContent className="px-4 md:px-6 pb-6">
-            {/* Step Content */}
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="min-h-[400px] flex items-center justify-center"
-            >
-              {renderStep()}
-            </motion.div>
+          {/* Content */}
+          <div className="px-8 pb-10">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="min-h-[420px]"
+              >
+                {renderStep()}
+              </motion.div>
+            </AnimatePresence>
 
             {/* Navigation */}
-            <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t">
-              <div className="flex gap-3 sm:flex-1">
-                <Button
-                  variant="outline"
+            <div className="flex justify-between items-center mt-10">
+              <div className="flex items-center gap-4">
+                <button
                   onClick={onCancel}
-                  className="flex-1 sm:flex-none"
+                  className="text-sm text-stone-400 hover:text-stone-600 transition-colors duration-150 touch-manipulation"
                 >
                   Cancel
-                </Button>
-                
+                </button>
                 {currentStep > 1 && (
                   <Button
-                    variant="default"
+                    variant="ghost"
                     onClick={handlePrevious}
-                    className="flex-1 sm:flex-none"
+                    className="flex items-center gap-2 touch-manipulation text-stone-400 hover:text-stone-600 hover:bg-transparent px-0"
                   >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Previous
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
                   </Button>
                 )}
               </div>
 
-              <div className="flex gap-3">
+              <div>
                 {currentStep < totalSteps ? (
-                  <Button
+                  <button
                     onClick={handleNext}
                     disabled={!canProceedToNext()}
-                    className="flex-1 sm:flex-none"
+                    className="flex items-center gap-2 px-8 py-2.5 rounded-full text-sm font-medium bg-[#091747] text-white hover:bg-[#0d2060] disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 touch-manipulation"
                   >
                     Next
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
                 ) : (
-                  <Button
+                  <button
                     onClick={handleGenerate}
                     disabled={!canProceedToNext() || isLoading}
-                    className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    className="flex items-center gap-2 px-8 py-2.5 rounded-full text-sm font-medium bg-[#091747] text-white hover:bg-[#0d2060] disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 touch-manipulation"
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         Generating...
                       </>
                     ) : (
                       <>
-                        <Sparkles className="h-4 w-4 mr-2" />
+                        <Sparkles className="h-4 w-4" />
                         Generate Assessment
                       </>
                     )}
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </React.Fragment>
   );

@@ -63,7 +63,7 @@ export const SidebarNavItem = ({
         {label}
       </span>
       
-      {/* Active highlight with gradient matching course card */}
+      {/* Active highlight with gradient matching previous sidebar */}
       {isActive && (
         <motion.div 
           layoutId="activeBackground"
@@ -76,7 +76,7 @@ export const SidebarNavItem = ({
       <div 
         className={cn(
           "absolute inset-0 rounded-lg bg-transparent transition-colors duration-200",
-          !isActive && "hover:bg-blue-100/50 dark:hover:bg-gray-800"
+          !isActive && "hover:bg-gray-50 dark:hover:bg-gray-800"
         )} 
       />
     </button>

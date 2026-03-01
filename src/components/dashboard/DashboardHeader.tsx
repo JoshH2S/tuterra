@@ -11,7 +11,7 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
   
   return (
     <div className="mb-6">
-      <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-bold mb-2 text-white`}>{title}</h1>
+      <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-semibold mb-2 text-white`}>{title}</h1>
       <p className={`text-white/80 ${isMobile ? 'text-sm' : ''}`}>
         {description}
       </p>

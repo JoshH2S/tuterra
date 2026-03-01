@@ -54,16 +54,16 @@ export const InterviewForm = ({ onSubmit, isLoading = false, progress = 0 }: Int
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="w-full">
-        <Card className="w-full max-w-2xl mx-auto shadow-md">
-          <CardHeader className="space-y-1 sm:space-y-2">
+        <Card className="w-full max-w-2xl mx-auto border-0 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="space-y-2 sm:space-y-3">
             <CardTitle className="text-xl sm:text-2xl text-center sm:text-left">Job Interview Simulator</CardTitle>
-            <CardDescription className="text-sm sm:text-base text-center sm:text-left">
+            <CardDescription className="text-sm sm:text-base text-center sm:text-left text-gray-600">
               Enter the details about the job you're interviewing for, and we'll generate a tailored
               interview experience with AI-powered questions.
             </CardDescription>
           </CardHeader>
           
-          <CardContent className="space-y-4 sm:space-y-6">
+          <CardContent className="space-y-5 sm:space-y-6">
             <FormField
               control={form.control}
               name="industry"
