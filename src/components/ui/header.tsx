@@ -35,8 +35,8 @@ function Header1({ variant = "default" }: Header1Props) {
         <header
             className={`w-full z-40 fixed top-0 left-0 transition-all duration-500 ${
                 scrolled
-                    ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-black/[0.04]"
-                    : "bg-transparent"
+                    ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-black/[0.04]"
+                    : "bg-white/80 backdrop-blur-sm"
             }`}
         >
             <div className="container relative mx-auto flex h-20 items-center justify-between px-6 lg:px-10">
