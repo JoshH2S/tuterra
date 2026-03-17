@@ -104,7 +104,7 @@ const Auth = () => {
   const renderAuthContent = () => {
     if (isProcessing) {
       return (
-        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-center text-muted-foreground">
             Processing your authentication...
@@ -115,22 +115,11 @@ const Auth = () => {
 
     if (error) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-transparent border border-border rounded-full p-1">
-              <TabsTrigger value="signin" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium">Sign Up</TabsTrigger>
-            </TabsList>
-            <TabsContent value="signin">
-              <SignInForm />
-            </TabsContent>
-            <TabsContent value="signup">
-              <SignUpForm />
-            </TabsContent>
-          </Tabs>
+          {renderTabs()}
         </div>
       );
     }
@@ -143,22 +132,53 @@ const Auth = () => {
       case "signIn":
       case "signUp":
       default:
-        return (
-          <Tabs defaultValue={mode === "signUp" ? "signup" : "signin"} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-transparent border border-border rounded-full p-1 h-11">
-              <TabsTrigger value="signin" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all">Sign Up</TabsTrigger>
-            </TabsList>
-            <TabsContent value="signin">
-              <SignInForm />
-            </TabsContent>
-            <TabsContent value="signup">
-              <SignUpForm />
-            </TabsContent>
-          </Tabs>
-        );
+        return renderTabs();
     }
   };
+
+  const renderTabs = () => (
+    <Tabs
+      defaultValue={mode === "signUp" ? "signup" : "signin"}
+      className="w-full"
+    >
+      <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 rounded-full p-1 h-11">
+        <TabsTrigger
+          value="signin"
+          className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all"
+        >
+          Sign In
+        </TabsTrigger>
+        <TabsTrigger
+          value="signup"
+          className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all"
+        >
+          Sign Up
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="signin" className="mt-0">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+            Welcome back
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Sign in to continue your journey
+          </p>
+        </div>
+        <SignInForm />
+      </TabsContent>
+      <TabsContent value="signup" className="mt-0">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+            Create your account
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Enter your details to get started
+          </p>
+        </div>
+        <SignUpForm />
+      </TabsContent>
+    </Tabs>
+  );
 
   return (
     <div className="min-h-screen flex">
@@ -207,11 +227,11 @@ const Auth = () => {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-12"
+        className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-8 lg:py-12 overflow-y-auto"
       >
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="flex justify-center mb-8 lg:hidden">
+          <div className="flex justify-center mb-6 lg:hidden">
             <Link to="/">
               <img
                 src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
@@ -219,17 +239,6 @@ const Auth = () => {
                 className="h-10 w-auto"
               />
             </Link>
-          </div>
-
-          <div className="mb-8">
-            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-              {mode === "signUp" ? "Create your account" : "Welcome back"}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {mode === "signUp"
-                ? "Enter your details to get started"
-                : "Sign in to continue your journey"}
-            </p>
           </div>
 
           {renderAuthContent()}
