@@ -43,43 +43,55 @@ const GeneratedCourseDashboard = () => {
       {/* Hero Card Section */}
       <div className="relative z-10 mb-16 px-4 sm:px-6">
         <div 
-          className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] flex flex-col sm:flex-row bg-[#F7F3EC] p-4 gap-4"
+          className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] overflow-hidden"
           style={{ minHeight: '340px' }}
         >
-          {/* Solid Content Panel — smaller portion */}
-          <div className="flex flex-col justify-between p-4 sm:w-[36%] shrink-0">
-            <div>
-              <p className="text-xs font-mono text-[#8a7a5a] mb-4 tracking-wide uppercase">
-                AI-Powered Learning
-              </p>
-              <div className="flex items-start gap-3 mb-4">
-                <GraduationCap className="h-8 w-8 text-[#7a6a2a] mt-1 shrink-0" />
-                <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">
-                  Course Engine
-                </h1>
-              </div>
-              <p className="text-sm text-[#5a5040] leading-relaxed">
-                Generate personalized courses on any topic with AI-powered learning paths
-              </p>
-            </div>
-            <div className="mt-8">
-              <Button 
-                onClick={() => setShowWizard(true)}
-                className="flex items-center gap-2 px-6 py-5 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] hover:-translate-y-0.5 transition-all font-semibold"
-              >
-                <Plus className="h-5 w-5" />
-                Create Your Course
-              </Button>
-            </div>
-          </div>
-
-          {/* Image Panel — enveloped inside the card */}
-          <div 
-            className="flex-1 rounded-xl bg-cover bg-center min-h-[220px] sm:min-h-0"
+          {/* Mobile: full-bleed background image */}
+          <div
+            className="sm:hidden absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-mart-production-7718665.jpg')",
             }}
           />
+          <div className="sm:hidden absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+
+          {/* Desktop: side-by-side layout */}
+          <div className="relative z-10 flex flex-col sm:flex-row h-full sm:bg-[#F7F3EC]">
+            {/* Text */}
+            <div className="flex flex-col justify-end sm:justify-between p-6 sm:p-6 sm:w-[36%] shrink-0 min-h-[340px] sm:min-h-0">
+              <div>
+                <p className="text-xs font-mono text-white/70 sm:text-[#8a7a5a] mb-4 tracking-wide uppercase">
+                  AI-Powered Learning
+                </p>
+                <div className="flex items-start gap-3 mb-4">
+                  <GraduationCap className="h-8 w-8 text-white/80 sm:text-[#7a6a2a] mt-1 shrink-0" />
+                  <h1 className="text-3xl md:text-4xl font-medium font-manrope text-white sm:text-[#1a1a1a] leading-tight tracking-tight">
+                    Course Engine
+                  </h1>
+                </div>
+                <p className="text-sm text-white/70 sm:text-[#5a5040] leading-relaxed">
+                  Generate personalized courses on any topic with AI-powered learning paths
+                </p>
+              </div>
+              <div className="mt-8">
+                <Button 
+                  onClick={() => setShowWizard(true)}
+                  className="flex items-center gap-2 px-6 py-5 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] hover:-translate-y-0.5 transition-all font-semibold"
+                >
+                  <Plus className="h-5 w-5" />
+                  What do you want to learn?
+                </Button>
+              </div>
+            </div>
+
+            {/* Desktop-only: side image */}
+            <div 
+              className="hidden sm:block flex-1 rounded-xl m-4 bg-cover bg-center"
+              style={{
+                backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-mart-production-7718665.jpg')",
+              }}
+            />
+          </div>
         </div>
       </div>
 
