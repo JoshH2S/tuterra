@@ -179,7 +179,7 @@ const Auth = () => {
           <div className="w-full max-w-md flex flex-col items-center gap-6">
 
             {/* ── Top: supporting hero copy ── */}
-            <div className="hidden lg:flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center">
               <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-3">
                 AI-Powered Career Readiness
               </p>
@@ -213,7 +213,7 @@ const Auth = () => {
                 }}
               >
                 {/* Card header */}
-                <div className="space-y-1">
+                <div className="space-y-1 text-center">
                   <h1 className="text-2xl font-semibold text-white tracking-tight">
                     {mode === "resetPassword"
                       ? "Reset password"
