@@ -150,117 +150,126 @@ const Auth = () => {
       />
 
       {/* ── Overlay: dark tint ── */}
-      <div className="absolute inset-0 bg-black/55" />
+      <div className="absolute inset-0 bg-black/60" />
 
       {/* ── Atmosphere: radial accents ── */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background: [
-            "radial-gradient(ellipse 80% 60% at 20% 80%, rgba(172,149,113,0.15) 0%, transparent 70%)",
-            "radial-gradient(ellipse 60% 50% at 80% 20%, rgba(100,65,5,0.12) 0%, transparent 60%)",
+            "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(172,149,113,0.08) 0%, transparent 70%)",
             "radial-gradient(ellipse 100% 80% at 50% 50%, rgba(26,18,8,0.4) 0%, transparent 100%)",
           ].join(", "),
         }}
       />
 
-      {/* ── Logo: top-left ── */}
-      <div className="absolute top-8 left-8 z-20 lg:top-10 lg:left-12">
-        <img
-          src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
-          alt="tuterra.ai logo"
-          className="h-8 lg:h-10 w-auto brightness-0 invert"
-        />
-      </div>
+      {/* ── Unified layout container ── */}
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* ── Top bar: logo ── */}
+        <div className="flex-shrink-0 px-6 pt-6 lg:px-12 lg:pt-10">
+          <img
+            src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+            alt="tuterra.ai logo"
+            className="h-7 lg:h-9 w-auto brightness-0 invert"
+          />
+        </div>
 
-      {/* ── Hero copy: bottom-left (hidden on mobile) ── */}
-      <div className="hidden lg:flex flex-col absolute bottom-12 left-12 z-10 max-w-lg">
-        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-4">
-          AI-Powered Career Readiness
-        </p>
+        {/* ── Center stage: card is the focal anchor ── */}
+        <div className="flex-1 flex items-center justify-center px-4 py-8 lg:py-0">
+          <div className="w-full max-w-[960px] flex flex-col lg:flex-row items-center lg:items-center gap-8 lg:gap-16">
 
-        <h2 className="text-4xl font-bold text-white leading-tight mb-4">
-          Your journey to career
-          <br />
-          excellence starts here.
-        </h2>
+            {/* ── Left: supporting hero copy (desktop only) ── */}
+            <div className="hidden lg:flex flex-col flex-1 max-w-sm">
+              <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-4">
+                AI-Powered Career Readiness
+              </p>
 
-        <p className="text-white/40 text-sm leading-relaxed mb-8">
-          Join thousands of students building real-world skills through
-          AI-powered virtual internships and personalized development tools.
-        </p>
+              <h2 className="text-3xl font-bold text-white leading-tight mb-4">
+                Your journey to career
+                <br />
+                excellence starts here.
+              </h2>
 
-        {/* Stats row */}
-        <div className="flex items-center gap-6">
-          {[
-            { value: "12K+", label: "Active learners" },
-            { value: "94%", label: "Placement rate" },
-            { value: "200+", label: "Partners" },
-          ].map((stat, i, arr) => (
-            <div key={stat.label} className="flex items-center gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-white/40 mt-0.5">
-                  {stat.label}
-                </p>
+              <p className="text-white/40 text-sm leading-relaxed mb-8">
+                Join thousands of students building real-world skills through
+                AI-powered virtual internships and personalized development tools.
+              </p>
+
+              {/* Stats row */}
+              <div className="flex items-center gap-5">
+                {[
+                  { value: "12K+", label: "Active learners" },
+                  { value: "94%", label: "Placement rate" },
+                  { value: "200+", label: "Partners" },
+                ].map((stat, i, arr) => (
+                  <div key={stat.label} className="flex items-center gap-5">
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-white">{stat.value}</p>
+                      <p className="text-[11px] text-white/40 mt-0.5">{stat.label}</p>
+                    </div>
+                    {i < arr.length - 1 && <div className="w-px h-7 bg-white/10" />}
+                  </div>
+                ))}
               </div>
-              {i < arr.length - 1 && (
-                <div className="w-px h-8 bg-white/10" />
-              )}
             </div>
-          ))}
+
+            {/* ── Right: glass auth card (the focal anchor) ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="w-full max-w-md"
+            >
+              <div
+                className="rounded-2xl p-7 lg:p-9 space-y-6 overflow-y-auto max-h-[calc(100vh-8rem)]"
+                style={{
+                  background: "rgba(255,255,255,0.09)",
+                  backdropFilter: "blur(28px)",
+                  WebkitBackdropFilter: "blur(28px)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                }}
+              >
+                {/* Card header */}
+                <div className="space-y-1">
+                  <h1 className="text-2xl font-semibold text-white tracking-tight">
+                    {mode === "resetPassword"
+                      ? "Reset password"
+                      : mode === "emailVerification"
+                      ? "Verify your email"
+                      : tab === "signup"
+                      ? "Create your account"
+                      : "Welcome back"}
+                  </h1>
+                  <p className="text-sm text-white/40">
+                    {mode === "resetPassword"
+                      ? "Enter your new password below"
+                      : mode === "emailVerification"
+                      ? "Check your inbox to continue"
+                      : tab === "signup"
+                      ? "Start your career journey today"
+                      : "Sign in to continue your journey"}
+                  </p>
+                </div>
+
+                {renderAuthContent()}
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
+
+        {/* ── Bottom: subtle footer (optional, keeps vertical rhythm) ── */}
+        <div className="flex-shrink-0 px-6 pb-4 lg:px-12 lg:pb-6">
+          <p className="text-[11px] text-white/20 text-center lg:text-left">
+            © {new Date().getFullYear()} Tuterra. All rights reserved.
+          </p>
         </div>
       </div>
-
-      {/* ── Main: glass card ── */}
-      <motion.div
-        initial={{ opacity: 0, x: 40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="
-          relative z-20
-          w-full max-w-md mx-auto mt-24 mb-8 px-4
-          lg:absolute lg:right-12 lg:top-1/2 lg:-translate-y-1/2 lg:mx-0 lg:mt-0 lg:mb-0 lg:px-0
-          xl:right-16
-        "
-      >
-        <div
-          className="rounded-2xl p-8 lg:p-10 space-y-6"
-          style={{
-            background: "rgba(255,255,255,0.09)",
-            backdropFilter: "blur(28px)",
-            WebkitBackdropFilter: "blur(28px)",
-            border: "1px solid rgba(255,255,255,0.14)",
-          }}
-        >
-          {/* Card header */}
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold text-white tracking-tight">
-              {mode === "resetPassword"
-                ? "Reset password"
-                : mode === "emailVerification"
-                ? "Verify your email"
-                : "Welcome back"}
-            </h1>
-            <p className="text-sm text-white/40">
-              {mode === "resetPassword"
-                ? "Enter your new password below"
-                : mode === "emailVerification"
-                ? "Check your inbox to continue"
-                : "Sign in to continue your journey"}
-            </p>
-          </div>
-
-          {renderAuthContent()}
-        </div>
-      </motion.div>
     </div>
   );
 };
 
-// ── Pill tab switcher (replaces shadcn Tabs) ──────────────────────────────────
+// ── Pill tab switcher ──────────────────────────────────────────────────────────
 interface PillTabSwitcherProps {
   tab: "signin" | "signup";
   onChange: (tab: "signin" | "signup") => void;
