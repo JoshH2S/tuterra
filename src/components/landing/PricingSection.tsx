@@ -3,25 +3,9 @@ import { Pricing } from "@/components/ui/pricing";
 
 const tuteeraPricing = [
   {
-    name: "Free",
-    price: "$0",
-    yearlyPrice: "$0",
-    period: "forever",
-    features: [
-      "5 quizzes per month",
-      "2 interview simulations per month",
-      "1 skill assessment per month",
-      "Basic dashboard and course tracking",
-    ],
-    description: "Perfect for trying out Tuterra's core features",
-    buttonText: "Get Started",
-    href: "/auth?tab=signup",
-    isPopular: false,
-  },
-  {
     name: "Pro",
-    price: "$9.99",
-    yearlyPrice: "$7.99",
+    price: "$5.99",
+    yearlyPrice: "$4.79",
     period: "per month",
     features: [
       "Unlimited quizzes, assessments, and interview simulations",
@@ -60,7 +44,7 @@ export function PricingSection() {
         plans={tuteeraPricing}
         eyebrow="Pricing"
         title="Choose Your Learning Journey"
-        description="Start with our free plan or upgrade for unlimited access to all features"
+        description="Upgrade for unlimited access to all features"
       />
     </div>
   );

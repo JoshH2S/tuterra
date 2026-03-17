@@ -26,7 +26,6 @@ export default function PricingPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     
-    // Check if user just completed onboarding
     if (params.get('onboarding') === 'complete') {
       setIsPostOnboarding(true);
       toast({
@@ -34,7 +33,6 @@ export default function PricingPage() {
         description: "Choose a plan to get started with your learning journey.",
         duration: 6000,
       });
-      // Clean up the URL
       navigate('/pricing', { replace: true });
     }
     
@@ -49,26 +47,12 @@ export default function PricingPage() {
   }, [location.search, toast, navigate]);
 
   const handleSelectPlan = async (planId: string) => {
-    if (planId === 'free_plan') {
-      if (isLoggedIn && isPostOnboarding) {
-        // User just completed onboarding and chose free plan - go to dashboard
-        toast({
-          title: "Welcome to Tuterra!",
-          description: "You're all set with the free plan. Let's get started!",
-        });
-        navigate('/dashboard');
-        return;
-      }
-      navigate('/auth?tab=signup&plan=free');
-      return;
-    }
     if (planId === 'enterprise_plan') {
       navigate('/contact');
       return;
     }
     if (isLoggedIn) {
       if (isPostOnboarding) {
-        // User just completed onboarding and wants to upgrade - proceed to checkout
         setIsRedirecting(true);
         const success = await createCheckoutSession({
           planId: 'pro_plan',
@@ -81,29 +65,10 @@ export default function PricingPage() {
         }
         return;
       }
-      // Existing users go to settings to manage subscription
       navigate('/profile-settings');
       return;
     }
     navigate(`/auth?tab=signup&plan=${planId}`);
-  };
-
-  const handlePlanDowngrade = async () => {
-    if (!confirm("Are you sure you want to downgrade to the free plan? You'll lose access to premium features at the end of your billing period.")) {
-      return;
-    }
-    setIsRedirecting(true);
-    const success = await cancelSubscription();
-    setIsRedirecting(false);
-
-    if (success) {
-      toast({
-        title: "Plan Downgraded",
-        description: "Your subscription will be downgraded to the free plan at the end of your billing period.",
-        duration: 5000,
-      });
-      navigate('/profile-settings');
-    }
   };
 
   const isCurrentPlanPro = subscription?.planId === 'pro_plan' && subscription.status === 'active';
@@ -119,12 +84,22 @@ export default function PricingPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isRedirecting]);
 
-  const calculateAnnualSavings = useCallback((monthlyPrice: number) => {
-    const monthlyTotal = monthlyPrice * 12;
-    const yearlyPrice = monthlyTotal * 0.8; // 20% discount
-    const savings = ((monthlyTotal - yearlyPrice) / monthlyTotal) * 100;
-    return Math.round(savings);
-  }, []);
+  const tierFeatures = {
+    pro: [
+      "Unlimited quizzes, assessments, and interview simulations",
+      "Virtual internship experiences with AI supervision",
+      "AI feedback on every quiz and skill report",
+      "Learning path planning & skill progress tracking",
+    ],
+    enterprise: [
+      "Designed for schools, bootcamps, and institutions",
+      "Custom onboarding & dashboards",
+      "Group analytics and LMS integrations",
+      "Instructor tools",
+      "Content alignment with school curriculum",
+      "Admin panel to manage learners",
+    ],
+  };
 
   const PlanFeature = ({ feature, tooltip }: { feature: string; tooltip?: string }) => (
     <li className="flex text-sm">
@@ -146,57 +121,7 @@ export default function PricingPage() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
   };
 
-  const tierFeatures = {
-    free: [
-      "5 quizzes per month",
-      "2 interview simulations per month",
-      "1 skill assessment per month",
-      "Basic dashboard and course tracking",
-    ],
-    pro: [
-      "Unlimited quizzes, assessments, and interview simulations",
-      "Virtual internship experiences with AI supervision",
-      "AI feedback on every quiz and skill report",
-      "Learning path planning & skill progress tracking",
-    ],
-    enterprise: [
-      "Designed for schools, bootcamps, and institutions",
-      "Custom onboarding & dashboards",
-      "Group analytics and LMS integrations",
-      "Instructor tools",
-      "Content alignment with school curriculum",
-      "Admin panel to manage learners",
-    ],
-  };
-
-  const renderFeatures = (features: string[], tooltips?: Record<string, string>) => {
-    return features.map((feature) => (
-      <PlanFeature 
-        key={feature} 
-        feature={feature}
-        tooltip={tooltips?.[feature]}
-      />
-    ));
-  };
-
-  const proTooltips = {
-    "AI feedback on every quiz and skill report": "Powered by advanced language models",
-    "Learning path planning & skill progress tracking": "Personalized learning recommendations",
-  };
-
-  const enterpriseTooltips = {
-    "Group analytics and LMS integrations": "Advanced reporting and insights",
-    "Admin panel to manage learners": "Comprehensive user management tools",
-  };
-
-  const isCurrentPlan = (planId: string) => {
-    if (subscriptionLoading) return false;
-    return subscription?.planId === planId && subscription.status === 'active';
-  };
-
-  // Fixed pricing strings instead of React elements
-  const proMainPrice = billingInterval === 'monthly' ? "$9.99" : "$7.99";
-  const proSubLabel = billingInterval === 'yearly' ? "(billed annually)" : "";
+  const proMainPrice = billingInterval === 'monthly' ? "$5.99" : "$4.79";
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-7xl relative">
@@ -259,19 +184,8 @@ export default function PricingPage() {
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8 max-w-6xl mx-auto"
+        className="grid gap-6 md:grid-cols-2 lg:gap-8 max-w-4xl mx-auto"
       >
-        <SubscriptionCard
-          title="Free"
-          price="$0"
-          description="Explore core tools with limited usage"
-          features={tierFeatures.free}
-          planId="free_plan"
-          onSelect={handleSelectPlan}
-          buttonText="Start Free"
-          buttonDisabled={subscription?.planId === 'free_plan'}
-        />
-
         <SubscriptionCard
           title="Pro"
           price={proMainPrice}
@@ -288,8 +202,6 @@ export default function PricingPage() {
                 : "Choose Pro"
           }
           buttonDisabled={isRedirecting || subscriptionLoading}
-          showDowngradeButton={isCurrentPlanPro}
-          onDowngrade={handlePlanDowngrade}
         />
 
         <SubscriptionCard
