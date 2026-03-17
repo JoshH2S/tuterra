@@ -179,7 +179,7 @@ const Auth = () => {
           <div className="w-full max-w-md flex flex-col items-center gap-6">
 
             {/* ── Top: supporting hero copy ── */}
-            <div className="hidden lg:flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center">
               <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-3">
                 AI-Powered Career Readiness
               </p>
