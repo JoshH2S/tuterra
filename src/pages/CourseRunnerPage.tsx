@@ -232,13 +232,13 @@ const CourseRunnerPage = () => {
 
   return (
     <>
-      <div className="flex h-screen bg-background">
+      <div className="flex h-[100dvh] bg-background">
         {/* Mobile Menu Button */}
         {isMobile && (
           <Button
             variant="ghost"
             size="icon"
-            className="fixed top-4 left-4 z-50"
+            className="fixed top-3 left-3 z-50"
             onClick={() => setShowSidebar(!showSidebar)}
           >
             {showSidebar ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -279,18 +279,18 @@ const CourseRunnerPage = () => {
         />
       )}
 
-      {/* Main Content - white canvas (sidebar keeps its own styling) */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden bg-white">
         {/* Top Progress Bar */}
-        <div className="border-b bg-white px-6 py-3">
+        <div className="border-b bg-white px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium truncate max-w-[200px]">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm font-medium truncate">
                 {currentModule?.title}
               </span>
             </div>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground shrink-0 ml-2">
               {progressPercent}% complete
             </span>
           </div>
@@ -298,7 +298,7 @@ const CourseRunnerPage = () => {
         </div>
 
         {/* Step Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 sm:pb-6">
           <div className="max-w-3xl mx-auto">
             {isLoadingSteps ? (
               <div className="text-center py-12">
@@ -327,34 +327,36 @@ const CourseRunnerPage = () => {
 
         {/* Navigation Footer */}
         {!showFeedback && currentStep && (
-          <div className="border-t bg-white px-6 py-4">
-            <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="border-t bg-white px-4 sm:px-6 py-3 sm:py-4 safe-area-bottom">
+            <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
               <Button
                 variant="outline"
                 onClick={handlePreviousStep}
                 disabled={isFirstStep}
+                size={isMobile ? "sm" : "default"}
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous
+                <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
               </Button>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Step {currentStepIndex + 1} of {steps.length}</span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <span>{currentStepIndex + 1}/{steps.length}</span>
               </div>
 
               {/* Only show Continue button for legacy teach steps without slides */}
               {currentStep.step_type === 'teach' && 
                (!currentStep.content.slides || currentStep.content.slides.length === 0) && (
-                <Button onClick={handleNextStep}>
+                <Button onClick={handleNextStep} size={isMobile ? "sm" : "default"}>
                   Continue
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  <ArrowRight className="h-4 w-4 ml-1 sm:ml-2" />
                 </Button>
               )}
               
               {/* Spacer for non-teach steps or slide-based teach steps */}
               {(currentStep.step_type !== 'teach' || 
                 (currentStep.content.slides && currentStep.content.slides.length > 0)) && (
-                <div className="w-[100px]" />
+                <div className="w-[72px] sm:w-[100px]" />
               )}
             </div>
           </div>
