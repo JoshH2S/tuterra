@@ -71,11 +71,6 @@ export function HeroSection() {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>
-              <Link to="/internship-preview">
-                <button className="flex items-center justify-center gap-2 px-7 py-3 rounded-full border border-white/25 text-white text-sm font-medium hover:bg-white/10 active:scale-[0.98] transition-all duration-150 backdrop-blur-sm">
-                  See How It Works
-                </button>
-              </Link>
             </div>
           </motion.div>
         </div>
