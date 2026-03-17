@@ -9,6 +9,7 @@ import SubmitFinalProjectPage from "@/pages/SubmitFinalProjectPage";
 import InternshipCompletionPage from "@/pages/InternshipCompletionPage";
 import WelcomePage from "@/pages/virtual-internship/WelcomePage";
 import { DebugTaskSubmission } from "@/components/internship/DebugTaskSubmission";
+import HubPage from "@/pages/HubPage";
 
 export const dashboardRoutes = [
   <Route key="dashboard-index" path="/" element={<Navigate to="/dashboard/overview" replace />} />,
