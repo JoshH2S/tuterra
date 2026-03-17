@@ -1,4 +1,3 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
@@ -10,6 +9,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+
+const HERO_URL =
+  "https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/Untitled%20Project.jpg";
 
 type AuthMode = "signIn" | "signUp" | "emailVerification" | "resetPassword" | "processing" | "error";
 
@@ -22,27 +25,22 @@ const Auth = () => {
   const queryParams = new URLSearchParams(location.search);
   const defaultTab = queryParams.get("tab") || "signin";
 
-  // For debugging - helps us see exactly what's in the URL and localStorage
   useEffect(() => {
     console.log("Auth page: Current URL:", window.location.href);
     console.log("Auth page: Hash present:", !!window.location.hash);
     console.log("Auth page: pendingPasswordReset flag:", localStorage.getItem("pendingPasswordReset"));
   }, []);
 
-  // Handle auth actions from URL (verification, password reset, magic link)
   useEffect(() => {
     const handleAuthRedirect = async () => {
-      // Check if hash or query params exist in URL
       const hasHashParams = window.location.hash && window.location.hash.length > 1;
       
       if (hasHashParams) {
-        // Set processing state
         setIsProcessing(true);
         setMode("processing");
         
         try {
           console.log("Processing auth redirect with hash params");
-          // Exchange code for session
           const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
           
           if (error) {
@@ -50,43 +48,30 @@ const Auth = () => {
             throw error;
           }
           
-          // Get current session
           const { data: { session } } = await supabase.auth.getSession();
           
-          // Determine auth flow based on URL, session state, and localStorage flags
           if (session) {
-            // Check if this is a password reset flow by checking for the pendingPasswordReset flag
             const isPendingReset = localStorage.getItem("pendingPasswordReset") === "true";
             console.log("Is pending reset:", isPendingReset);
             
             if (isPendingReset) {
-              // For compatibility with old links, handle reset here too
-              localStorage.removeItem("pendingPasswordReset"); // Clear the flag
+              localStorage.removeItem("pendingPasswordReset");
               if (window.location.pathname === "/auth") {
-                // If we're on /auth page, show the reset form
                 setMode("resetPassword");
-                console.log("Setting mode to resetPassword on /auth");
               } else {
-                // If the link was supposed to go to /reset-password but landed here,
-                // redirect to the proper page
                 navigate("/reset-password", { replace: true });
               }
             } 
-            // If email was just verified (emailVerified is true in URL)
             else if (window.location.href.includes("email_confirmed=true") || window.location.hash.includes("type=signup")) {
-              // Redirect to dedicated verification page instead of handling here
               console.log("Email verification detected, redirecting to /verify-email");
               navigate("/verify-email", { replace: true });
               return;
             }
-            // Otherwise, it's a successful sign-in
             else {
-              // If user is fully set up, redirect to dashboard
               console.log("Redirecting to dashboard - successful auth");
               navigate("/dashboard", { replace: true });
             }
           } else {
-            // If no session, likely an error occurred
             console.error("No session after code exchange");
             setError("Authentication failed. Please try again.");
             setMode("error");
@@ -97,17 +82,14 @@ const Auth = () => {
           setMode("error");
         } finally {
           setIsProcessing(false);
-          // Clear hash from URL without reloading
           window.history.replaceState(null, "", window.location.pathname + window.location.search);
         }
       } else {
-        // Check if there's an email in the URL (from a redirection)
         const email = queryParams.get("email");
         if (email) {
           localStorage.setItem("pendingVerificationEmail", email);
         }
         
-        // Set default tab from URL if present
         if (defaultTab === "signup") {
           setMode("signUp");
         } else {
@@ -119,7 +101,6 @@ const Auth = () => {
     handleAuthRedirect();
   }, [location, navigate, defaultTab]);
 
-  // Display correct component based on mode
   const renderAuthContent = () => {
     if (isProcessing) {
       return (
@@ -139,9 +120,9 @@ const Auth = () => {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-transparent border border-border rounded-full p-1">
+              <TabsTrigger value="signin" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium">Sign Up</TabsTrigger>
             </TabsList>
             <TabsContent value="signin">
               <SignInForm />
@@ -164,9 +145,9 @@ const Auth = () => {
       default:
         return (
           <Tabs defaultValue={mode === "signUp" ? "signup" : "signin"} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-8 bg-transparent border border-border rounded-full p-1 h-11">
+              <TabsTrigger value="signin" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all">Sign Up</TabsTrigger>
             </TabsList>
             <TabsContent value="signin">
               <SignInForm />
@@ -180,34 +161,81 @@ const Auth = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
-    >
-      <Card className="w-full max-w-md shadow-lg border-0 mb-8">
-        <CardHeader>
-          <CardTitle className="text-center text-[#ac9571]">Welcome to Tuterra</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {renderAuthContent()}
-        </CardContent>
-      </Card>
-      
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-        className="w-[200px]"
-      >
-        <img
-          alt="Tuterra Logo"
-          className="w-full h-auto"
-          src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+    <div className="min-h-screen flex">
+      {/* Left panel — hero image (hidden on mobile) */}
+      <div className="hidden lg:block relative w-1/2 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url('${HERO_URL}')` }}
         />
+        {/* Gold overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(72,46,0,0.92) 0%, rgba(100,65,5,0.80) 40%, rgba(150,100,10,0.50) 70%, transparent 100%)",
+          }}
+        />
+        {/* Content overlay */}
+        <div className="relative z-10 flex flex-col justify-between h-full p-12">
+          <Link to="/">
+            <img
+              src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+              alt="tuterra.ai logo"
+              className="h-10 w-auto brightness-0 invert"
+            />
+          </Link>
+          <div className="max-w-md">
+            <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#C8A84B] mb-4">
+              AI-Powered Career Readiness
+            </p>
+            <h2 className="text-3xl font-bold text-white leading-tight mb-4">
+              Your journey to career excellence starts here.
+            </h2>
+            <p className="text-white/60 text-sm leading-relaxed">
+              Join thousands of students building real-world skills through AI-powered virtual internships, personalized courses, and professional development tools.
+            </p>
+          </div>
+          <p className="text-white/30 text-xs">
+            © {new Date().getFullYear()} Tuterra. All rights reserved.
+          </p>
+        </div>
+      </div>
+
+      {/* Right panel — form */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-12"
+      >
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="flex justify-center mb-8 lg:hidden">
+            <Link to="/">
+              <img
+                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+                alt="tuterra.ai logo"
+                className="h-10 w-auto"
+              />
+            </Link>
+          </div>
+
+          <div className="mb-8">
+            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+              {mode === "signUp" ? "Create your account" : "Welcome back"}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {mode === "signUp"
+                ? "Enter your details to get started"
+                : "Sign in to continue your journey"}
+            </p>
+          </div>
+
+          {renderAuthContent()}
+        </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
 
