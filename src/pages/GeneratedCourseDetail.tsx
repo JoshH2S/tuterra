@@ -111,26 +111,26 @@ const GeneratedCourseDetail = () => {
   const hasStarted = progress && progress.total_steps_completed > 0;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-5xl mx-auto">
       {/* Back Button */}
       <Button 
         variant="ghost" 
         onClick={() => navigate('/courses/generated')}
-        className="mb-6"
+        className="mb-4 sm:mb-6 -ml-2"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Courses
       </Button>
 
       {/* Course Header */}
-      <div className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] bg-[#F7F3EC] p-6 mb-6">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+      <div className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] bg-[#F7F3EC] p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="flex flex-col gap-4 sm:gap-6">
           <div className="flex-1">
             <p className="text-xs font-mono text-[#8a7a5a] mb-3 tracking-wide uppercase">
               AI-Powered Learning
             </p>
 
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
               <Badge className={getLevelColor(course.level)}>
                 {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
               </Badge>
@@ -139,7 +139,7 @@ const GeneratedCourseDetail = () => {
               </Badge>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-medium text-[#1a1a1a] leading-tight tracking-tight mb-2">
+            <h1 className="text-2xl sm:text-3xl font-medium text-[#1a1a1a] leading-tight tracking-tight mb-2">
               {course.title}
             </h1>
 
@@ -163,8 +163,8 @@ const GeneratedCourseDetail = () => {
             {hasStarted ? (
               <>
                 {/* Circular progress ring */}
-                <div className="relative w-24 h-24">
-                  <svg className="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
                     <circle cx="48" cy="48" r="38" fill="none" stroke="#C8A84B" strokeWidth="7" opacity="0.2" />
                     <circle
                       cx="48" cy="48" r="38"
@@ -185,7 +185,7 @@ const GeneratedCourseDetail = () => {
                 <Button
                   onClick={handleContinue}
                   size="lg"
-                  className="flex items-center gap-2 px-6 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all font-semibold"
+                  className="flex items-center gap-2 px-6 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all font-semibold w-full sm:w-auto justify-center"
                 >
                   Continue Learning
                   <ChevronRight className="h-5 w-5" />
@@ -195,7 +195,7 @@ const GeneratedCourseDetail = () => {
               <Button
                 onClick={handleStartCourse}
                 size="lg"
-                className="flex items-center gap-2 px-6 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all font-semibold"
+                className="flex items-center gap-2 px-6 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all font-semibold w-full sm:w-auto justify-center"
               >
                 <Play className="h-5 w-5" />
                 Start Course
@@ -207,7 +207,7 @@ const GeneratedCourseDetail = () => {
 
       {/* Learning Objectives */}
       {course.learning_objectives && course.learning_objectives.length > 0 && (
-        <PremiumCard className="p-6 mb-6">
+        <PremiumCard className="p-4 sm:p-6 mb-4 sm:mb-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
             What You'll Learn
@@ -224,9 +224,9 @@ const GeneratedCourseDetail = () => {
       )}
 
       {/* Course Syllabus */}
-      <PremiumCard className="p-6">
+      <PremiumCard className="p-4 sm:p-6">
         <h2 className="text-lg font-semibold mb-4">Course Syllabus</h2>
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {modules.map((module, index) => {
             const moduleProgress = progress?.module_completion?.[module.id];
             const isCompleted = module.is_completed || moduleProgress?.status === 'completed';
@@ -237,46 +237,64 @@ const GeneratedCourseDetail = () => {
               <div
                 key={module.id}
                 className={cn(
-                  "flex items-center gap-4 p-4 rounded-lg border transition-colors",
+                  "flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-colors",
                   isCurrent && "border-primary bg-primary/5",
                   isCompleted && "border-green-500/50 bg-green-500/5",
                   !isCurrent && !isCompleted && "border-border hover:border-primary/50"
                 )}
               >
                 <div className={cn(
-                  "flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold",
+                  "flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-xs sm:text-sm font-semibold shrink-0",
                   isCompleted && "bg-green-500 text-white",
                   isCurrent && !isCompleted && "bg-primary text-primary-foreground",
                   !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
                 )}>
                   {isCompleted ? (
-                    <CheckCircle className="h-5 w-5" />
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                   ) : (
                     index + 1
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{module.title}</h3>
+                  <h3 className="font-medium text-sm sm:text-base truncate">{module.title}</h3>
                   {module.summary && (
-                    <p className="text-sm text-muted-foreground truncate">{module.summary}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:truncate">{module.summary}</p>
                   )}
+                  {/* Mobile: show meta inline */}
+                  <div className="flex items-center gap-2 mt-1 sm:hidden">
+                    {module.estimated_minutes && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {module.estimated_minutes}m
+                      </span>
+                    )}
+                    {isCompleted && (
+                      <Badge variant="outline" className="text-green-500 border-green-500/50 text-[10px] px-1.5 py-0">
+                        Complete
+                      </Badge>
+                    )}
+                    {isInProgress && !isCompleted && (
+                      <Badge variant="outline" className="text-amber-500 border-amber-500/50 text-[10px] px-1.5 py-0">
+                        In Progress
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                {/* Desktop meta */}
+                <div className="hidden sm:flex items-center gap-3 text-sm text-muted-foreground">
                   {module.estimated_minutes && (
                     <span className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       {module.estimated_minutes}m
                     </span>
                   )}
-                  
                   {isCompleted && (
                     <Badge variant="outline" className="text-green-500 border-green-500/50">
                       Complete
                     </Badge>
                   )}
-                  
                   {isInProgress && !isCompleted && (
                     <Badge variant="outline" className="text-amber-500 border-amber-500/50">
                       In Progress
