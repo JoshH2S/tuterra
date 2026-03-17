@@ -1,5 +1,3 @@
-
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 interface SubmitButtonProps {
@@ -9,20 +7,19 @@ interface SubmitButtonProps {
 
 export const SubmitButton = ({ loading, disabled }: SubmitButtonProps) => {
   return (
-    <Button 
-      type="submit" 
-      className="w-full" 
+    <button
+      type="submit"
       disabled={loading || disabled}
-      size="lg"
+      className="w-full h-11 rounded-full bg-[#ac9571] hover:bg-[#9a8362] text-white font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#ac9571]/20"
     >
       {loading ? (
-        <span className="flex items-center gap-2">
+        <span className="flex items-center justify-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Creating account...</span>
         </span>
       ) : (
         "Create Account"
       )}
-    </Button>
+    </button>
   );
 };
