@@ -69,22 +69,14 @@ function Header1({ variant = "default" }: Header1Props) {
                 <div className="hidden lg:flex items-center gap-3">
                     <Link
                         to="/auth"
-                        className={`text-[13px] font-medium tracking-wide uppercase transition-colors duration-200 ${
-                            scrolled
-                                ? "text-foreground/70 hover:text-foreground"
-                                : "text-white/70 hover:text-white"
-                        }`}
+                        className="text-[13px] font-medium tracking-wide uppercase transition-colors duration-200 text-foreground/70 hover:text-foreground"
                     >
                         Sign in
                     </Link>
                     <Button
                         onClick={handleGetStarted}
                         size="sm"
-                        className={`rounded-full px-6 text-[13px] font-semibold tracking-wide transition-all duration-300 ${
-                            scrolled
-                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                : "bg-white/15 text-white backdrop-blur-sm border border-white/20 hover:bg-white/25"
-                        }`}
+                        className="rounded-full px-6 text-[13px] font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         Get started
                     </Button>
