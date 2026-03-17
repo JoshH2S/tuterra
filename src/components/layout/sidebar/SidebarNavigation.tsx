@@ -37,16 +37,6 @@ export const navigationItems: NavigationItem[] = [
     path: "/dashboard/overview" 
   },
   { 
-    icon: BookOpenText, 
-    label: "Courses", 
-    path: "/courses" 
-  },
-  { 
-    icon: ScrollText, 
-    label: "Quizzes", 
-    path: "/quizzes" 
-  },
-  { 
     icon: FileQuestion, 
     label: "Skill Assessments", 
     path: "/assessments" 
@@ -55,11 +45,6 @@ export const navigationItems: NavigationItem[] = [
     icon: BrainCircuit, 
     label: "Interview Simulator", 
     path: "/interview-simulator" 
-  },
-  { 
-    icon: Briefcase, 
-    label: "Virtual Internships", 
-    path: "/dashboard/virtual-internship/overview" 
   },
   { 
     icon: Sparkles, 
