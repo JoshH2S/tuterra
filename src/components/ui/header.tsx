@@ -59,9 +59,8 @@ function Header1({ variant = "default" }: Header1Props) {
                         <img
                             src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
                             alt="tuterra.ai logo"
-                            className={`h-10 w-auto object-contain transition-all duration-300 ${
-                                scrolled ? "" : "brightness-0 invert"
-                            }`}
+                            className="h-10 w-auto object-contain"
+                        />
                         />
                     </Link>
                 </div>
