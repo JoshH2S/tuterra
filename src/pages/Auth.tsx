@@ -8,7 +8,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const HERO_URL =
   "https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/Untitled%20Project.jpg";
@@ -19,9 +18,9 @@ const Auth = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("signIn");
-  const [error, setError] = useState<string>("");
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
+  const [tab, setTab] = useState<"signin" | "signup">("signin");
+  const [error, setError] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const queryParams = new URLSearchParams(location.search);
   const defaultTab = queryParams.get("tab") || "signin";
 
@@ -40,20 +39,13 @@ const Auth = () => {
         setMode("processing");
 
         try {
-          console.log("Processing auth redirect with hash params");
           const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
-
-          if (error) {
-            console.error("Exchange code error:", error);
-            throw error;
-          }
+          if (error) throw error;
 
           const { data: { session } } = await supabase.auth.getSession();
 
           if (session) {
             const isPendingReset = localStorage.getItem("pendingPasswordReset") === "true";
-            console.log("Is pending reset:", isPendingReset);
-
             if (isPendingReset) {
               localStorage.removeItem("pendingPasswordReset");
               if (window.location.pathname === "/auth") {
@@ -61,21 +53,20 @@ const Auth = () => {
               } else {
                 navigate("/reset-password", { replace: true });
               }
-            } else if (window.location.href.includes("email_confirmed=true") || window.location.hash.includes("type=signup")) {
-              console.log("Email verification detected, redirecting to /verify-email");
+            } else if (
+              window.location.href.includes("email_confirmed=true") ||
+              window.location.hash.includes("type=signup")
+            ) {
               navigate("/verify-email", { replace: true });
               return;
             } else {
-              console.log("Redirecting to dashboard - successful auth");
               navigate("/dashboard", { replace: true });
             }
           } else {
-            console.error("No session after code exchange");
             setError("Authentication failed. Please try again.");
             setMode("error");
           }
         } catch (e: any) {
-          console.error("Auth redirect error:", e);
           setError(e.message || "Failed to process authentication. Please try again.");
           setMode("error");
         } finally {
@@ -84,16 +75,14 @@ const Auth = () => {
         }
       } else {
         const email = queryParams.get("email");
-        if (email) {
-          localStorage.setItem("pendingVerificationEmail", email);
-        }
+        if (email) localStorage.setItem("pendingVerificationEmail", email);
 
         if (defaultTab === "signup") {
           setMode("signUp");
-          setActiveTab("signup");
+          setTab("signup");
         } else {
           setMode("signIn");
-          setActiveTab("signin");
+          setTab("signin");
         }
       }
     };
@@ -119,7 +108,8 @@ const Auth = () => {
           <Alert variant="destructive" className="bg-red-500/10 border-red-500/20 text-red-300">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          {renderTabs()}
+          <PillTabSwitcher tab={tab} onChange={(t) => setTab(t)} />
+          {tab === "signin" ? <SignInForm /> : <SignUpForm />}
         </div>
       );
     }
@@ -132,88 +122,37 @@ const Auth = () => {
       case "signIn":
       case "signUp":
       default:
-        return renderTabs();
+        return (
+          <>
+            <PillTabSwitcher
+              tab={tab}
+              onChange={(t) => {
+                setTab(t);
+                setMode(t === "signup" ? "signUp" : "signIn");
+              }}
+            />
+            {tab === "signin" ? <SignInForm /> : <SignUpForm />}
+          </>
+        );
     }
   };
 
-  const renderTabs = () => (
-    <div className="w-full space-y-6">
-      {/* Custom pill tab switcher */}
-      <div className="flex rounded-full p-1" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.10)" }}>
-        <button
-          type="button"
-          onClick={() => { setActiveTab("signin"); setMode("signIn"); }}
-          className={`flex-1 py-2.5 text-sm font-medium rounded-full transition-all duration-300 ${
-            activeTab === "signin"
-              ? "bg-[#ac9571] text-white shadow-lg"
-              : "text-white/50 hover:text-white/70"
-          }`}
-        >
-          Sign In
-        </button>
-        <button
-          type="button"
-          onClick={() => { setActiveTab("signup"); setMode("signUp"); }}
-          className={`flex-1 py-2.5 text-sm font-medium rounded-full transition-all duration-300 ${
-            activeTab === "signup"
-              ? "bg-[#ac9571] text-white shadow-lg"
-              : "text-white/50 hover:text-white/70"
-          }`}
-        >
-          Sign Up
-        </button>
-      </div>
-
-      {/* Tab content */}
-      {activeTab === "signin" && (
-        <motion.div
-          key="signin"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="mb-5">
-            <h1 className="text-2xl font-semibold text-white tracking-tight">
-              Welcome back
-            </h1>
-            <p className="text-white/40 text-sm mt-1">
-              Sign in to continue your journey
-            </p>
-          </div>
-          <SignInForm />
-        </motion.div>
-      )}
-
-      {activeTab === "signup" && (
-        <motion.div
-          key="signup"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="mb-5">
-            <h1 className="text-2xl font-semibold text-white tracking-tight">
-              Create your account
-            </h1>
-            <p className="text-white/40 text-sm mt-1">
-              Enter your details to get started
-            </p>
-          </div>
-          <SignUpForm />
-        </motion.div>
-      )}
-    </div>
-  );
-
   return (
-    <div
-      className="relative min-h-screen overflow-hidden"
-      style={{
-        background: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url('${HERO_URL}') center/cover no-repeat`,
-        backgroundColor: "#1a1208",
-      }}
-    >
-      {/* Radial gradient atmosphere layers */}
+    <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: "#1a1208" }}>
+      {/* ── Background: hero photo ── */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url('${HERO_URL}')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+
+      {/* ── Overlay: dark tint ── */}
+      <div className="absolute inset-0 bg-black/55" />
+
+      {/* ── Atmosphere: radial accents ── */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -225,32 +164,57 @@ const Auth = () => {
         }}
       />
 
-      {/* Logo — top-left */}
-      <Link to="/" className="absolute top-8 left-8 z-20 lg:top-10 lg:left-12">
+      {/* ── Logo: top-left ── */}
+      <div className="absolute top-8 left-8 z-20 lg:top-10 lg:left-12">
         <img
           src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
           alt="tuterra.ai logo"
           className="h-8 lg:h-10 w-auto brightness-0 invert"
         />
-      </Link>
+      </div>
 
-      {/* Hero copy — bottom-left (desktop only) */}
-      <div className="hidden lg:block absolute bottom-12 left-12 z-10 max-w-lg">
+      {/* ── Hero copy: bottom-left (hidden on mobile) ── */}
+      <div className="hidden lg:flex flex-col absolute bottom-12 left-12 z-10 max-w-lg">
         <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-4">
           AI-Powered Career Readiness
         </p>
-        <h2 className="text-3xl font-bold text-white leading-tight mb-4">
-          Your journey to career excellence starts here.
+
+        <h2 className="text-4xl font-bold text-white leading-tight mb-4">
+          Your journey to career
+          <br />
+          excellence starts here.
         </h2>
-        <p className="text-white/40 text-sm leading-relaxed">
-          Join thousands of students building real-world skills through AI-powered virtual internships, personalized courses, and professional development tools.
+
+        <p className="text-white/40 text-sm leading-relaxed mb-8">
+          Join thousands of students building real-world skills through
+          AI-powered virtual internships and personalized development tools.
         </p>
-        <p className="text-white/20 text-xs mt-8">
-          © {new Date().getFullYear()} Tuterra. All rights reserved.
-        </p>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-6">
+          {[
+            { value: "12K+", label: "Active learners" },
+            { value: "94%", label: "Placement rate" },
+            { value: "200+", label: "Partners" },
+          ].map((stat, i, arr) => (
+            <div key={stat.label} className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">
+                  {stat.value}
+                </p>
+                <p className="text-xs text-white/40 mt-0.5">
+                  {stat.label}
+                </p>
+              </div>
+              {i < arr.length - 1 && (
+                <div className="w-px h-8 bg-white/10" />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Glass card — right-center on desktop, centered on mobile */}
+      {/* ── Main: glass card ── */}
       <motion.div
         initial={{ opacity: 0, x: 40 }}
         animate={{ opacity: 1, x: 0 }}
@@ -263,7 +227,7 @@ const Auth = () => {
         "
       >
         <div
-          className="rounded-2xl p-8 lg:p-10"
+          className="rounded-2xl p-8 lg:p-10 space-y-6"
           style={{
             background: "rgba(255,255,255,0.09)",
             backdropFilter: "blur(28px)",
@@ -271,27 +235,62 @@ const Auth = () => {
             border: "1px solid rgba(255,255,255,0.14)",
           }}
         >
-          {/* Mobile logo (inside card) */}
-          <div className="flex justify-center mb-6 lg:hidden">
-            <Link to="/">
-              <img
-                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
-                alt="tuterra.ai logo"
-                className="h-8 w-auto brightness-0 invert"
-              />
-            </Link>
+          {/* Card header */}
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold text-white tracking-tight">
+              {mode === "resetPassword"
+                ? "Reset password"
+                : mode === "emailVerification"
+                ? "Verify your email"
+                : "Welcome back"}
+            </h1>
+            <p className="text-sm text-white/40">
+              {mode === "resetPassword"
+                ? "Enter your new password below"
+                : mode === "emailVerification"
+                ? "Check your inbox to continue"
+                : "Sign in to continue your journey"}
+            </p>
           </div>
 
           {renderAuthContent()}
         </div>
-
-        {/* Mobile copyright */}
-        <p className="text-center text-white/20 text-xs mt-6 lg:hidden">
-          © {new Date().getFullYear()} Tuterra. All rights reserved.
-        </p>
       </motion.div>
     </div>
   );
 };
+
+// ── Pill tab switcher (replaces shadcn Tabs) ──────────────────────────────────
+interface PillTabSwitcherProps {
+  tab: "signin" | "signup";
+  onChange: (tab: "signin" | "signup") => void;
+}
+
+const PillTabSwitcher = ({ tab, onChange }: PillTabSwitcherProps) => (
+  <div
+    className="flex rounded-full p-1"
+    style={{
+      background: "rgba(255,255,255,0.08)",
+      border: "1px solid rgba(255,255,255,0.10)",
+    }}
+  >
+    {(["signin", "signup"] as const).map((t) => (
+      <button
+        key={t}
+        type="button"
+        onClick={() => onChange(t)}
+        className="flex-1 py-2 text-sm font-medium transition-all duration-200 rounded-full"
+        style={{
+          border: "none",
+          cursor: "pointer",
+          background: tab === t ? "#ac9571" : "transparent",
+          color: tab === t ? "#fff" : "rgba(255,255,255,0.45)",
+        }}
+      >
+        {t === "signin" ? "Sign In" : "Sign Up"}
+      </button>
+    ))}
+  </div>
+);
 
 export default Auth;
