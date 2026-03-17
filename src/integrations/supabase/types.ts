@@ -608,6 +608,39 @@ export type Database = {
         }
         Relationships: []
       }
+      debug_step_generation_logs: {
+        Row: {
+          check_error: string | null
+          check_timestamp: string | null
+          created_at: string | null
+          execution_id: string | null
+          existing_steps_count: number | null
+          id: string
+          module_id: string
+          user_id: string | null
+        }
+        Insert: {
+          check_error?: string | null
+          check_timestamp?: string | null
+          created_at?: string | null
+          execution_id?: string | null
+          existing_steps_count?: number | null
+          id?: string
+          module_id: string
+          user_id?: string | null
+        }
+        Update: {
+          check_error?: string | null
+          check_timestamp?: string | null
+          created_at?: string | null
+          execution_id?: string | null
+          existing_steps_count?: number | null
+          id?: string
+          module_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           email_type: string
