@@ -123,43 +123,45 @@ export function SlideNavigator({ slides, onComplete, autoMarkComplete = true, is
       </AnimatePresence>
 
       {/* Navigation Controls */}
-      <div className="flex items-center justify-between pt-4 border-t">
+      <div className="flex items-center justify-between gap-2 pt-4 border-t">
         <Button
           variant="outline"
           onClick={handlePrevious}
           disabled={isFirstSlide}
-          className="gap-2"
+          size="sm"
+          className="gap-1.5 shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
-          Previous
+          <span className="hidden sm:inline">Previous</span>
+          <span className="sm:hidden">Prev</span>
         </Button>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">
-            Slide {currentSlideIndex + 1} of {slides.length}
-          </span>
-        </div>
+        <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
+          {currentSlideIndex + 1} / {slides.length}
+        </span>
 
         {isLastSlide ? (
           <Button
             onClick={handleNext}
             disabled={!allSlidesViewed || isSubmitting}
-            className="gap-2"
+            size="sm"
+            className="gap-1.5 shrink-0"
           >
             {isSubmitting ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Completing...
+                <span className="hidden sm:inline">Completing...</span>
               </>
             ) : (
               <>
-                {autoMarkComplete ? "Continue to Next Step" : "Complete"}
+                <span className="hidden sm:inline">{autoMarkComplete ? "Continue to Next Step" : "Complete"}</span>
+                <span className="sm:hidden">{autoMarkComplete ? "Next Step" : "Complete"}</span>
                 <CheckCircle className="h-4 w-4" />
               </>
             )}
           </Button>
         ) : (
-          <Button onClick={handleNext} className="gap-2">
+          <Button onClick={handleNext} size="sm" className="gap-1.5 shrink-0">
             Next
             <ChevronRight className="h-4 w-4" />
           </Button>
