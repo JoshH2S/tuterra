@@ -227,11 +227,11 @@ const Auth = () => {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-12"
+        className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-8 lg:py-12 overflow-y-auto"
       >
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="flex justify-center mb-8 lg:hidden">
+          <div className="flex justify-center mb-6 lg:hidden">
             <Link to="/">
               <img
                 src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
@@ -239,17 +239,6 @@ const Auth = () => {
                 className="h-10 w-auto"
               />
             </Link>
-          </div>
-
-          <div className="mb-8">
-            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-              {mode === "signUp" ? "Create your account" : "Welcome back"}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {mode === "signUp"
-                ? "Enter your details to get started"
-                : "Sign in to continue your journey"}
-            </p>
           </div>
 
           {renderAuthContent()}
