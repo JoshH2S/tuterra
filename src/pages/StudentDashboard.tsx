@@ -196,35 +196,48 @@ export default function StudentDashboard() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
-          className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] flex flex-col sm:flex-row bg-[#F7F3EC] p-4 gap-4"
+          className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] overflow-hidden"
           style={{ minHeight: "300px" }}
         >
-          {/* Left: greeting */}
-          <div className="flex flex-col justify-between p-4 sm:w-[40%] shrink-0">
-            <div>
-              <p className="text-xs font-mono text-[#8a7a5a] mb-4 tracking-wide uppercase">
-                Your learning studio
-              </p>
-              <div className="flex items-start gap-3 mb-4">
-                <Sparkles className="h-7 w-7 text-[#7a6a2a] mt-1 shrink-0" />
-                <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">
-                  {firstName ? `Welcome back, ${firstName}.` : "Welcome back."}
-                </h1>
-              </div>
-              <p className="text-sm text-[#5a5040] leading-relaxed max-w-xs">
-                Pick up where you left off, or start something new.
-              </p>
-            </div>
-          </div>
-
-          {/* Right: decorative image */}
+          {/* Mobile: full-bleed background image with text overlay */}
           <div
-            className="flex-1 rounded-xl bg-cover bg-center min-h-[180px] sm:min-h-0"
+            className="sm:hidden absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage:
                 "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-donghuangmingde-2177482.jpg')",
             }}
           />
+          <div className="sm:hidden absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+
+          {/* Desktop: side-by-side layout */}
+          <div className="relative z-10 flex flex-col sm:flex-row h-full sm:bg-[#F7F3EC]">
+            {/* Text */}
+            <div className="flex flex-col justify-end sm:justify-between p-6 sm:p-6 sm:w-[40%] shrink-0 min-h-[300px] sm:min-h-0">
+              <div>
+                <p className="text-xs font-mono text-white/70 sm:text-[#8a7a5a] mb-4 tracking-wide uppercase">
+                  Your learning studio
+                </p>
+                <div className="flex items-start gap-3 mb-4">
+                  <Sparkles className="h-7 w-7 text-white/80 sm:text-[#7a6a2a] mt-1 shrink-0" />
+                  <h1 className="text-3xl md:text-4xl font-medium font-manrope text-white sm:text-[#1a1a1a] leading-tight tracking-tight">
+                    {firstName ? `Welcome back, ${firstName}.` : "Welcome back."}
+                  </h1>
+                </div>
+                <p className="text-sm text-white/70 sm:text-[#5a5040] leading-relaxed max-w-xs">
+                  Pick up where you left off, or start something new.
+                </p>
+              </div>
+            </div>
+
+            {/* Desktop-only: side image */}
+            <div
+              className="hidden sm:block flex-1 rounded-xl m-4 bg-cover bg-center"
+              style={{
+                backgroundImage:
+                  "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-donghuangmingde-2177482.jpg')",
+              }}
+            />
+          </div>
         </motion.div>
       </div>
 
