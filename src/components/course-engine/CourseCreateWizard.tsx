@@ -97,7 +97,7 @@ export const CourseCreateWizard = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg bg-[#F9F8F6] border-black/[0.06] max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="sm:max-w-lg bg-[#F9F8F6] border-black/[0.06] max-h-[90vh] overflow-y-auto overflow-x-hidden w-[calc(100vw-2rem)] sm:w-full rounded-2xl p-4 sm:p-6 [&>button]:top-3 [&>button]:right-3">
         {/* Visual anchor */}
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#C8A84B]/70 via-amber-200/80 to-transparent" />
 
