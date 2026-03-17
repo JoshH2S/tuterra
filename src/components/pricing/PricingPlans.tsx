@@ -1,7 +1,6 @@
 
 import { motion } from "framer-motion";
 import { SubscriptionCard } from "@/components/subscription/SubscriptionCard";
-import { SubscriptionFeatures } from "./SubscriptionFeatures";
 import { Mail } from "lucide-react";
 
 interface PricingPlansProps {
@@ -10,7 +9,6 @@ interface PricingPlansProps {
   isCurrentPlanPro: boolean;
   subscriptionLoading: boolean;
   handleSelectPlan: (planId: string) => void;
-  handlePlanDowngrade: () => void;
   calculateAnnualSavings?: (monthlyPrice: number) => number;
 }
 
@@ -20,7 +18,6 @@ export function PricingPlans({
   isCurrentPlanPro,
   subscriptionLoading,
   handleSelectPlan,
-  handlePlanDowngrade
 }: PricingPlansProps) {
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -28,12 +25,6 @@ export function PricingPlans({
   };
 
   const tierFeatures = {
-    free: [
-      "5 quizzes per month",
-      "2 interview simulations per month",
-      "1 skill assessment per month",
-      "Basic dashboard and course tracking",
-    ],
     pro: [
       "Unlimited quizzes, assessments, and interview simulations",
       "AI feedback on every quiz and skill report",
@@ -49,37 +40,16 @@ export function PricingPlans({
     ],
   };
 
-  const proTooltips = {
-    "AI feedback on every quiz and skill report": "Powered by advanced language models",
-    "Learning path planning & skill progress tracking": "Personalized learning recommendations",
-  };
-
-  const enterpriseTooltips = {
-    "Group analytics and LMS integrations": "Advanced reporting and insights",
-    "Admin panel to manage learners": "Comprehensive user management tools",
-  };
-
   return (
     <motion.div 
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8 max-w-6xl mx-auto"
+      className="grid gap-6 md:grid-cols-2 lg:gap-8 max-w-4xl mx-auto"
     >
       <SubscriptionCard
-        title="Free"
-        price="$0"
-        description="Explore core tools with limited usage"
-        features={tierFeatures.free}
-        planId="free_plan"
-        onSelect={handleSelectPlan}
-        buttonText="Start Free"
-        buttonDisabled={false}
-      />
-
-      <SubscriptionCard
         title="Pro"
-        price={billingInterval === 'monthly' ? "$9.99" : "$95.88"}
+        price={billingInterval === 'monthly' ? "$5.99" : "$57.48"}
         description="Everything you need for serious learning"
         features={tierFeatures.pro}
         planId="pro_plan"
@@ -93,8 +63,6 @@ export function PricingPlans({
               : "Choose Pro"
         }
         buttonDisabled={isRedirecting || subscriptionLoading}
-        showDowngradeButton={isCurrentPlanPro}
-        onDowngrade={handlePlanDowngrade}
       />
 
       <SubscriptionCard

@@ -202,7 +202,7 @@ serve(async (req) => {
     // Define price IDs for each plan - use environment variables if available
     // Otherwise fall back to the hardcoded values for backward compatibility
     const priceIds: Record<string, string> = {
-      pro_plan: "price_1RG6bhG3AK2xXjO3wCUouYYh", // <-- Updated to the new price ID
+      pro_plan: "price_1TBnwtG3AK2xXjO39wbyT739",
     };
 
     // Validate plan ID is supported

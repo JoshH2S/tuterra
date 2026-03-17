@@ -105,15 +105,6 @@ export function Pricing({
                   {plan.name}
                 </p>
               
-                {/* Promotional Internship Badge for Free plan */}
-                {plan.name === "Free" && promoStatus.hasPromotionalInternships && (
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 mx-auto">
-                    <Gift className="h-4 w-4 text-amber-500" />
-                    <span className="text-sm font-bold text-amber-500">
-                      🎁 {promoStatus.internshipsRemaining} Free Internship{promoStatus.internshipsRemaining > 1 ? 's' : ''} Included!
-                    </span>
-                  </div>
-                )}
                 <div className="mt-6 flex items-center justify-center gap-x-2">
                   <span className="text-5xl font-bold tracking-tight text-foreground">
                     {isMonthly ? plan.price : plan.yearlyPrice}

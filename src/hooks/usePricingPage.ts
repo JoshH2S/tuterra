@@ -28,11 +28,6 @@ export function usePricingPage() {
   }, [location.search, toast, navigate]);
   
   const handleSelectPlan = async (planId: string) => {
-    if (planId === 'free_plan') {
-      navigate('/auth?tab=signup&plan=free');
-      return;
-    }
-    
     if (planId === 'enterprise_plan') {
       navigate('/contact');
       return;
@@ -44,25 +39,6 @@ export function usePricingPage() {
     }
     
     navigate(`/auth?tab=signup&plan=${planId}`);
-  };
-
-  const handlePlanDowngrade = async () => {
-    if (!confirm("Are you sure you want to downgrade to the free plan? You'll lose access to premium features at the end of your billing period.")) {
-      return;
-    }
-    
-    setIsRedirecting(true);
-    const success = await cancelSubscription();
-    setIsRedirecting(false);
-    
-    if (success) {
-      toast({
-        title: "Plan Downgraded",
-        description: "Your subscription will be downgraded to the free plan at the end of your billing period.",
-        duration: 5000,
-      });
-      navigate('/profile-settings');
-    }
   };
 
   const isCurrentPlanPro = subscription?.planId === 'pro_plan' && subscription.status === 'active';
@@ -94,7 +70,6 @@ export function usePricingPage() {
     subscriptionLoading,
     isCurrentPlanPro,
     handleSelectPlan,
-    handlePlanDowngrade,
     calculateAnnualSavings,
     showCanceledAlert: location.search.includes('canceled=true')
   };
