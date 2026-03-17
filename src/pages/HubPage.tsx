@@ -166,9 +166,9 @@ function InlineCourseWizard({ onBack, initialTopic }: { onBack: () => void; init
     setIsCreating(true);
     try {
       const result = await createCourse({ topic, goal: goal || undefined, level, pace_weeks: paceWeeks, format_preferences: formatPreferences });
-      if (result) {
+      if (result?.course) {
         toast({ title: "Course created!", description: "Redirecting to your new course..." });
-        navigate(`/courses/generated/${result.id}`);
+        navigate(`/courses/generated/${result.course.id}`);
       }
     } catch (error) {
       console.error(error);
