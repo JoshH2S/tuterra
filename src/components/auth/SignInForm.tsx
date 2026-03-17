@@ -46,13 +46,6 @@ export const SignInForm = () => {
   }} transition={{
     duration: 0.3
   }} className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl tracking-tight text-[#ac9571] text-center font-normal">It's good to see you again!</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Enter your credentials to access your account
-        </p>
-      </div>
-
       <form onSubmit={handleSignIn} className="space-y-4">
         <div className="space-y-4">
           <div className="relative">
