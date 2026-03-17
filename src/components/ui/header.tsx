@@ -61,7 +61,6 @@ function Header1({ variant = "default" }: Header1Props) {
                             alt="tuterra.ai logo"
                             className="h-10 w-auto object-contain"
                         />
-                        />
                     </Link>
                 </div>
 
