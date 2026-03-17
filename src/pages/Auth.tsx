@@ -104,7 +104,7 @@ const Auth = () => {
   const renderAuthContent = () => {
     if (isProcessing) {
       return (
-        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-center text-muted-foreground">
             Processing your authentication...
@@ -115,22 +115,11 @@ const Auth = () => {
 
     if (error) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-transparent border border-border rounded-full p-1">
-              <TabsTrigger value="signin" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium">Sign Up</TabsTrigger>
-            </TabsList>
-            <TabsContent value="signin">
-              <SignInForm />
-            </TabsContent>
-            <TabsContent value="signup">
-              <SignUpForm />
-            </TabsContent>
-          </Tabs>
+          {renderTabs()}
         </div>
       );
     }
@@ -143,22 +132,53 @@ const Auth = () => {
       case "signIn":
       case "signUp":
       default:
-        return (
-          <Tabs defaultValue={mode === "signUp" ? "signup" : "signin"} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-transparent border border-border rounded-full p-1 h-11">
-              <TabsTrigger value="signin" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all">Sign Up</TabsTrigger>
-            </TabsList>
-            <TabsContent value="signin">
-              <SignInForm />
-            </TabsContent>
-            <TabsContent value="signup">
-              <SignUpForm />
-            </TabsContent>
-          </Tabs>
-        );
+        return renderTabs();
     }
   };
+
+  const renderTabs = () => (
+    <Tabs
+      defaultValue={mode === "signUp" ? "signup" : "signin"}
+      className="w-full"
+    >
+      <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted/50 rounded-full p-1 h-11">
+        <TabsTrigger
+          value="signin"
+          className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all"
+        >
+          Sign In
+        </TabsTrigger>
+        <TabsTrigger
+          value="signup"
+          className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm font-medium transition-all"
+        >
+          Sign Up
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="signin" className="mt-0">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+            Welcome back
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Sign in to continue your journey
+          </p>
+        </div>
+        <SignInForm />
+      </TabsContent>
+      <TabsContent value="signup" className="mt-0">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+            Create your account
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Enter your details to get started
+          </p>
+        </div>
+        <SignUpForm />
+      </TabsContent>
+    </Tabs>
+  );
 
   return (
     <div className="min-h-screen flex">
