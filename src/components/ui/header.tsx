@@ -86,11 +86,7 @@ function Header1({ variant = "default" }: Header1Props) {
                 <div className="flex lg:hidden items-center">
                     <button
                         onClick={() => setOpen(!isOpen)}
-                        className={`p-2 rounded-lg touch-manipulation transition-colors ${
-                            scrolled
-                                ? "text-foreground hover:bg-muted"
-                                : "text-white hover:bg-white/10"
-                        }`}
+                        className="p-2 rounded-lg touch-manipulation transition-colors text-foreground hover:bg-muted"
                     >
                         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
