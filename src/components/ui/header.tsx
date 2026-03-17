@@ -46,11 +46,7 @@ function Header1({ variant = "default" }: Header1Props) {
                         <Link
                             key={item.title}
                             to={item.href}
-                            className={`text-[13px] font-medium tracking-wide uppercase transition-colors duration-200 ${
-                                scrolled
-                                    ? "text-foreground/70 hover:text-foreground"
-                                    : "text-white/70 hover:text-white"
-                            }`}
+                            className="text-[13px] font-medium tracking-wide uppercase transition-colors duration-200 text-foreground/70 hover:text-foreground"
                         >
                             {item.title}
                         </Link>
