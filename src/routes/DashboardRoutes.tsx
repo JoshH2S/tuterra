@@ -14,6 +14,7 @@ import HubPage from "@/pages/HubPage";
 export const dashboardRoutes = [
   <Route key="dashboard-index" path="/" element={<Navigate to="/dashboard/overview" replace />} />,
   <Route key="dashboard-full" path="/overview" element={<StudentDashboard />} />,
+  <Route key="dashboard-hub" path="/hub" element={<HubPage />} />,
   <Route key="dashboard-profile" path="profile-settings" element={<ProfileSettings />} />,
   <Route key="dashboard-password" path="update-password" element={<UpdatePassword />} />,
   <Route key="dashboard-internship" path="internship" element={<InternshipOverviewPage />} />,
