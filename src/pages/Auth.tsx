@@ -138,114 +138,197 @@ const Auth = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden" style={{ backgroundColor: "#1a1208" }}>
-      {/* ── Background: hero photo ── */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url('${HERO_URL}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
-
-      {/* ── Overlay: dark tint ── */}
-      <div className="absolute inset-0 bg-black/60" />
-
-      {/* ── Atmosphere: radial accents ── */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: [
-            "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(172,149,113,0.08) 0%, transparent 70%)",
-            "radial-gradient(ellipse 100% 80% at 50% 50%, rgba(26,18,8,0.4) 0%, transparent 100%)",
-          ].join(", "),
-        }}
-      />
-
-      {/* ── Unified layout container ── */}
-      <div className="relative z-10 min-h-screen flex flex-col">
-        {/* ── Top bar: logo ── */}
-        <div className="flex-shrink-0 px-6 pt-6 lg:px-12 lg:pt-10">
-          <img
-            src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
-            alt="tuterra.ai logo"
-            className="h-7 lg:h-9 w-auto brightness-0 invert"
+    <div className="relative min-h-screen" style={{ backgroundColor: "#1a1208" }}>
+      {/* ── MOBILE: stacked layout with full-bleed hero ── */}
+      <div className="lg:hidden min-h-screen flex flex-col">
+        {/* ── Hero image section with text overlay ── */}
+        <div className="relative w-full min-h-[44vh] flex flex-col justify-end">
+          {/* Full-bleed hero image */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url('${HERO_URL}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
           />
-        </div>
+          {/* Gradient overlay: lighter at top, darker at bottom for text readability */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 60%, rgba(26,18,8,0.95) 100%)",
+            }}
+          />
 
-        {/* ── Center stage: card is the focal anchor ── */}
-        <div className="flex-1 flex items-center justify-center px-4 py-8 lg:py-0">
-          <div className="w-full max-w-md flex flex-col items-center gap-6">
+          {/* Logo at top */}
+          <div className="relative z-10 px-5 pt-5">
+            <img
+              src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+              alt="tuterra.ai logo"
+              className="h-7 w-auto brightness-0 invert"
+            />
+          </div>
 
-            {/* ── Top: supporting hero copy ── */}
-            <div className="flex flex-col items-center text-center">
-              <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-3">
-                AI-Powered Career Readiness
-              </p>
-
-              <h2 className="text-3xl font-bold text-white leading-tight mb-3">
-                Your journey to career
-                <br />
-                excellence starts here.
-              </h2>
-
-              <p className="text-white/40 text-sm leading-relaxed max-w-sm">
-                Build real-world skills through AI-powered virtual internships
-                and personalized development tools.
-              </p>
-            </div>
-
-            {/* ── Glass auth card (the focal anchor) ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-full max-w-md"
-            >
-              <div
-                className="rounded-2xl p-7 lg:p-9 space-y-6 overflow-y-auto max-h-[calc(100vh-8rem)]"
-                style={{
-                  background: "rgba(255,255,255,0.09)",
-                  backdropFilter: "blur(28px)",
-                  WebkitBackdropFilter: "blur(28px)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                }}
-              >
-                {/* Card header */}
-                <div className="space-y-1 text-center">
-                  <h1 className="text-2xl font-semibold text-white tracking-tight">
-                    {mode === "resetPassword"
-                      ? "Reset password"
-                      : mode === "emailVerification"
-                      ? "Verify your email"
-                      : tab === "signup"
-                      ? "Create your account"
-                      : "Welcome back"}
-                  </h1>
-                  <p className="text-sm text-white/40">
-                    {mode === "resetPassword"
-                      ? "Enter your new password below"
-                      : mode === "emailVerification"
-                      ? "Check your inbox to continue"
-                      : tab === "signup"
-                      ? "Start your career journey today"
-                      : "Sign in to continue your journey"}
-                  </p>
-                </div>
-
-                {renderAuthContent()}
-              </div>
-            </motion.div>
-
+          {/* Hero text overlaid on image */}
+          <div className="relative z-10 px-5 pb-6 mt-auto">
+            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#c9a96e] mb-2">
+              AI-Powered Career Readiness
+            </p>
+            <h2 className="text-2xl font-bold text-white leading-tight mb-2">
+              Your journey to career
+              <br />
+              excellence starts here.
+            </h2>
+            <p className="text-white/50 text-sm leading-relaxed max-w-xs">
+              Build real-world skills through AI-powered virtual internships
+              and personalized development tools.
+            </p>
           </div>
         </div>
 
-        {/* ── Bottom: subtle footer (optional, keeps vertical rhythm) ── */}
-        <div className="flex-shrink-0 px-6 pb-4 lg:px-12 lg:pb-6">
-          <p className="text-[11px] text-white/20 text-center lg:text-left">
+        {/* ── Card section (seamless transition from hero) ── */}
+        <div className="flex-1 px-4 pb-4 -mt-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="w-full max-w-md mx-auto"
+          >
+            <div
+              className="rounded-2xl p-6 space-y-5"
+              style={{
+                background: "rgba(255,255,255,0.09)",
+                backdropFilter: "blur(28px)",
+                WebkitBackdropFilter: "blur(28px)",
+                border: "1px solid rgba(255,255,255,0.14)",
+              }}
+            >
+              {/* Card header */}
+              <div className="space-y-1 text-center">
+                <h1 className="text-xl font-semibold text-white tracking-tight">
+                  {mode === "resetPassword"
+                    ? "Reset password"
+                    : mode === "emailVerification"
+                    ? "Verify your email"
+                    : tab === "signup"
+                    ? "Create your account"
+                    : "Welcome back"}
+                </h1>
+                <p className="text-sm text-white/40">
+                  {mode === "resetPassword"
+                    ? "Enter your new password below"
+                    : mode === "emailVerification"
+                    ? "Check your inbox to continue"
+                    : tab === "signup"
+                    ? "Start your career journey today"
+                    : "Sign in to continue your journey"}
+                </p>
+              </div>
+              {renderAuthContent()}
+            </div>
+          </motion.div>
+
+          {/* Footer */}
+          <p className="text-[11px] text-white/20 text-center mt-4 pb-2">
             © {new Date().getFullYear()} Tuterra. All rights reserved.
           </p>
+        </div>
+      </div>
+
+      {/* ── DESKTOP: original centered layout ── */}
+      <div className="hidden lg:block relative min-h-screen overflow-hidden">
+        {/* Background hero */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url('${HERO_URL}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+        <div className="absolute inset-0 bg-black/60" />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: [
+              "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(172,149,113,0.08) 0%, transparent 70%)",
+              "radial-gradient(ellipse 100% 80% at 50% 50%, rgba(26,18,8,0.4) 0%, transparent 100%)",
+            ].join(", "),
+          }}
+        />
+
+        <div className="relative z-10 min-h-screen flex flex-col">
+          <div className="flex-shrink-0 px-12 pt-10">
+            <img
+              src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+              alt="tuterra.ai logo"
+              className="h-9 w-auto brightness-0 invert"
+            />
+          </div>
+
+          <div className="flex-1 flex items-center justify-center py-0">
+            <div className="w-full max-w-md flex flex-col items-center gap-6">
+              <div className="flex flex-col items-center text-center">
+                <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-3">
+                  AI-Powered Career Readiness
+                </p>
+                <h2 className="text-3xl font-bold text-white leading-tight mb-3">
+                  Your journey to career
+                  <br />
+                  excellence starts here.
+                </h2>
+                <p className="text-white/40 text-sm leading-relaxed max-w-sm">
+                  Build real-world skills through AI-powered virtual internships
+                  and personalized development tools.
+                </p>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="w-full max-w-md"
+              >
+                <div
+                  className="rounded-2xl p-9 space-y-6 overflow-y-auto max-h-[calc(100vh-8rem)]"
+                  style={{
+                    background: "rgba(255,255,255,0.09)",
+                    backdropFilter: "blur(28px)",
+                    WebkitBackdropFilter: "blur(28px)",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                  }}
+                >
+                  <div className="space-y-1 text-center">
+                    <h1 className="text-2xl font-semibold text-white tracking-tight">
+                      {mode === "resetPassword"
+                        ? "Reset password"
+                        : mode === "emailVerification"
+                        ? "Verify your email"
+                        : tab === "signup"
+                        ? "Create your account"
+                        : "Welcome back"}
+                    </h1>
+                    <p className="text-sm text-white/40">
+                      {mode === "resetPassword"
+                        ? "Enter your new password below"
+                        : mode === "emailVerification"
+                        ? "Check your inbox to continue"
+                        : tab === "signup"
+                        ? "Start your career journey today"
+                        : "Sign in to continue your journey"}
+                    </p>
+                  </div>
+                  {renderAuthContent()}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 px-12 pb-6">
+            <p className="text-[11px] text-white/20 text-left">
+              © {new Date().getFullYear()} Tuterra. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </div>
