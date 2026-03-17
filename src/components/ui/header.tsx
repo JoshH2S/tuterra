@@ -35,8 +35,8 @@ function Header1({ variant = "default" }: Header1Props) {
         <header
             className={`w-full z-40 fixed top-0 left-0 transition-all duration-500 ${
                 scrolled
-                    ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-black/[0.04]"
-                    : "bg-transparent"
+                    ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-black/[0.04]"
+                    : "bg-white/80 backdrop-blur-sm"
             }`}
         >
             <div className="container relative mx-auto flex h-20 items-center justify-between px-6 lg:px-10">
@@ -46,11 +46,7 @@ function Header1({ variant = "default" }: Header1Props) {
                         <Link
                             key={item.title}
                             to={item.href}
-                            className={`text-[13px] font-medium tracking-wide uppercase transition-colors duration-200 ${
-                                scrolled
-                                    ? "text-foreground/70 hover:text-foreground"
-                                    : "text-white/70 hover:text-white"
-                            }`}
+                            className="text-[13px] font-medium tracking-wide uppercase transition-colors duration-200 text-foreground/70 hover:text-foreground"
                         >
                             {item.title}
                         </Link>
@@ -63,9 +59,7 @@ function Header1({ variant = "default" }: Header1Props) {
                         <img
                             src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
                             alt="tuterra.ai logo"
-                            className={`h-10 w-auto object-contain transition-all duration-300 ${
-                                scrolled ? "" : "brightness-0 invert"
-                            }`}
+                            className="h-10 w-auto object-contain"
                         />
                     </Link>
                 </div>
@@ -74,22 +68,14 @@ function Header1({ variant = "default" }: Header1Props) {
                 <div className="hidden lg:flex items-center gap-3">
                     <Link
                         to="/auth"
-                        className={`text-[13px] font-medium tracking-wide uppercase transition-colors duration-200 ${
-                            scrolled
-                                ? "text-foreground/70 hover:text-foreground"
-                                : "text-white/70 hover:text-white"
-                        }`}
+                        className="text-[13px] font-medium tracking-wide uppercase transition-colors duration-200 text-foreground/70 hover:text-foreground"
                     >
                         Sign in
                     </Link>
                     <Button
                         onClick={handleGetStarted}
                         size="sm"
-                        className={`rounded-full px-6 text-[13px] font-semibold tracking-wide transition-all duration-300 ${
-                            scrolled
-                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                : "bg-white/15 text-white backdrop-blur-sm border border-white/20 hover:bg-white/25"
-                        }`}
+                        className="rounded-full px-6 text-[13px] font-semibold tracking-wide bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         Get started
                     </Button>
@@ -99,11 +85,7 @@ function Header1({ variant = "default" }: Header1Props) {
                 <div className="flex lg:hidden items-center">
                     <button
                         onClick={() => setOpen(!isOpen)}
-                        className={`p-2 rounded-lg touch-manipulation transition-colors ${
-                            scrolled
-                                ? "text-foreground hover:bg-muted"
-                                : "text-white hover:bg-white/10"
-                        }`}
+                        className="p-2 rounded-lg touch-manipulation transition-colors text-foreground hover:bg-muted"
                     >
                         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
