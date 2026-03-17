@@ -176,44 +176,27 @@ const Auth = () => {
 
         {/* ── Center stage: card is the focal anchor ── */}
         <div className="flex-1 flex items-center justify-center px-4 py-8 lg:py-0">
-          <div className="w-full max-w-[960px] flex flex-col lg:flex-row items-center lg:items-center gap-8 lg:gap-16">
+          <div className="w-full max-w-md flex flex-col items-center gap-6">
 
-            {/* ── Left: supporting hero copy (desktop only) ── */}
-            <div className="hidden lg:flex flex-col flex-1 max-w-sm">
-              <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-4">
+            {/* ── Top: supporting hero copy ── */}
+            <div className="hidden lg:flex flex-col items-center text-center">
+              <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#c9a96e] mb-3">
                 AI-Powered Career Readiness
               </p>
 
-              <h2 className="text-3xl font-bold text-white leading-tight mb-4">
+              <h2 className="text-3xl font-bold text-white leading-tight mb-3">
                 Your journey to career
                 <br />
                 excellence starts here.
               </h2>
 
-              <p className="text-white/40 text-sm leading-relaxed mb-8">
-                Join thousands of students building real-world skills through
-                AI-powered virtual internships and personalized development tools.
+              <p className="text-white/40 text-sm leading-relaxed max-w-sm">
+                Build real-world skills through AI-powered virtual internships
+                and personalized development tools.
               </p>
-
-              {/* Stats row */}
-              <div className="flex items-center gap-5">
-                {[
-                  { value: "12K+", label: "Active learners" },
-                  { value: "94%", label: "Placement rate" },
-                  { value: "200+", label: "Partners" },
-                ].map((stat, i, arr) => (
-                  <div key={stat.label} className="flex items-center gap-5">
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-white">{stat.value}</p>
-                      <p className="text-[11px] text-white/40 mt-0.5">{stat.label}</p>
-                    </div>
-                    {i < arr.length - 1 && <div className="w-px h-7 bg-white/10" />}
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* ── Right: glass auth card (the focal anchor) ── */}
+            {/* ── Glass auth card (the focal anchor) ── */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
