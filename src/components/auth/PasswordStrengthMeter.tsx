@@ -1,6 +1,5 @@
-
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface StrengthLevel {
   label: string;
@@ -10,42 +9,37 @@ interface StrengthLevel {
 }
 
 const strengthLevels: StrengthLevel[] = [
-  { label: 'Very Weak', color: 'bg-red-500', textColor: 'text-red-500', minScore: 0 },
-  { label: 'Weak', color: 'bg-orange-500', textColor: 'text-orange-500', minScore: 20 },
-  { label: 'Fair', color: 'bg-yellow-500', textColor: 'text-yellow-500', minScore: 40 },
-  { label: 'Good', color: 'bg-green-500', textColor: 'text-green-500', minScore: 60 },
-  { label: 'Strong', color: 'bg-emerald-500', textColor: 'text-emerald-500', minScore: 80 }
+  { label: "Very Weak", color: "bg-red-500", textColor: "text-red-400", minScore: 0 },
+  { label: "Weak", color: "bg-orange-500", textColor: "text-orange-400", minScore: 20 },
+  { label: "Fair", color: "bg-yellow-500", textColor: "text-yellow-400", minScore: 40 },
+  { label: "Good", color: "bg-green-500", textColor: "text-green-400", minScore: 60 },
+  { label: "Strong", color: "bg-emerald-500", textColor: "text-emerald-400", minScore: 80 },
 ];
 
-export const PasswordStrengthMeter = ({ 
+export const PasswordStrengthMeter = ({
   password,
-  strength 
-}: { 
+  strength,
+}: {
   password: string;
   strength: number;
 }) => {
-  // Find the current strength level based on the score
-  const currentLevel = strengthLevels
-    .slice()
-    .reverse()
-    .find(level => strength >= level.minScore) || strengthLevels[0];
+  const currentLevel =
+    strengthLevels
+      .slice()
+      .reverse()
+      .find((level) => strength >= level.minScore) || strengthLevels[0];
 
   return (
-    <div className="space-y-2 mt-2">
+    <div className="space-y-2 mt-2 px-1">
       <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Password Strength:</span>
-        <span className={cn(
-          "font-medium",
-          currentLevel.textColor
-        )}>
-          {currentLevel.label}
-        </span>
+        <span className="text-white/40">Password Strength:</span>
+        <span className={cn("font-medium", currentLevel.textColor)}>{currentLevel.label}</span>
       </div>
-      
-      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+
+      <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
         <motion.div
-          className={cn("h-full", currentLevel.color)}
-          initial={{ width: '0%' }}
+          className={cn("h-full rounded-full", currentLevel.color)}
+          initial={{ width: "0%" }}
           animate={{ width: `${strength}%` }}
           transition={{ duration: 0.3 }}
         />
