@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, MessageSquare, Sparkles, Search,
-  BookOpen, Brain, Briefcase, ArrowLeft, Target, Gauge, Clock, Check, Loader2
+  ArrowRight, MessageSquare, Sparkles,
+  BookOpen, Brain, Briefcase, ArrowLeft, Target, Gauge, Clock, Check, Loader2, Send
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRecentActivity, ActivityItem } from "@/hooks/useRecentActivity";
@@ -44,12 +44,59 @@ function extractFirstName(user: { user_metadata?: Record<string, string>; email?
   return "";
 }
 
-// ─── Action Chips Config ────────────────────────────────────────────────────
+// ─── Spotlight Config ───────────────────────────────────────────────────────
 
-const ACTION_CHIPS: { type: ActionType; icon: typeof BookOpen; label: string }[] = [
-  { type: "course", icon: BookOpen, label: "Create Course" },
-  { type: "assessment", icon: Brain, label: "Assessment" },
-  { type: "interview", icon: Briefcase, label: "Interview" },
+const MODES: {
+  type: ActionType;
+  icon: typeof BookOpen;
+  label: string;
+  placeholder: string;
+  suggestions: string[];
+  accent: string;
+  ctaLabel: string;
+}[] = [
+  {
+    type: "course",
+    icon: BookOpen,
+    label: "AI Course",
+    placeholder: "e.g. Teach me about the causes of World War II...",
+    suggestions: [
+      "Modern day geopolitics",
+      "Laws of gravity",
+      "Personal finance basics",
+      "The history of jazz",
+    ],
+    accent: "#C8A84B",
+    ctaLabel: "Create course",
+  },
+  {
+    type: "assessment",
+    icon: Brain,
+    label: "Assessment",
+    placeholder: "e.g. Test my knowledge of JavaScript fundamentals...",
+    suggestions: [
+      "JavaScript fundamentals",
+      "US Constitutional law",
+      "Macroeconomics principles",
+      "Data structures & algorithms",
+    ],
+    accent: "#3B82F6",
+    ctaLabel: "Start assessment",
+  },
+  {
+    type: "interview",
+    icon: Briefcase,
+    label: "Interview",
+    placeholder: "e.g. Practice for a software engineering role at Google...",
+    suggestions: [
+      "Software engineer at Google",
+      "Product manager at a startup",
+      "Investment banking analyst",
+      "UX designer at an agency",
+    ],
+    accent: "#10B981",
+    ctaLabel: "Start interview",
+  },
 ];
 
 // ─── Feature Card ───────────────────────────────────────────────────────────
@@ -62,16 +109,17 @@ interface FeatureCardProps {
   href: string;
   image: string;
   delay?: number;
+  onClick?: () => void;
 }
 
-function FeatureCard({ title, eyebrow, description, cta, href, image, delay = 0 }: FeatureCardProps) {
+function FeatureCard({ title, eyebrow, description, cta, href, image, delay = 0, onClick }: FeatureCardProps) {
   const navigate = useNavigate();
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay, ease: "easeOut" }}
-      onClick={() => navigate(href)}
+      onClick={() => { onClick?.(); navigate(href); }}
       className="group rounded-2xl overflow-hidden border border-black/[0.06] shadow-[0_2px_16px_rgba(0,0,0,0.08)] cursor-pointer hover:shadow-[0_8px_32px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 transition-all duration-200 ease-out"
     >
       <div
@@ -87,7 +135,7 @@ function FeatureCard({ title, eyebrow, description, cta, href, image, delay = 0 
       <div className="bg-white px-5 py-4 flex items-center justify-between gap-4">
         <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
         <button
-          onClick={(e) => { e.stopPropagation(); navigate(href); }}
+          onClick={(e) => { e.stopPropagation(); onClick?.(); navigate(href); }}
           className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-[#091747] text-white hover:bg-[#0d2060] transition-colors duration-150"
         >
           {cta}
@@ -149,6 +197,155 @@ function ActivityRow({ item, onClick }: { item: ActivityItem; onClick: () => voi
         </span>
       )}
     </div>
+  );
+}
+
+// ─── Spotlight Hero ─────────────────────────────────────────────────────────
+
+function SpotlightHero({
+  firstName,
+  onLaunch,
+  inputRef,
+  activeMode,
+  setActiveMode,
+}: {
+  firstName: string;
+  onLaunch: (type: ActionType, topic: string) => void;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  activeMode: number;
+  setActiveMode: (i: number) => void;
+}) {
+  const [inputValue, setInputValue] = useState("");
+  const mode = MODES[activeMode];
+
+  const handleSuggestion = (s: string) => {
+    setInputValue(s);
+    inputRef.current?.focus();
+  };
+
+  const handleSubmit = () => {
+    if (inputValue.trim().length >= 2) {
+      onLaunch(mode.type, inputValue.trim());
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: "easeOut" }}
+      className="max-w-[680px] mx-auto text-center pt-12 sm:pt-14 pb-8 px-5"
+    >
+      {/* Eyebrow */}
+      <p className="font-mono text-[10px] font-medium tracking-[0.12em] uppercase text-[#8a7a5a] mb-3">
+        Your learning studio
+      </p>
+
+      {/* Heading */}
+      <h1 className="text-2xl sm:text-[34px] font-medium text-gray-900 leading-tight tracking-tight mb-2">
+        {firstName ? `Good to see you, ${firstName}.` : "Welcome back."}
+      </h1>
+      <p className="text-sm text-gray-400 mb-7">
+        Pick a mode, then tell us what you want to do.
+      </p>
+
+      {/* Mode Switcher */}
+      <div className="inline-flex bg-gray-100 rounded-full p-[3px] gap-[2px] mb-5 border border-gray-200">
+        {MODES.map((m, i) => {
+          const Icon = m.icon;
+          const isActive = i === activeMode;
+          return (
+            <button
+              key={m.label}
+              onClick={() => {
+                setActiveMode(i);
+                setInputValue("");
+                inputRef.current?.focus();
+              }}
+              className={`flex items-center gap-[7px] px-5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all duration-200 ${
+                isActive
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Icon className="w-[13px] h-[13px] shrink-0" />
+              {m.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Input Box */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeMode}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.2 }}
+          className="max-w-[600px] mx-auto"
+        >
+          <div
+            className="rounded-2xl border-2 overflow-hidden transition-all duration-200 focus-within:shadow-[0_0_0_4px]"
+            style={{
+              borderColor: `${mode.accent}66`,
+            }}
+            onFocus={(e) => {
+              const box = e.currentTarget;
+              box.style.borderColor = mode.accent;
+              box.style.boxShadow = `0 0 0 4px ${mode.accent}14`;
+            }}
+            onBlur={(e) => {
+              const box = e.currentTarget;
+              if (!box.contains(e.relatedTarget as Node)) {
+                box.style.borderColor = `${mode.accent}66`;
+                box.style.boxShadow = "none";
+              }
+            }}
+          >
+            <textarea
+              ref={inputRef}
+              rows={2}
+              placeholder={mode.placeholder}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              className="w-full px-5 pt-4 pb-2 text-sm text-gray-900 placeholder-gray-400 resize-none outline-none bg-transparent leading-relaxed"
+            />
+            <div className="flex items-center justify-between px-4 pb-3 pt-1">
+              <span className="text-[11px] text-gray-400">Press Enter to start, Shift+Enter for new line</span>
+              <button
+                onClick={handleSubmit}
+                disabled={inputValue.trim().length < 2}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold text-white transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                style={{ background: mode.accent }}
+              >
+                <Send className="w-3 h-3" />
+                {mode.ctaLabel}
+              </button>
+            </div>
+          </div>
+
+          {/* Suggestions */}
+          <div className="flex flex-wrap gap-2 justify-center mt-3">
+            {mode.suggestions.map((s) => (
+              <button
+                key={s}
+                onClick={() => handleSuggestion(s)}
+                className="text-xs px-3.5 py-1.5 rounded-full border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-800 bg-white transition-all duration-150 active:scale-95"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -397,7 +594,7 @@ function InlineAssessmentWizard({ onBack, initialTopic }: { onBack: () => void; 
 
 // ─── Inline Interview Wizard ────────────────────────────────────────────────
 
-function InlineInterviewWizard({ onBack }: { onBack: () => void }) {
+function InlineInterviewWizard({ onBack, initialTopic }: { onBack: () => void; initialTopic: string }) {
   const navigate = useNavigate();
   return (
     <motion.div
@@ -420,7 +617,9 @@ function InlineInterviewWizard({ onBack }: { onBack: () => void }) {
       </div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">Practice makes perfect</h3>
       <p className="text-sm text-gray-400 mb-6 max-w-xs mx-auto">
-        Simulate realistic job interviews with AI feedback.
+        {initialTopic
+          ? `Preparing you for: "${initialTopic}".`
+          : "Simulate realistic job interviews with AI feedback."}
       </p>
       <Button
         onClick={() => navigate("/assessments/job-interview-simulator")}
@@ -437,8 +636,10 @@ function InlineInterviewWizard({ onBack }: { onBack: () => void }) {
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState<string>("");
-  const [inputTopic, setInputTopic] = useState("");
   const [activeWizard, setActiveWizard] = useState<ActionType>(null);
+  const [wizardTopic, setWizardTopic] = useState("");
+  const [activeMode, setActiveMode] = useState(0);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const { items: recentActivity, isLoading } = useRecentActivity(3);
 
   useEffect(() => {
@@ -447,19 +648,23 @@ export default function StudentDashboard() {
     });
   }, []);
 
-  const handleInputSubmit = () => {
-    if (inputTopic.trim().length >= 3) {
-      setActiveWizard("course");
-    }
-  };
-
-  const handleChipClick = (type: ActionType) => {
+  const handleLaunch = (type: ActionType, topic: string) => {
+    setWizardTopic(topic);
     setActiveWizard(type);
   };
 
   const handleWizardBack = () => {
     setActiveWizard(null);
+    setWizardTopic("");
   };
+
+  const setModeAndFocus = useCallback((modeIndex: number) => {
+    setActiveMode(modeIndex);
+    setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  }, []);
 
   const features: FeatureCardProps[] = [
     {
@@ -470,6 +675,7 @@ export default function StudentDashboard() {
       href: "/courses/generated",
       image: "https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-mart-production-7718665.jpg",
       delay: 0.15,
+      onClick: () => setModeAndFocus(0),
     },
     {
       title: "Skill Assessments",
@@ -479,6 +685,7 @@ export default function StudentDashboard() {
       href: "/assessments",
       image: "https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/skillassessment2.jpg",
       delay: 0.22,
+      onClick: () => setModeAndFocus(1),
     },
     {
       title: "Interview Simulator",
@@ -488,6 +695,7 @@ export default function StudentDashboard() {
       href: "/assessments/job-interview-simulator",
       image: "https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/jobinterviewsimulator.jpg",
       delay: 0.29,
+      onClick: () => setModeAndFocus(2),
     },
   ];
 
@@ -506,13 +714,13 @@ export default function StudentDashboard() {
             className="relative z-10 min-h-[60vh]"
           >
             {activeWizard === "course" && (
-              <InlineCourseWizard onBack={handleWizardBack} initialTopic={inputTopic} />
+              <InlineCourseWizard onBack={handleWizardBack} initialTopic={wizardTopic} />
             )}
             {activeWizard === "assessment" && (
-              <InlineAssessmentWizard onBack={handleWizardBack} initialTopic={inputTopic} />
+              <InlineAssessmentWizard onBack={handleWizardBack} initialTopic={wizardTopic} />
             )}
             {activeWizard === "interview" && (
-              <InlineInterviewWizard onBack={handleWizardBack} />
+              <InlineInterviewWizard onBack={handleWizardBack} initialTopic={wizardTopic} />
             )}
           </motion.div>
         ) : (
@@ -523,89 +731,14 @@ export default function StudentDashboard() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            {/* ── Hero Card with Input ──────────────────────────────── */}
-            <div className="relative z-10 mb-12 px-4 sm:px-6">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] overflow-hidden"
-                style={{ minHeight: "300px" }}
-              >
-                {/* Mobile: full-bleed background image */}
-                <div
-                  className="sm:hidden absolute inset-0 bg-cover bg-center"
-                  style={{
-                    backgroundImage:
-                      "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-donghuangmingde-2177482.jpg')",
-                  }}
-                />
-                <div className="sm:hidden absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
-
-                {/* Layout */}
-                <div className="relative z-10 flex flex-col sm:flex-row h-full sm:bg-[#F7F3EC]">
-                  {/* Text + Input Panel */}
-                  <div className="flex flex-col justify-end sm:justify-between p-6 sm:p-6 sm:w-[45%] shrink-0 min-h-[340px] sm:min-h-0">
-                    <div>
-                      <p className="text-[10px] font-mono text-white/70 sm:text-[#8a7a5a] mb-3 tracking-wide uppercase">
-                        Your learning studio
-                      </p>
-                      <div className="flex items-start gap-3 mb-3">
-                        <Sparkles className="h-6 w-6 text-white/80 sm:text-[#7a6a2a] mt-1 shrink-0" />
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-medium font-manrope text-white sm:text-[#1a1a1a] leading-tight tracking-tight">
-                          {firstName ? `Welcome back, ${firstName}.` : "Welcome back."}
-                        </h1>
-                      </div>
-                      <p className="text-sm text-white/70 sm:text-[#5a5040] leading-relaxed max-w-xs mb-5">
-                        Pick up where you left off, or start something new.
-                      </p>
-
-                      {/* Search Input */}
-                      <div className="relative mb-3">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50 sm:text-gray-400 pointer-events-none" />
-                        <input
-                          type="text"
-                          placeholder="What do you want to learn today?"
-                          value={inputTopic}
-                          onChange={(e) => setInputTopic(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleInputSubmit()}
-                          className="w-full h-11 pl-10 pr-4 rounded-full text-sm
-                            bg-white/15 backdrop-blur-sm text-white placeholder-white/50 border border-white/20
-                            sm:bg-white sm:text-gray-900 sm:placeholder-gray-400 sm:border-gray-200 sm:shadow-sm
-                            focus:outline-none focus:ring-2 focus:ring-[#C8A84B]/40 transition-all duration-200"
-                        />
-                      </div>
-
-                      {/* Action Chips */}
-                      <div className="flex flex-wrap gap-2">
-                        {ACTION_CHIPS.map(({ type, icon: Icon, label }) => (
-                          <button
-                            key={type}
-                            onClick={() => handleChipClick(type)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
-                              bg-white/15 text-white/90 border border-white/20 hover:bg-white/25
-                              sm:bg-[#091747] sm:text-white sm:border-transparent sm:hover:bg-[#0d2060]
-                              transition-all duration-150 active:scale-95"
-                          >
-                            <Icon className="w-3 h-3" />
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Desktop-only: side image */}
-                  <div
-                    className="hidden sm:block flex-1 rounded-xl m-4 bg-cover bg-center"
-                    style={{
-                      backgroundImage:
-                        "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-donghuangmingde-2177482.jpg')",
-                    }}
-                  />
-                </div>
-              </motion.div>
-            </div>
+            {/* ── Spotlight Hero ──────────────────────────────────── */}
+            <SpotlightHero
+              firstName={firstName}
+              onLaunch={handleLaunch}
+              inputRef={inputRef}
+              activeMode={activeMode}
+              setActiveMode={setActiveMode}
+            />
 
             {/* ── Body ──────────────────────────────────────────────── */}
             <div className="container mx-auto px-4 relative z-10">
@@ -655,7 +788,7 @@ export default function StudentDashboard() {
                       <p className="text-sm text-gray-400 leading-relaxed">
                         No activity yet.{" "}
                         <button
-                          onClick={() => handleChipClick("course")}
+                          onClick={() => handleLaunch("course", "")}
                           className="text-[#091747] underline underline-offset-2 hover:text-[#0d2060] transition-colors duration-150"
                         >
                           Start your first course
