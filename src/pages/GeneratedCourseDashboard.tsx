@@ -13,8 +13,18 @@ import { cn } from "@/lib/utils";
 
 const GeneratedCourseDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { courses, isLoading, refreshCourses, deleteCourse } = useGeneratedCourses();
+  const locationState = location.state as { topic?: string; autoCreate?: boolean } | null;
   const [showWizard, setShowWizard] = useState(false);
+
+  useEffect(() => {
+    if (locationState?.autoCreate) {
+      setShowWizard(true);
+      // Clear location state so refresh doesn't re-trigger
+      window.history.replaceState({}, document.title);
+    }
+  }, [locationState?.autoCreate]);
 
   useEffect(() => {
     refreshCourses();
