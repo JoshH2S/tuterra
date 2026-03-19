@@ -20,6 +20,7 @@ interface CourseCreateWizardProps {
   open: boolean;
   onClose: () => void;
   onCreated?: () => void;
+  initialTopic?: string;
 }
 
 export const CourseCreateWizard = ({
