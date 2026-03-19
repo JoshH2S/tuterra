@@ -557,78 +557,20 @@ function InlineCourseWizard({ onBack, initialTopic }: { onBack: () => void; init
 
 function InlineAssessmentWizard({ onBack, initialTopic }: { onBack: () => void; initialTopic: string }) {
   const navigate = useNavigate();
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="max-w-lg mx-auto py-8 px-4 text-center"
-    >
-      <div className="flex items-center gap-3 mb-6 text-left">
-        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 rounded-full">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <Brain className="h-5 w-5 text-blue-500" />
-          Skill Assessment
-        </h2>
-      </div>
-      <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 mx-auto">
-        <Brain className="h-8 w-8 text-blue-500" />
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">Ready to test your skills?</h3>
-      <p className="text-sm text-gray-400 mb-6 max-w-xs mx-auto">
-        {initialTopic
-          ? `We'll create an assessment for "${initialTopic}".`
-          : "Choose from available assessments or create a custom one."}
-      </p>
-      <Button
-        onClick={() => navigate("/assessments")}
-        className="rounded-full bg-blue-600 hover:bg-blue-700 text-white"
-      >
-        Go to Assessments <ArrowRight className="h-4 w-4 ml-1" />
-      </Button>
-    </motion.div>
-  );
+  useEffect(() => {
+    navigate("/assessments", { state: { topic: initialTopic, autoCreate: true }, replace: true });
+  }, [navigate, initialTopic]);
+  return null;
 }
 
 // ─── Inline Interview Wizard ────────────────────────────────────────────────
 
 function InlineInterviewWizard({ onBack, initialTopic }: { onBack: () => void; initialTopic: string }) {
   const navigate = useNavigate();
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="max-w-lg mx-auto py-8 px-4 text-center"
-    >
-      <div className="flex items-center gap-3 mb-6 text-left">
-        <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 rounded-full">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <Briefcase className="h-5 w-5 text-emerald-500" />
-          Mock Interview
-        </h2>
-      </div>
-      <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mb-4 mx-auto">
-        <Briefcase className="h-8 w-8 text-emerald-500" />
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">Practice makes perfect</h3>
-      <p className="text-sm text-gray-400 mb-6 max-w-xs mx-auto">
-        {initialTopic
-          ? `Preparing you for: "${initialTopic}".`
-          : "Simulate realistic job interviews with AI feedback."}
-      </p>
-      <Button
-        onClick={() => navigate("/assessments/job-interview-simulator")}
-        className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white"
-      >
-        Start Interview <ArrowRight className="h-4 w-4 ml-1" />
-      </Button>
-    </motion.div>
-  );
+  useEffect(() => {
+    navigate("/assessments/job-interview-simulator", { state: { topic: initialTopic }, replace: true });
+  }, [navigate, initialTopic]);
+  return null;
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────

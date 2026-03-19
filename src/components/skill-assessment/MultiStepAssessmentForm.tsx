@@ -21,17 +21,20 @@ interface MultiStepAssessmentFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   progress?: number;
+  initialTopic?: string;
 }
 
 export function MultiStepAssessmentForm({ 
   onComplete, 
   onCancel, 
   isLoading = false, 
-  progress = 0 
+  progress = 0,
+  initialTopic
 }: MultiStepAssessmentFormProps) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<AssessmentFormData>>({
+    industry: initialTopic || "",
     level: "intermediate",
     questionCount: 15,
     additionalInfo: ""

@@ -19,18 +19,22 @@ interface MultiStepInterviewFormProps {
   onStepChange?: (step: number) => void;
   isLoading?: boolean;
   progress?: number;
+  initialTopic?: string;
 }
 
 export function MultiStepInterviewForm({ 
   onComplete, 
   onStepChange, 
   isLoading = false, 
-  progress = 0 
+  progress = 0,
+  initialTopic
 }: MultiStepInterviewFormProps) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [formData, setFormData] = useState<Partial<ExtendedInterviewFormData>>({});
+  const [formData, setFormData] = useState<Partial<ExtendedInterviewFormData>>({
+    ...(initialTopic ? { jobTitle: initialTopic } : {})
+  });
   const formRef = useRef<HTMLDivElement>(null);
 
   const totalSteps = 3;
