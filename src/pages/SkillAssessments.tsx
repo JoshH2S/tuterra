@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { SkillAssessmentForm } from "@/components/skill-assessment/SkillAssessmentForm";
@@ -14,7 +14,9 @@ import { AssessmentSearch } from "@/components/skill-assessment/AssessmentSearch
 export default function SkillAssessments() {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [isCreating, setIsCreating] = useState(false);
+  const location = useLocation();
+  const locationState = location.state as { topic?: string; autoCreate?: boolean } | null;
+  const [isCreating, setIsCreating] = useState(!!locationState?.autoCreate);
   const [searchQuery, setSearchQuery] = useState("");
   const { generateAssessment, isGenerating, progress } = useSkillAssessmentGeneration();
 
