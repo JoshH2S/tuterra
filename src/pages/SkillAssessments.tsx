@@ -80,6 +80,7 @@ export default function SkillAssessments() {
             onCancel={handleCancel}
             isLoading={isGenerating}
             progress={progress}
+            initialTopic={locationState?.topic}
           />
         ) : (
           <>
