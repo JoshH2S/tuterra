@@ -183,6 +183,7 @@ const GeneratedCourseDashboard = () => {
           open={showWizard}
           onClose={() => setShowWizard(false)}
           onCreated={handleCourseCreated}
+          initialTopic={locationState?.topic}
         />
       </div>
     </>

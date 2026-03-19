@@ -3,17 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, Brain, Briefcase, ArrowRight, ArrowLeft,
-  Sparkles, Search, ChevronRight, Clock, Target, Gauge,
-  Check, Settings, Loader2
+  Sparkles, Search, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useRecentActivity, ActivityItem } from "@/hooks/useRecentActivity";
-import { CourseLevel, FormatPreferences } from "@/types/course-engine";
-import { useGeneratedCourses } from "@/hooks/useGeneratedCourses";
-import { toast } from "@/hooks/use-toast";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
