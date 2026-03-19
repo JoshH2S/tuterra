@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { BookOpen, Plus, GraduationCap, Clock, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -13,8 +13,18 @@ import { cn } from "@/lib/utils";
 
 const GeneratedCourseDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { courses, isLoading, refreshCourses, deleteCourse } = useGeneratedCourses();
+  const locationState = location.state as { topic?: string; autoCreate?: boolean } | null;
   const [showWizard, setShowWizard] = useState(false);
+
+  useEffect(() => {
+    if (locationState?.autoCreate) {
+      setShowWizard(true);
+      // Clear location state so refresh doesn't re-trigger
+      window.history.replaceState({}, document.title);
+    }
+  }, [locationState?.autoCreate]);
 
   useEffect(() => {
     refreshCourses();
@@ -173,6 +183,7 @@ const GeneratedCourseDashboard = () => {
           open={showWizard}
           onClose={() => setShowWizard(false)}
           onCreated={handleCourseCreated}
+          initialTopic={locationState?.topic}
         />
       </div>
     </>

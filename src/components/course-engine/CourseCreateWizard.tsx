@@ -20,17 +20,19 @@ interface CourseCreateWizardProps {
   open: boolean;
   onClose: () => void;
   onCreated?: () => void;
+  initialTopic?: string;
 }
 
 export const CourseCreateWizard = ({
   open,
   onClose,
   onCreated,
+  initialTopic,
 }: CourseCreateWizardProps) => {
   const { createCourse } = useGeneratedCourses();
   const [isCreating, setIsCreating] = useState(false);
   const [step, setStep] = useState(1);
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useState(initialTopic || "");
   const [goal, setGoal] = useState("");
   const [level, setLevel] = useState<CourseLevel>("beginner");
   const [paceWeeks, setPaceWeeks] = useState(4);
