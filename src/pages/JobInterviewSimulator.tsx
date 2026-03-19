@@ -355,6 +355,7 @@ const JobInterviewSimulator = () => {
             onComplete={handleFormSubmit} 
             isLoading={isGeneratingQuestions || loadingQuestions || isGenerating}
             progress={progress}
+            initialTopic={locationState.topic}
           />
         )}
         
