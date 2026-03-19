@@ -732,13 +732,15 @@ export default function StudentDashboard() {
             transition={{ duration: 0.25 }}
           >
             {/* ── Spotlight Hero ──────────────────────────────────── */}
-            <SpotlightHero
-              firstName={firstName}
-              onLaunch={handleLaunch}
-              inputRef={inputRef}
-              activeMode={activeMode}
-              setActiveMode={setActiveMode}
-            />
+            <div className="relative z-10">
+              <SpotlightHero
+                firstName={firstName}
+                onLaunch={handleLaunch}
+                inputRef={inputRef}
+                activeMode={activeMode}
+                setActiveMode={setActiveMode}
+              />
+            </div>
 
             {/* ── Body ──────────────────────────────────────────────── */}
             <div className="container mx-auto px-4 relative z-10">
