@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen, Brain, Briefcase, ArrowRight, ArrowLeft,
-  Sparkles, Search, ChevronRight
+  Sparkles, Search, ChevronRight, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
