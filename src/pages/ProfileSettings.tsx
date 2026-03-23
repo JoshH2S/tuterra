@@ -1,34 +1,39 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ProfileForm } from "@/components/profile/ProfileForm";
-import { NewsTopicsDialog } from "@/components/profile/NewsTopicsDialog";
 import { ProfileCompletion } from "@/components/profile/ProfileCompletion";
 import { NotificationPreferences } from "@/components/profile/NotificationPreferences";
-import { 
+import {
   ArrowLeft,
-  Bell, 
-  Lock, 
-  Newspaper, 
+  Bell,
+  Lock,
   User,
-  CreditCard
+  CreditCard,
+  ChevronRight,
 } from "lucide-react";
 import { useProfileManagement } from "@/hooks/useProfileManagement";
 import { SubscriptionManager } from "@/components/subscription/SubscriptionManager";
 
+const TABS = [
+  { value: "profile",       label: "Profile",       icon: User },
+  { value: "billing",       label: "Billing",       icon: CreditCard },
+  { value: "security",      label: "Security",      icon: Lock },
+  { value: "notifications", label: "Notifications", icon: Bell },
+] as const;
+
 const ProfileSettings = () => {
   const navigate = useNavigate();
-  const [showTopicsDialog, setShowTopicsDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("profile");
+
   const {
     loading,
     uploadingAvatar,
@@ -47,82 +52,58 @@ const ProfileSettings = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
-  };
-
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
-      <div className="flex items-center mb-6 space-x-2">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => navigate(-1)}
-          className="rounded-full"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold">Settings</h1>
+    <div className="min-h-screen bg-[#f8f7f4]">
+      {/* Page header */}
+      <div className="bg-white border-b border-gray-100 px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center justify-center h-8 w-8 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 text-gray-500" />
+          </button>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Settings</h1>
+        </div>
       </div>
 
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="space-y-6"
-      >
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="w-full md:w-auto mb-6 grid grid-cols-5 h-auto bg-transparent space-x-2 p-0">
-            <TabsTrigger 
-              value="profile" 
-              className="flex flex-col md:flex-row items-center space-x-0 md:space-x-2 rounded-xl data-[state=active]:bg-background"
-            >
-              <User className="h-4 w-4 mb-1 md:mb-0" />
-              <span>Profile</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="news" 
-              className="flex flex-col md:flex-row items-center space-x-0 md:space-x-2 rounded-xl data-[state=active]:bg-background"
-            >
-              <Newspaper className="h-4 w-4 mb-1 md:mb-0" />
-              <span>News</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="subscription" 
-              className="flex flex-col md:flex-row items-center space-x-0 md:space-x-2 rounded-xl data-[state=active]:bg-background"
-            >
-              <CreditCard className="h-4 w-4 mb-1 md:mb-0" />
-              <span>Billing</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="security" 
-              className="flex flex-col md:flex-row items-center space-x-0 md:space-x-2 rounded-xl data-[state=active]:bg-background"
-            >
-              <Lock className="h-4 w-4 mb-1 md:mb-0" />
-              <span>Security</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="notifications" 
-              className="flex flex-col md:flex-row items-center space-x-0 md:space-x-2 rounded-xl data-[state=active]:bg-background"
-            >
-              <Bell className="h-4 w-4 mb-1 md:mb-0" />
-              <span>Notifications</span>
-            </TabsTrigger>
-          </TabsList>
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 
-          <TabsContent 
-            value="profile"
-            className="space-y-6 mt-0"
-          >
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-background to-muted/20">
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
-                  Update your personal details and school information
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+          {/* Tab bar */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
+            <TabsList className="w-full bg-transparent h-auto p-0 flex rounded-xl overflow-hidden">
+              {TABS.map(({ value, label, icon: Icon }) => (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="
+                    flex-1 flex items-center justify-center gap-2 py-3.5 px-4
+                    text-sm font-medium rounded-none
+                    text-gray-400 hover:text-gray-700
+                    border-b-2 border-transparent
+                    data-[state=active]:border-[#C8A84B]
+                    data-[state=active]:text-gray-900
+                    data-[state=active]:bg-transparent
+                    data-[state=active]:shadow-none
+                    transition-all duration-150
+                  "
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">{label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+
+          {/* ── Profile ── */}
+          <TabsContent value="profile" className="mt-0">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-50">
+                <h2 className="text-base font-semibold text-gray-900">Profile Information</h2>
+                <p className="text-sm text-gray-400 mt-0.5">Update your personal details and photo</p>
+              </div>
+              <div className="px-6 py-6 space-y-6">
                 <ProfileAvatar
                   firstName={formData.firstName}
                   lastName={formData.lastName}
@@ -130,11 +111,7 @@ const ProfileSettings = () => {
                   uploadingAvatar={uploadingAvatar}
                   onAvatarUpload={handleAvatarUpload}
                 />
-                
-                <div className="mb-6">
-                  <ProfileCompletion profile={formData} />
-                </div>
-                
+                <ProfileCompletion profile={formData} />
                 <ProfileForm
                   formData={formData}
                   loading={loading}
@@ -142,105 +119,72 @@ const ProfileSettings = () => {
                   onSubmit={updateProfile}
                   onCancel={() => navigate(-1)}
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
 
-          <TabsContent 
-            value="news"
-            className="space-y-6 mt-0"
-          >
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-background to-muted/20">
-              <CardHeader>
-                <CardTitle>News Preferences</CardTitle>
-                <CardDescription>
-                  Customize your news feed by selecting topics of interest
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Choose the topics you want to see in your news feed to stay updated on relevant content.
-                </p>
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowTopicsDialog(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Newspaper className="h-4 w-4" />
-                  Manage News Topics
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent
-            value="subscription"
-            className="space-y-6 mt-0"
-          >
+          {/* ── Billing ── */}
+          <TabsContent value="billing" className="mt-0 space-y-4">
             <SubscriptionManager />
-            
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle>Change Plan</CardTitle>
-                <CardDescription>
-                  Upgrade or downgrade your subscription
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Visit our pricing page to view available plans and upgrade options.
-                </p>
-                <Button 
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-50">
+                <h2 className="text-base font-semibold text-gray-900">Change Plan</h2>
+                <p className="text-sm text-gray-400 mt-0.5">View available plans and upgrade options</p>
+              </div>
+              <div className="px-6 py-5">
+                <button
                   onClick={() => navigate("/pricing")}
-                  className="flex items-center gap-2"
+                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-lg border border-gray-100 hover:border-[#C8A84B]/40 hover:bg-[#fdf9f0] transition-all group"
                 >
-                  <CreditCard className="h-4 w-4" />
-                  View Plans
-                </Button>
-              </CardContent>
-            </Card>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-[#fdf3d6] flex items-center justify-center">
+                      <CreditCard className="h-4 w-4 text-[#C8A84B]" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-800">View all plans</p>
+                      <p className="text-xs text-gray-400">Compare features and pricing</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-[#C8A84B] transition-colors" />
+                </button>
+              </div>
+            </div>
           </TabsContent>
 
-          <TabsContent 
-            value="security"
-            className="space-y-6 mt-0"
-          >
-            <Card className="border-0 shadow-sm bg-gradient-to-b from-background to-muted/20">
-              <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-                <CardDescription>
-                  Manage your password and account security
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Update your password to maintain the security of your account.
-                </p>
-                <Button 
-                  variant="outline"
+          {/* ── Security ── */}
+          <TabsContent value="security" className="mt-0">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-50">
+                <h2 className="text-base font-semibold text-gray-900">Security Settings</h2>
+                <p className="text-sm text-gray-400 mt-0.5">Manage your password and account access</p>
+              </div>
+              <div className="px-6 py-5 space-y-3">
+                <button
                   onClick={() => navigate("/update-password")}
-                  className="flex items-center gap-2"
+                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-lg border border-gray-100 hover:border-[#C8A84B]/40 hover:bg-[#fdf9f0] transition-all group"
                 >
-                  <Lock className="h-4 w-4" />
-                  Change Password
-                </Button>
-              </CardContent>
-            </Card>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-[#f0f4ff] flex items-center justify-center">
+                      <Lock className="h-4 w-4 text-[#3b5bdb]" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-800">Change password</p>
+                      <p className="text-xs text-gray-400">Update your account password</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-[#C8A84B] transition-colors" />
+                </button>
+              </div>
+            </div>
           </TabsContent>
 
-          <TabsContent 
-            value="notifications"
-            className="space-y-6 mt-0"
-          >
+          {/* ── Notifications ── */}
+          <TabsContent value="notifications" className="mt-0">
             <NotificationPreferences />
           </TabsContent>
-        </Tabs>
-      </motion.div>
 
-      <NewsTopicsDialog
-        open={showTopicsDialog}
-        onClose={() => setShowTopicsDialog(false)}
-      />
+        </Tabs>
+      </div>
     </div>
   );
 };

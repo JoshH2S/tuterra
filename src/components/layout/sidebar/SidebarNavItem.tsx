@@ -33,52 +33,51 @@ export const SidebarNavItem = ({
   };
   
   const itemContent = (
-    <button 
+    <button
       id={id}
       onClick={onClick}
       className={cn(
-        "flex items-center relative w-full py-2.5 px-3 rounded-lg transition-all duration-200 touch-manipulation group",
-        isActive && "text-primary font-medium",
+        "flex items-center relative w-full py-2.5 px-3 rounded-lg transition-all duration-200 touch-manipulation group/navitem",
         id === "sidebar-courses" && "course-highlight"
       )}
     >
       <motion.div
-        className="relative z-10 flex items-center mr-2"
+        className="relative z-10 flex items-center mr-2.5"
         whileTap={{ scale: 0.95 }}
       >
         <Icon className={cn(
-          "h-5 w-5 transition-colors",
-          isActive 
-            ? "text-blue-500" 
-            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          "h-[18px] w-[18px] transition-colors",
+          isActive
+            ? "text-[#C8A84B]"
+            : "text-white/40 group-hover/navitem:text-white/70"
         )} />
       </motion.div>
-      
+
       <span className={cn(
-        "text-transparent bg-clip-text transition-colors z-10",
+        "text-sm transition-colors z-10",
         isActive
-          ? "bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500"
-          : "bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-400 dark:to-gray-500 hover:from-gray-800 hover:to-gray-700 dark:hover:from-gray-300 dark:hover:to-gray-400"
+          ? "text-white font-medium"
+          : "text-white/50 group-hover/navitem:text-white/80"
       )}>
         {label}
       </span>
-      
-      {/* Active highlight with gradient matching previous sidebar */}
+
+      {/* Active: left accent bar + subtle background */}
       {isActive && (
-        <motion.div 
-          layoutId="activeBackground"
-          className="absolute inset-0 bg-gradient-to-r from-primary-100 to-primary-200 dark:bg-blue-950/30 rounded-lg"
-          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-        />
+        <>
+          <motion.div
+            layoutId="activeBackground"
+            className="absolute inset-0 bg-white/8 rounded-lg"
+            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+          />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#C8A84B] rounded-r-full" />
+        </>
       )}
-      
-      {/* Hover highlight with full width */}
-      <div 
-        className={cn(
-          "absolute inset-0 rounded-lg bg-transparent transition-colors duration-200",
-          !isActive && "hover:bg-gray-50 dark:hover:bg-gray-800"
-        )} 
-      />
+
+      {/* Hover background */}
+      {!isActive && (
+        <div className="absolute inset-0 rounded-lg bg-white/0 group-hover/navitem:bg-white/5 transition-colors duration-200" />
+      )}
     </button>
   );
 

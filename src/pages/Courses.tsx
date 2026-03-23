@@ -134,34 +134,35 @@ const Courses = () => {
       <div className="fixed inset-0 left-0 md:left-[200px] z-0 pointer-events-none bg-white" />
 
       {/* Hero Card */}
-      <div className="relative z-10 mb-16 px-4 sm:px-6">
-        <div
-          className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] flex flex-col sm:flex-row bg-[#F7F3EC] p-4 gap-4"
-          style={{ minHeight: '340px' }}
-        >
-          <div className="flex flex-col justify-between p-4 sm:w-[36%] shrink-0">
+      <div className="-mt-6 -mx-6 mb-8 relative z-10">
+        <div className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] overflow-hidden bg-[#F7F3EC] min-h-[220px]">
+          {/* Image fills the right half absolutely — no gap possible */}
+          <div
+            className="absolute inset-y-0 right-0 w-full sm:w-[58%] bg-cover bg-center"
+            style={{ backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-donghuangmingde-2177482.jpg')" }}
+          />
+          {/* Gradient fade so text stays readable over the image on small screens */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#F7F3EC] via-[#F7F3EC]/90 sm:via-[#F7F3EC]/0 to-transparent" />
+          {/* Text content */}
+          <div className="relative z-10 flex flex-col p-8 sm:w-[45%] justify-center gap-4 min-h-[220px]">
             <div>
-              <p className="text-xs font-mono text-[#8a7a5a] mb-4 tracking-wide uppercase">Learning Library</p>
-              <div className="flex items-start gap-3 mb-4">
-                <BookOpenText className="h-8 w-8 text-[#7a6a2a] mt-1 shrink-0" />
-                <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">Courses</h1>
+              <p className="text-xs font-mono text-[#8a7a5a] mb-3 tracking-wide uppercase">Learning Library</p>
+              <div className="flex items-start gap-3 mb-3">
+                <BookOpenText className="h-7 w-7 text-[#7a6a2a] mt-0.5 shrink-0" />
+                <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">Course Engine</h1>
               </div>
-              <p className="text-sm text-[#5a5040] leading-relaxed">Create and manage your courses — build structured learning paths for any subject.</p>
+              <p className="text-sm text-[#5a5040] leading-relaxed">Generate personalised courses on any topic with AI-powered learning paths.</p>
             </div>
-            <div className="mt-8">
+            <div>
               <Button
                 onClick={handleCreateClick}
                 className="flex items-center gap-2 px-6 py-5 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] hover:-translate-y-0.5 transition-all font-semibold"
               >
                 <Plus className="h-5 w-5" />
-                Create New Course
+                What do you want to learn?
               </Button>
             </div>
           </div>
-          <div
-            className="flex-1 rounded-xl bg-cover bg-center min-h-[200px] sm:min-h-0"
-            style={{ backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/pexels-donghuangmingde-2177482.jpg')" }}
-          />
         </div>
       </div>
 

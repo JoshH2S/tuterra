@@ -30,31 +30,34 @@ export const MainSidebar = () => {
     <div ref={sidebarRef} className="relative flex">
       <Sidebar className={cn(
         "fixed left-0 top-0 h-screen",
-        "bg-[#F7F3EC] dark:bg-gray-900", 
-        "border-r border-[#e8e0d0] dark:border-gray-800",
-        "shadow-[1px_0_3px_0_rgba(0,0,0,0.02)]",
+        "bg-[#0d1b35]",
+        "border-r border-white/5",
+        "shadow-[2px_0_16px_0_rgba(0,0,0,0.25)]",
         "transition-all duration-300 ease-in-out z-30",
-        "w-[200px]" // Fixed width, no more collapsed state
+        "w-[200px]"
       )}>
         <SidebarHeader className="relative">
-          <motion.div 
-            key="logo" 
+          <motion.div
+            key="logo"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center p-4"
+            className="flex items-center px-5 py-5"
           >
             <Link to="/" className="flex items-center">
-              <span className="text-xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#091747] to-blue-400 dark:from-[#091747] dark:to-blue-500">tuterra.ai</span>
+              <img
+                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+                alt="tuterra.ai"
+                className="h-8 w-auto object-contain brightness-0 invert"
+              />
             </Link>
           </motion.div>
         </SidebarHeader>
-        
-        <SidebarContent className="flex flex-col justify-between h-[calc(100vh-64px)]">
+
+        <SidebarContent className="flex flex-col justify-between h-[calc(100vh-72px)]">
           <SidebarNavigation isCollapsed={false} />
         </SidebarContent>
 
-        {/* Move the user profile to the sidebar footer */}
-        <SidebarFooter className="border-t border-[#e8e0d0] dark:border-gray-800 p-2">
+        <SidebarFooter className="border-t border-white/8 p-2">
           <SidebarUserProfile isCollapsed={false} />
         </SidebarFooter>
       </Sidebar>

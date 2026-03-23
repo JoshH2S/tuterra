@@ -12,7 +12,6 @@ export const NotificationPreferences = () => {
     emailNotifications: true,
     quizReminders: true,
     studySessionAlerts: true,
-    newsUpdates: false,
     courseUpdates: true,
     securityAlerts: true
   });
@@ -46,14 +45,14 @@ export const NotificationPreferences = () => {
   };
 
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-b from-background to-muted/20">
-      <CardHeader>
-        <CardTitle>Notification Settings</CardTitle>
-        <CardDescription>
+    <Card className="border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+      <CardHeader className="px-6 py-5 border-b border-gray-50">
+        <CardTitle className="text-base font-semibold text-gray-900">Notification Settings</CardTitle>
+        <CardDescription className="text-sm text-gray-400 mt-0.5">
           Control how and when you receive notifications
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="px-6 py-6 space-y-6">
         <motion.div 
           initial="hidden"
           animate="visible"
@@ -67,9 +66,9 @@ export const NotificationPreferences = () => {
           className="space-y-4"
         >
           <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="emailNotifications" className="text-base">Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">Receive important updates via email</p>
+            <div className="space-y-0.5">
+              <Label htmlFor="emailNotifications" className="text-sm font-medium text-gray-800">Email Notifications</Label>
+              <p className="text-xs text-gray-400">Receive important updates via email</p>
             </div>
             <Switch 
               id="emailNotifications" 
@@ -79,9 +78,9 @@ export const NotificationPreferences = () => {
           </motion.div>
           
           <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="quizReminders" className="text-base">Quiz Reminders</Label>
-              <p className="text-sm text-muted-foreground">Get reminded about upcoming quizzes</p>
+            <div className="space-y-0.5">
+              <Label htmlFor="quizReminders" className="text-sm font-medium text-gray-800">Quiz Reminders</Label>
+              <p className="text-xs text-gray-400">Get reminded about upcoming quizzes</p>
             </div>
             <Switch 
               id="quizReminders" 
@@ -91,9 +90,9 @@ export const NotificationPreferences = () => {
           </motion.div>
           
           <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="studySessionAlerts" className="text-base">Study Session Alerts</Label>
-              <p className="text-sm text-muted-foreground">Receive alerts for scheduled study sessions</p>
+            <div className="space-y-0.5">
+              <Label htmlFor="studySessionAlerts" className="text-sm font-medium text-gray-800">Study Session Alerts</Label>
+              <p className="text-xs text-gray-400">Receive alerts for scheduled study sessions</p>
             </div>
             <Switch 
               id="studySessionAlerts" 
@@ -103,21 +102,9 @@ export const NotificationPreferences = () => {
           </motion.div>
           
           <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="newsUpdates" className="text-base">News Updates</Label>
-              <p className="text-sm text-muted-foreground">Get notified about new articles in your topics</p>
-            </div>
-            <Switch 
-              id="newsUpdates" 
-              checked={preferences.newsUpdates}
-              onCheckedChange={() => handleToggle('newsUpdates')}
-            />
-          </motion.div>
-          
-          <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="courseUpdates" className="text-base">Course Updates</Label>
-              <p className="text-sm text-muted-foreground">Receive notifications about course changes</p>
+            <div className="space-y-0.5">
+              <Label htmlFor="courseUpdates" className="text-sm font-medium text-gray-800">Course Updates</Label>
+              <p className="text-xs text-gray-400">Receive notifications about course changes</p>
             </div>
             <Switch 
               id="courseUpdates" 
@@ -127,9 +114,9 @@ export const NotificationPreferences = () => {
           </motion.div>
           
           <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label htmlFor="securityAlerts" className="text-base">Security Alerts</Label>
-              <p className="text-sm text-muted-foreground">Get important security-related notifications</p>
+            <div className="space-y-0.5">
+              <Label htmlFor="securityAlerts" className="text-sm font-medium text-gray-800">Security Alerts</Label>
+              <p className="text-xs text-gray-400">Get important security-related notifications</p>
             </div>
             <Switch 
               id="securityAlerts" 

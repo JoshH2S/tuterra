@@ -60,45 +60,40 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
   };
 
   return (
-    <div className="flex flex-col w-full">
-      {/* MAKE THE PROFILE AREA CLICKABLE */}
-      <div 
-        className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-muted rounded-md"
+    <div className="flex flex-col w-full gap-0.5">
+      <div
+        className="flex items-center gap-2.5 px-2 py-2 cursor-pointer rounded-lg hover:bg-white/6 transition-colors"
         onClick={handleProfileClick}
       >
-        <Avatar className="h-9 w-9">
+        <Avatar className="h-8 w-8 ring-1 ring-white/10 shrink-0">
           {avatarUrl && (
-            <AvatarImage 
-              src={avatarUrl} 
+            <AvatarImage
+              src={avatarUrl}
               alt={`${displayName}'s avatar`}
               className="object-cover w-full h-full"
             />
           )}
-          <AvatarFallback>{initials}</AvatarFallback>
+          <AvatarFallback className="bg-[#1a2d50] text-white/70 text-xs">{initials}</AvatarFallback>
         </Avatar>
         {!isCollapsed && (
-          <div className="flex flex-col text-sm">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-sm font-medium text-white/90 truncate leading-tight">
                 {displayName}
               </span>
-              <SubscriptionBadge tier={subscription.tier} className="h-5 px-1.5 py-0" />
             </div>
-            <div className="text-xs text-black">
-              {subscription.tier === "free" ? "Free Plan" : (
-                subscription.tier === "premium" ? "Premium Plan" : "Pro Plan"
-              )}
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <SubscriptionBadge tier={subscription.tier} className="h-4 px-1.5 py-0 text-[10px]" />
             </div>
           </div>
         )}
       </div>
 
-      {/* Keep Logout separate so it doesn't click with profile */}
       {!isCollapsed && (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="mt-1.5 h-7 px-2 flex items-center justify-start text-black hover:bg-gray-100" 
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 flex items-center justify-start text-white/35 hover:text-white/60 hover:bg-white/5"
           onClick={handleSignOut}
         >
           <LogOut className="h-3.5 w-3.5 mr-1.5" />

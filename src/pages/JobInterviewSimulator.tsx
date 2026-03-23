@@ -314,7 +314,7 @@ const JobInterviewSimulator = () => {
 
       {/* Full-height centred layout */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-10">
-        <div className="w-full max-w-2xl space-y-4 md:space-y-6">
+        <div className="w-full max-w-5xl space-y-4 md:space-y-6">
 
           {/* tuterra.ai logo — shown above the card in all states except completion */}
           {!isInterviewComplete && (
