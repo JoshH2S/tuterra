@@ -16,8 +16,9 @@ export async function generateEnhancedQuestions(
       return generateBasicInterviewQuestions(industry, role, jobDescription);
     }
 
+    const industryContext = industry && industry.trim() ? ` in the ${industry} industry` : "";
     const questionPrompt = `
-      Create an interview question set for a ${role} position in the ${industry} industry.
+      Create an interview question set for a ${role} position${industryContext}.
       
       Key Requirements:
       ${requirements.join('\n')}
@@ -27,7 +28,7 @@ export async function generateEnhancedQuestions(
       Generate 8-10 questions with this distribution:
       - 3 Behavioral questions relevant to the role
       - 3-4 Technical/Role-specific questions based on the requirements
-      - 2 Situational questions related to the industry
+      - 2 Situational questions related to the role${industry && industry.trim() ? " and industry" : ""}
       - 1-2 Problem-solving questions
       
       For each question, provide:

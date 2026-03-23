@@ -11,7 +11,7 @@ import { InterviewJobDescriptionStep } from "./steps/InterviewJobDescriptionStep
 import { InterviewFormData } from "@/hooks/interview/utils/validation";
 
 export interface ExtendedInterviewFormData extends InterviewFormData {
-  // Extended form data can be added here if needed in the future
+  practiceMode: "specific-job" | "general-practice";
 }
 
 interface MultiStepInterviewFormProps {
@@ -20,6 +20,7 @@ interface MultiStepInterviewFormProps {
   isLoading?: boolean;
   progress?: number;
   initialTopic?: string;
+  skipIndustry?: boolean;
 }
 
 export function MultiStepInterviewForm({ 
@@ -27,12 +28,14 @@ export function MultiStepInterviewForm({
   onStepChange, 
   isLoading = false, 
   progress = 0,
-  initialTopic
+  initialTopic,
+  skipIndustry = false
 }: MultiStepInterviewFormProps) {
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(skipIndustry ? 2 : 1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState<Partial<ExtendedInterviewFormData>>({
+    practiceMode: "specific-job",
     ...(initialTopic ? { jobTitle: initialTopic } : {})
   });
   const formRef = useRef<HTMLDivElement>(null);
@@ -81,7 +84,7 @@ export function MultiStepInterviewForm({
       case 2:
         return !!formData.jobTitle;
       case 3:
-        return !!formData.jobDescription && formData.jobDescription.trim().length > 0;
+        return formData.practiceMode === "general-practice" || !!formData.jobDescription?.trim();
       default:
         return false;
     }
@@ -103,9 +106,15 @@ export function MultiStepInterviewForm({
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
+    const minStep = skipIndustry ? 2 : 1;
+    if (currentStep > minStep) {
       setCurrentStep(prev => prev - 1);
     }
+  };
+
+  const handleSkipIndustryForGeneralPractice = () => {
+    updateFormData({ industry: "", practiceMode: "general-practice" });
+    setCurrentStep(2);
   };
 
   const handleGenerate = async () => {
@@ -119,7 +128,11 @@ export function MultiStepInterviewForm({
     }
 
     // Validate required fields
-    if (!formData.industry || !formData.jobTitle || !formData.jobDescription) {
+    if (
+      (!skipIndustry && !formData.industry) ||
+      !formData.jobTitle ||
+      (formData.practiceMode !== "general-practice" && !formData.jobDescription?.trim())
+    ) {
       toast({
         title: "Missing Required Information",
         description: "Please ensure all required fields are completed.",
@@ -132,9 +145,10 @@ export function MultiStepInterviewForm({
 
     try {
       const completeFormData: ExtendedInterviewFormData = {
-        industry: formData.industry,
+        industry: formData.industry || "",
         jobTitle: formData.jobTitle,
-        jobDescription: formData.jobDescription
+        jobDescription: formData.jobDescription || "",
+        practiceMode: formData.practiceMode || "specific-job"
       };
 
       await onComplete(completeFormData);
@@ -157,6 +171,7 @@ export function MultiStepInterviewForm({
           <InterviewIndustryStep 
             value={formData.industry || ''} 
             onChange={(industry) => updateFormData({ industry })} 
+            onSkip={!skipIndustry ? handleSkipIndustryForGeneralPractice : undefined}
           />
         );
       case 2:
@@ -171,6 +186,8 @@ export function MultiStepInterviewForm({
           <InterviewJobDescriptionStep 
             value={formData.jobDescription || ''} 
             onChange={(jobDescription) => updateFormData({ jobDescription })} 
+            practiceMode={formData.practiceMode || "specific-job"}
+            onPracticeModeChange={(practiceMode) => updateFormData({ practiceMode })}
           />
         );
       default:
@@ -180,7 +197,8 @@ export function MultiStepInterviewForm({
 
   const showProgress = isLoading && progress > 0;
 
-  const stepLabels = ["Industry", "Role", "Description"];
+  const stepLabels = skipIndustry ? ["Role", "Description"] : ["Industry", "Role", "Description"];
+  const minStep = skipIndustry ? 2 : 1;
 
   return (
     <React.Fragment>
@@ -267,9 +285,10 @@ export function MultiStepInterviewForm({
             {/* Deliberate numbered stepper */}
             <div className="flex items-center justify-center">
               {stepLabels.map((label, i) => {
-                const stepNum = i + 1;
-                const isComplete = currentStep > stepNum;
-                const isActive = currentStep === stepNum;
+                const actualStep = skipIndustry ? i + 2 : i + 1;
+                const displayNum = i + 1;
+                const isComplete = currentStep > actualStep;
+                const isActive = currentStep === actualStep;
                 return (
                   <React.Fragment key={label}>
                     <div className="flex flex-col items-center gap-1.5">
@@ -282,7 +301,7 @@ export function MultiStepInterviewForm({
                             : "bg-stone-200 text-stone-400"
                         }`}
                       >
-                        {isComplete ? <Check className="w-3.5 h-3.5" /> : `0${stepNum}`}
+                        {isComplete ? <Check className="w-3.5 h-3.5" /> : `0${displayNum}`}
                       </div>
                       <span
                         className={`text-[10px] tracking-widest uppercase font-medium ${
@@ -292,10 +311,10 @@ export function MultiStepInterviewForm({
                         {label}
                       </span>
                     </div>
-                    {i < 2 && (
+                    {i < stepLabels.length - 1 && (
                       <div
                         className={`h-px w-12 mx-3 mb-5 transition-colors duration-300 ${
-                          currentStep > stepNum ? "bg-[#C8A84B]" : "bg-stone-200"
+                          currentStep > actualStep ? "bg-[#C8A84B]" : "bg-stone-200"
                         }`}
                       />
                     )}
@@ -325,7 +344,7 @@ export function MultiStepInterviewForm({
               <Button
                 variant="ghost"
                 onClick={handleBack}
-                disabled={currentStep === 1 || isGenerating || isLoading}
+                disabled={currentStep === minStep || isGenerating || isLoading}
                 className="flex items-center gap-2 touch-manipulation text-stone-400 hover:text-stone-600 hover:bg-transparent px-0"
               >
                 <ArrowLeft className="h-4 w-4" />

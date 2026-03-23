@@ -22,6 +22,7 @@ interface MultiStepAssessmentFormProps {
   isLoading?: boolean;
   progress?: number;
   initialTopic?: string;
+  skipIndustry?: boolean;
 }
 
 export function MultiStepAssessmentForm({ 
@@ -29,12 +30,15 @@ export function MultiStepAssessmentForm({
   onCancel, 
   isLoading = false, 
   progress = 0,
-  initialTopic
+  initialTopic,
+  skipIndustry = false
 }: MultiStepAssessmentFormProps) {
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(skipIndustry ? 2 : 1);
   const [formData, setFormData] = useState<Partial<AssessmentFormData>>({
-    industry: initialTopic || "",
+    ...(skipIndustry
+      ? { role: initialTopic || "" }
+      : { industry: initialTopic || "" }),
     level: "intermediate",
     questionCount: 15,
     additionalInfo: ""
@@ -42,7 +46,8 @@ export function MultiStepAssessmentForm({
   const formRef = useRef<HTMLDivElement>(null);
 
   const totalSteps = 3;
-  const stepLabels = ["Industry", "Role", "Details"];
+  const stepLabels = skipIndustry ? ["Role", "Details"] : ["Industry", "Role", "Details"];
+  const minStep = skipIndustry ? 2 : 1;
 
   // Scroll to top when step changes
   useEffect(() => {
@@ -96,7 +101,7 @@ export function MultiStepAssessmentForm({
   };
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
+    if (currentStep > minStep) {
       setCurrentStep(prev => prev - 1);
     }
   };
@@ -112,7 +117,7 @@ export function MultiStepAssessmentForm({
     }
 
     const completeData: AssessmentFormData = {
-      industry: formData.industry!,
+      industry: formData.industry || "",
       role: formData.role!,
       level: formData.level!,
       questionCount: formData.questionCount!,
@@ -231,9 +236,10 @@ export function MultiStepAssessmentForm({
             {/* Deliberate numbered stepper */}
             <div className="flex items-center justify-center">
               {stepLabels.map((label, i) => {
-                const stepNum = i + 1;
-                const isComplete = currentStep > stepNum;
-                const isActive = currentStep === stepNum;
+                const actualStep = skipIndustry ? i + 2 : i + 1;
+                const displayNum = i + 1;
+                const isComplete = currentStep > actualStep;
+                const isActive = currentStep === actualStep;
                 return (
                   <React.Fragment key={label}>
                     <div className="flex flex-col items-center gap-1.5">
@@ -246,7 +252,7 @@ export function MultiStepAssessmentForm({
                             : "bg-stone-200 text-stone-400"
                         }`}
                       >
-                        {isComplete ? <Check className="w-3.5 h-3.5" /> : `0${stepNum}`}
+                        {isComplete ? <Check className="w-3.5 h-3.5" /> : `0${displayNum}`}
                       </div>
                       <span
                         className={`text-[10px] tracking-widest uppercase font-medium ${
@@ -256,10 +262,10 @@ export function MultiStepAssessmentForm({
                         {label}
                       </span>
                     </div>
-                    {i < 2 && (
+                    {i < stepLabels.length - 1 && (
                       <div
                         className={`h-px w-12 mx-3 mb-5 transition-colors duration-300 ${
-                          currentStep > stepNum ? "bg-[#C8A84B]" : "bg-stone-200"
+                          currentStep > actualStep ? "bg-[#C8A84B]" : "bg-stone-200"
                         }`}
                       />
                     )}

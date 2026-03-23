@@ -11,9 +11,10 @@ import { generateFallbackQuestions } from './utils/fallbackQuestions';
 
 // Types for interview parameters
 export interface InterviewGenerationParams {
-  industry: string;
+  industry?: string;
   jobTitle: string;
   jobDescription: string;
+  practiceMode?: "specific-job" | "general-practice";
 }
 
 // Hook for handling interview generation
@@ -105,10 +106,10 @@ export const useInterviewGeneration = () => {
     }
 
     // Validate input parameters
-    if (!params.industry || !params.jobTitle) {
+    if (!params.jobTitle) {
       toast({
         title: "Missing information",
-        description: "Industry and job title are required fields",
+        description: "Job title is a required field",
         variant: "destructive",
       });
       return null;
@@ -138,7 +139,7 @@ export const useInterviewGeneration = () => {
         .insert({
           user_id: user.id,
           job_title: params.jobTitle.trim(),
-          industry: params.industry.trim(),
+          industry: (params.industry || "").trim(),
           job_description: params.jobDescription.trim(),
           status: "created",
         })
@@ -181,7 +182,8 @@ export const useInterviewGeneration = () => {
                 sessionId: session.id,
                 industry: params.industry,
                 jobRole: params.jobTitle,
-                jobDescription: params.jobDescription
+                jobDescription: params.jobDescription,
+                practiceMode: params.practiceMode,
               }, (error) => {
                 console.error(`API generation error (attempt ${attempt}):`, error);
                 lastError = error;

@@ -23,7 +23,18 @@ const JobInterviewSimulator = () => {
   const { id: interviewId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const locationState = location.state || {};
+  const locationState = ((location.state as {
+    topic?: string;
+    autoCreate?: boolean;
+    jobTitle?: string;
+    industry?: string;
+    jobDescription?: string;
+  } | null) ?? {});
+  const searchParams = new URLSearchParams(location.search);
+  const quickStartTopic = locationState?.topic ?? searchParams.get("topic") ?? "";
+  const shouldSkipIndustry =
+    (locationState?.autoCreate || searchParams.get("quickstart") === "1") &&
+    quickStartTopic.trim().length > 0;
   const isDetailMode = !!interviewId;
   const { isOnline, hasConnectionError } = useNetworkStatus();
   
@@ -87,14 +98,14 @@ const JobInterviewSimulator = () => {
         console.log("Setting interview session from URL parameter:", interviewId);
         setCurrentSessionId(interviewId);
         
-        if (locationState.jobTitle && locationState.industry) {
+        if (locationState.jobTitle) {
           console.log("Using location state for interview details:", {
             jobTitle: locationState.jobTitle,
             industry: locationState.industry
           });
           
           setJobTitle(locationState.jobTitle);
-          setIndustry(locationState.industry);
+          setIndustry(locationState.industry ?? "");
           if (locationState.jobDescription) {
             setJobDescription(locationState.jobDescription);
           }
@@ -105,7 +116,7 @@ const JobInterviewSimulator = () => {
         
         try {
           await new Promise(resolve => setTimeout(resolve, 1000));
-          await fetchQuestions();
+          await fetchQuestions(interviewId);
           console.log("Questions fetched successfully");
         } catch (error) {
           console.error("Error fetching questions:", error);
@@ -115,11 +126,11 @@ const JobInterviewSimulator = () => {
             variant: "destructive"
           });
           
-          if (locationState.jobTitle && locationState.industry) {
+          if (locationState.jobTitle) {
             try {
               await new Promise(resolve => setTimeout(resolve, 500));
               await generateQuestions(
-                locationState.industry, 
+                locationState.industry ?? "",
                 locationState.jobTitle, 
                 locationState.jobDescription || "",
                 interviewId
@@ -139,7 +150,7 @@ const JobInterviewSimulator = () => {
     };
     
     setupInterview();
-  }, [interviewId, setCurrentSessionId, setJobTitle, setIndustry, setJobDescription]);
+  }, [interviewId, locationState.jobTitle, locationState.industry, locationState.jobDescription, fetchQuestions, generateQuestions, setCurrentSessionId, setJobTitle, setIndustry, setJobDescription]);
 
   const interviewReady = questions.length > 0 && !isInterviewInProgress && !isInterviewComplete;
   const sessionCreationErrors: string[] = [];
@@ -150,7 +161,8 @@ const JobInterviewSimulator = () => {
       const result = await generateInterview({
         industry: data.industry,
         jobTitle: data.jobTitle,
-        jobDescription: data.jobDescription
+        jobDescription: data.jobDescription,
+        practiceMode: data.practiceMode,
       });
       
       if (!result) {
@@ -224,11 +236,11 @@ const JobInterviewSimulator = () => {
     setErrorState({ hasError: false, message: "" });
     
     try {
-      await fetchQuestions();
+      await fetchQuestions(interviewId);
     } catch (error) {
       console.error("Retry fetch failed:", error);
       
-      if (jobTitle && industry) {
+      if (jobTitle) {
         try {
           await generateQuestions(
             industry,
@@ -298,112 +310,124 @@ const JobInterviewSimulator = () => {
 
   return (
     <>
-      <div className="fixed inset-0 left-0 md:left-[200px] z-0 pointer-events-none bg-white" />
-      
-      {/* Hero Card — only on landing/setup state */}
-      {!isInterviewInProgress && !isInterviewComplete && !isDetailMode && !isGeneratingQuestions && !loadingQuestions && !isGenerating && (
-        <div className="relative z-10 mb-16 px-4 sm:px-6">
-          <div
-            className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] flex flex-col sm:flex-row bg-[#F7F3EC] p-4 gap-4"
-            style={{ minHeight: '340px' }}
-          >
-            <div className="flex flex-col justify-between p-4 sm:w-[36%] shrink-0">
-              <div>
-                <p className="text-xs font-mono text-[#8a7a5a] mb-4 tracking-wide uppercase">AI-Powered Practice</p>
-                <div className="flex items-start gap-3 mb-4">
-                  <BrainCircuit className="h-8 w-8 text-[#7a6a2a] mt-1 shrink-0" />
-                  <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">Interview Simulator</h1>
-                </div>
-                <p className="text-sm text-[#5a5040] leading-relaxed">
-                  Practice real interview questions with AI feedback tailored to your target role and industry.
-                </p>
-              </div>
-              <div className="mt-8">
-                <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] font-semibold text-sm">
-                  <Plus className="h-4 w-4" />
-                  Set up below to start
-                </div>
-              </div>
+      <div className="fixed inset-0 left-0 md:left-[200px] z-0 pointer-events-none bg-background" />
+
+      {/* Full-height centred layout */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-10">
+        <div className="w-full max-w-2xl space-y-4 md:space-y-6">
+
+          {/* tuterra.ai logo — shown above the card in all states except completion */}
+          {!isInterviewComplete && (
+            <div className="flex items-center justify-center mb-2">
+              <img
+                src="/lovable-uploads/e4d97c37-c1df-4857-b0d5-dcd941fb1867.png"
+                alt="tuterra.ai"
+                className="h-10 w-auto object-contain"
+              />
             </div>
+          )}
+
+          {/* Hero card — setup state only */}
+          {!isInterviewInProgress && !isInterviewComplete && !isDetailMode && !isGeneratingQuestions && !loadingQuestions && !isGenerating && (
             <div
-              className="flex-1 rounded-xl bg-cover bg-center min-h-[200px] sm:min-h-0"
-              style={{ backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/jobinterviewsimulator.jpg')" }}
+              className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] flex flex-col sm:flex-row bg-[#F7F3EC] p-4 gap-4"
+              style={{ minHeight: '300px' }}
+            >
+              <div className="flex flex-col justify-between p-4 sm:w-[40%] shrink-0">
+                <div>
+                  <p className="text-xs font-mono text-[#8a7a5a] mb-4 tracking-wide uppercase">AI-Powered Practice</p>
+                  <div className="flex items-start gap-3 mb-4">
+                    <BrainCircuit className="h-8 w-8 text-[#7a6a2a] mt-1 shrink-0" />
+                    <h1 className="text-3xl md:text-4xl font-medium font-manrope text-[#1a1a1a] leading-tight tracking-tight">Interview Simulator</h1>
+                  </div>
+                  <p className="text-sm text-[#5a5040] leading-relaxed">
+                    Practice real interview questions with AI feedback tailored to your target role and industry.
+                  </p>
+                </div>
+                <div className="mt-8">
+                  <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] font-semibold text-sm">
+                    <Plus className="h-4 w-4" />
+                    Set up below to start
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex-1 rounded-xl bg-cover bg-center min-h-[180px] sm:min-h-0"
+                style={{ backgroundImage: "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/jobinterviewsimulator.jpg')" }}
+              />
+            </div>
+          )}
+
+          <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
+
+          {!interviewReady && !isInterviewInProgress && !isInterviewComplete && (isGeneratingQuestions || loadingQuestions || isGenerating) && (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="relative h-12 w-12">
+                <div className="absolute inset-0 rounded-full border-4 border-[#C8A84B]/20" />
+                <div className="absolute inset-0 rounded-full border-4 border-t-[#C8A84B] border-l-transparent border-r-transparent border-b-transparent animate-spin" />
+              </div>
+              <p className="text-base font-medium text-[#3a3530]">Preparing your interview questions…</p>
+              <p className="text-sm text-[#8a7a5a]">This may take a moment as we analyse the job requirements.</p>
+            </div>
+          )}
+
+          {!interviewReady && !isInterviewInProgress && !isInterviewComplete &&
+           !isGeneratingQuestions && !loadingQuestions && !isGenerating && !isDetailMode && (
+            <MultiStepInterviewForm
+              onComplete={handleFormSubmit}
+              isLoading={isGeneratingQuestions || loadingQuestions || isGenerating}
+              progress={progress}
+              initialTopic={quickStartTopic}
+              skipIndustry={shouldSkipIndustry}
             />
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4">
-        <div className="space-y-4 md:space-y-8">
-        
-        <InterviewDebug sessionCreationErrors={sessionCreationErrors} />
-        
-        {(isGeneratingQuestions || loadingQuestions || isGenerating) && (
-          <div className="text-center py-8">
-            <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-lg">Preparing your interview questions...</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This may take a moment as we analyze the job requirements.
-            </p>
-          </div>
-        )}
-        
-        {!interviewReady && !isInterviewInProgress && !isInterviewComplete && 
-         !isGeneratingQuestions && !loadingQuestions && !isGenerating && !isDetailMode && (
-          <MultiStepInterviewForm 
-            onComplete={handleFormSubmit} 
-            isLoading={isGeneratingQuestions || loadingQuestions || isGenerating}
-            progress={progress}
-            initialTopic={locationState.topic}
-          />
-        )}
-        
-        {interviewReady && !isInterviewInProgress && !isInterviewComplete && (
-          <InterviewReadyPrompt
-            jobTitle={jobTitle}
-            onStartChat={handleStartChat}
-            usedFallbackQuestions={usedFallbackQuestions}
-          />
-        )}
-        
-        {isInterviewInProgress && (
-          <InterviewChat
-            currentQuestion={currentQuestion}
-            onSubmitResponse={handleSubmitResponse}
-            typingEffect={typingEffect}
-            onTypingComplete={() => {}}
-            isLastQuestion={isLastQuestion}
-            jobTitle={jobTitle}
-            currentQuestionIndex={currentQuestionIndex}
-            totalQuestions={questions.length}
-          />
-        )}
-        
-        {isInterviewComplete && !showFeedback && (
-          <InterviewCompletion
-            transcript={transcript}
-            onDownloadTranscript={handleDownloadTranscript}
-            onStartNew={handleStartNewInterview}
-            onViewFeedback={handleViewFeedback}
-            sessionId={currentSessionId}
-          />
-        )}
+          {interviewReady && !isInterviewInProgress && !isInterviewComplete && (
+            <InterviewReadyPrompt
+              jobTitle={jobTitle}
+              onStartChat={handleStartChat}
+              usedFallbackQuestions={usedFallbackQuestions}
+            />
+          )}
 
-        {isInterviewComplete && showFeedback && (
-          <InterviewFeedbackComponent
-            feedback={feedback}
-            transcript={transcript}
-            onDownloadTranscript={handleDownloadTranscript}
-            onStartNew={handleStartNewInterview}
-            loading={isGeneratingFeedback}
-            hasError={feedbackError}
-            onRetry={handleRetryFeedback}
-          />
-        )}
+          {isInterviewInProgress && (
+            <InterviewChat
+              currentQuestion={currentQuestion}
+              onSubmitResponse={handleSubmitResponse}
+              typingEffect={typingEffect}
+              onTypingComplete={() => {}}
+              isLastQuestion={isLastQuestion}
+              jobTitle={jobTitle}
+              currentQuestionIndex={currentQuestionIndex}
+              totalQuestions={questions.length}
+            />
+          )}
+
+          {isInterviewComplete && !showFeedback && (
+            <InterviewCompletion
+              transcript={transcript}
+              onDownloadTranscript={handleDownloadTranscript}
+              onStartNew={handleStartNewInterview}
+              onViewFeedback={handleViewFeedback}
+              sessionId={currentSessionId}
+            />
+          )}
+
+          {isInterviewComplete && showFeedback && (
+            <InterviewFeedbackComponent
+              feedback={feedback}
+              transcript={transcript}
+              onDownloadTranscript={handleDownloadTranscript}
+              onStartNew={handleStartNewInterview}
+              loading={isGeneratingFeedback}
+              hasError={feedbackError}
+              onRetry={handleRetryFeedback}
+            />
+          )}
+
         </div>
       </div>
-      
+
       <UpgradePrompt
         isOpen={showUpgradePrompt}
         onClose={() => setShowUpgradePrompt(false)}

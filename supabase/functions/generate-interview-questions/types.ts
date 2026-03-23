@@ -2,12 +2,13 @@
 // Type definitions for the generate-interview-questions edge function
 
 export interface RequestBody {
-  industry: string;
+  industry?: string;
   jobTitle: string;   // Primary parameter
   jobRole?: string;   // Support legacy parameter
   role?: string;      // Support legacy parameter
   jobDescription?: string;
   sessionId: string;
+  practiceMode?: 'specific-job' | 'general-practice';
 }
 
 export interface EdgeFunctionResponse {

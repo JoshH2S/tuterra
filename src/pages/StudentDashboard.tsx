@@ -369,7 +369,11 @@ function InlineAssessmentWizard({ onBack, initialTopic }: { onBack: () => void; 
 function InlineInterviewWizard({ onBack, initialTopic }: { onBack: () => void; initialTopic: string }) {
   const navigate = useNavigate();
   useEffect(() => {
-    navigate("/assessments/job-interview-simulator", { state: { topic: initialTopic }, replace: true });
+    const params = new URLSearchParams({ quickstart: "1", topic: initialTopic });
+    navigate(`/assessments/job-interview-simulator?${params.toString()}`, {
+      state: { topic: initialTopic, autoCreate: true },
+      replace: true,
+    });
   }, [navigate, initialTopic]);
   return null;
 }

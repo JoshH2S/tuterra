@@ -40,15 +40,12 @@ export const validateRequest = (body: any) => {
   if (!body) {
     throw new Error("Request body is missing");
   }
-  
+
   if (!body.sessionId) {
     throw new Error("Session ID is required");
   }
-  
-  if (!body.industry) {
-    throw new Error("Industry is required");
-  }
-  
+
+  // industry is optional — general-practice mode does not require it
   if (!body.jobTitle) {
     throw new Error("Job title is required");
   }

@@ -12,10 +12,9 @@ export const generateQuestionsFromApi = async (
 ): Promise<InterviewQuestion[]> => {
   try {
     // Validate params before sending
-    if (!params.sessionId || !params.industry || !params.jobRole) {
+    if (!params.sessionId || !params.jobRole) {
       const missingFields = [];
       if (!params.sessionId) missingFields.push('sessionId');
-      if (!params.industry) missingFields.push('industry');
       if (!params.jobRole) missingFields.push('jobRole');
       
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
@@ -28,11 +27,13 @@ export const generateQuestionsFromApi = async (
     }
     
     // Create a clean payload with proper serialization - standardize on jobTitle
+    const sanitizedIndustry = params.industry?.trim() || "";
     const payload = {
-      industry: params.industry.trim(),
+      industry: sanitizedIndustry,
       jobTitle: sanitizedJobTitle, // Primary parameter
       jobDescription: params.jobDescription ? params.jobDescription.trim() : "",
-      sessionId: params.sessionId
+      sessionId: params.sessionId,
+      practiceMode: params.practiceMode,
     };
     
     // Log the exact payload being sent to help with debugging

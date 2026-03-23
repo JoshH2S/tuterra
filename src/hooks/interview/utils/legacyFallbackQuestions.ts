@@ -8,11 +8,12 @@ import { formatJobRole } from "./roleUtils";
  */
 export const generateLegacyFallbackQuestions = (
   jobRole: string,
-  industry: string,
+  industry: string | undefined,
   sessionId: string | null
 ): InterviewQuestion[] => {
   const currentDate = new Date().toISOString();
   const displayJobRole = formatJobRole(jobRole);
+  const normalizedIndustry = industry?.trim() || "";
   
   const baseQuestions = [
     {
@@ -25,7 +26,9 @@ export const generateLegacyFallbackQuestions = (
     {
       id: `fallback-2`,
       session_id: sessionId || '',
-      question: `What interests you about working in ${industry}?`,
+      question: normalizedIndustry
+        ? `What interests you about working in ${normalizedIndustry}?`
+        : `What interests you about this ${displayJobRole} opportunity?`,
       question_order: 1,
       created_at: currentDate
     },
@@ -53,8 +56,8 @@ export const generateLegacyFallbackQuestions = (
   ];
 
   // Add industry-specific questions
-  if (industry.toLowerCase().includes('tech') || 
-      industry.toLowerCase().includes('technology')) {
+  if (normalizedIndustry.toLowerCase().includes('tech') || 
+      normalizedIndustry.toLowerCase().includes('technology')) {
     baseQuestions.push({
       id: `fallback-6`,
       session_id: sessionId || '',
@@ -62,7 +65,7 @@ export const generateLegacyFallbackQuestions = (
       question_order: 5,
       created_at: currentDate
     });
-  } else if (industry.toLowerCase().includes('finance')) {
+  } else if (normalizedIndustry.toLowerCase().includes('finance')) {
     baseQuestions.push({
       id: `fallback-6`,
       session_id: sessionId || '',
@@ -70,7 +73,7 @@ export const generateLegacyFallbackQuestions = (
       question_order: 5,
       created_at: currentDate
     });
-  } else if (industry.toLowerCase().includes('health')) {
+  } else if (normalizedIndustry.toLowerCase().includes('health')) {
     baseQuestions.push({
       id: `fallback-6`,
       session_id: sessionId || '',
@@ -118,7 +121,7 @@ export const generateLegacyFallbackQuestions = (
  */
 export const generateEmergencyFallbackQuestions = (
   jobRole: string,
-  industry: string,
+  industry: string | undefined,
   sessionId: string | null
 ): InterviewQuestion[] => {
   const currentDate = new Date().toISOString();
@@ -135,7 +138,9 @@ export const generateEmergencyFallbackQuestions = (
     {
       id: `emergency-fallback-2`,
       session_id: sessionId || '',
-      question: `What interests you about working in the ${industry} industry?`,
+      question: industry?.trim()
+        ? `What interests you about working in the ${industry} industry?`
+        : `What interests you about working as a ${displayJobRole}?`,
       question_order: 1,
       created_at: currentDate
     },

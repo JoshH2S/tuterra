@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { InterviewQuestion, EnhancedInterviewQuestion } from "@/types/interview";
 import { generateFallbackQuestions } from "./utils/fallbackQuestions";
@@ -14,16 +14,16 @@ export const useInterviewQuestions = (
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const generateQuestions = async (industry: string, jobTitle: string, jobDescription: string, sessionId: string): Promise<InterviewQuestion[]> => {
+  const generateQuestions = useCallback(async (
+    industry: string | undefined,
+    jobTitle: string,
+    jobDescription: string,
+    sessionId: string
+  ): Promise<InterviewQuestion[]> => {
     // Input validation
     if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
       console.error("Cannot generate questions: No valid session ID provided");
       throw new Error("Session ID is missing or invalid");
-    }
-    
-    if (!industry || typeof industry !== 'string') {
-      console.error("Cannot generate questions: Invalid industry parameter");
-      throw new Error("Industry parameter is missing or invalid");
     }
     
     if (!jobTitle || typeof jobTitle !== 'string') {
@@ -71,9 +71,9 @@ export const useInterviewQuestions = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [setQuestions, toast]);
 
-  const generateFallbackQuestionsWrapper = async (jobRole: string, industry: string): Promise<InterviewQuestion[]> => {
+  const generateFallbackQuestionsWrapper = useCallback(async (jobRole: string, industry?: string): Promise<InterviewQuestion[]> => {
     try {
       const fallbackQuestions = await generateFallbackQuestions(jobRole, industry, sessionId);
       return fallbackQuestions;
@@ -91,23 +91,27 @@ export const useInterviewQuestions = (
         {
           id: `emergency-fallback-2`,
           session_id: sessionId || '',
-          question: `What interests you about working in the ${industry} industry?`,
+          question: industry?.trim()
+            ? `What interests you about working in the ${industry} industry?`
+            : `What interests you about this ${jobRole} position?`,
           question_order: 1,
           created_at: new Date().toISOString()
         }
       ];
     }
-  };
+  }, [sessionId]);
 
-  const fetchQuestions = async () => {
-    if (!sessionId) {
+  const fetchQuestions = useCallback(async (sessionIdOverride?: string) => {
+    const targetSessionId = sessionIdOverride ?? sessionId;
+
+    if (!targetSessionId) {
       console.error("Cannot fetch questions: No session ID provided");
       return;
     }
     
     setLoading(true);
     try {
-      const questionsList = await fetchQuestionsFromDb(sessionId);
+      const questionsList = await fetchQuestionsFromDb(targetSessionId);
       setQuestions(questionsList);
     } catch (error) {
       console.error("Error fetching questions:", error);
@@ -119,7 +123,7 @@ export const useInterviewQuestions = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessionId, setQuestions, toast]);
 
   return {
     generateQuestions,

@@ -39,14 +39,20 @@ export const formatJobRole = (title: string): string => {
 /**
  * Fetches question templates from the database based on industry and role category
  */
-export const fetchQuestionTemplates = async (industry: string, roleCategory: string) => {
+export const fetchQuestionTemplates = async (industry: string | undefined, roleCategory: string) => {
   try {
-    const { data: templates, error } = await supabase
+    const normalizedIndustry = industry?.trim() || "";
+    let query = supabase
       .from('question_templates')
       .select('*')
-      .or(`industry.eq.${industry},industry.eq.general`)
       .or(`role_category.eq.${roleCategory},role_category.eq.any`)
       .limit(10);
+
+    query = normalizedIndustry
+      ? query.or(`industry.eq.${normalizedIndustry},industry.eq.general`)
+      : query.eq('industry', 'general');
+
+    const { data: templates, error } = await query;
       
     if (error) {
       console.error("Error fetching templates:", error);

@@ -81,6 +81,7 @@ export default function SkillAssessments() {
             isLoading={isGenerating}
             progress={progress}
             initialTopic={locationState?.topic}
+            skipIndustry={!!locationState?.autoCreate}
           />
         ) : (
           <>

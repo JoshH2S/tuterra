@@ -11,14 +11,15 @@ export function generateBasicInterviewQuestions(industry: string, role: string, 
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
   
+  const industryPhrase = industry && industry.trim() ? ` in the ${industry} industry` : "";
   const baseQuestions: EnhancedInterviewQuestion[] = [
     {
       id: crypto.randomUUID(),
-      text: `Tell me about your experience as a ${formattedRole} in the ${industry} industry.`,
+      text: `Tell me about your experience as a ${formattedRole}${industryPhrase}.`,
       category: "behavioral",
       difficulty: "entry",
       estimatedTimeSeconds: 120,
-      keywords: [role.toLowerCase(), industry.toLowerCase(), "experience"],
+      keywords: [role.toLowerCase(), ...(industry ? [industry.toLowerCase()] : []), "experience"],
       expectedTopics: ["previous roles", "responsibilities", "achievements"],
       followUp: ["What specific skills did you develop?", "How did your experience prepare you for this role?"],
       question_order: 0,
@@ -50,13 +51,15 @@ export function generateBasicInterviewQuestions(industry: string, role: string, 
     },
     {
       id: crypto.randomUUID(),
-      text: `How do you stay updated with trends and changes in the ${industry} industry?`,
+      text: industry && industry.trim()
+        ? `How do you stay updated with trends and changes in the ${industry} industry?`
+        : `How do you stay updated with trends and changes in your field?`,
       category: "technical",
       difficulty: "intermediate",
       estimatedTimeSeconds: 100,
-      keywords: [industry.toLowerCase(), "trends", "professional development"],
+      keywords: [...(industry ? [industry.toLowerCase()] : []), "trends", "professional development"],
       expectedTopics: ["learning sources", "industry publications", "networking"],
-      followUp: ["What recent industry trend do you find most interesting?"],
+      followUp: ["What recent trend do you find most interesting?"],
       question_order: 3,
       created_at: currentDate
     },
@@ -75,7 +78,7 @@ export function generateBasicInterviewQuestions(industry: string, role: string, 
   ];
   
   // Add industry-specific questions
-  if (industry.toLowerCase() === 'technology' || industry.toLowerCase() === 'tech') {
+  if (industry && (industry.toLowerCase() === 'technology' || industry.toLowerCase() === 'tech')) {
     baseQuestions.push({
       id: crypto.randomUUID(),
       text: "Describe a technical project you worked on that you're particularly proud of.",
@@ -88,7 +91,7 @@ export function generateBasicInterviewQuestions(industry: string, role: string, 
       question_order: 5,
       created_at: currentDate
     });
-  } else if (industry.toLowerCase() === 'finance') {
+  } else if (industry && industry.toLowerCase() === 'finance') {
     baseQuestions.push({
       id: crypto.randomUUID(),
       text: "How do you ensure accuracy and attention to detail in your financial work?",
@@ -101,7 +104,7 @@ export function generateBasicInterviewQuestions(industry: string, role: string, 
       question_order: 5,
       created_at: currentDate
     });
-  } else if (industry.toLowerCase() === 'healthcare') {
+  } else if (industry && industry.toLowerCase() === 'healthcare') {
     baseQuestions.push({
       id: crypto.randomUUID(),
       text: "How do you balance patient care with administrative responsibilities?",

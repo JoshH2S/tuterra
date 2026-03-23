@@ -7,6 +7,7 @@ import { Building2 } from "lucide-react";
 interface InterviewIndustryStepProps {
   value: string;
   onChange: (value: string) => void;
+  onSkip?: () => void;
 }
 
 const POPULAR_INDUSTRIES = [
@@ -24,7 +25,7 @@ const POPULAR_INDUSTRIES = [
   "Government"
 ];
 
-export function InterviewIndustryStep({ value, onChange }: InterviewIndustryStepProps) {
+export function InterviewIndustryStep({ value, onChange, onSkip }: InterviewIndustryStepProps) {
   const [customIndustry, setCustomIndustry] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
 
@@ -90,6 +91,18 @@ export function InterviewIndustryStep({ value, onChange }: InterviewIndustryStep
               Don't see your industry? Enter it manually
             </button>
           </div>
+
+          {onSkip && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={onSkip}
+                className="text-sm text-[#091747] hover:text-[#0d2060] transition-colors duration-150 underline underline-offset-4 decoration-[#091747]/30 touch-manipulation"
+              >
+                Not preparing for a specific posting? Skip industry for general practice
+              </button>
+            </div>
+          )}
         </motion.div>
       ) : (
         <motion.div

@@ -1,10 +1,77 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { RequestBody, EdgeFunctionResponse } from "./types.ts";
-import { corsHeaders, createSuccessResponse, createErrorResponse, validateRequest, verifySessionExists } from "./utils.ts";
+import { corsHeaders, createSuccessResponse, createErrorResponse, validateRequest, verifySessionExists, adminSupabase } from "./utils.ts";
 import { extractRequirements } from "./requirementsExtractor.ts";
 import { generateEnhancedQuestions } from "./questionGenerator.ts";
 import { generateBasicInterviewQuestions } from "./fallbackQuestions.ts";
+// ─── Practice requirements (inlined to avoid bundler module-not-found issues) ─
+
+const getRoleSignals = (jobTitle: string): string[] => {
+  const t = jobTitle.toLowerCase();
+  if (t.includes("engineer") || t.includes("developer") || t.includes("programmer")) {
+    return [
+      "Ability to explain technical decisions, tradeoffs, and implementation choices",
+      "Experience debugging production issues and improving code quality",
+      "Knowledge of system design, scalability, or architecture appropriate to the role level",
+      "Strong collaboration with product, design, and engineering teammates",
+    ];
+  }
+  if (t.includes("manager") || t.includes("lead") || t.includes("director")) {
+    return [
+      "Ability to prioritize work, manage tradeoffs, and align teams around goals",
+      "Experience leading people, projects, or cross-functional initiatives",
+      "Clear communication with stakeholders, executives, and team members",
+      "Strong decision-making under ambiguity and changing priorities",
+    ];
+  }
+  if (t.includes("analyst") || t.includes("data") || t.includes("business intelligence")) {
+    return [
+      "Ability to analyze complex datasets and translate findings into decisions",
+      "Experience using relevant analytical tools, reporting methods, or dashboards",
+      "Strong communication of insights to non-technical stakeholders",
+      "Clear thinking around metrics, business questions, and recommendations",
+    ];
+  }
+  if (t.includes("designer") || t.includes("design") || t.includes("ux") || t.includes("ui")) {
+    return [
+      "Ability to explain design decisions and connect them to user needs",
+      "Experience balancing user research, design quality, and delivery constraints",
+      "Strong collaboration with product, engineering, and stakeholders",
+      "Confidence discussing portfolio work, iteration, and feedback handling",
+    ];
+  }
+  if (t.includes("marketing") || t.includes("growth") || t.includes("sales")) {
+    return [
+      "Ability to explain campaign, pipeline, or growth strategies with clear results",
+      "Experience using performance metrics to guide decisions and optimization",
+      "Strong communication tailored to customers, prospects, or stakeholders",
+      "Comfort balancing creativity with measurable business outcomes",
+    ];
+  }
+  return [
+    "Ability to explain relevant experience, strengths, and achievements clearly",
+    "Strong problem-solving and decision-making in realistic work situations",
+    "Good communication, collaboration, and stakeholder management",
+    "Evidence of learning quickly and adapting to role expectations",
+  ];
+};
+
+const buildPracticeRequirements = (
+  jobTitle: string,
+  industry?: string,
+  additionalContext?: string,
+): string[] => {
+  const normalizedIndustry = industry?.trim();
+  const trimmedContext = additionalContext?.trim();
+  return [
+    `Role: ${jobTitle}`,
+    ...(normalizedIndustry ? [`Industry: ${normalizedIndustry}`] : []),
+    "Tailor questions to the core responsibilities and expectations of this role",
+    ...getRoleSignals(jobTitle),
+    ...(trimmedContext ? [`Additional practice context: ${trimmedContext}`] : []),
+  ];
+};
 
 // Get environment variables
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -93,13 +160,14 @@ serve(async (req) => {
     }
     
     // Extract parameters - standardize on jobTitle
-    const { industry, jobTitle, jobDescription, sessionId } = reqBody;
+    const { industry, jobTitle, jobDescription, sessionId, practiceMode } = reqBody;
     
     console.log("Processed parameters:", { 
       industry, 
       jobTitle,
       jobDescription: jobDescription ? jobDescription.substring(0, 50) + "..." : "N/A",
-      sessionId
+      sessionId,
+      practiceMode
     });
     
     // For testing quickly without session verification - comment out in production
@@ -128,17 +196,19 @@ serve(async (req) => {
     }
     
     console.log(`Session verified. Generating enhanced questions for session ${sessionId}`);
-    let questions = [];
-    let requirements = [];
+    let questions: EdgeFunctionResponse["questions"] = [];
+    let requirements: string[] = [];
 
     try {
-      // 1. Extract key requirements from job description if available
-      if (jobDescription && jobDescription.trim().length > 50) {
+      const hasDetailedJobDescription = !!jobDescription && jobDescription.trim().length > 50;
+
+      // 1. Extract key requirements from job description when preparing for a real posting.
+      if (practiceMode !== "general-practice" && hasDetailedJobDescription) {
         requirements = await extractRequirements(jobTitle, industry, jobDescription);
         console.log(`Extracted ${requirements.length} key requirements from job description`);
       } else {
-        requirements = [`Role: ${jobTitle}`, `Industry: ${industry}`];
-        console.log("No detailed job description provided, using basic requirements");
+        requirements = buildPracticeRequirements(jobTitle, industry, jobDescription);
+        console.log("Using synthesized role-based requirements for interview generation");
       }
 
       // 2. Generate enhanced questions based on requirements

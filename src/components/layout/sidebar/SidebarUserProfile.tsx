@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { User, Sparkles, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { CreditsBadge } from "@/components/credits/CreditsBadge";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SubscriptionBadge } from "@/components/ai-tutor/SubscriptionBadge";
 import { Button } from "@/components/ui/button";
@@ -85,16 +84,10 @@ export const SidebarUserProfile = ({ isCollapsed = false }: SidebarUserProfilePr
               </span>
               <SubscriptionBadge tier={subscription.tier} className="h-5 px-1.5 py-0" />
             </div>
-            <div className="text-xs text-black flex items-center gap-2">
+            <div className="text-xs text-black">
               {subscription.tier === "free" ? "Free Plan" : (
                 subscription.tier === "premium" ? "Premium Plan" : "Pro Plan"
               )}
-              <div className={subscription.tier === "free" ? "flex items-center" : "hidden"}>
-                <CreditsBadge />
-                <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
-                  <Sparkles className="h-3 w-3 text-amber-500" />
-                </Button>
-              </div>
             </div>
           </div>
         )}

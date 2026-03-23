@@ -1,16 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, Bell, Search, CreditCard, Coins } from "lucide-react";
+import { Menu, Bell, Search } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { MobileSearch } from "./MobileSearch";
 import { MobileMenu } from "./MobileMenu";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useSubscription } from "@/hooks/useSubscription";
 import { usePromotionalInternships } from "@/hooks/usePromotionalInternships";
-import { CreditsBadge } from "@/components/credits/CreditsBadge";
-import { CreditsSummaryPopup } from "@/components/credits/CreditsSummaryPopup";
 import { PromotionalBadge } from "@/components/promotional/PromotionalBadge";
 
 export function MobileHeader() {
@@ -19,17 +16,12 @@ export function MobileHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { subscription } = useSubscription();
   const { status } = usePromotionalInternships();
-  
+
   // Close the menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
-
-  const handleUpgradeClick = () => {
-    navigate('/pricing');
-  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -59,20 +51,6 @@ export function MobileHeader() {
               />
             )}
 
-            {subscription?.tier === 'free' && (
-              <>
-                <CreditsSummaryPopup />
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="text-xs h-8 px-3"
-                  onClick={handleUpgradeClick}
-                >
-                  <CreditCard className="h-3.5 w-3.5 mr-1" />
-                  Upgrade
-                </Button>
-              </>
-            )}
             
             <motion.button
               whileTap={{ scale: 0.95 }}

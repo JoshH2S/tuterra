@@ -1,6 +1,5 @@
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 interface InterviewReadyPromptProps {
   jobTitle: string;
@@ -8,53 +7,79 @@ interface InterviewReadyPromptProps {
   usedFallbackQuestions?: boolean;
 }
 
-export const InterviewReadyPrompt = ({ 
-  jobTitle, 
+const TIPS = [
+  "Answer as if you're in a real interview",
+  "Take your time to think before responding",
+  "Provide specific examples from your experience",
+  "Keep your answers concise but comprehensive",
+];
+
+export const InterviewReadyPrompt = ({
+  jobTitle,
   onStartChat,
-  usedFallbackQuestions = false
+  usedFallbackQuestions = false,
 }: InterviewReadyPromptProps) => {
   return (
-    <Card className="w-full mx-auto max-w-2xl">
-      <CardHeader>
-        <CardTitle className="text-xl text-center md:text-2xl">
-          Your Interview is Ready
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p>
-          We've prepared a simulated job interview for the <strong>{jobTitle}</strong> position.
-        </p>
-        
-        {usedFallbackQuestions && (
-          <div className="bg-amber-50 border border-amber-200 p-3 rounded-md text-amber-800 text-sm">
-            <p>
-              <strong>Note:</strong> We're using a set of standard questions for this role 
-              since we couldn't generate custom ones at the moment. These are still relevant
-              to your job title but may be less specific to your exact requirements.
+    <div className="w-full max-w-2xl mx-auto">
+      {/* Hero card — mirrors the dashboard FeatureCard style */}
+      <div
+        className="relative rounded-2xl overflow-hidden border border-black/[0.06] shadow-[0_2px_16px_rgba(0,0,0,0.08)]"
+        style={{ minHeight: "340px" }}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://nhlsrtubyvggtkyrhkuu.supabase.co/storage/v1/object/public/heroes/jobinterviewsimulator.jpg')",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+
+        <div className="relative inset-x-0 bottom-0 p-6 flex flex-col justify-end h-full">
+          <p className="text-[10px] font-mono text-white/65 uppercase tracking-widest mb-2">
+            Career Preparation
+          </p>
+          <h2 className="text-2xl font-semibold text-white leading-tight tracking-tight">
+            Your Interview is Ready
+          </h2>
+          <p className="mt-2 text-sm text-white/75 leading-relaxed">
+            Questions prepared for{" "}
+            <span className="text-white font-medium">{jobTitle}</span>
+          </p>
+
+          {usedFallbackQuestions && (
+            <p className="mt-3 text-xs text-amber-300/90 leading-relaxed max-w-[46ch]">
+              Using standard questions for this role — custom generation wasn't
+              available right now.
             </p>
+          )}
+
+          <div className="mt-5">
+            <button
+              onClick={onStartChat}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-white text-[#091747] hover:bg-white/90 active:scale-95 transition-all duration-150"
+            >
+              Start Interview
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
-        )}
-        
-        <div className="space-y-3">
-          <h3 className="font-medium">Tips for a successful practice:</h3>
-          <ul className="list-disc pl-5 space-y-1 text-sm md:text-base">
-            <li>Answer as if you're in a real interview</li>
-            <li>Take your time to think before responding</li>
-            <li>Try to provide specific examples from your experience</li>
-            <li>Speak clearly and confidently</li>
-            <li>Keep your answers concise but comprehensive</li>
-          </ul>
         </div>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={onStartChat}
-          className="w-full py-5 text-base font-medium"
-          size="lg"
-        >
-          Start Interview
-        </Button>
-      </CardFooter>
-    </Card>
+      </div>
+
+      {/* Tips card below */}
+      <div className="mt-4 rounded-2xl border border-black/[0.06] bg-white shadow-[0_1px_8px_rgba(0,0,0,0.05)] p-5">
+        <p className="text-xs font-mono uppercase tracking-widest text-[#8a7a5a] mb-4">
+          Tips for a successful practice
+        </p>
+        <ul className="space-y-2.5">
+          {TIPS.map((tip) => (
+            <li key={tip} className="flex items-start gap-2.5 text-sm text-[#3a3530]">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+              {tip}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 };

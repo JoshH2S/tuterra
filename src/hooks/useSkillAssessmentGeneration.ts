@@ -7,7 +7,7 @@ import { useUserCredits } from '@/hooks/useUserCredits';
 
 // Types for assessment parameters
 export interface AssessmentParams {
-  industry: string;
+  industry?: string;
   role: string;
   additionalInfo?: string;
   questionCount: number;
@@ -210,8 +210,9 @@ export const useSkillAssessmentGeneration = () => {
       let assessmentData: any | null = null;
       let generationTime = 0;
 
+      const industry = params.industry || "";
       // Check cache for similar assessment
-      const cacheKey = `assessment:${params.industry}:${params.role}:${params.level || 'intermediate'}`;
+      const cacheKey = `assessment:${industry}:${params.role}:${params.level || 'intermediate'}`;
       const { data: cachedAssessment } = await supabase
         .from('cached_assessments')
         .select('*')
@@ -326,8 +327,8 @@ export const useSkillAssessmentGeneration = () => {
       const { data: savedAssessment, error: saveError } = await supabase
         .from('skill_assessments')
         .insert({
-          title: `${params.role} - ${params.industry}`,
-          industry: params.industry,
+          title: industry ? `${params.role} - ${industry}` : params.role,
+          industry: industry,
           role: params.role,
           description: assessmentData.description,
           creator_id: user.id,

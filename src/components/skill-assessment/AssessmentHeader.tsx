@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { Clock } from "lucide-react";
 
@@ -8,37 +7,34 @@ interface AssessmentHeaderProps {
   level?: string;
 }
 
-export const AssessmentHeader = ({ 
-  title, 
-  timeRemaining, 
-  level 
-}: AssessmentHeaderProps) => {
+export const AssessmentHeader = ({ title, timeRemaining, level }: AssessmentHeaderProps) => {
   const formatTime = useMemo(() => {
     const minutes = Math.floor(timeRemaining / 60);
     const remainingSeconds = timeRemaining % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   }, [timeRemaining]);
 
-  // Determine color based on remaining time
-  const getTimerColor = () => {
-    if (timeRemaining <= 60) return "text-red-500";
-    if (timeRemaining <= 180) return "text-amber-500";
-    return "text-primary";
-  };
+  const timerColor =
+    timeRemaining <= 60
+      ? "text-red-500 border-red-200 bg-red-50"
+      : timeRemaining <= 180
+      ? "text-amber-600 border-amber-200 bg-amber-50"
+      : "text-gray-600 border-gray-200 bg-white";
 
   return (
-    <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
-      <h1 className="text-xl md:text-2xl font-semibold truncate text-white drop-shadow-lg">{title}</h1>
-      <div className="flex flex-row items-center justify-between md:justify-end gap-4">
-        <div className={`flex items-center px-3 py-1.5 bg-background/80 backdrop-blur-sm shadow-sm rounded-full border ${getTimerColor()}`}>
-          <Clock className={`mr-1.5 h-4 w-4 animate-pulse ${getTimerColor()}`} />
-          <span className="font-medium">{formatTime}</span>
-        </div>
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <h1 className="text-lg md:text-xl font-medium text-gray-900 truncate">{title}</h1>
         {level && (
-          <div className="px-2 py-1 bg-muted rounded text-xs font-medium capitalize">
-            {level} level
-          </div>
+          <span className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 capitalize">
+            {level}
+          </span>
         )}
+      </div>
+
+      <div className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${timerColor}`}>
+        <Clock className="h-3.5 w-3.5" />
+        <span>{formatTime}</span>
       </div>
     </div>
   );

@@ -193,8 +193,21 @@ function InlineAssessmentWizard({ onBack, initialTopic }: { onBack: () => void; 
 
 // ─── Interview Quick Start ──────────────────────────────────────────────────
 
-function InlineInterviewWizard({ onBack }: { onBack: () => void }) {
+function InlineInterviewWizard({ onBack, initialTopic }: { onBack: () => void; initialTopic: string }) {
   const navigate = useNavigate();
+  const trimmedTopic = initialTopic.trim();
+
+  const handleStartInterview = () => {
+    if (trimmedTopic) {
+      const params = new URLSearchParams({ quickstart: "1", topic: trimmedTopic });
+      navigate(`/assessments/job-interview-simulator?${params.toString()}`, {
+        state: { topic: trimmedTopic, autoCreate: true },
+      });
+      return;
+    }
+
+    navigate("/assessments/job-interview-simulator");
+  };
 
   return (
     <motion.div
@@ -218,10 +231,12 @@ function InlineInterviewWizard({ onBack }: { onBack: () => void }) {
         </div>
         <h3 className="text-lg font-semibold text-foreground mb-2">Practice makes perfect</h3>
         <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-          Set up a mock interview tailored to your target role and industry.
+          {trimmedTopic
+            ? `We'll set up an interview for "${trimmedTopic}".`
+            : "Set up a mock interview tailored to your target role and industry."}
         </p>
         <Button
-          onClick={() => navigate("/assessments/job-interview-simulator")}
+          onClick={handleStartInterview}
           className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white"
         >
           Start Interview <ArrowRight className="h-4 w-4 ml-1" />
@@ -284,6 +299,7 @@ export default function HubPage() {
               <InlineInterviewWizard
                 key="interview"
                 onBack={() => setActiveAction(null)}
+                initialTopic={searchValue}
               />
             )}
           </AnimatePresence>
