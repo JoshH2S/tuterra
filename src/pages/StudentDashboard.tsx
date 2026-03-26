@@ -229,7 +229,7 @@ function SpotlightHero({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: "easeOut" }}
-      className="max-w-[680px] mx-auto text-center pt-12 sm:pt-14 pb-8 px-5"
+      className="max-w-[680px] mx-auto text-center pt-8 sm:pt-14 pb-6 sm:pb-8 px-4 sm:px-5"
     >
       {/* Eyebrow */}
       <p className="font-mono text-[10px] font-medium tracking-[0.12em] uppercase text-[#8a7a5a] mb-3">
@@ -245,29 +245,31 @@ function SpotlightHero({
       </p>
 
       {/* Mode Switcher */}
-      <div className="inline-flex bg-gray-100 rounded-full p-[3px] gap-[2px] mb-5 border border-gray-200">
-        {MODES.map((m, i) => {
-          const Icon = m.icon;
-          const isActive = i === activeMode;
-          return (
-            <button
-              key={m.label}
-              onClick={() => {
-                setActiveMode(i);
-                setInputValue("");
-                inputRef.current?.focus();
-              }}
-              className={`flex items-center gap-[7px] px-5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all duration-200 ${
-                isActive
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Icon className="w-[13px] h-[13px] shrink-0" />
-              {m.label}
-            </button>
-          );
-        })}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-5 scrollbar-hide">
+        <div className="inline-flex bg-gray-100 rounded-full p-[3px] gap-[2px] border border-gray-200">
+          {MODES.map((m, i) => {
+            const Icon = m.icon;
+            const isActive = i === activeMode;
+            return (
+              <button
+                key={m.label}
+                onClick={() => {
+                  setActiveMode(i);
+                  setInputValue("");
+                  inputRef.current?.focus();
+                }}
+                className={`flex items-center gap-1.5 px-3.5 sm:px-5 py-2 rounded-full text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-all duration-200 ${
+                  isActive
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Icon className="w-[13px] h-[13px] shrink-0" />
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Input Box */}
@@ -312,8 +314,9 @@ function SpotlightHero({
               }}
               className="w-full px-5 pt-4 pb-2 text-sm text-gray-900 placeholder-gray-400 resize-none outline-none bg-transparent leading-relaxed"
             />
-            <div className="flex items-center justify-between px-4 pb-3 pt-1">
-              <span className="text-[11px] text-gray-400">Press Enter to start, Shift+Enter for new line</span>
+          <div className="flex items-center justify-between px-3 sm:px-4 pb-3 pt-1 gap-2">
+              <span className="text-[10px] sm:text-[11px] text-gray-400 hidden sm:inline">Press Enter to start, Shift+Enter for new line</span>
+              <span className="text-[10px] text-gray-400 sm:hidden">Press Enter to start</span>
               <button
                 onClick={handleSubmit}
                 disabled={inputValue.trim().length < 2}
