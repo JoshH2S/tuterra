@@ -84,13 +84,15 @@ const GeneratedCourseDetail = () => {
 
   if (showContract) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <CourseContractScreen
-          course={course}
-          modules={modules}
-          onAcceptContract={handleAcceptContract}
-          onCancel={handleCancelContract}
-        />
+      <div className="min-h-screen bg-gradient-to-b from-[#FBF7EF]/60 to-white">
+        <div className="container mx-auto px-4 py-10 sm:py-14">
+          <CourseContractScreen
+            course={course}
+            modules={modules}
+            onAcceptContract={handleAcceptContract}
+            onCancel={handleCancelContract}
+          />
+        </div>
       </div>
     );
   }
