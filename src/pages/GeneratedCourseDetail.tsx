@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  BookOpen, 
-  Clock, 
-  Target, 
-  ChevronRight, 
-  Play, 
-  CheckCircle,
-  Lock,
+import {
   ArrowLeft,
-  Loader2
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Lock,
+  Play,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { PremiumCard } from "@/components/ui/premium-card";
 import { useCourseRunner } from "@/hooks/useCourseRunner";
 import { CourseContractScreen } from "@/components/course-engine/CourseContractScreen";
 import { cn } from "@/lib/utils";
@@ -41,9 +38,7 @@ const GeneratedCourseDetail = () => {
     setShowContract(true);
   };
 
-  const handleAcceptContract = async (startDate: Date) => {
-    // TODO: Save contract details to course_progress
-    // For now, just navigate to the course
+  const handleAcceptContract = async (_startDate: Date) => {
     if (id) {
       navigate(`/courses/generated/${id}/learn`);
     }
@@ -59,41 +54,34 @@ const GeneratedCourseDetail = () => {
     }
   };
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'beginner': return 'bg-green-500/10 text-green-500';
-      case 'intermediate': return 'bg-amber-500/10 text-amber-500';
-      case 'advanced': return 'bg-red-500/10 text-red-500';
-      default: return 'bg-primary/10 text-primary';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <PremiumCard className="p-12 text-center">
-          <h2 className="text-xl font-semibold mb-2">Course not found</h2>
-          <p className="text-muted-foreground mb-4">
+      <div className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-md rounded-2xl border border-primary-300/40 bg-white p-10 text-center shadow-[0_8px_32px_-8px_rgba(184,134,11,0.15)]">
+          <h2 className="font-manrope text-xl text-primary-900 mb-2">Course not found</h2>
+          <p className="text-sm text-neutral-muted mb-6">
             This course may have been deleted or you don't have access.
           </p>
-          <Button onClick={() => navigate('/courses/generated')}>
+          <Button
+            onClick={() => navigate('/courses/generated')}
+            className="bg-gradient-to-br from-primary-400 to-primary-600 text-white hover:from-primary-500 hover:to-primary-700"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Courses
           </Button>
-        </PremiumCard>
+        </div>
       </div>
     );
   }
 
-  // Show contract screen for new courses
   if (showContract) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -109,203 +97,268 @@ const GeneratedCourseDetail = () => {
 
   const progressPercent = getProgressPercentage();
   const hasStarted = progress && progress.total_steps_completed > 0;
+  const isComplete = Boolean(progress?.completed_at) || progressPercent >= 100;
+
+  // Determine which modules are locked (beyond current reach)
+  let highestReachedIndex = 0;
+  modules.forEach((module) => {
+    if (module.is_completed || progress?.current_module_id === module.id) {
+      highestReachedIndex = Math.max(highestReachedIndex, module.module_index);
+    }
+  });
+
+  const totalMinutes = modules.reduce((a, m) => a + (m.estimated_minutes || 0), 0);
+
+  // Ring geometry
+  const ringSize = 112;
+  const ringStroke = 7;
+  const ringRadius = (ringSize - ringStroke) / 2;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference - (progressPercent / 100) * ringCircumference;
 
   return (
-    <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-5xl mx-auto">
-      {/* Back Button */}
-      <Button 
-        variant="ghost" 
-        onClick={() => navigate('/courses/generated')}
-        className="mb-4 sm:mb-6 -ml-2"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Courses
-      </Button>
+    <div className="min-h-screen bg-gradient-to-b from-brand-light/50 to-white">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 py-6 sm:py-10">
+        {/* Back Link */}
+        <button
+          onClick={() => navigate('/courses/generated')}
+          className="group mb-8 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-muted transition-colors hover:text-primary-700"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+          Back to Courses
+        </button>
 
-      {/* Course Header */}
-      <div className="relative rounded-2xl border-2 border-[#C8A84B] shadow-[0_4px_24px_rgba(0,0,0,0.12)] bg-[#F7F3EC] p-4 sm:p-6 mb-4 sm:mb-6">
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <div className="flex-1">
-            <p className="text-xs font-mono text-[#8a7a5a] mb-3 tracking-wide uppercase">
-              AI-Powered Learning
-            </p>
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-2xl border border-primary-300/40 bg-gradient-to-b from-brand-light to-white px-6 py-10 sm:px-12 sm:py-14 shadow-[0_8px_32px_-8px_rgba(184,134,11,0.15),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-400/70 to-transparent" />
 
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <Badge className={getLevelColor(course.level)}>
-                {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
-              </Badge>
-              <Badge variant="outline" className="border-[#C8A84B]/50 text-[#8a7a5a]">
-                {course.pace_weeks} {course.pace_weeks === 1 ? 'week' : 'weeks'}
-              </Badge>
+          {/* Eyebrow */}
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary-600">
+              <Sparkles className="h-3 w-3" />
+              {course.level.charAt(0).toUpperCase() + course.level.slice(1)} Course
             </div>
-
-            <h1 className="text-2xl sm:text-3xl font-medium text-[#1a1a1a] leading-tight tracking-tight mb-2">
-              {course.title}
-            </h1>
-
-            {course.description && (
-              <p className="text-sm text-[#5a5040] leading-relaxed mb-4">{course.description}</p>
-            )}
-
-            <div className="flex items-center gap-4 text-sm text-[#8a7a5a]">
-              <span className="flex items-center gap-1">
-                <BookOpen className="h-4 w-4" />
-                {modules.length} modules
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                ~{modules.reduce((acc, m) => acc + (m.estimated_minutes || 0), 0)} min
-              </span>
-            </div>
+            <span className="h-px flex-1 max-w-[140px] bg-gradient-to-r from-primary-300/60 to-transparent" />
           </div>
 
-          <div className="flex flex-col items-center gap-3">
-            {hasStarted ? (
-              <>
-                {/* Circular progress ring */}
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 96 96">
-                    <circle cx="48" cy="48" r="38" fill="none" stroke="#C8A84B" strokeWidth="7" opacity="0.2" />
+          <div className="grid gap-8 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div className="min-w-0">
+              <h1 className="font-manrope text-3xl sm:text-4xl font-medium leading-[1.15] tracking-tight text-primary-900">
+                {course.title}
+              </h1>
+
+              {course.description && (
+                <p className="mt-4 text-base leading-relaxed text-neutral-text max-w-xl">
+                  {course.description}
+                </p>
+              )}
+
+              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-muted">
+                <span className="tabular-nums">
+                  {modules.length} {modules.length === 1 ? 'Module' : 'Modules'}
+                </span>
+                <span className="h-1 w-1 rounded-full bg-primary-300" />
+                <span className="flex items-center gap-1.5 tabular-nums">
+                  <Clock className="h-3 w-3" />
+                  ~{totalMinutes} min
+                </span>
+                <span className="h-1 w-1 rounded-full bg-primary-300" />
+                <span className="tabular-nums">
+                  {course.pace_weeks} {course.pace_weeks === 1 ? 'week' : 'weeks'}
+                </span>
+              </div>
+
+              <div className="mt-8">
+                {isComplete ? (
+                  <Button
+                    onClick={handleContinue}
+                    size="lg"
+                    className={cn(
+                      "bg-gradient-to-br from-primary-400 to-primary-600 text-white",
+                      "shadow-[0_6px_20px_-6px_rgba(184,134,11,0.5)]",
+                      "hover:from-primary-500 hover:to-primary-700 hover:shadow-[0_8px_24px_-6px_rgba(184,134,11,0.6)]",
+                      "transition-all duration-200"
+                    )}
+                  >
+                    View Completion
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : hasStarted ? (
+                  <Button
+                    onClick={handleContinue}
+                    size="lg"
+                    className={cn(
+                      "bg-gradient-to-br from-primary-400 to-primary-600 text-white",
+                      "shadow-[0_6px_20px_-6px_rgba(184,134,11,0.5)]",
+                      "hover:from-primary-500 hover:to-primary-700 hover:shadow-[0_8px_24px_-6px_rgba(184,134,11,0.6)]",
+                      "transition-all duration-200"
+                    )}
+                  >
+                    Continue Learning
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleStartCourse}
+                    size="lg"
+                    className={cn(
+                      "bg-gradient-to-br from-primary-400 to-primary-600 text-white",
+                      "shadow-[0_6px_20px_-6px_rgba(184,134,11,0.5)]",
+                      "hover:from-primary-500 hover:to-primary-700 hover:shadow-[0_8px_24px_-6px_rgba(184,134,11,0.6)]",
+                      "transition-all duration-200"
+                    )}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Begin Course
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Ring */}
+            {hasStarted && (
+              <div className="flex flex-col items-center gap-2 sm:pl-6">
+                <div className="relative" style={{ width: ringSize, height: ringSize }}>
+                  <svg width={ringSize} height={ringSize} className="-rotate-90">
+                    <defs>
+                      <linearGradient id="detailRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#DAA520" />
+                        <stop offset="100%" stopColor="#B8860B" />
+                      </linearGradient>
+                    </defs>
                     <circle
-                      cx="48" cy="48" r="38"
+                      cx={ringSize / 2}
+                      cy={ringSize / 2}
+                      r={ringRadius}
                       fill="none"
-                      stroke="#C8A84B"
-                      strokeWidth="7"
+                      stroke="hsl(45, 40%, 90%)"
+                      strokeWidth={ringStroke}
+                    />
+                    <circle
+                      cx={ringSize / 2}
+                      cy={ringSize / 2}
+                      r={ringRadius}
+                      fill="none"
+                      stroke="url(#detailRingGrad)"
+                      strokeWidth={ringStroke}
                       strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 38}`}
-                      strokeDashoffset={`${2 * Math.PI * 38 * (1 - progressPercent / 100)}`}
+                      strokeDasharray={ringCircumference}
+                      strokeDashoffset={ringOffset}
                       className="transition-all duration-700 ease-out"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-lg font-bold text-[#1a1a1a] leading-none">{progressPercent}%</span>
-                    <span className="text-[10px] text-[#8a7a5a] mt-0.5">done</span>
+                    <span className="font-manrope text-2xl font-semibold text-primary-800 tabular-nums">
+                      {progressPercent}
+                      <span className="text-base text-primary-500">%</span>
+                    </span>
                   </div>
                 </div>
-                <Button
-                  onClick={handleContinue}
-                  size="lg"
-                  className="flex items-center gap-2 px-6 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all font-semibold w-full sm:w-auto justify-center"
-                >
-                  Continue Learning
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={handleStartCourse}
-                size="lg"
-                className="flex items-center gap-2 px-6 rounded-full text-black/80 bg-white/30 backdrop-blur-md border border-white/50 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] hover:bg-white/45 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all font-semibold w-full sm:w-auto justify-center"
-              >
-                <Play className="h-5 w-5" />
-                Start Course
-              </Button>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary-600">
+                  {isComplete ? 'Completed' : 'In Progress'}
+                </span>
+              </div>
             )}
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Learning Objectives */}
-      {course.learning_objectives && course.learning_objectives.length > 0 && (
-        <PremiumCard className="p-4 sm:p-6 mb-4 sm:mb-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            What You'll Learn
-          </h2>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {course.learning_objectives.map((objective, index) => (
-              <li key={objective.id || index} className="flex items-start gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-sm">{objective.text}</span>
-              </li>
-            ))}
-          </ul>
-        </PremiumCard>
-      )}
+        {/* Learning Objectives */}
+        {course.learning_objectives && course.learning_objectives.length > 0 && (
+          <section className="mt-12">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary-600">
+                What You'll Learn
+              </div>
+              <span className="h-px flex-1 bg-gradient-to-r from-primary-300/60 to-transparent" />
+            </div>
+            <ul className="grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">
+              {course.learning_objectives.map((objective, index) => (
+                <li key={objective.id || index} className="flex items-start gap-3">
+                  <span className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-gradient-to-br from-primary-400 to-primary-600" />
+                  <span className="text-[15px] leading-relaxed text-neutral-text">
+                    {objective.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
-      {/* Course Syllabus */}
-      <PremiumCard className="p-4 sm:p-6">
-        <h2 className="text-lg font-semibold mb-4">Course Syllabus</h2>
-        <div className="space-y-2 sm:space-y-3">
-          {modules.map((module, index) => {
-            const moduleProgress = progress?.module_completion?.[module.id];
-            const isCompleted = module.is_completed || moduleProgress?.status === 'completed';
-            const isInProgress = moduleProgress?.status === 'in_progress';
-            const isCurrent = progress?.current_module_id === module.id;
+        {/* Syllabus */}
+        <section className="mt-14 mb-12">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-primary-600">
+              Syllabus
+            </div>
+            <span className="h-px flex-1 bg-gradient-to-r from-primary-300/60 to-transparent" />
+          </div>
 
-            return (
-              <div
-                key={module.id}
-                className={cn(
-                  "flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-colors",
-                  isCurrent && "border-primary bg-primary/5",
-                  isCompleted && "border-green-500/50 bg-green-500/5",
-                  !isCurrent && !isCompleted && "border-border hover:border-primary/50"
-                )}
-              >
-                <div className={cn(
-                  "flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-xs sm:text-sm font-semibold shrink-0",
-                  isCompleted && "bg-green-500 text-white",
-                  isCurrent && !isCompleted && "bg-primary text-primary-foreground",
-                  !isCompleted && !isCurrent && "bg-muted text-muted-foreground"
-                )}>
-                  {isCompleted ? (
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                  ) : (
-                    index + 1
+          <div className="divide-y divide-primary-300/30 border-y border-primary-300/30">
+            {modules.map((module, index) => {
+              const moduleProgress = progress?.module_completion?.[module.id];
+              const isCompleted = module.is_completed || moduleProgress?.status === 'completed';
+              const isInProgress = moduleProgress?.status === 'in_progress' || progress?.current_module_id === module.id;
+              const isLocked = module.module_index > highestReachedIndex + 1;
+
+              return (
+                <div
+                  key={module.id}
+                  className={cn(
+                    "group flex items-start gap-5 py-5 transition-colors",
+                    isLocked && "opacity-50"
                   )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm sm:text-base truncate">{module.title}</h3>
-                  {module.summary && (
-                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:truncate">{module.summary}</p>
-                  )}
-                  {/* Mobile: show meta inline */}
-                  <div className="flex items-center gap-2 mt-1 sm:hidden">
-                    {module.estimated_minutes && (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {module.estimated_minutes}m
+                >
+                  {/* Index / status */}
+                  <div className="w-12 shrink-0 pt-1 text-right">
+                    {isCompleted ? (
+                      <CheckCircle2 className="ml-auto h-5 w-5 text-primary-600" strokeWidth={1.8} />
+                    ) : isLocked ? (
+                      <Lock className="ml-auto h-4 w-4 text-neutral-muted" strokeWidth={1.8} />
+                    ) : (
+                      <span className="font-manrope text-2xl font-semibold text-primary-500/80 tabular-nums">
+                        {String(index + 1).padStart(2, '0')}
                       </span>
                     )}
-                    {isCompleted && (
-                      <Badge variant="outline" className="text-green-500 border-green-500/50 text-[10px] px-1.5 py-0">
-                        Complete
-                      </Badge>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <h3 className="font-manrope text-base sm:text-lg font-medium text-primary-900 leading-snug">
+                        {module.title}
+                      </h3>
+                      {isInProgress && !isCompleted && (
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-600">
+                          In progress
+                        </span>
+                      )}
+                      {isCompleted && (
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-600">
+                          Complete
+                        </span>
+                      )}
+                    </div>
+
+                    {module.summary && (
+                      <p className="mt-1.5 text-[13px] leading-relaxed text-neutral-muted line-clamp-2 max-w-2xl">
+                        {module.summary}
+                      </p>
                     )}
-                    {isInProgress && !isCompleted && (
-                      <Badge variant="outline" className="text-amber-500 border-amber-500/50 text-[10px] px-1.5 py-0">
-                        In Progress
-                      </Badge>
-                    )}
+
+                    <div className="mt-2 flex items-center gap-4 text-[11px] uppercase tracking-[0.18em] text-neutral-muted/80">
+                      {module.estimated_minutes ? (
+                        <span className="flex items-center gap-1.5 tabular-nums">
+                          <Clock className="h-3 w-3" />
+                          {module.estimated_minutes} min
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-
-                {/* Desktop meta */}
-                <div className="hidden sm:flex items-center gap-3 text-sm text-muted-foreground">
-                  {module.estimated_minutes && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {module.estimated_minutes}m
-                    </span>
-                  )}
-                  {isCompleted && (
-                    <Badge variant="outline" className="text-green-500 border-green-500/50">
-                      Complete
-                    </Badge>
-                  )}
-                  {isInProgress && !isCompleted && (
-                    <Badge variant="outline" className="text-amber-500 border-amber-500/50">
-                      In Progress
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </PremiumCard>
+              );
+            })}
+          </div>
+        </section>
+      </div>
     </div>
   );
 };

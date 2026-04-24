@@ -90,7 +90,7 @@ serve(async (req) => {
     let isPassing = true;
 
     // Handle different step types
-    if (step.step_type === 'quiz' || step.step_type === 'checkpoint') {
+    if (step.step_type === 'quiz' || (step.step_type === 'checkpoint' && submission.answers)) {
       // Auto-grade quiz/checkpoint with multiple choice
       if (submission.answers && step.content.questions) {
         let correctCount = 0;
@@ -118,7 +118,7 @@ serve(async (req) => {
             : 'Take time to review the teaching sections before retrying.'
         };
       }
-    } else if (step.step_type === 'prompt' || (step.step_type === 'checkpoint' && submission.text)) {
+    } else if (step.step_type === 'prompt' || step.step_type === 'checkpoint') {
       // Use AI to evaluate written responses
       const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
       
@@ -264,33 +264,61 @@ Be honest and fair. Students learn best from accurate feedback, not false encour
         .update({ is_completed: true, completed_at: new Date().toISOString() })
         .eq('id', step_id);
 
-      // Update progress
-      const { data: allSteps } = await supabase
+      // Count completion for the current module (to know if the module is done)
+      const { data: moduleSteps } = await supabase
         .from('module_steps')
         .select('id, is_completed, step_type')
         .eq('module_id', module.id);
 
-      const completedSteps = allSteps?.filter(s => s.is_completed).length || 0;
-      const totalSteps = allSteps?.length || 0;
-      const completedCheckpoints = allSteps?.filter(s => s.is_completed && s.step_type === 'checkpoint').length || 0;
+      const moduleCompletedSteps = moduleSteps?.filter(s => s.is_completed).length || 0;
+      const moduleTotalSteps = moduleSteps?.length || 0;
+
+      // Count completion across ALL modules in this course (authoritative course progress)
+      const { data: allCourseModules } = await supabase
+        .from('course_modules')
+        .select('id')
+        .eq('course_id', course_id);
+
+      const courseModuleIds = (allCourseModules || []).map(m => m.id);
+
+      const { data: allCourseSteps } = courseModuleIds.length > 0
+        ? await supabase
+            .from('module_steps')
+            .select('id, is_completed, step_type')
+            .in('module_id', courseModuleIds)
+        : { data: [] as Array<{ id: string; is_completed: boolean; step_type: string }> };
+
+      const totalCourseSteps = allCourseSteps?.length || 0;
+      const completedCourseSteps = allCourseSteps?.filter(s => s.is_completed).length || 0;
+      const completedCheckpoints = allCourseSteps?.filter(s => s.is_completed && s.step_type === 'checkpoint').length || 0;
+      const courseIsComplete = totalCourseSteps > 0 && completedCourseSteps === totalCourseSteps;
 
       await supabase
         .from('course_progress')
         .update({
           current_step_id: step_id,
-          total_steps_completed: completedSteps,
+          total_steps_completed: completedCourseSteps,
           total_checkpoints_passed: completedCheckpoints,
-          last_activity_at: new Date().toISOString()
+          last_activity_at: new Date().toISOString(),
+          ...(courseIsComplete ? { completed_at: new Date().toISOString() } : {}),
         })
         .eq('course_id', course_id)
         .eq('user_id', userId);
 
-      // Check if module is complete
-      if (completedSteps === totalSteps) {
+      // Mark the current module complete if all its steps are done
+      if (moduleCompletedSteps === moduleTotalSteps && moduleTotalSteps > 0) {
         await supabase
           .from('course_modules')
           .update({ is_completed: true, completed_at: new Date().toISOString() })
           .eq('id', module.id);
+      }
+
+      // Mark the course itself complete if all steps across all modules are done
+      if (courseIsComplete) {
+        await supabase
+          .from('generated_courses')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('id', course_id);
       }
     }
 

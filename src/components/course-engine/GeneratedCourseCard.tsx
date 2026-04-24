@@ -1,8 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,10 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BookOpen, Clock, MoreVertical, Trash2, Play, CheckCircle } from "lucide-react";
+import { ArrowRight, Clock, MoreVertical, Trash2, CheckCircle2 } from "lucide-react";
 import { GeneratedCourse } from "@/types/course-engine";
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface GeneratedCourseCardProps {
   course: GeneratedCourse;
@@ -50,7 +49,7 @@ export const GeneratedCourseCard = ({
       setShowDeleteDialog(false);
     }
   };
-  
+
   const handleClick = () => {
     if (onClick) {
       onClick();
@@ -59,59 +58,77 @@ export const GeneratedCourseCard = ({
     }
   };
 
-  const getLevelColor = (level: string) => {
-    // Warm paper aesthetic - subtle cream treatment
-    return "bg-[#FFF8DC]/70 text-black/70 border-black/10";
-  };
+  const isCompleted = course.status === "completed";
+  const isInProgress = course.status === "active" && progress > 0;
+  const levelLabel = course.level.charAt(0).toUpperCase() + course.level.slice(1);
 
-  const getStatusBadge = () => {
-    switch (course.status) {
-      case "completed":
-        return (
-          <Badge variant="outline" className="bg-[#FFD700]/18 text-black/75 border-black/10">
-            <CheckCircle className="h-3.5 w-3.5 mr-1" />
-            Completed
-          </Badge>
-        );
-      case "active":
-        return progress > 0 ? (
-          <Badge variant="outline" className="bg-[#FFE4B5]/55 text-black/70 border-black/10">
-            In Progress
-          </Badge>
-        ) : null;
-      default:
-        return null;
-    }
-  };
+  const ctaLabel = isCompleted
+    ? "Review Course"
+    : progress > 0
+    ? "Continue Learning"
+    : "Start Course";
 
   return (
     <>
-      <Card className="group relative overflow-hidden border border-white/20 bg-white/40 backdrop-blur-xl shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),0_16px_32px_rgba(0,0,0,0.12)] hover:bg-white/50 transition-all duration-300 hover:-translate-y-1 rounded-2xl">
-        <div className="p-6">
-          {/* Header */}
+      <Card
+        className={cn(
+          "group relative overflow-hidden rounded-2xl cursor-pointer",
+          "border border-[#C8A84B]/40",
+          "bg-gradient-to-b from-[#FBF7EF] to-white",
+          "shadow-[0_4px_16px_-8px_rgba(184,134,11,0.18),inset_0_1px_0_0_rgba(255,255,255,0.9)]",
+          "hover:border-[#C8A84B]/70",
+          "hover:shadow-[0_12px_32px_-12px_rgba(184,134,11,0.28),inset_0_1px_0_0_rgba(255,255,255,1)]",
+          "hover:-translate-y-1 transition-all duration-300"
+        )}
+        onClick={handleClick}
+      >
+        {/* Top gold hairline */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#C8A84B]/60 to-transparent" />
+
+        <div className="flex flex-col h-full p-6">
+          {/* Eyebrow row: level + status + menu */}
           <div className="flex items-start justify-between mb-4">
-            <div className="flex-1 pr-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="outline" className={getLevelColor(course.level)}>
-                  {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
-                </Badge>
-                {getStatusBadge()}
-              </div>
-              <h3 className="font-medium text-foreground line-clamp-2 text-lg leading-relaxed">
-                {course.title}
-              </h3>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pr-2">
+              <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.22em] text-[#9a7f2a]">
+                {levelLabel}
+              </span>
+              {isCompleted && (
+                <>
+                  <span className="h-1 w-1 rounded-full bg-[#C8A84B]/60" />
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9a7f2a]">
+                    <CheckCircle2 className="h-3 w-3" strokeWidth={1.8} />
+                    Completed
+                  </span>
+                </>
+              )}
+              {isInProgress && !isCompleted && (
+                <>
+                  <span className="h-1 w-1 rounded-full bg-[#C8A84B]/60" />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#9a7f2a]">
+                    In Progress
+                  </span>
+                </>
+              )}
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-black/45 hover:text-black/80 opacity-60 group-hover:opacity-100 transition">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="-mt-1 -mr-1 h-8 w-8 text-[#8a7a5a] opacity-50 group-hover:opacity-100 hover:text-[#1a1a1a] hover:bg-[#C8A84B]/10 transition"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   className="text-destructive"
-                  onClick={() => setShowDeleteDialog(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeleteDialog(true);
+                  }}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete Course
@@ -120,44 +137,68 @@ export const GeneratedCourseCard = ({
             </DropdownMenu>
           </div>
 
+          {/* Title */}
+          <h3 className="font-manrope text-[17px] font-medium leading-snug tracking-tight text-[#1a1a1a] line-clamp-2 mb-3">
+            {course.title}
+          </h3>
+
           {/* Description */}
-          <p className="text-sm text-black/60 line-clamp-2 mb-5 leading-relaxed">
+          <p className="text-[13px] leading-relaxed text-[#5a5040]/85 line-clamp-2 mb-5">
             {course.description || `A ${course.pace_weeks}-week journey exploring ${course.topic}`}
           </p>
 
-          {/* Meta Info */}
-          <div className="flex items-center gap-5 text-xs text-black/45 mb-5">
-            <span className="flex items-center gap-1.5">
-              <BookOpen className="h-3 w-3" />
-              {course.pace_weeks} modules
+          {/* Meta row */}
+          <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-[0.18em] text-[#8a7a5a] mb-5">
+            <span className="tabular-nums">
+              {course.pace_weeks} {course.pace_weeks === 1 ? "Week" : "Weeks"}
             </span>
+            <span className="h-1 w-1 rounded-full bg-[#C8A84B]/50" />
             <span className="flex items-center gap-1.5">
-              <Clock className="h-3 w-3" />
+              <Clock className="h-3 w-3" strokeWidth={1.8} />
               {formatDistanceToNow(new Date(course.created_at), { addSuffix: true })}
             </span>
           </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-2 mb-5">
-            <div className="flex justify-between text-xs">
-              <span className="text-black/45">Progress</span>
-              <span className="text-black/75 font-medium">{progress}%</span>
+          {/* Progress */}
+          <div className="mb-6 mt-auto">
+            <div className="flex items-baseline justify-between mb-1.5">
+              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#8a7a5a]">
+                Progress
+              </span>
+              <span className="font-manrope text-sm font-medium tabular-nums text-[#1a1a1a]">
+                {progress}
+                <span className="text-xs text-[#8a7a5a] ml-0.5">%</span>
+              </span>
             </div>
-            <Progress value={progress} className="h-1.5 bg-black/5" indicatorClassName="bg-[#B8860B]" />
+            <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-[#C8A84B]/15">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#DAA520] to-[#B8860B] transition-all duration-700 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
 
-          {/* Action Button */}
+          {/* CTA */}
           <Button
-            className="w-full rounded-full py-5 text-black bg-gradient-to-br from-[#FFF8DC]/90 to-[#FFE4B5]/90 border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_10px_25px_rgba(184,134,11,0.18)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08),0_18px_40px_rgba(184,134,11,0.26)] hover:-translate-y-[1px] transition-all"
-            onClick={handleClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClick();
+            }}
+            className={cn(
+              "w-full rounded-full py-5 font-semibold text-white",
+              "bg-gradient-to-br from-[#DAA520] to-[#B8860B]",
+              "shadow-[0_6px_20px_-8px_rgba(184,134,11,0.55),inset_0_1px_0_rgba(255,255,255,0.25)]",
+              "hover:from-[#E4B333] hover:to-[#C99416]",
+              "hover:shadow-[0_10px_26px_-8px_rgba(184,134,11,0.65),inset_0_1px_0_rgba(255,255,255,0.3)]",
+              "transition-all duration-200"
+            )}
           >
-            <Play className="h-4 w-4 mr-2" />
-            {progress > 0 ? "Continue Learning" : "Start Course"}
+            {ctaLabel}
+            <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-0.5" />
           </Button>
         </div>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

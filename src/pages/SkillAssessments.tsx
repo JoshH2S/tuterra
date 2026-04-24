@@ -87,9 +87,12 @@ export default function SkillAssessments() {
           <>
             <AssessmentSearch searchQuery={searchQuery} onSearch={handleSearch} />
 
-            <div className="mt-6 mb-6">
-              <h2 className="text-3xl font-semibold text-gray-900 mb-1">All Assessments</h2>
-              <p className="text-gray-500">Track and manage your skill assessments</p>
+            {/* Section heading — matches Course Engine "CONTINUE LEARNING" eyebrow */}
+            <div className="mt-10 mb-6 flex items-center gap-3">
+              <h2 className="font-manrope text-sm font-medium uppercase tracking-[0.22em] text-[#9a7f2a]">
+                All Assessments
+              </h2>
+              <span className="h-px flex-1 bg-gradient-to-r from-[#C8A84B]/50 to-transparent" />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 w-full">

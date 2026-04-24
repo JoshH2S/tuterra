@@ -24,6 +24,8 @@ interface UseCourseRunnerReturn {
   isLoadingSteps: boolean;
   isSubmitting: boolean;
   lastFeedback: AIFeedback | null;
+  previousSubmission: StepSubmission | null;
+  lastSubmissionPassing: boolean | null;
   loadCourse: (courseId: string) => Promise<void>;
   loadModuleSteps: (moduleId: string) => Promise<void>;
   submitStep: (submission: SubmissionData) => Promise<{ success: boolean; nextStepId?: string }>;
@@ -44,9 +46,57 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
   const [isLoadingSteps, setIsLoadingSteps] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastFeedback, setLastFeedback] = useState<AIFeedback | null>(null);
+  const [previousSubmission, setPreviousSubmission] = useState<StepSubmission | null>(null);
+  const [lastSubmissionPassing, setLastSubmissionPassing] = useState<boolean | null>(null);
 
   // Dedup guard: prevent concurrent calls to loadModuleSteps for the same module
   const activeModuleLoadRef = useRef<string | null>(null);
+
+  // Fetch the most recent submission for the current step whenever the step changes
+  useEffect(() => {
+    if (!currentStep || currentStep.step_type === 'teach') {
+      setPreviousSubmission(null);
+      setLastSubmissionPassing(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchPreviousSubmission = async () => {
+      const { data } = await supabase
+        .from('step_submissions')
+        .select('*')
+        .eq('step_id', currentStep.id)
+        .order('attempt_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (data) {
+        setPreviousSubmission({
+          id: data.id,
+          step_id: data.step_id,
+          user_id: data.user_id,
+          course_id: data.course_id,
+          submission: data.submission as SubmissionData,
+          ai_feedback: data.ai_feedback as AIFeedback | undefined,
+          score: data.score ?? undefined,
+          is_passing: data.is_passing ?? undefined,
+          attempt_number: data.attempt_number,
+          created_at: data.created_at,
+        });
+        setLastSubmissionPassing(data.is_passing ?? null);
+      } else {
+        setPreviousSubmission(null);
+        setLastSubmissionPassing(null);
+      }
+    };
+
+    fetchPreviousSubmission();
+
+    return () => { cancelled = true; };
+  }, [currentStep?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadCourse = useCallback(async (courseId: string) => {
     setIsLoading(true);
@@ -261,7 +311,27 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
         throw new Error(result.error || 'Submission failed');
       }
 
-      setLastFeedback(result.feedback);
+      const feedback: AIFeedback = result.feedback ?? {
+        feedback: 'Your response was submitted successfully.',
+        overallScore: result.is_passing ? 80 : 50,
+      };
+
+      setLastFeedback(feedback);
+      setLastSubmissionPassing(result.is_passing);
+
+      // Persist the submission in memory so the form can be pre-populated on retry
+      setPreviousSubmission({
+        id: '',
+        step_id: currentStep.id,
+        user_id: '',
+        course_id: course.id,
+        submission,
+        ai_feedback: feedback,
+        score: feedback.overallScore,
+        is_passing: result.is_passing,
+        attempt_number: 1,
+        created_at: new Date().toISOString(),
+      });
 
       // Update step completion locally
       if (result.is_passing) {
@@ -362,16 +432,49 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
     if (step) {
       setCurrentStep(step);
       setLastFeedback(null);
+      // Clear immediately so stale data from the previous step never reaches the form
+      setPreviousSubmission(null);
+      setLastSubmissionPassing(null);
+
+      // Persist position so a page refresh returns the user to this exact step
+      if (course && progress) {
+        supabase
+          .from('course_progress')
+          .update({
+            current_step_id: stepId,
+            last_activity_at: new Date().toISOString(),
+          })
+          .eq('course_id', course.id)
+          .eq('user_id', progress.user_id)
+          .then(({ error }) => {
+            if (error) console.error('[useCourseRunner] Failed to persist step position:', error);
+          });
+      }
     }
-  }, [steps]);
+  }, [steps, course, progress]);
 
   const navigateToModule = useCallback((moduleIndex: number) => {
     const module = modules.find(m => m.module_index === moduleIndex);
     if (module) {
       setCurrentModule(module);
       setLastFeedback(null);
+
+      // Persist module position so a page refresh lands on the right module
+      if (course && progress) {
+        supabase
+          .from('course_progress')
+          .update({
+            current_module_id: module.id,
+            last_activity_at: new Date().toISOString(),
+          })
+          .eq('course_id', course.id)
+          .eq('user_id', progress.user_id)
+          .then(({ error }) => {
+            if (error) console.error('[useCourseRunner] Failed to persist module position:', error);
+          });
+      }
     }
-  }, [modules]);
+  }, [modules, course, progress]);
 
   const getProgressPercentage = useCallback(() => {
     // Use step-based progress instead of module-based for better granularity
@@ -399,6 +502,8 @@ export const useCourseRunner = (): UseCourseRunnerReturn => {
     isLoadingSteps,
     isSubmitting,
     lastFeedback,
+    previousSubmission,
+    lastSubmissionPassing,
     loadCourse,
     loadModuleSteps,
     submitStep,

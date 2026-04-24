@@ -18,6 +18,7 @@ import { ModuleSidebar } from "@/components/course-engine/ModuleSidebar";
 import { FeedbackDisplay } from "@/components/course-engine/FeedbackDisplay";
 import { ModuleStartConfirmation } from "@/components/course-engine/ModuleStartConfirmation";
 import { ModuleGenerationLoading } from "@/components/course-engine/ModuleGenerationLoading";
+import { CourseCompletionScreen } from "@/components/course-engine/CourseCompletionScreen";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CourseModule } from "@/types/course-engine";
@@ -33,6 +34,7 @@ const CourseRunnerPage = () => {
   const [showModuleConfirmation, setShowModuleConfirmation] = useState(false);
   const [pendingModule, setPendingModule] = useState<CourseModule | null>(null);
   const [isGeneratingModule, setIsGeneratingModule] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
 
   const {
     course,
@@ -45,6 +47,8 @@ const CourseRunnerPage = () => {
     isLoadingSteps,
     isSubmitting,
     lastFeedback,
+    previousSubmission,
+    lastSubmissionPassing,
     loadCourse,
     loadModuleSteps,
     submitStep,
@@ -73,6 +77,13 @@ const CourseRunnerPage = () => {
     }
   }, [lastFeedback]);
 
+  // If the course is already complete (e.g. user refreshes after finishing), show the completion screen.
+  useEffect(() => {
+    if (progress?.completed_at) {
+      setShowCompletion(true);
+    }
+  }, [progress?.completed_at]);
+
   const handleSubmit = async (submission: any) => {
     const result = await submitStep(submission);
     if (result.success && result.nextStepId) {
@@ -85,6 +96,10 @@ const CourseRunnerPage = () => {
     if (result.success) {
       handleNextStep();
     }
+  };
+
+  const handleRetry = () => {
+    setShowFeedback(false);
   };
 
   // Calculate which modules are locked (all modules after the furthest reached)
@@ -181,8 +196,8 @@ const CourseRunnerPage = () => {
         setPendingModule(nextModule);
         setShowModuleConfirmation(true);
       } else {
-        // Course complete!
-        navigate(`/courses/generated/${id}`);
+        // Course complete! Show the completion screen.
+        setShowCompletion(true);
       }
     }
   };
@@ -229,6 +244,25 @@ const CourseRunnerPage = () => {
   const isFirstStep = currentStepIndex === 0 && currentModule?.module_index === 0;
   const isLastStep = currentStepIndex === steps.length - 1 && 
     currentModule?.module_index === modules.length - 1;
+
+  if (showCompletion) {
+    const totalStepsInCourse = Math.max(
+      progress?.total_steps_completed ?? 0,
+      modules.length * 6
+    );
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-brand-light/50 to-white px-4 py-10 sm:px-8">
+        <CourseCompletionScreen
+          course={course}
+          modules={modules}
+          totalStepsCompleted={progress?.total_steps_completed ?? 0}
+          totalStepsInCourse={totalStepsInCourse}
+          onBackToCourse={() => navigate(`/courses/generated/${id}`)}
+          onBackToCourses={() => navigate('/courses/generated')}
+        />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -280,21 +314,33 @@ const CourseRunnerPage = () => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white">
-        {/* Top Progress Bar */}
-        <div className="border-b bg-white px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium truncate">
-                {currentModule?.title}
+      <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-b from-brand-light/40 to-white">
+        {/* Top bar — editorial chapter header */}
+        <div className="border-b border-primary-300/30 bg-white/80 backdrop-blur-sm px-4 sm:px-8 pt-4 pb-3">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-baseline justify-between gap-4 mb-2">
+              <div className="flex items-baseline gap-3 min-w-0 flex-1">
+                {currentModule && (
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary-600 shrink-0">
+                    Module {String(currentModule.module_index + 1).padStart(2, "0")}
+                  </span>
+                )}
+                <span className="h-px w-6 bg-primary-300/60 shrink-0" />
+                <span className="font-bitter text-base sm:text-lg font-medium text-primary-900 truncate">
+                  {currentModule?.title}
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-muted shrink-0 tabular-nums">
+                {progressPercent}%
               </span>
             </div>
-            <span className="text-sm text-muted-foreground shrink-0 ml-2">
-              {progressPercent}% complete
-            </span>
+            <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-primary-300/20">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-700 ease-out"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
           </div>
-          <Progress value={progressPercent} className="h-1.5" />
         </div>
 
         {/* Step Content */}
@@ -307,8 +353,10 @@ const CourseRunnerPage = () => {
               </div>
             ) : showFeedback && lastFeedback ? (
               <FeedbackDisplay 
-                feedback={lastFeedback} 
+                feedback={lastFeedback}
+                isPassing={lastSubmissionPassing ?? false}
                 onContinue={handleNextStep}
+                onRetry={handleRetry}
               />
             ) : currentStep ? (
               <StepRenderer
@@ -316,6 +364,7 @@ const CourseRunnerPage = () => {
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 onTeachComplete={handleTeachComplete}
+                previousSubmission={previousSubmission}
               />
             ) : (
               <div className="text-center py-12">
@@ -325,38 +374,65 @@ const CourseRunnerPage = () => {
           </div>
         </div>
 
-        {/* Navigation Footer */}
+        {/* Navigation Footer — refined chapter pagination */}
         {!showFeedback && currentStep && (
-          <div className="border-t bg-white px-4 sm:px-6 py-3 sm:py-4 safe-area-bottom">
-            <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
-              <Button
-                variant="outline"
+          <div className="border-t border-primary-300/30 bg-white/80 backdrop-blur-sm px-4 sm:px-8 py-4 safe-area-bottom">
+            <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+              <button
                 onClick={handlePreviousStep}
                 disabled={isFirstStep}
-                size={isMobile ? "sm" : "default"}
+                className={cn(
+                  "group flex items-center gap-2 text-sm font-medium transition-colors",
+                  isFirstStep
+                    ? "text-neutral-muted/40 cursor-not-allowed"
+                    : "text-neutral-muted hover:text-primary-700"
+                )}
               >
-                <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
+                <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
                 <span className="hidden sm:inline">Previous</span>
-                <span className="sm:hidden">Prev</span>
-              </Button>
+              </button>
 
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                <span>{currentStepIndex + 1}/{steps.length}</span>
+              {/* Segmented step indicator */}
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:inline text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-muted tabular-nums">
+                  Step {String(currentStepIndex + 1).padStart(2, "0")}
+                  <span className="text-primary-300 mx-1.5">/</span>
+                  {String(steps.length).padStart(2, "0")}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {steps.map((s, i) => (
+                    <span
+                      key={s.id}
+                      className={cn(
+                        "h-1 rounded-full transition-all duration-300",
+                        i === currentStepIndex
+                          ? "w-6 bg-gradient-to-r from-primary-400 to-primary-600"
+                          : s.is_completed
+                          ? "w-1.5 bg-primary-500"
+                          : "w-1.5 bg-primary-300/50"
+                      )}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {/* Only show Continue button for legacy teach steps without slides */}
-              {currentStep.step_type === 'teach' && 
-               (!currentStep.content.slides || currentStep.content.slides.length === 0) && (
-                <Button onClick={handleNextStep} size={isMobile ? "sm" : "default"}>
+              {/* Continue button only for legacy teach steps without slides */}
+              {currentStep.step_type === 'teach' &&
+               (!currentStep.content.slides || currentStep.content.slides.length === 0) ? (
+                <Button
+                  onClick={handleNextStep}
+                  size={isMobile ? "sm" : "default"}
+                  className={cn(
+                    "bg-gradient-to-br from-primary-400 to-primary-600 text-white",
+                    "shadow-[0_4px_14px_-4px_rgba(184,134,11,0.5)]",
+                    "hover:from-primary-500 hover:to-primary-700"
+                  )}
+                >
                   Continue
                   <ArrowRight className="h-4 w-4 ml-1 sm:ml-2" />
                 </Button>
-              )}
-              
-              {/* Spacer for non-teach steps or slide-based teach steps */}
-              {(currentStep.step_type !== 'teach' || 
-                (currentStep.content.slides && currentStep.content.slides.length > 0)) && (
-                <div className="w-[72px] sm:w-[100px]" />
+              ) : (
+                <div className="w-[60px] sm:w-[80px]" />
               )}
             </div>
           </div>
